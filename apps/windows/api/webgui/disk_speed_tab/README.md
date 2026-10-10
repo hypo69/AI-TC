@@ -5,7 +5,6 @@
 
 ## Архитектура
 1. **Frontend**: Вкладка `/tc#tab-disk-speed` (`index.html`, `main.js`).
-2. **Backend**: Сервис `StorageBenchmarkService` (`apps/windows/modules/storage_manager/core/benchmark.py`) и роутер `/api/v1/storage/benchmark/*`.
 3. **Движок**: `diskspd.exe` (располагается в `bin/diskspd/diskspd.exe` или загружается автоматически).
 4. **Безопасность**: Запись и чтение производятся исключительно на изолированном временном файле `diskspd-test.dat` в безопасной директории `AI-Windows-Admin-benchmark` или `data/benchmark`, с автоматической очисткой после теста.
 5. **История**: Результаты измерений фиксируются в локальной SQLite базе данных (`data/storage_benchmarks.db`).

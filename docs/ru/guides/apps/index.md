@@ -2,8 +2,8 @@
 
 Список доступных микроприложений:
 
-- [AI Windows Admin Admin](ai_windows_admin_admin.md)
-- [Baseline Detector](baseline_detector.md)
+- AI Windows Admin Admin
+- Baseline Detector
 - [Cloudflared Monitor](cloudflared_monitor.md)
 - [Dashboard](dashboard.md)
 - [Hardware Explorer](hardware_explorer.md)
@@ -14,4 +14,4 @@
 - [Network Diagnostics](network_diagnostics.md)
 - [Process Explorer](process_explorer.md)
 - [Realtime Monitor](realtime_monitor.md)
-- [Сценарии тестирования и автогенератор навыков (Scenarios)](scenarios.md)
+- Сценарии тестирования и автогенератор навыков (Scenarios)

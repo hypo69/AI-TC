@@ -47,4 +47,4 @@
 
 ---
 
-[← Troubleshooting](troubleshooting.md) | [← Назад в меню](index.md)
+← Troubleshooting | ← Назад в меню

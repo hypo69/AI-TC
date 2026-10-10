@@ -43,7 +43,6 @@
    - **Service Account (`service_account.json`)**: для фонового серверного взаимодействия с Google Sheets и Drive.
 
 3. **Связка с `google_auth.py`**:
-   - Модуль `.agents/skills/google-workspace/scripts/google_auth.py` автоматически опрашивает менеджер пула `src.secrets.google_accounts_state` с возможностью выбора аккаунта через `account_name`.
 
 
 ---
@@ -94,7 +93,7 @@
     ]
   }
   ```
-- **Системный промпт**: `WORKSPACE_AGENT_SYSTEM_PROMPT` в [`src/ai/agents/prompts.py`](file:///c:/Users/onela/AppData/Local/AI-Windows-Admin/src/ai/agents/prompts.py).
+- **Системный промпт**: `WORKSPACE_AGENT_SYSTEM_PROMPT` в [`src/ai/agents/prompts.py`](file:///c:/Users/onela/AppData/Local/AI-TC/src/ai/agents/prompts.py).
 
 ---
 

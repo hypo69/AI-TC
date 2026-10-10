@@ -243,11 +243,8 @@ def _has_value_changed(self, app_name: str, new_value: Any) -> bool:
 ## Дополнительные модули
 
 - `apps/windows/telemetry/sensor_collector.py` — адаптер сбора метрик и группировки `samples`
-- `apps/windows/telemetry/aggregator.py` — центральный агрегатор телеметрии
 - `apps/windows/telemetry/json_logger.py` — JSON-логгер с авторотацией по 50 МБ
 - `apps/windows/telemetry/telemetry_config.py` — менеджер конфигурации сенсоров
-- `apps/librehardwaremonitor/core/lhm_service.py` — сервис LHM через HTTP API
-- `apps/common/autolog_engine.py` — движок автологгирования
 
 ---
 

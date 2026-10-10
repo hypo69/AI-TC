@@ -37,9 +37,9 @@ bash skills/project-installer/scripts/run_installer_gemini.sh
 ## 📖 Mandatory Reference
 
 Before executing any installation step, the agent **MUST** inspect:
-- [INSTALL-INSTRUCTION.md](file:///c:/Users/onela/AppData/Local/AI-Windows-Admin/skills/project-installer/INSTALL-INSTRUCTION.md) (Skill copy) or [INSTALL-INSTRUCTION.md](file:///c:/Users/onela/AppData/Local/AI-Windows-Admin/INSTALL-INSTRUCTION.md) (Root copy).
-- Windows baseline: [`install.ps1`](file:///c:/Users/onela/AppData/Local/AI-Windows-Admin/install.ps1) and [`install/`](file:///c:/Users/onela/AppData/Local/AI-Windows-Admin/install).
-- Linux / macOS baseline: [`install.sh`](file:///c:/Users/onela/AppData/Local/AI-Windows-Admin/install.sh), [`install/install.sh`](file:///c:/Users/onela/AppData/Local/AI-Windows-Admin/install/install.sh), and [`INSTALL_LINUX.md`](file:///c:/Users/onela/AppData/Local/AI-Windows-Admin/INSTALL_LINUX.md).
+- [INSTALL-INSTRUCTION.md](file:///c:/Users/onela/AppData/Local/AI-TC/skills/project-installer/INSTALL-INSTRUCTION.md) (Skill copy) or [INSTALL-INSTRUCTION.md](file:///c:/Users/onela/AppData/Local/AI-TC/INSTALL-INSTRUCTION.md) (Root copy).
+- Windows baseline: [`install.ps1`](file:///c:/Users/onela/AppData/Local/AI-TC/install.ps1) and [`install/`](file:///c:/Users/onela/AppData/Local/AI-TC/install).
+- Linux / macOS baseline: [`install.sh`](file:///c:/Users/onela/AppData/Local/AI-TC/install.sh), [`install/install.sh`](file:///c:/Users/onela/AppData/Local/AI-TC/install/install.sh), and [`INSTALL_LINUX.md`](file:///c:/Users/onela/AppData/Local/AI-TC/INSTALL_LINUX.md).
 
 ---
 

@@ -24,4 +24,4 @@
 
 ## 🔗 Подключение
 
-Вкладка зарегистрирована в `src/api/webgui/apps/modules/tabs-config.js` под ID `file_history_ai_search`.
+Вкладка зарегистрирована в `apps/windows/api/webgui/apps/modules/tabs-config.js` под ID `file_history_ai_search`.

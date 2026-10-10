@@ -690,7 +690,7 @@ def test_create_user_with_duplicate_email():
 
 ## 📚 Дополнительные ресурсы
 
-- [Архитектура системы](../ARCHITECTURE.md)
+- Архитектура системы
 - [Разработка Skills](developing-skills.md)
 - [Создание Agents](creating-agents.md)
 - [pytest документация](https://docs.pytest.org/)

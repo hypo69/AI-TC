@@ -9,7 +9,7 @@ inclusion: auto
 This steering file applies project-wide engineering standards, architecture principles, and code quality requirements to all code changes.
 
 ## Source
-These standards are maintained in `.ai/instructions/rules/CODE_RULES.md` and represent the unified engineering standard v1.0.
+These standards are maintained in `.ai/instructions/standards/ENGINEERING.md` and represent the unified engineering standard v1.0.
 
 ## Key Principles
 
@@ -213,16 +213,16 @@ When creating new application in `apps/<app_name>`:
 
 1. **Business Logic** - Implement in `apps/<app_name>/`
 2. **FastAPI Router** - Export router from `router.py`
-3. **Server Registration** - Add to `src/app/__init__.py`
-4. **Web Tab** - Create in `src/api/webinterface/<app_name>_tab/`
+3. **Server Registration** - Add to `apps/windows/api/server.py`
+4. **Web Tab** - Create in `apps/windows/api/webgui/<app_name>_tab/`
 5. **Admin UI** - Add to admin interface navigation
 6. **TDD & Docs** - Write tests and documentation
 
 ## Related Documents
 
-- Full details: `.ai/instructions/rules/CODE_RULES.md`
-- Documentation: `.ai/instructions/rules/DOCS_RULES.md`
-- Code reuse: `.ai/instructions/rules/REUSE_RULES.md`
+- Full details: `.ai/instructions/standards/ENGINEERING.md`
+- Documentation: `.ai/instructions/standards/DOCUMENTATION.md`
+- Code reuse: `.ai/instructions/standards/REUSE.md`
 
 ---
 

@@ -9,7 +9,7 @@ inclusion: auto
 This steering file defines the documentation workflow (TDD-doc-gen), docstring format, and README requirements.
 
 ## Source
-Based on `.ai/instructions/rules/DOCS_RULES.md` - mandatory for all functional changes.
+Based on `.ai/instructions/standards/DOCUMENTATION.md` - mandatory for all functional changes.
 
 ## Three Levels of Documentation
 
@@ -46,7 +46,7 @@ STEP 2: Add Docstring to Code
         ↓
 
 STEP 3: Implement Function
-├─ Follow CODE_RULES.md standards
+├─ Follow ENGINEERING.md standards
 ├─ Use early returns, explicit dependencies
 └─ Add comments explaining "WHY", not "WHAT"
 
@@ -317,8 +317,8 @@ pytest tests/ --cov --cov-report=html
 
 ## Related Documents
 
-- Engineering Standards: `.ai/instructions/rules/CODE_RULES.md`
-- Code Reuse: `.ai/instructions/rules/REUSE_RULES.md`
+- Engineering Standards: `.ai/instructions/standards/ENGINEERING.md`
+- Code Reuse: `.ai/instructions/standards/REUSE.md`
 - Full spec: `.ai/instructions/README.md`
 
 ---

@@ -686,7 +686,7 @@ python scripts/main.py test.json
 
 ## 📚 Дополнительные ресурсы
 
-- [Архитектура Skills](../ARCHITECTURE.md)
+- Архитектура Skills
 - [Создание Agents](creating-agents.md)
 - [Стратегия тестирования](testing-strategy.md)
 - [Учебная книга — Глава 7](../cook-book/ch07_skills_management.md)

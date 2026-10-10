@@ -73,7 +73,7 @@ Central steering document that coordinates all development standards for the AI-
 ```
 .
 ├── .ai/instructions/          ← Unified AI instructions hub
-│   ├── rules/                 ← CODE_RULES, DOCS_RULES, REUSE_RULES
+│   ├── rules/                 ← ENGINEERING, DOCUMENTATION, REUSE
 │   └── knowledge/             ← Architecture, API docs, guides
 ├── .kiro/                     ← Kiro IDE configuration
 │   ├── steering/              ← Auto-loaded project guidelines
@@ -92,7 +92,7 @@ Central steering document that coordinates all development standards for the AI-
 
 ### 1. Planning
 - Analyze requirements
-- Check for existing implementations (REUSE_RULES)
+- Check for existing implementations (REUSE)
 - Design architecture
 - Write specification
 
@@ -155,7 +155,7 @@ Central steering document that coordinates all development standards for the AI-
 1. **Read** existing code and specifications
 2. **Plan** your changes
 3. **Write** docstring + tests first
-4. **Implement** following CODE_RULES
+4. **Implement** following ENGINEERING
 5. **Test** with pytest
 6. **Document** in README.md
 7. **Commit** with clear message
@@ -186,8 +186,8 @@ Central steering document that coordinates all development standards for the AI-
 Follow the 6-step Application Lifecycle:
 1. Logic & TUI in `apps/<app_name>/`
 2. FastAPI Router with `/api/v1/<app>` endpoints
-3. Server mount in `src/app/__init__.py`
-4. Web tab in `src/api/webinterface/<app>_tab/`
+3. Server mount in `apps/windows/api/server.py`
+4. Web tab in `apps/windows/api/webgui/<app>_tab/`
 5. Admin navigation and panes
 6. TDD with pytest and README
 
@@ -228,9 +228,9 @@ This project is configured for **Kiro IDE**:
 ## Resources
 
 ### Configuration
-- `.ai/instructions/rules/CODE_RULES.md` - Full engineering standards
-- `.ai/instructions/rules/DOCS_RULES.md` - Documentation requirements
-- `.ai/instructions/rules/REUSE_RULES.md` - Code reuse guidelines
+- `.ai/instructions/standards/ENGINEERING.md` - Full engineering standards
+- `.ai/instructions/standards/DOCUMENTATION.md` - Documentation requirements
+- `.ai/instructions/standards/REUSE.md` - Code reuse guidelines
 - `.ai/instructions/knowledge/` - Architecture and API documentation
 
 ### Project Information
@@ -243,10 +243,10 @@ This project is configured for **Kiro IDE**:
 
 | Question | Answer Location |
 |----------|-----------------|
-| How do I code? | `engineering-standards.md` + CODE_RULES.md |
-| How do I document? | `documentation-standards.md` + DOCS_RULES.md |
-| How do I reuse code? | REUSE_RULES.md |
-| How is the system designed? | `.ai/instructions/knowledge/project_overview.md` |
+| How do I code? | `engineering-standards.md` + ENGINEERING.md |
+| How do I document? | `documentation-standards.md` + DOCUMENTATION.md |
+| How do I reuse code? | REUSE.md |
+| How is the system designed? | `.ai/instructions/README.md` |
 | How do I set up? | INSTALLATION_GUIDE.md |
 | What are the APIs? | api_documentation.md |
 | How do I run services? | LAUNCHER_GUIDE.md |

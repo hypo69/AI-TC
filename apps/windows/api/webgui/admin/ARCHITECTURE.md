@@ -321,8 +321,8 @@ async function initAdminInterface() {
 ## Ссылки
 
 - [Рефакторинг гайд](./REFACTORING_GUIDE.md) - Как мигрировать с main.js
-- [Оптимизация](../OPTIMIZATION_SUMMARY.md) - Система оптимизаций
-- [Тестирование](../OPTIMIZATION_TESTING_GUIDE.md) - Как тестировать
+- Оптимизация - Система оптимизаций
+- Тестирование - Как тестировать
 
 ## Заключение
 

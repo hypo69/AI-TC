@@ -140,9 +140,9 @@ Reference `project-standards.md` for:
 
 All steering files reference the authoritative source documents in `.ai/instructions/`:
 
-- **CODE_RULES.md** - Full engineering standard (v1.0)
-- **DOCS_RULES.md** - Complete documentation guide
-- **REUSE_RULES.md** - Code reuse and prior art standards
+- **ENGINEERING.md** - Full engineering standard (v1.0)
+- **DOCUMENTATION.md** - Complete documentation guide
+- **REUSE.md** - Code reuse and prior art standards
 - **project_overview.md** - System architecture details
 - **api_documentation.md** - REST API reference
 
@@ -155,7 +155,7 @@ All steering files reference the authoritative source documents in `.ai/instruct
 4. Update README.md with new section
 
 ### Updating Existing Guidelines
-1. Update in `.ai/instructions/rules/` first
+1. Update in `.ai/instructions/standards/` first
 2. Sync changes to corresponding steering file
 3. Keep descriptions concise (steering is for reminders, not full specs)
 
@@ -168,7 +168,7 @@ All steering files reference the authoritative source documents in `.ai/instruct
 ## Version Information
 
 - **Version**: 1.0 (FastAPI Foundry Edition)
-- **Alignment**: Synced with CODE_RULES.md v1.0
+- **Alignment**: Synced with ENGINEERING.md v1.0
 - **Last Updated**: September 16, 2026
 - **Status**: ✅ Production Ready
 

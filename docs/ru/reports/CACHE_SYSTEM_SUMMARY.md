@@ -10,7 +10,7 @@
 
 ### 1. Универсальная система кеширования
 
-**Файл:** `src/api/webgui/js/api-cache.js`
+**Файл:** `apps/windows/api/webgui/js/api-cache.js`
 
 - ✅ Автоматическое кеширование всех API-запросов
 - ✅ 3 стратегии: Cache-First, Network-First, Stale-While-Revalidate
@@ -22,7 +22,7 @@
 
 ### 2. Низкоуровневый Cache Manager
 
-**Файл:** `src/api/webgui/js/browser-cache.js`
+**Файл:** `apps/windows/api/webgui/js/browser-cache.js`
 
 - ✅ IndexedDB для персистентного хранения
 - ✅ In-Memory кеш (LRU eviction)
@@ -34,9 +34,6 @@
 ### 3. Интеграция в интерфейс
 
 **Обновлены файлы:**
-- `src/api/webgui/js/main.js` — подключение api-cache
-- `src/api/webgui/about_system_tab/main.js` — пример использования
-- `src/api/webgui/about_system_tab/index.html` — UI индикаторы
 
 **Добавлено:**
 - 💾 Cache Status Badge — показывает hit rate в реальном времени

@@ -36,7 +36,6 @@
 
 ## Key Design Decisions
 
-- **Application Factory**: `create_app()` in `src/app/factory.py` — testable, no global state
 - **lifespan**: Replaces deprecated `@app.on_event` — single startup/shutdown context
 - **AppState**: All shared services stored in `app.state` — accessible via `request.app.state`
 - **UnifiedChatModel**: Prefix-based routing to 9 LLM providers

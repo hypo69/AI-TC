@@ -11,7 +11,6 @@
 2. Активировать Google Drive API
 3. Создать Service Account
 4. Скачать JSON ключ
-5. Скопировать в `src/secrets/google_sa_account_service_account.json`
 
 ### 2. Установить зависимости (2 минуты)
 
@@ -43,21 +42,21 @@ pip install -r req/sync_requirements.txt
 
 ### 👤 Для конечного пользователя
 Прочитайте в этом порядке:
-1. **[README_SYNC.md](README_SYNC.md)** - Что это такое
+1. **README_SYNC.md** - Что это такое
 2. **[GOOGLE_DRIVE_SYNC_SETUP.md](GOOGLE_DRIVE_SYNC_SETUP.md)** - Как запустить
 3. Используйте команды `.\sync.ps1 sync` или `.\sync.ps1 start`
 
 ### 👨‍💻 Для разработчика
 Прочитайте в этом порядке:
-1. **[README_SYNC.md](README_SYNC.md)** - Общий обзор
-2. **[docs/GOOGLE_DRIVE_SYNC_GUIDE.md](docs/GOOGLE_DRIVE_SYNC_GUIDE.md)** - Полное руководство
-3. **[SYNC_IMPLEMENTATION_SUMMARY.md](SYNC_IMPLEMENTATION_SUMMARY.md)** - Технические детали
+1. **README_SYNC.md** - Общий обзор
+2. **docs/GOOGLE_DRIVE_SYNC_GUIDE.md** - Полное руководство
+3. **SYNC_IMPLEMENTATION_SUMMARY.md** - Технические детали
 4. Используйте Python API или REST API
 
 ### 🏗️ Для архитектора/DevOps
 Прочитайте:
-1. **[SYNC_IMPLEMENTATION_SUMMARY.md](SYNC_IMPLEMENTATION_SUMMARY.md)** - Архитектура
-2. **[docs/GOOGLE_DRIVE_SYNC_GUIDE.md](docs/GOOGLE_DRIVE_SYNC_GUIDE.md)** - Все возможности
+1. **SYNC_IMPLEMENTATION_SUMMARY.md** - Архитектура
+2. **docs/GOOGLE_DRIVE_SYNC_GUIDE.md** - Все возможности
 3. **[GOOGLE_SETUP_INSTRUCTIONS.md](GOOGLE_SETUP_INSTRUCTIONS.md)** - Подготовка среды
 
 ---
@@ -137,7 +136,6 @@ sync.upload_file("config.json", sync.root_folder_id)
 
 ### ⚠️ Безопасность JSON ключа
 
-- ✅ **ДА**: Скопируйте в `src/secrets/google_sa_account_service_account.json`
 - ❌ **НЕ КОММИТЬТЕ** в git (`.gitignore` уже это содержит)
 - ❌ **НЕ ДЕЛИТЕСЬ** с кем-либо
 - ✅ **ПЕРИОДИЧЕСКИ** ротируйте ключи
@@ -281,7 +279,6 @@ python -c "from src.integrations import GoogleDriveSync; sync = GoogleDriveSync(
 - [ ] Прочитал GOOGLE_SETUP_INSTRUCTIONS.md
 - [ ] Создал Google Service Account
 - [ ] Скачал JSON ключ
-- [ ] Скопировал JSON в `src/secrets/google_sa_account_service_account.json`
 - [ ] Установил зависимости: `pip install -r req/sync_requirements.txt`
 - [ ] Инициализировал: `.\sync.ps1 init`
 - [ ] Синхронизировал: `.\sync.ps1 sync`

@@ -171,4 +171,4 @@ invoke_subagent(
 
 - [`creating-agents.md`](creating-agents.md) — Общее руководство по созданию агентов
 - [`developing-skills.md`](developing-skills.md) — Разработка навыков
-- [`../ARCHITECTURE.md`](../ARCHITECTURE.md) — Общая архитектура платформы
+- `../ARCHITECTURE.md` — Общая архитектура платформы

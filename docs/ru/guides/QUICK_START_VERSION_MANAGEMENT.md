@@ -348,7 +348,7 @@ asyncio.run(monitor_updates())
 
 ## Дополнительная Info
 
-- 📖 [Полная документация](CROSSPLATFORM_LOGGING_AND_UPDATE_GUIDE.md)
+- 📖 Полная документация
 - 🔧 Исходный код: `core/version_manager.py`
 - 🌐 API эндпоинты: `core/fastapi/router_version.py`
 - 📝 Логирование: `core/logger/logger.py`

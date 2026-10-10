@@ -17,7 +17,7 @@
 - `README.md` — Документация модуля.
 
 ## Бэкенд роутер
-Обработчики реализованы в `src/api/router_ninite.py`:
+Эндпоинты:
 - `GET /api/ninite/status`
 - `POST /api/ninite/upload`
 - `POST /api/ninite/schedule`

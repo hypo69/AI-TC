@@ -24,7 +24,6 @@
 
 Пример существующего агента в системе:
 - `src/ai/agents/agent.py` — `MediaSearchAgent` (автономный агент поиска фильмов и сериалов через RAG, Web-Search и Python REPL).
-- `src/ai/agents/travel_agent.py` — `TravelAgent` (агент поиска авиабилетов и маршрутов).
 
 ---
 

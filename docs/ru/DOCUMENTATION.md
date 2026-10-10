@@ -27,7 +27,7 @@ docs/ru/
 
 ## 👨‍💻 Руководство разработчика
 
-- [Руководство разработчика](developer/index.md) — стандарты кода, hypo69 docblock, протокол TDD, добавление провайдеров и эндпоинтов
+- Руководство разработчика — стандарты кода, hypo69 docblock, протокол TDD, добавление провайдеров и эндпоинтов
 
 ---
 
@@ -42,7 +42,7 @@ docs/ru/
 
 ## 🏗️ Архитектура
 
-- [Архитектура системы](ARCHITECTURE.md) — слои, компоненты, потоки выполнения
+- Архитектура системы — слои, компоненты, потоки выполнения
 - [Обзор архитектуры](architecture/overview.md) — оркестратор провайдеров, шина `UnifiedChatModel`
 - [Компоненты системы](architecture/components.md) — адаптеры провайдеров, сервисы, кэширование
 - [Провайдер Google Gemini](architecture/gemini-provider.md) — ротация API-ключей, квоты, rate-limits
@@ -56,14 +56,14 @@ docs/ru/
 
 | # | Глава |
 |---|-------|
-| 1 | [Архитектура макетной платы и среда](cook-book/ch01_philosophy.md) |
+| 1 | Архитектура макетной платы и среда |
 | 2 | [Оркестратор моделей и отказоустойчивость](cook-book/ch02_orchestration.md) |
 | 3 | [Локальный инференс (HF и DirectML)](cook-book/ch03_local_inference.md) |
-| 4 | [Архитектура RAG и векторный поиск](cook-book/ch04_rag_architecture.md) |
+| 4 | Архитектура RAG и векторный поиск |
 | 5 | [Оптимизация, экспорт и Fine-Tuning](cook-book/ch05_optimization_finetuning.md) |
-| 6 | [ReAct-агенты, MCP и мультимодальность](cook-book/ch06_agents_and_mcp.md) |
+| 6 | ReAct-агенты, MCP и мультимодальность |
 | 7 | [Создание и управление навыками](cook-book/ch07_skills_management.md) |
-| 8 | [Практикум: 10 лабораторных работ](cook-book/ch08_laboratory_practicum.md) |
+| 8 | Практикум: 10 лабораторных работ |
 
 ---
 

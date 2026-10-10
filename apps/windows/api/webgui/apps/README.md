@@ -61,8 +61,6 @@ function setupTopMenuButtons() {
 ```
 
 **Затронутые файлы:**
-- `apps/main.js` — `setupTopMenuButtons()`, `setupSidebarButtons()`
-- `apps/modules/tab-manager.js` — `setupNavTabs()`
 
 **Тесты:** `tests/test_tc_menu_event_delegation.py` — 19 тестов, 6 категорий.
 
@@ -84,5 +82,5 @@ pytest tests/test_tc_menu_event_delegation.py -v
 
 ## 🔗 Ссылки
 
-- [`../../.ai/instructions/standards/DOCUMENTATION.md`](../../.ai/instructions/standards/DOCUMENTATION.md) — Стандарты документирования
-- [`../../.ai/instructions/workflows/TDD.md`](../../.ai/instructions/workflows/TDD.md) — TDD workflow
+- `../../.ai/instructions/standards/DOCUMENTATION.md` — Стандарты документирования
+- `../../.ai/instructions/workflows/TDD.md` — TDD workflow

@@ -491,7 +491,7 @@ class DataAnalysisAgent:
 
 ## 📚 Дополнительные ресурсы
 
-- [Архитектура системы](../ARCHITECTURE.md)
+- Архитектура системы
 - [Динамические субагенты (Subagents)](dynamic-subagents.md)
 - [Разработка Skills](developing-skills.md)
 - [Стратегия тестирования](testing-strategy.md)

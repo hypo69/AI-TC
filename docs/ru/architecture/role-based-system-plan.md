@@ -340,7 +340,7 @@ AI-Windows-Admin/
 ## План реализации
 
 ### Этап 1: Централизация конфигов (Готово)
-- ✅ Создана папка `src/api/webgui/config/`
+- ✅ Создана папка `apps/windows/api/webgui/config/`
 - ✅ Перемещен `tc_menu_config.json`
 - ✅ Создан `README.md` с описанием
 
@@ -358,13 +358,11 @@ AI-Windows-Admin/
 
 ### Этап 4: Обновление веб-интерфейса
 1. Обновить `admin/index.html` для проверки разрешений
-2. Обновить `apps/index.html` для проверки разрешений
 3. Добавить динамическую генерацию меню на основе ролей
 4. Добавить проверку доступа к навыкам и плагинам
 
 ### Этап 5: Документация
 1. Обновить `docs/ru/architecture/centralized-config.md`
-2. Создать `docs/ru/architecture/role-based-access.md`
 3. Обновить `docs/ru/architecture/index.md`
 
 ## Принципы проектирования

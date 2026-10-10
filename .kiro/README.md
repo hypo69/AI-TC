@@ -9,5 +9,4 @@ Pointers and event hooks for Kiro autonomous agent workflows.
 All project guidelines and architectural documentation are maintained in [`.ai/instructions`](../.ai/instructions/README.md).
 
 Key References:
-- [`rules/CODE_RULES.md`](../.ai/instructions/rules/CODE_RULES.md)
-- [`knowledge/codex/`](../.ai/instructions/knowledge/codex/README.md)
+- [`standards/ENGINEERING.md`](../.ai/instructions/standards/ENGINEERING.md)

@@ -105,7 +105,7 @@ if (config.menu) {
 
 Если у вас есть старые конфиги в корне или в папках приложений:
 
-1. Переместите их в `src/api/webgui/config/`
+1. Переместите их в `apps/windows/api/webgui/config/`
 2. Переименуйте по новому правилу
 3. Обновите пути в коде на `/html/config/{new_name}.json`
 

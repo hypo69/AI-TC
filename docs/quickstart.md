@@ -31,4 +31,4 @@ Open `http://localhost:8000` in your browser. On first run, the server auto-crea
 
 All non-secret configuration lives in `config.json`. Secrets go in `.env`.
 
-See [User Guide](user/getting-started.md) for more details.
+See User Guide for more details.

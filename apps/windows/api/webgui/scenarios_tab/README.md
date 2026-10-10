@@ -28,7 +28,6 @@
 - **HTML Шаблон:** `index.html` (Центрированный интерфейс чата с выдвижной панелью Bootstrap Offcanvas справа для сценариев)
 - **Клиентский модуль:** `main.js` (экспортирует функцию `window.initScenariosTab`)
 - **Конфигурация подсказок:** `questions.json` (внешний список вопросов и быстрых кнопок)
-- **Бэкенд API:** `/api/v1/scenarios` (`src/api/router_scenarios.py`)
   - `GET /api/v1/scenarios` — перечень сценариев
   - `POST /api/v1/scenarios/run` — выполнение сценария
   - `POST /api/v1/scenarios/chat` — мини-чат и автогенерация навыков

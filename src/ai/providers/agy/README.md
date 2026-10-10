@@ -38,4 +38,4 @@ await chat.close()
 ---
 
 ## Unit Testing
-Unit tests validating persistent session retention and streaming generation are located in [`tests/test_agy_chat.py`](../../../tests/test_agy_chat.py).
+Unit tests validating persistent session retention and streaming generation are located in `tests/test_agy_chat.py`.

@@ -262,7 +262,7 @@ AI-Windows-Admin-Sync/
 
 ## 📚 Дополнительно
 
-- Полное руководство: [GOOGLE_DRIVE_SYNC_GUIDE.md](docs/GOOGLE_DRIVE_SYNC_GUIDE.md)
+- Полное руководство: GOOGLE_DRIVE_SYNC_GUIDE.md
 - REST API: `/docs` (если запущено FastAPI приложение)
 - Логи: `sync_setup.log`
 

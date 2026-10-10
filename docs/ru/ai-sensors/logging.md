@@ -4,14 +4,14 @@
 
 Логгирование сенсоров в AI-Windows-Admin спроектировано по стандартам высоконагруженных телеметрических систем и разделено на **два взаимодополняющих формата**:
 
-1. 📊 **Табличные CSV-логи ([`AppCsvLogger`](../../apps/common/csv_logger.py)):**
+1. 📊 **Табличные CSV-логи (`AppCsvLogger`):**
    * Располагаются в системной директории `%APPDATA%/AI-Windows-Admin/apps/windows/telemetry/logs/`.
    * Обеспечивают мгновенную интеграцию с аналитическими инструментами (Excel, Pandas, Grafana, PowerBI).
    * Стандартизированы по 3 потокам: **Опросы (`*_polls.csv`)**, **События (`*_events.csv`)**, **Изменения параметров (`*_param_changes.csv`)**.
-2. 📄 **Потоковые JSON-Lines логи ([`TelemetryJsonLogger`](../../apps/windows/telemetry/json_logger.py)):**
+2. 📄 **Потоковые JSON-Lines логи (`TelemetryJsonLogger`):**
    * Располагаются в `logs/telemetry/` (`ai_sensors_polls.jsonl` и `device_telemetry_events.jsonl`).
    * Append-only формат с защитой от повреждения при сбоях и автоматической ротацией файлов по достижению 50–100 МБ.
-3. 📝 **Системный журнал ([`logger`](../../logger/logger.py)):**
+3. 📝 **Системный журнал (`logger`):**
    * Консольный вывод и файлы журнала (`info.log`, `debug.log`, `errors.log`).
 
 ---
@@ -76,7 +76,7 @@ flowchart TD
 
 ## 📊 CSV-логгирование: Схемы и форматы
 
-Все CSV-логи формируются модулем [`apps/common/csv_logger.py`](../../apps/common/csv_logger.py) в кодировке `utf-8-sig` с автоматическим созданием заголовков колонок:
+Все CSV-логи формируются модулем `apps/common/csv_logger.py` в кодировке `utf-8-sig` с автоматическим созданием заголовков колонок:
 
 ### 1. Опросы сенсоров (`*_polls.csv`)
 Записываются вызовом `AppCsvLogger.log_poll(...)`:
@@ -126,7 +126,7 @@ timestamp,app,param_name,old_value,new_value,status,user,details
 ```
 
 ### 2. Поток периодических аппаратных метрик (`ai_sensors_polls.jsonl`)
-Формируется [`SensorCollector`](hardware_telemetry.md) и [`TelemetryAggregator`](../../apps/windows/telemetry/aggregator.py):
+Формируется `SensorCollector` и `TelemetryAggregator`:
 
 ```json
 {
@@ -198,6 +198,6 @@ json_logger.log({"metric": "cpu_load", "value": 15.4})
 ---
 
 ## 📑 См. также:
-* [Подробный реестр CSV-телеметрии и файлов](csv_telemetry.md)
-* [Аппаратная телеметрия и датчики](hardware_telemetry.md)
+* Подробный реестр CSV-телеметрии и файлов
+* Аппаратная телеметрия и датчики
 * [Сенсор периферии и дребезга портов](device_flapping_sensor.md)

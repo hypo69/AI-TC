@@ -109,20 +109,11 @@
 
 ### 🖥️ Полноценные приложения и терминальные пространства (`/apps`)
 
-В директории [`/apps`](file:///c:/Users/onela/AppData/Local/AI-Windows-Admin/apps) размещены автономные доменные приложения, терминалы и мониторы, работающие на хосте и интегрированные с платформой:
+В директории [`/apps`](file:///c:/Users/onela/AppData/Local/AI-TC/apps) размещено доменное приложение, работающее на хосте и интегрированное с платформой:
 
 | Приложение | Терминал / Путь | Описание |
 |---|---|---|
-| **AI Windows Diagnostic Center** | [`apps/windows`](file:///c:/Users/onela/AppData/Local/AI-Windows-Admin/apps/windows) | Центр диагностики и администрирования Windows (15 доменных коллекторов OS, железо, драйверы, SafeOps симуляция, WikiLLM база знаний) |
-| **Network Terminal** | [`apps/network_terminal`](file:///c:/Users/onela/AppData/Local/AI-Windows-Admin/apps/network_terminal) | Сетевой терминал (захват пакетов, протокольный анализ, сокеты и детекция аномалий трафика) |
-| **Google Cloud Monitor** | [`apps/gcloud_monitor`](file:///c:/Users/onela/AppData/Local/AI-Windows-Admin/apps/gcloud_monitor) | Монитор наблюдаемости GCP (Cloud Logging, метрики, IAM аудит, AI-диагностика сбоев) |
-| **Website Monitor** | [`apps/website_monitor`](file:///c:/Users/onela/AppData/Local/AI-Windows-Admin/apps/website_monitor) | Мониторинг веб-сайтов (GA4 Data API, Google Search Console, задержки и доступность) |
-| **Cloudflare Monitor** | [`apps/cloudflared_monitor`](file:///c:/Users/onela/AppData/Local/AI-Windows-Admin/apps/cloudflared_monitor) | Мониторинг и диагностика состояния Cloudflare туннелей |
-| **User Assistant** | [`apps/user_assistant`](file:///c:/Users/onela/AppData/Local/AI-Windows-Admin/apps/user_assistant) | Персональный ассистент (интеграция с Gmail, Google Календарем, файлами и агендой) |
-| **IT Support & Helpdesk** | [`apps/helpdesk`](file:///c:/Users/onela/AppData/Local/AI-Windows-Admin/apps/helpdesk) | Система обработки тикетов и поддержке IT-инфраструктуры |
-| **Wikipedia Research** | [`apps/wikipedia_research`](file:///c:/Users/onela/AppData/Local/AI-Windows-Admin/apps/wikipedia_research) | Исследовательский движок факт-чекинга по Wikipedia |
-| **Research & Statistics** | [`apps/research_and_statistic`](file:///c:/Users/onela/AppData/Local/AI-Windows-Admin/apps/research_and_statistic) | Терминал статистических исследований и анализа данных |
-| **AI Windows Admin Admin** | [`apps/ai_windows_admin_admin`](file:///c:/Users/onela/AppData/Local/AI-Windows-Admin/apps/ai_windows_admin_admin) | Центральная панель администрирования платформы |
+| **AI Windows Diagnostic Center** | [`apps/windows`](file:///c:/Users/onela/AppData/Local/AI-TC/apps/windows) | Центр диагностики и администрирования Windows (15 доменных коллекторов OS, железо, драйверы, SafeOps симуляция, WikiLLM база знаний) |
 
 > [!NOTE]
 > Внутри подсистемы [`apps/windows`](file:///c:/Users/onela/AppData/Local/AI-TC/apps/windows) выстроена глубокая ИТ-архитектура:

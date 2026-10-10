@@ -19,7 +19,7 @@
     "username": "your-email@gmail.com",
     "password": "xxxx xxxx xxxx xxxx",
     "from_email": "your-email@gmail.com",
-    "from_name": "AI Breadboard Assistant",
+    "from_name": "AI Windows Admin Assistant",
     "timeout": 30
   }
 }

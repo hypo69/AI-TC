@@ -16,7 +16,7 @@
 # Package: apps.windows.api.routers
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 22:28:45
+# Updated: 2026-10-10 22:32:21
 # =============================================================================
 
 from __future__ import annotations
@@ -26,13 +26,12 @@ import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from src.ai.google_accounts_state import (
     _TOKENS_DIR,
     delete_google_account,
-    get_account_info,
     list_google_accounts,
     save_google_account,
     set_default_account,

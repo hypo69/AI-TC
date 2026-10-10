@@ -92,7 +92,7 @@ graph TB
 
 ## 7.4. Фабрика навыков: `skill-factory`
 
-Для автоматизации создания и упаковки новых инструментов в репозитории предназначен встроенный навык [`skill-factory`](file:///c:/Users/onela/AppData/Local/aiwindowsadmin/.agents/skills/skill-factory/SKILL.md).
+Для автоматизации создания и упаковки новых инструментов в репозитории предназначен встроенный навык [`skill-factory`](file:///c:/Users/onela/AppData/Local/AI-TC/.agents/skills/skill-factory/SKILL.md).
 
 ### Процесс создания нового навыка:
 1. **Генерация структуры:** Создание папки в `.agents/skills/<name>` с шаблоном `SKILL.md` и директориями `scripts/`, `references/`.
@@ -108,11 +108,11 @@ graph TB
 
 | Навык | Назначение |
 |---|---|
-| [`tdd-doc-gen`](file:///c:/Users/onela/AppData/Local/aiwindowsadmin/.agents/skills/tdd-doc-gen/SKILL.md) | Moduleное тестирование и документация изменений кода. |
-| [`rag-search-manager`](file:///c:/Users/onela/AppData/Local/aiwindowsadmin/.agents/skills/rag-search-manager/SKILL.md) | Семантический поиск и координация RAG-индекса. |
-| [`db-inspector`](file:///c:/Users/onela/AppData/Local/aiwindowsadmin/.agents/skills/db-inspector/SKILL.md) | Аудит и check целостности локальных баз SQLite. |
-| [`storage-controller`](file:///c:/Users/onela/AppData/Local/aiwindowsadmin/.agents/skills/storage-controller/SKILL.md) | Управление и сканирование подключенных дисковых накопителей. |
-| [`media-card-builder`](file:///c:/Users/onela/AppData/Local/aiwindowsadmin/.agents/skills/media-card-builder/SKILL.md) | Генерация структурированных карточек контента. |
+| [`tdd-doc-gen`](file:///c:/Users/onela/AppData/Local/AI-TC/.agents/skills/tdd-doc-gen/SKILL.md) | Moduleное тестирование и документация изменений кода. |
+| `rag-search-manager` | Семантический поиск и координация RAG-индекса. |
+| `db-inspector` | Аудит и check целостности локальных баз SQLite. |
+| [`storage-controller`](file:///c:/Users/onela/AppData/Local/AI-TC/.agents/skills/storage-controller/SKILL.md) | Управление и сканирование подключенных дисковых накопителей. |
+| `media-card-builder` | Генерация структурированных карточек контента. |
 
 ---
 

@@ -11,8 +11,8 @@ This document specifies the exact installation lifecycle, platform rules, prereq
 
 1. **Host-Native Execution:** Everything runs natively in a dedicated Python virtual environment (`venv`).
 2. **Platform Scripts Baseline:** 
-   - Windows execution and environment rules are governed by [`install.ps1`](file:///c:/Users/onela/AppData/Local/AI-Windows-Admin/install.ps1) and modular scripts in [`install/`](file:///c:/Users/onela/AppData/Local/AI-Windows-Admin/install).
-   - Linux and macOS execution rules are governed by [`install.sh`](file:///c:/Users/onela/AppData/Local/AI-Windows-Admin/install.sh) and [`install/install.py`](file:///c:/Users/onela/AppData/Local/AI-Windows-Admin/install/install.py).
+   - Windows execution and environment rules are governed by [`install.ps1`](file:///c:/Users/onela/AppData/Local/AI-TC/install.ps1) and modular scripts in [`install/`](file:///c:/Users/onela/AppData/Local/AI-TC/install).
+   - Linux and macOS execution rules are governed by [`install.sh`](file:///c:/Users/onela/AppData/Local/AI-TC/install.sh) and [`install/install.py`](file:///c:/Users/onela/AppData/Local/AI-TC/install/install.py).
 3. **Configuration over Hardcoding:** System parameters are read from `config.json` and secrets from `.env`.
 4. **Cross-Platform Parity:** Core installation logic is unified across Windows (PowerShell/CMD) and Linux/macOS (Bash/Python).
 5. **Resilient Self-Healing:** Any failure during dependency installation, SSL generation, or path configuration must trigger diagnostic checks and automated remedy steps.

@@ -485,9 +485,7 @@ except TypeError:
 
 ## Связанные документы
 
-- [`docs/ru/guides/creating-agents.md`](../../../../docs/ru/guides/creating-agents.md) — общее введение в агенты
-- [`docs/ru/guides/standard-agents.md`](../../../../docs/ru/guides/standard-agents.md) — руководство по Python ReAct-агентам
-- [`docs/ru/api/agents.md`](../../../../docs/ru/api/agents.md) — справочник REST API агентов
-- [`docs/ru/cook-book/ch06_agents_and_mcp.md`](../../../../docs/ru/cook-book/ch06_agents_and_mcp.md) — рецепты агентов и MCP
-- [`src/api/router_agents.py`](../../api/router_agents.py) — FastAPI-роутер агентов
+- `docs/ru/guides/creating-agents.md` — общее введение в агенты
+- `docs/ru/guides/standard-agents.md` — руководство по Python ReAct-агентам
+- `docs/ru/api/agents.md` — справочник REST API агентов
 - [`src/skills/registry.py`](../../skills/registry.py) — реестр навыков (альтернативный способ расширения)

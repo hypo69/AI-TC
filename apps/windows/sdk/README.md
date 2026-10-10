@@ -66,7 +66,7 @@ apps/windows/sdk/
 
 ## ⚠️ Система исключений SDK (Exceptions Hierarchy)
 
-Все сбои и ошибки подсистем строго типизированы и наследуются от базового класса [`WindowsSDKError`](file:///c:/Users/onela/AppData/Local/AI-Windows-Admin/apps/windows/sdk/exceptions.py#L22-L46):
+Все сбои и ошибки подсистем строго типизированы и наследуются от базового класса [`WindowsSDKError`](file:///c:/Users/onela/AppData/Local/AI-TC/apps/windows/sdk/exceptions.py#L22-L46):
 
 ```mermaid
 classDiagram

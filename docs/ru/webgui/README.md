@@ -130,7 +130,7 @@ document.getElementById('btn-clear-cache').onclick = async () => {
 
 ### Добавление custom endpoints
 
-В `src/api/webgui/js/api-cache.js`:
+В `apps/windows/api/webgui/js/api-cache.js`:
 
 ```javascript
 const URL_PATTERNS = [

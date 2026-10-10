@@ -16,7 +16,7 @@
 | [creating-agents.md](creating-agents.md) | Разработка интеллектуальных агентов (ReAct, Multi-Agent, Tool Calling). |
 | [developing-skills.md](developing-skills.md) | Создание, оформление, мультиязычность (i18n) и тестирование навыков (Skills). |
 | [developing-plugins.md](developing-plugins.md) | Разработка модульных плагинов для Web UI админки, генератор Plugin Factory и i18n. |
-| [simulation-system.md](simulation-system.md) | Архитектура системы синтетической генерации данных и клиентского RAG. |
+| simulation-system.md | Архитектура системы синтетической генерации данных и клиентского RAG. |
 | [simulation-scenarios.md](simulation-scenarios.md) | Матрица сценариев бизнес-симуляций. |
 | [testing-strategy.md](testing-strategy.md) | Стратегия тестирования, TDD-методология и запуск тестовых наборов. |
 
