@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard UTILS - Versioning Module
+# Process Name: AI-Windows-Admin UTILS - Versioning Module
 # =============================================================================
 # Description:
 #   Parse non-standard version string into list of integers.
@@ -13,11 +13,11 @@
 #     print(res)
 #
 # File: versioning.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: src.utils
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:13:56
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 """Parse non-standard version string into list of integers."""

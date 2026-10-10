@@ -28,6 +28,7 @@
 """
 
 from __future__ import annotations
+from logger import logger
 
 import argparse
 import asyncio
@@ -107,7 +108,7 @@ def debug(
     """
 
     if enabled:
-        print(f'[DEBUG] {message}')
+        logger.console(f'[DEBUG] {message}')
 
 
 def sanitize_filename(
@@ -489,7 +490,7 @@ async def capture_interface(
             )
 
         except Exception as exc:
-            print(
+            logger.console(
                 f'Ошибка открытия страницы: {exc}'
             )
 
@@ -520,7 +521,7 @@ async def capture_interface(
             debug_enabled,
         )
 
-        print(
+        logger.console(
             f'[000] {initial_path}'
         )
 
@@ -529,7 +530,7 @@ async def capture_interface(
             debug_enabled,
         )
 
-        print(
+        logger.console(
             'Найдено элементов навигации: '
             f'{len(navigation)}'
         )
@@ -544,7 +545,7 @@ async def capture_interface(
                 or f'item_{number}'
             )
 
-            print(
+            logger.console(
                 f'[{number:03d}] {label}'
             )
 
@@ -574,7 +575,7 @@ async def capture_interface(
                 )
 
                 if not success:
-                    print(
+                    logger.console(
                         '      -> ОШИБКА перехода'
                     )
 
@@ -614,7 +615,7 @@ async def capture_interface(
                     debug_enabled,
                 )
 
-                print(
+                logger.console(
                     f'      -> {output_path}'
                 )
 
@@ -646,7 +647,7 @@ async def capture_interface(
                 )
 
             except Exception as exc:
-                print(
+                logger.console(
                     f'      -> ОШИБКА: {exc}'
                 )
 
@@ -687,12 +688,12 @@ async def capture_interface(
 
         await browser.close()
 
-    print()
-    print('Готово.')
-    print(
+    logger.console()
+    logger.console('Готово.')
+    logger.console(
         f'Скриншоты: {output_dir.resolve()}'
     )
-    print(
+    logger.console(
         f'Manifest:  {manifest_path.resolve()}'
     )
 

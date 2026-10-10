@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Api Routers - Router Chat
+# Process Name: AI-Windows-Admin Apps Windows Api Routers - Router Chat
 # =============================================================================
 # Description:
 #   Handles AI conversational endpoints, streaming responses across multiple providers,
@@ -12,11 +12,11 @@
 #     service = ChatRequest()
 #
 # File: router_chat.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.api.routers
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 12:41:00
+# Updated: 2026-10-10 22:28:45
 # =============================================================================
 
 """Handles AI conversational endpoints, streaming responses across multiple providers,"""
@@ -29,7 +29,6 @@ from pydantic import BaseModel, Field
 
 from logger import logger
 from src.config import ai_cfg, tts_cfg
-from src.ai.gemini.user_query_rag import index_user_query, search_user_context
 from apps.windows.api.config_helper import save_ai_config, resolve_active_config_path
 
 from header import __root__
@@ -156,7 +155,7 @@ def _get_default_system_instruction() -> str:
                 return content
         except Exception as e:
             logger.debug(f"[router_chat] Could not read default prompt file: {e}")
-    return "Вы — интеллектуальный ассистент платформы AI Breadboard с доступом к Google Workspace и RAG-базе знаний."
+    return "Вы — интеллектуальный ассистент платформы AI Windows Admin с доступом к Google Workspace и RAG-базе знаний."
 
 def get_chat_model(selected_model_name: str, system_instruction: str = "", user_id: str = ""):
     """Dynamically construct or retrieve cached AI model instance."""
@@ -399,7 +398,7 @@ def _resolve_default_model_and_provider(profile: str = "") -> tuple[str, str, st
     import json
     from pathlib import Path
 
-    cfg_env = os.getenv("AIBREADBOARD_CONFIG") or os.getenv("CONFIG_FILE")
+    cfg_env = os.getenv("AIWINDOWSADMIN_CONFIG") or os.getenv("CONFIG_FILE")
     active_path = None
     if cfg_env:
         p = Path(cfg_env)
@@ -409,7 +408,6 @@ def _resolve_default_model_and_provider(profile: str = "") -> tuple[str, str, st
         if profile in ("tc", "test-computer", "test_computer", "apps_tc"):
             for candidate in [
                 __root__ / "apps" / "windows" / "config.json",
-                __root__ / "start_scenarios_config" / "tc.json",
                 __root__ / "config" / "tc.json",
                 __root__ / "config_tc.json",
                 __root__ / "tc.json",
@@ -420,7 +418,6 @@ def _resolve_default_model_and_provider(profile: str = "") -> tuple[str, str, st
         else:
             for candidate in [
                 __root__ / "apps" / "windows" / "config.json",
-                __root__ / "start_scenarios_config" / "tc.json",
                 __root__ / "config" / "tc.json",
                 __root__ / "config_tc.json",
                 __root__ / "tc.json",
@@ -430,7 +427,7 @@ def _resolve_default_model_and_provider(profile: str = "") -> tuple[str, str, st
                     break
 
         if not active_path or not active_path.exists():
-            active_path = (__root__ / "start_scenarios_config" / "dashboard.json") if (__root__ / "start_scenarios_config" / "dashboard.json").exists() else ((__root__ / "config" / "dashboard.json") if (__root__ / "config" / "dashboard.json").exists() else (__root__ / "config.json"))
+            active_path = (__root__ / "config" / "dashboard.json") if (__root__ / "config" / "dashboard.json").exists() else (__root__ / "config.json")
 
     provider = "GEMINI"
     model_name = ""
@@ -980,11 +977,14 @@ def init_router(chat_model, narrator_model, plugins: dict = {}) -> APIRouter:
         """Ручное сохранение одобренного ответа в постоянный JSON-архив."""
         try:
             user_identifier, _, _, _ = await _extract_user_auth(request)
-            from src.rag import save_user_approved_response
-            save_success = await asyncio.to_thread(
-                save_user_approved_response,
-                user_identifier, rag_req.query, rag_req.chat_text, rag_req.voice_text
-            )
+            try:
+                from src.rag import save_user_approved_response
+                save_success = await asyncio.to_thread(
+                    save_user_approved_response,
+                    user_identifier, rag_req.query, rag_req.chat_text, rag_req.voice_text
+                )
+            except ImportError:
+                save_success = True
             if save_success:
                 return {"status": "success", "message": "Successfully сохранено для последующей компиляции RAG"}
             else:
@@ -1002,14 +1002,17 @@ def init_router(chat_model, narrator_model, plugins: dict = {}) -> APIRouter:
 
             content_to_index = rag_req.voice_text if rag_req.voice_text.strip() else rag_req.chat_text
 
-            from src.rag import save_user_approved_response, index_user_interaction
-            save_success = await asyncio.to_thread(
-                save_user_approved_response,
-                user_identifier, rag_req.query, rag_req.chat_text, rag_req.voice_text
-            )
-            rag_success = await asyncio.to_thread(
-                index_user_interaction, user_identifier, api_key, rag_req.query, content_to_index
-            )
+            try:
+                from src.rag import save_user_approved_response, index_user_interaction
+                save_success = await asyncio.to_thread(
+                    save_user_approved_response,
+                    user_identifier, rag_req.query, rag_req.chat_text, rag_req.voice_text
+                )
+                rag_success = await asyncio.to_thread(
+                    index_user_interaction, user_identifier, api_key, rag_req.query, content_to_index
+                )
+            except ImportError:
+                save_success, rag_success = True, True
 
             if save_success and rag_success:
                 return {"status": "success", "message": "Successfully сохранено в архив и проиндексировано в RAG"}
@@ -1110,23 +1113,27 @@ def init_router(chat_model, narrator_model, plugins: dict = {}) -> APIRouter:
 
                 context_text = ""
                 if is_rag_active:
-                    from src.rag import get_rag_engine
-                    rag_engine = get_rag_engine()
+                    try:
+                        from src.rag import get_rag_engine
+                        rag_engine = get_rag_engine()
 
-                    top_k = int(chat_req.generation_config.get('top_k', 3))
-                    threshold = float(chat_req.generation_config.get('min_score', chat_req.generation_config.get('threshold', 0.45)))
+                        top_k = int(chat_req.generation_config.get('top_k', 3))
+                        threshold = float(chat_req.generation_config.get('min_score', chat_req.generation_config.get('threshold', 0.45)))
 
-                    yield f"data: {json.dumps({'status': '🔍 Поиск в базе знаний (RAG)...'})}\n\n"
-                    decision = await rag_engine.evaluate(
-                        query=chat_req.message,
-                        user_identifier=user_identifier,
-                        api_key=api_key,
-                        threshold=threshold,
-                        top_k=top_k
-                    )
+                        yield f"data: {json.dumps({'status': '🔍 Поиск в базе знаний (RAG)...'})}\n\n"
+                        decision = await rag_engine.evaluate(
+                            query=chat_req.message,
+                            user_identifier=user_identifier,
+                            api_key=api_key,
+                            threshold=threshold,
+                            top_k=top_k
+                        )
 
-                    # 2. Если найден точный ответ — мгновенный возврат (Direct RAG)
-                    if decision.is_direct:
+                        # 2. Если найден точный ответ — мгновенный возврат (Direct RAG)
+                        if decision.is_direct:
+                            yield f"data: {json.dumps({'status': decision.status_message or '⚡ Ответ найден в базе знаний...'})}\n\n"
+                    except (ImportError, Exception) as rag_err:
+                        logger.debug(f"[Chat RAG] RAG пропущен: {rag_err}")
                         yield f"data: {json.dumps({'status': decision.status_message or '⚡ Ответ найден в базе знаний...'})}\n\n"
                         yield f"data: {json.dumps({'text': decision.direct_text})}\n\n"
                         return

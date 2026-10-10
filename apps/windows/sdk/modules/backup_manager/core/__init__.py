@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Modules Backup_Manager Core -   Init  
+# Process Name: AI-Windows-Admin Apps Windows Modules Backup_Manager Core -   Init  
 # =============================================================================
 # Description:
 #   Пакет ядра Windows Backup, Libraries & File History.
@@ -9,11 +9,11 @@
 #
 #
 # File: __init__.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.backup_manager.core
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:28:28
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 """Пакет ядра Windows Backup, Libraries & File History."""

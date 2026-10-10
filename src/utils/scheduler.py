@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard UTILS - Scheduler Module
+# Process Name: AI-Windows-Admin UTILS - Scheduler Module
 # =============================================================================
 # Description:
 #   Async background periodic job scheduler.
@@ -14,11 +14,11 @@
 #     print(result)
 #
 # File: scheduler.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: src.utils
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:13:56
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations
@@ -30,8 +30,15 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 from header import __root__
 from logger import logger
-from src.user_manager import user_manager
-from src.rag.user_workspace_rag import user_workspace_rag_manager
+try:
+    from src.user_manager import user_manager
+except ImportError:
+    user_manager = None
+
+try:
+    from src.rag.user_workspace_rag import user_workspace_rag_manager
+except ImportError:
+    user_workspace_rag_manager = None
 
 class BackgroundScheduler:
     """Async background periodic job scheduler."""

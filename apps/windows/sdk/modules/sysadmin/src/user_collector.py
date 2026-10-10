@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Modules Sysadmin Src - User Collector
+# Process Name: AI-Windows-Admin Apps Windows Modules Sysadmin Src - User Collector
 # =============================================================================
 # Description:
 #   Модуль сбора детальных метрик и аудита учетных записей Windows.
@@ -12,11 +12,11 @@
 #     service = WindowsAccountDetails()
 #
 # File: user_collector.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.sysadmin.src
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:28:28
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

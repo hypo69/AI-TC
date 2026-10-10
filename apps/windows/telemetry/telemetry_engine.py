@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Telemetry - Engine
+# Process Name: AI-Windows-Admin Apps Windows Telemetry - Engine
 # =============================================================================
 # Description:
 #   Асинхронное многоскоростное ядро сбора телеметрии (Multi-Rate Decoupled Telemetry Engine).
@@ -15,11 +15,11 @@
 #     await engine.start()
 #
 # File: telemetry_engine.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.telemetry
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-08 10:25:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

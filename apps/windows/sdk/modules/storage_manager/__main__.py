@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Modules Storage_Manager -   Main  
+# Process Name: AI-Windows-Admin Apps Windows Modules Storage_Manager -   Main  
 # =============================================================================
 # Description:
 #   # Description:
@@ -14,11 +14,11 @@
 #     res = main()
 #
 # File: __main__.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.storage_manager
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:28:28
+# Updated: 2026-10-10 22:22:30
 # =============================================================================
 
 from __future__ import annotations
@@ -158,13 +158,13 @@ def main() -> None:
     if args.command == 'hash':
         req = DiskHashRequest(disk_id=args.disk_id, start_lba=args.lba, sector_count=args.count)
         h_res = mgr.compute_hash(req)
-        print(f"PhysicalDrive{h_res.disk_id} SHA-256 (LBA {h_res.start_lba}+{h_res.sector_count}): {h_res.hash_hex} ({h_res.duration_sec}s)")
+        logger.console(f"PhysicalDrive{h_res.disk_id} SHA-256 (LBA {h_res.start_lba}+{h_res.sector_count}): {h_res.hash_hex} ({h_res.duration_sec}s)")
         return
 
     # По умолчанию: дашборд
     if getattr(args, 'json', False):
         report = mgr.generate_report()
-        print(report.model_dump_json(indent=2))
+        logger.console(report.model_dump_json(indent=2))
         return
 
     tui.render_dashboard()

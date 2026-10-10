@@ -1,8 +1,8 @@
-# 🔌 MCP Серверы AI Breadboard (Model Context Protocol)
+# 🔌 MCP Серверы AI Windows Admin (Model Context Protocol)
 
 ## 📋 Обзор
 
-Подсистема **MCP** (`.mcp/`) предоставляет набор серверов протокола **Model Context Protocol (MCP)** для интеграции возможностей AI-Breadboard с внешними AI-ассистентами и средами разработки, такими как **Claude Desktop**, **Cursor**, **VS Code**, **Google Antigravity** и **LangChain**.
+Подсистема **MCP** (`.mcp/`) предоставляет набор серверов протокола **Model Context Protocol (MCP)** для интеграции возможностей AI-Windows-Admin с внешними AI-ассистентами и средами разработки, такими как **Claude Desktop**, **Cursor**, **VS Code**, **Google Antigravity** и **LangChain**.
 
 MCP стандартизирует подключение инструментов, ресурсов и промптов через протокол JSON-RPC (через `stdio` или SSE).
 
@@ -32,7 +32,7 @@ graph TD
     Hub --> M6
     Hub --> M7
     
-    MCPServers --> Core[Ядро AI-Breadboard / RAG / Провайдеры]
+    MCPServers --> Core[Ядро AI-Windows-Admin / RAG / Провайдеры]
 ```
 
 ---

@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows SDK - Package Root
+# Process Name: AI-Windows-Admin Apps Windows SDK - Package Root
 # =============================================================================
 # Description:
-#   Единый Windows SDK для AI-Breadboard.
+#   Единый Windows SDK для AI-Windows-Admin.
 #   Предоставляет централизованный доступ к низкоуровневым C-FFI вызовам,
 #   управлению драйверами, системными компонентами Features, ядру SafeOps,
 #   27 функциональным модулям администрирования и типизированной системе исключений.
@@ -16,11 +16,11 @@
 #     from apps.windows.sdk.native import Kernel32, Advapi32
 #
 # File: __init__.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 07:16:00
+# Updated: 2026-10-10 19:20:00
 # =============================================================================
 
 from __future__ import annotations
@@ -42,6 +42,7 @@ from apps.windows.sdk import core
 from apps.windows.sdk import drivers
 from apps.windows.sdk import features
 from apps.windows.sdk import modules
+from apps.windows.sdk import software_scanner
 from apps.windows.sdk import exceptions
 
 # Экспорт ключевых исключений SDK
@@ -91,6 +92,7 @@ __all__ = [
     "drivers",
     "features",
     "modules",
+    "software_scanner",
     "exceptions",
     # Исключения
     "WindowsSDKError",

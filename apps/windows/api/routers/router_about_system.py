@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Api Routers - Router About System
+# Process Name: AI-Windows-Admin Apps Windows Api Routers - Router About System
 # =============================================================================
 # Description:
 #   FastAPI REST эндпоинты для панели "О Системе" (About System Panel)
@@ -13,11 +13,11 @@
 #     service = AboutSystemPanelOverviewResponse()
 #
 # File: router_about_system.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.api.routers
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-08 12:52:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations
@@ -1767,7 +1767,7 @@ def init_router() -> APIRouter:
 
             msg = f"Имя компьютера успешно изменено на '{clean_name}'. Изменения вступят в силу после перезагрузки."
             if req.restart:
-                await asyncio.create_subprocess_exec("shutdown.exe", "/r", "/t", "5", "/c", "AI-Breadboard: Перезагрузка для применения нового имени хоста.")
+                await asyncio.create_subprocess_exec("shutdown.exe", "/r", "/t", "5", "/c", "AI-Windows-Admin: Перезагрузка для применения нового имени хоста.")
                 msg += " Перезагрузка системы запланирована через 5 секунд."
 
             return RenameComputerResponse(
@@ -1840,7 +1840,7 @@ def init_router() -> APIRouter:
 
             msg = f"Рабочая группа успешно изменена на '{clean_wg}'. Изменения вступят в силу после перезагрузки."
             if req.restart:
-                await asyncio.create_subprocess_exec("shutdown.exe", "/r", "/t", "5", "/c", "AI-Breadboard: Перезагрузка для применения новой рабочей группы.")
+                await asyncio.create_subprocess_exec("shutdown.exe", "/r", "/t", "5", "/c", "AI-Windows-Admin: Перезагрузка для применения новой рабочей группы.")
                 msg += " Перезагрузка системы запланирована через 5 секунд."
 
             return ChangeWorkgroupResponse(

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows API - Package Root
+# Process Name: AI-Windows-Admin Apps Windows API - Package Root
 # =============================================================================
 # Description:
 #   Слой 7: Внутренний FastAPI-сервис подсистемы Windows и Auto-Discovery роутеров.
@@ -10,11 +10,11 @@
 #     from apps.windows.api import create_app, discover_and_register_routers
 #
 # File: __init__.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.api
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-08 09:38:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Scripts Cli - Config
+# Process Name: AI-Windows-Admin Scripts Cli - Config
 # =============================================================================
 # Description:
 #   Cross-platform configuration management utilities.
@@ -12,11 +12,11 @@
 #     service = ConfigManager()
 #
 # File: config.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: scripts.cli
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:27:07
+# Updated: 2026-10-10 22:22:30
 # =============================================================================
 
 """Cross-platform configuration management utilities.
@@ -24,6 +24,7 @@
 Provides utilities for managing configuration files, JSON operations,
 and environment variable handling."""
 
+from logger import logger
 import json
 import os
 from pathlib import Path
@@ -58,7 +59,7 @@ class ConfigManager:
             with open(filepath, 'r', encoding='utf-8') as f:
                 return json.load(f)
         except Exception as e:
-            print(f'Error loading {filepath}: {e}')
+            logger.console(f'Error loading {filepath}: {e}')
             return {}
 
     def save_json(self, filepath: Path, data: dict, pretty: bool=True) -> bool:
@@ -78,7 +79,7 @@ class ConfigManager:
                 json.dump(data, f, ensure_ascii=False, indent=2 if pretty else None)
             return True
         except Exception as e:
-            print(f'Error saving {filepath}: {e}')
+            logger.console(f'Error saving {filepath}: {e}')
             return False
 
     def load_env_file(self, filepath: Path) -> dict:
@@ -103,7 +104,7 @@ class ConfigManager:
                         key, value = line.split('=', 1)
                         env_vars[key.strip()] = value.strip()
         except Exception as e:
-            print(f'Error loading {filepath}: {e}')
+            logger.console(f'Error loading {filepath}: {e}')
         return env_vars
 
     def save_env_file(self, filepath: Path, env_vars: dict) -> bool:
@@ -123,7 +124,7 @@ class ConfigManager:
                     f.write(f'{key}={value}\n')
             return True
         except Exception as e:
-            print(f'Error saving {filepath}: {e}')
+            logger.console(f'Error saving {filepath}: {e}')
             return False
 
     def get_config(self, key: str, default: Any=None) -> Any:
@@ -171,14 +172,14 @@ class ConfigManager:
         
         Args:
             filepath: Optional path to config file. If not provided,
-                reads from AIBREADBOARD_CONFIG or CONFIG_FILE env vars,
+                reads from AIWINDOWSADMIN_CONFIG or CONFIG_FILE env vars,
                 or falls back to default config.json.
                 
         Returns:
             Configuration dictionary.
         """
         if filepath is None:
-            cfg_env = os.getenv('AIBREADBOARD_CONFIG') or os.getenv('CONFIG_FILE')
+            cfg_env = os.getenv('AIWINDOWSADMIN_CONFIG') or os.getenv('CONFIG_FILE')
             if cfg_env:
                 cfg_path = Path(cfg_env)
                 filepath = cfg_path if cfg_path.is_absolute() else self.paths.project_root / cfg_env

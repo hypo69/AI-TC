@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard AI - Windows Controller Agent Module
+# Process Name: AI-Windows-Admin AI - Windows Controller Agent Module
 # =============================================================================
 # Description:
 #   Автономный агент управления операционной системой Windows.
@@ -15,11 +15,11 @@
 #     print(result)
 #
 # File: windows_controller_agent.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: src.ai.agents
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-08 22:25:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

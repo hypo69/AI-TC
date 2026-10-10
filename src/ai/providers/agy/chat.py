@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard AI - Chat Module
+# Process Name: AI-Windows-Admin AI - Chat Module
 # =============================================================================
 # Description:
 #   Antigravity SDK chat connection and request routing adapter.
@@ -14,11 +14,11 @@
 #     print(result)
 #
 # File: chat.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: src.ai.providers.agy
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 06:33:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 """Antigravity SDK chat connection and request routing adapter.

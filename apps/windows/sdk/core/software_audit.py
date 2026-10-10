@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Core - Software Audit
+# Process Name: AI-Windows-Admin Apps Windows Core - Software Audit
 # =============================================================================
 # Description:
 #   Модуль аудита установленного ПО Windows, истории запусков и анализа назначения приложений.
@@ -12,11 +12,11 @@
 #     service = SoftwareCategorizer()
 #
 # File: software_audit.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.core
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-03 23:56:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations
@@ -375,12 +375,12 @@ class SoftwareAuditEngine:
         return report
 
     def _save_to_csv(self, report: SoftwareAuditReport):
-        """Сохранить отчет в CSV файл в %APPDATA%/AI-Breadboard/apps/logs."""
+        """Сохранить отчет в CSV файл в %APPDATA%/AI-Windows-Admin/apps/logs."""
         appdata = os.environ.get('APPDATA')
         if not appdata:
             logger.warning('Переменная среды APPDATA не найдена, логирование отменено.')
             return
-        log_dir = Path(appdata) / 'AI-Breadboard' / 'apps' / 'logs'
+        log_dir = Path(appdata) / 'AI-Windows-Admin' / 'apps' / 'logs'
         log_dir.mkdir(parents=True, exist_ok=True)
         log_file = log_dir / 'software_audit.csv'
         try:

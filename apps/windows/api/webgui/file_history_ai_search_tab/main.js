@@ -1,6 +1,6 @@
 /**
  * =============================================================================
- * Process Name: AI-Breadboard UI - Main Script
+ * Process Name: AI-Windows-Admin UI - Main Script
  * =============================================================================
  * Description:
  *   Клиентский веб-скрипт модуля main.
@@ -10,11 +10,11 @@
  *     <script src="/src/api/webgui/file_history_ai_search_tab/main.js?v=20261001_v1" type="module"></script>
  *
  * File: main.js
- * Project: ai-breadboard
+ * Project: ai-windows-admin
  * Package: src/api/webgui/file_history_ai_search_tab
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-01 13:13:56
+ * Updated: 2026-10-10 17:35:00
  * =============================================================================
  */
 

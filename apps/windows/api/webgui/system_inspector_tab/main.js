@@ -10,11 +10,11 @@
  *     <script src="/windows/api/webgui/system_inspector_tab/main.js?v=20261001_v1" type="module"></script>
  *
  * File: main.js
- * Project: ai-breadboard
+ * Project: ai-windows-admin
  * Package: windows/api/webgui/system_inspector_tab
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-08 13:58:00
+ * Updated: 2026-10-10 19:41:00
  * =============================================================================
  */
 
@@ -942,7 +942,7 @@
     }
 
     // Prepare Clipboard text
-    lastAnalysisReportText = `=== AI-Breadboard: Отчет AI-аудита сенсоров и оборудования ===\n` +
+    lastAnalysisReportText = `=== AI-Windows-Admin: Отчет AI-аудита сенсоров и оборудования ===\n` +
       `Дата: ${new Date().toLocaleString('ru-RU')}\n` +
       `Индекс здоровья системы: ${healthScore}/100\n` +
       `AI-модель: ${report ? report.ai_model_used : 'Heuristic'}\n` +
@@ -1374,13 +1374,15 @@
     const tooltip = document.getElementById('sys-cpu-spark-tooltip');
     if (!box) return;
 
-    if (Array.isArray(history) && history.length >= 2) {
-      lastCpuSparkData = history;
-    } else if (lastCpuSparkData && lastCpuSparkData.length >= 2) {
-      history = lastCpuSparkData;
-    } else {
-      return;
+    let ptsData = Array.isArray(history) && history.length > 0 ? history : (lastCpuSparkData && lastCpuSparkData.length > 0 ? lastCpuSparkData : (_cpuSparkHistory && _cpuSparkHistory.length > 0 ? _cpuSparkHistory : []));
+    if (!ptsData || ptsData.length === 0) {
+      ptsData = [{ load: 0, temp: null, power: null, time: new Date() }];
     }
+    if (ptsData.length === 1) {
+      ptsData = [ptsData[0], { ...ptsData[0], time: ptsData[0].time || new Date() }];
+    }
+    lastCpuSparkData = ptsData;
+    history = ptsData;
 
     box.replaceChildren();
     const ns = 'http://www.w3.org/2000/svg';
@@ -1637,13 +1639,15 @@
     const tooltip = document.getElementById(`sys-gpu-spark-tooltip-${idx}`) || document.getElementById('sys-gpu-spark-tooltip');
     if (!box) return;
 
-    if (Array.isArray(history) && history.length >= 2) {
-      lastGpuSparkDataMap[idx] = history;
-    } else if (lastGpuSparkDataMap[idx] && lastGpuSparkDataMap[idx].length >= 2) {
-      history = lastGpuSparkDataMap[idx];
-    } else {
-      return;
+    let ptsData = Array.isArray(history) && history.length > 0 ? history : (lastGpuSparkDataMap[idx] && lastGpuSparkDataMap[idx].length > 0 ? lastGpuSparkDataMap[idx] : (_gpuSparkHistories[idx] && _gpuSparkHistories[idx].length > 0 ? _gpuSparkHistories[idx] : []));
+    if (!ptsData || ptsData.length === 0) {
+      ptsData = [{ load: 0, temp: null, power: null, time: new Date() }];
     }
+    if (ptsData.length === 1) {
+      ptsData = [ptsData[0], { ...ptsData[0], time: ptsData[0].time || new Date() }];
+    }
+    lastGpuSparkDataMap[idx] = ptsData;
+    history = ptsData;
 
     box.replaceChildren();
     const ns = 'http://www.w3.org/2000/svg';
@@ -1893,13 +1897,15 @@
     const tooltip = document.getElementById('sys-memio-spark-tooltip');
     if (!box) return;
 
-    if (Array.isArray(history) && history.length >= 2) {
-      lastMemIoSparkData = history;
-    } else if (lastMemIoSparkData && lastMemIoSparkData.length >= 2) {
-      history = lastMemIoSparkData;
-    } else {
-      return;
+    let ptsData = Array.isArray(history) && history.length > 0 ? history : (lastMemIoSparkData && lastMemIoSparkData.length > 0 ? lastMemIoSparkData : (_memIoSparkHistory && _memIoSparkHistory.length > 0 ? _memIoSparkHistory : []));
+    if (!ptsData || ptsData.length === 0) {
+      ptsData = [{ pct: 0, used: 0, swap: 0, time: new Date() }];
     }
+    if (ptsData.length === 1) {
+      ptsData = [ptsData[0], { ...ptsData[0], time: ptsData[0].time || new Date() }];
+    }
+    lastMemIoSparkData = ptsData;
+    history = ptsData;
 
     box.replaceChildren();
     const ns = 'http://www.w3.org/2000/svg';
@@ -2196,6 +2202,10 @@
       if (Array.isArray(data.history) && data.history.length > 0) {
         renderMemIoSpark(data.history);
         renderStorageSpark(data.history);
+      } else {
+        _memIoSparkHistory.push({ memory_percent: pct, read_bytes_sec: rBps, write_bytes_sec: wBps, time: new Date() });
+        if (_memIoSparkHistory.length > 60) _memIoSparkHistory.shift();
+        renderMemIoSpark(_memIoSparkHistory);
       }
     } catch (e) {
       console.warn('[SystemInspectorTab] Ошибка получения памяти/IO из API:', e);
@@ -2304,6 +2314,10 @@
       // 6. График истории
       if (Array.isArray(data.history) && data.history.length > 0) {
         renderNetSpark(data.history);
+      } else {
+        _netSparkHistory.push({ download_bytes_sec: rxBps, upload_bytes_sec: txBps, time: new Date() });
+        if (_netSparkHistory.length > 60) _netSparkHistory.shift();
+        renderNetSpark(_netSparkHistory);
       }
     } catch (e) {
       console.warn('[SystemInspectorTab] Ошибка получения сетевой нагрузки из API:', e);
@@ -2371,13 +2385,15 @@
     const tooltip = document.getElementById('sys-net-spark-tooltip');
     if (!box) return;
 
-    if (Array.isArray(history) && history.length >= 2) {
-      lastNetSparkData = history;
-    } else if (lastNetSparkData && lastNetSparkData.length >= 2) {
-      history = lastNetSparkData;
-    } else {
-      return;
+    let ptsData = Array.isArray(history) && history.length > 0 ? history : (lastNetSparkData && lastNetSparkData.length > 0 ? lastNetSparkData : (_netSparkHistory && _netSparkHistory.length > 0 ? _netSparkHistory : []));
+    if (!ptsData || ptsData.length === 0) {
+      ptsData = [{ rx_sec: 0, tx_sec: 0, time: new Date() }];
     }
+    if (ptsData.length === 1) {
+      ptsData = [ptsData[0], { ...ptsData[0], time: ptsData[0].time || new Date() }];
+    }
+    lastNetSparkData = ptsData;
+    history = ptsData;
 
     box.replaceChildren();
     const ns = 'http://www.w3.org/2000/svg';
@@ -2585,13 +2601,15 @@
     const tooltip = document.getElementById('sys-storage-spark-tooltip');
     if (!box) return;
 
-    if (Array.isArray(history) && history.length >= 2) {
-      lastStorageSparkData = history;
-    } else if (lastStorageSparkData && lastStorageSparkData.length >= 2) {
-      history = lastStorageSparkData;
-    } else {
-      return;
+    let ptsData = Array.isArray(history) && history.length > 0 ? history : (lastStorageSparkData && lastStorageSparkData.length > 0 ? lastStorageSparkData : (_storageSparkHistory && _storageSparkHistory.length > 0 ? _storageSparkHistory : []));
+    if (!ptsData || ptsData.length === 0) {
+      ptsData = [{ read_bytes_sec: 0, write_bytes_sec: 0, time: new Date() }];
     }
+    if (ptsData.length === 1) {
+      ptsData = [ptsData[0], { ...ptsData[0], time: ptsData[0].time || new Date() }];
+    }
+    lastStorageSparkData = ptsData;
+    history = ptsData;
 
     box.replaceChildren();
     const ns = 'http://www.w3.org/2000/svg';
@@ -3088,9 +3106,15 @@
       // 2. Карточки дисков
       renderStorageCards(data);
 
-      // 3. График истории накопителей (если уже есть кэшированная история)
-      if (lastStorageSparkData && lastStorageSparkData.length >= 2) {
+      // 3. График истории накопителей
+      if (Array.isArray(data.history) && data.history.length > 0) {
+        renderStorageSpark(data.history);
+      } else if (lastStorageSparkData && lastStorageSparkData.length > 0) {
         renderStorageSpark(lastStorageSparkData);
+      } else {
+        _storageSparkHistory.push({ read_bytes_sec: s.read_bytes_sec || 0, write_bytes_sec: s.write_bytes_sec || 0, time: new Date() });
+        if (_storageSparkHistory.length > 60) _storageSparkHistory.shift();
+        renderStorageSpark(_storageSparkHistory);
       }
     } catch (e) {
       console.warn('[SystemInspectorTab] Ошибка получения параметров дисков из API:', e);
@@ -3734,6 +3758,9 @@
       const currentCards = container.querySelectorAll('.sys-card-gpu');
       if (currentCards.length !== devices.length) {
         container.innerHTML = devices.map((gpu, idx) => renderGpuCardHtml(gpu, idx, devices.length)).join('');
+        if (cachedAvailableTimeRanges && Array.isArray(cachedAvailableTimeRanges.intervals)) {
+          populateIntervalSelectors(cachedAvailableTimeRanges.intervals);
+        }
       }
 
       devices.forEach((gpu, idx) => {
@@ -4767,11 +4794,6 @@
       title: 'User Assistant',
       desc: 'Фоновые периодические напоминания, календарь и уведомления',
     },
-    trading_terminal: {
-      icon: '📈',
-      title: 'Trading Terminal',
-      desc: 'Торговые котировки, балансы криптобирж и открытые ордера',
-    },
     registry_viewer: {
       icon: '📑',
       title: 'Registry Viewer',
@@ -5623,7 +5645,7 @@
 
   async function applyExclusionPreset(preset) {
     if (preset === 'logs') {
-      await addExclusionItem('paths', 'AppData\\Roaming\\AI-Breadboard\\apps\\windows\\telemetry\\logs');
+      await addExclusionItem('paths', 'AppData\\Roaming\\AI-Windows-Admin\\apps\\windows\\telemetry\\logs');
       await addExclusionItem('extensions', '.log');
       await addExclusionItem('extensions', '.csv');
       await addExclusionItem('patterns', '*system_inspector_polls.csv*');
@@ -5735,7 +5757,7 @@
       btn.onclick = () => {
         const preset = btn.getAttribute('data-preset');
         let target = '';
-        if (preset === 'project') target = 'C:\\Users\\onela\\AppData\\Local\\AI-Breadboard';
+        if (preset === 'project') target = 'C:\\Users\\onela\\AppData\\Local\\AI-Windows-Admin';
         else if (preset === 'downloads') target = 'C:\\Users\\onela\\Downloads';
         else if (preset === 'desktop') target = 'C:\\Users\\onela\\Desktop';
         else if (preset === 'temp') target = 'C:\\Users\\onela\\AppData\\Local\\Temp';

@@ -1,8 +1,8 @@
 # Начало работы
 
-Этот раздел поможет вам запустить AI-Breadboard за несколько минут.
+Этот раздел поможет вам запустить AI-Windows-Admin за несколько минут.
 
-Полное описание возможностей платформы — в **[README.md](https://github.com/hypo69/AI-Breadboard#readme)**.
+Полное описание возможностей платформы — в **[README.md](https://github.com/hypo69/AI-Windows-Admin#readme)**.
 
 ---
 
@@ -22,7 +22,7 @@
 Откройте PowerShell **от имени администратора**:
 
 ```powershell
-irm https://raw.githubusercontent.com/hypo69/AI-Breadboard/master/install.ps1 | iex
+irm https://raw.githubusercontent.com/hypo69/AI-Windows-Admin/master/install.ps1 | iex
 ```
 
 Установщик проведёт вас через 8 шагов: создание `venv`, установка зависимостей, SSL-сертификаты, регистрация команды `assist`.
@@ -50,8 +50,8 @@ ADMIN_PASSWORD=ваш_пароль
 ## Быстрый старт (Linux / macOS)
 
 ```bash
-git clone https://github.com/hypo69/AI-Breadboard.git
-cd AI-Breadboard
+git clone https://github.com/hypo69/AI-Windows-Admin.git
+cd AI-Windows-Admin
 bash install.sh
 cp .env.example .env
 # отредактируйте .env

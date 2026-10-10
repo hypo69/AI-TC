@@ -1,7 +1,7 @@
 # Skills Tab Web Interface
 
 ## Overview
-Web interface module for managing, inspecting, creating, and packaging AI Agent Skills in AI Breadboard and Gemini CLI environments.
+Web interface module for managing, inspecting, creating, and packaging AI Agent Skills in AI Windows Admin and Gemini CLI environments.
 
 ## Features
 - **Skill Discovery & Registry**: Lists all discovered skills across `.agents/skills`, `.gemini/skills`, and `skills` directories.

@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard AI - Core Module
+# Process Name: AI-Windows-Admin AI - Core Module
 # =============================================================================
 # Description:
-#   Модуль реализации компонента `GoogleGenerativeAICore` системы AI-Breadboard.
+#   Модуль реализации компонента `GoogleGenerativeAICore` системы AI-Windows-Admin.
 #
 # Usage Examples:
 #   Python API:
@@ -14,14 +14,14 @@
 #     print(result)
 #
 # File: core.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: src.ai.gemini
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 08:47:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
-"""Модуль реализации компонента `GoogleGenerativeAICore` системы AI-Breadboard."""
+"""Модуль реализации компонента `GoogleGenerativeAICore` системы AI-Windows-Admin."""
 
 import time
 from dataclasses import dataclass, field

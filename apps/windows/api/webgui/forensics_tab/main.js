@@ -1,20 +1,20 @@
-/**
+﻿/**
  * =============================================================================
  * Process Name: Windows Forensics Tab - Main Script
  * =============================================================================
  * Description:
- *   Клиентский скрипт управления интерфейсом модуля main.
+ *   Клиентский скрипт управления интерфейсом форензики и таймлайна активности.
  *
  * Usage Examples:
  *   HTML Integration:
- *     <script src="/windows/api/webgui/forensics_tab/main.js?v=20261001_v1" type="module"></script>
+ *     <script src="/windows/api/webgui/forensics_tab/main.js?v=20261010_v2" type="module"></script>
  *
  * File: main.js
- * Project: ai-breadboard
+ * Project: ai-windows-admin
  * Package: windows/api/webgui/forensics_tab
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-08 02:00:00
+ * Updated: 2026-10-10 20:33:00
  * =============================================================================
  */
 
@@ -38,12 +38,24 @@
     if (el) el.textContent = text !== null && text !== undefined ? String(text) : '--';
   }
 
+  function formatTime(isoStr) {
+    if (!isoStr) return '--:--:--';
+    try {
+      const d = new Date(isoStr);
+      if (isNaN(d.getTime())) return isoStr;
+      return d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) +
+             ' (' + d.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' }) + ')';
+    } catch (_) {
+      return isoStr;
+    }
+  }
+
   async function apiFetch(url) {
     if (window.api && typeof window.api.fetch === 'function') {
       return await window.api.fetch(url);
     }
     const res = await fetch(url);
-    if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+    if (!res.ok) throw new Error(HTTP : );
     return await res.json();
   }
 
@@ -54,18 +66,19 @@
 
       if (data.foreground_window) {
         setText('diag-fg-title', data.foreground_window.title || 'Рабочий стол Windows');
-        setText('diag-fg-proc', `Процесс: ${data.foreground_window.process_name || 'unknown'} (PID: ${data.foreground_window.pid || 0})`);
+        setText('diag-fg-proc', Процесс:  (PID: ));
       }
 
-      setText('diag-user-idle-time', `${data.user_idle_seconds.toFixed(1)} сек`);
+      const idleSec = data.user_idle_seconds !== undefined ? Number(data.user_idle_seconds) : 0;
+      setText('diag-user-idle-time', ${idleSec.toFixed(1)} сек);
       const statusBadge = document.getElementById('diag-user-status-badge');
       if (statusBadge) {
-        if (data.user_idle_seconds > 300) {
+        if (idleSec > 300) {
           statusBadge.className = 'badge bg-warning-subtle text-warning border border-warning';
           statusBadge.textContent = 'Пользователь отошел (>5 мин)';
         } else {
           statusBadge.className = 'badge bg-success-subtle text-success border border-success';
-          statusBadge.textContent = 'Пользователь за ПК';
+          statusBadge.textContent = 'Пользователь активен';
         }
       }
 
@@ -73,14 +86,14 @@
       const camContainer = document.getElementById('diag-cam-access-list');
       if (camContainer) {
         if (data.camera_active_apps && data.camera_active_apps.length > 0) {
-          camContainer.innerHTML = data.camera_active_apps.map(a => `
+          camContainer.innerHTML = data.camera_active_apps.map(a => 
             <div class="d-flex align-items-center justify-content-between py-1 border-bottom border-secondary-subtle">
-              <span class="text-truncate" style="max-width: 140px;">${escapeHtml(a.app_name)}</span>
-              <span class="badge ${a.is_active_now ? 'bg-danger' : 'bg-secondary'}" style="font-size: 0.65rem;">
-                ${a.is_active_now ? 'Захват камеры' : 'В доступе'}
+              <span class="text-truncate" style="max-width: 140px;" title=""></span>
+              <span class="badge " style="font-size: 0.65rem;">
+                
               </span>
             </div>
-          `).join('');
+          ).join('');
         } else {
           camContainer.innerHTML = '<span class="text-muted small">Нет активных обращений к камере</span>';
         }
@@ -90,34 +103,70 @@
       const micContainer = document.getElementById('diag-mic-access-list');
       if (micContainer) {
         if (data.microphone_active_apps && data.microphone_active_apps.length > 0) {
-          micContainer.innerHTML = data.microphone_active_apps.map(a => `
+          micContainer.innerHTML = data.microphone_active_apps.map(a => 
             <div class="d-flex align-items-center justify-content-between py-1 border-bottom border-secondary-subtle">
-              <span class="text-truncate" style="max-width: 140px;">${escapeHtml(a.app_name)}</span>
-              <span class="badge ${a.is_active_now ? 'bg-danger' : 'bg-secondary'}" style="font-size: 0.65rem;">
-                ${a.is_active_now ? 'Запись звука' : 'В доступе'}
+              <span class="text-truncate" style="max-width: 140px;" title=""></span>
+              <span class="badge " style="font-size: 0.65rem;">
+                
               </span>
             </div>
-          `).join('');
+          ).join('');
         } else {
           micContainer.innerHTML = '<span class="text-muted small">Нет активных обращений к микрофону</span>';
+        }
+      }
+
+      // Timeline History Table
+      const timelineTbody = document.getElementById('diag-timeline-tbody');
+      if (timelineTbody) {
+        const historyList = data.history || [];
+        setText('diag-timeline-count', ${historyList.length} срезов);
+        if (historyList.length === 0) {
+          timelineTbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-muted">Снимков активности в базе пока нет. Они накапливаются демоном телеметрии...</td></tr>';
+        } else {
+          timelineTbody.innerHTML = historyList.map(h => {
+            const fg = h.foreground_window || {};
+            const timeStr = formatTime(h.timestamp);
+            const idle = Number(h.user_idle_seconds || 0).toFixed(0);
+            const hasCam = (h.camera_active_apps || []).some(x => x.is_active_now);
+            const hasMic = (h.microphone_active_apps || []).some(x => x.is_active_now);
+            let sensorBadge = '<span class="text-muted">-</span>';
+            if (hasCam && hasMic) {
+              sensorBadge = '<span class="badge bg-danger" title="Камера + Микрофон">Cam + Mic</span>';
+            } else if (hasCam) {
+              sensorBadge = '<span class="badge bg-danger" title="Камера активна">Cam</span>';
+            } else if (hasMic) {
+              sensorBadge = '<span class="badge bg-warning text-dark" title="Микрофон активен">Mic</span>';
+            }
+
+            return 
+              <tr>
+                <td class="text-muted font-monospace small"></td>
+                <td class="fw-bold text-info"><i class="bi bi-window text-secondary me-1"></i> <span class="text-muted small">()</span></td>
+                <td class="text-body text-truncate" style="max-width: 320px;" title=""></td>
+                <td style="text-align: right;" class="font-monospace "> с</td>
+                <td style="text-align: center;"></td>
+              </tr>
+            ;
+          }).join('');
         }
       }
 
       // UserAssist Apps Table
       const uaTbody = document.getElementById('diag-userassist-tbody');
       if (uaTbody && data.userassist_top_apps) {
-        setText('diag-userassist-count', `${data.userassist_top_apps.length} программ`);
+        setText('diag-userassist-count', ${data.userassist_top_apps.length} программ);
         if (data.userassist_top_apps.length === 0) {
-          uaTbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-muted">Данных UserAssist в реестре не обнаружено</td></tr>';
+          uaTbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-muted">Данных UserAssist в реестре не обнаружено (или трекинг отключен в Windows)</td></tr>';
         } else {
-          uaTbody.innerHTML = data.userassist_top_apps.map(a => `
+          uaTbody.innerHTML = data.userassist_top_apps.map(a => 
             <tr>
-              <td class="fw-bold text-white"><i class="bi bi-app text-info me-1.5"></i>${escapeHtml(a.name)}</td>
-              <td style="text-align: right;" class="text-info font-monospace">${a.run_count} раз</td>
-              <td style="text-align: right;" class="text-warning font-monospace">${a.focus_formatted}</td>
-              <td class="small text-muted text-truncate" style="max-width: 280px;" title="${escapeHtml(a.path)}">${escapeHtml(a.path)}</td>
+              <td class="fw-bold text-white"><i class="bi bi-app text-info me-1.5"></i></td>
+              <td style="text-align: right;" class="text-info font-monospace"> раз</td>
+              <td style="text-align: right;" class="text-warning font-monospace"></td>
+              <td class="small text-muted text-truncate" style="max-width: 280px;" title=""></td>
             </tr>
-          `).join('');
+          ).join('');
         }
       }
     } catch (err) {
@@ -129,7 +178,7 @@
 
   function getFrequency() {
     try {
-      const saved = localStorage.getItem(`poll_freq_${POLL_ID}`);
+      const saved = localStorage.getItem(poll_freq_);
       if (saved) return saved;
     } catch (_) {}
     return 'manual';
@@ -137,14 +186,14 @@
 
   function setFrequency(freq) {
     try {
-      localStorage.setItem(`poll_freq_${POLL_ID}`, freq);
+      localStorage.setItem(poll_freq_, freq);
     } catch (_) {}
     applyPoller(freq, false);
   }
 
   function stopPolling() {
     if (window.unregisterTabPoller) {
-      window.unregisterTabPoller(`tab-forensics_${POLL_ID}`);
+      window.unregisterTabPoller(	ab-forensics_);
     }
     if (autoRefreshTimer) {
       clearInterval(autoRefreshTimer);
@@ -165,7 +214,7 @@
     if (isNaN(intervalSec) || intervalSec <= 0) return;
 
     const intervalMs = intervalSec * 1000;
-    const pollerId = `tab-forensics_${POLL_ID}`;
+    const pollerId = 	ab-forensics_;
 
     if (window.registerTabPoller) {
       window.registerTabPoller('tab-forensics', fetchForensicsActivity, intervalMs, { pollerId, immediate: runInitial });
@@ -197,7 +246,7 @@
         }
         if (window.showToast) {
           const label = select.options[select.selectedIndex]?.text || newFreq;
-          window.showToast(`Частота опроса форензики: ${label}`, 'info');
+          window.showToast(Частота опроса форензики: , 'info');
         }
       };
     }

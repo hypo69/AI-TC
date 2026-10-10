@@ -62,7 +62,13 @@ AI WINDOWS DIAGNOSTIC & ADMINISTRATION CENTER
 Архитектура `apps/windows` строго разделена по уровню ответственности:
 
 ### 1. `apps/windows/core` — Ядро, инфраструктура и сквозная оркестрация
-Содержит **общие фундаментальные механизмы, движки анализа и сквозные аудиты**, используемые всей системой и AI-агентами:
+Содержит **общие фундаментальные механизмы, движки анализа, семантические реестры и сквозные аудиты**, используемые всей системой и AI-агентами:
+* **Семантический реестр системных команд (`windows_command_registry.json` / `System32Catalog`):**
+  - Полный семантический каталог 149 штатных системных утилит Windows (`%SystemRoot%\System32`) по 66 доменным категориям.
+  - Градации уровней риска (`TelemetryTier`: `OBSERVE`, `DIAGNOSE`, `CONTROL`, `ADMIN`, `DESTRUCTIVE`, `RECOVERY`) и уровней привилегий (`STANDARD`, `ADMIN`, `SYSTEM`).
+  - Сопоставление CLI-утилит с их низкоуровневыми эквивалентами в PowerShell, WMI/CIM, Win32 API, Native NT API, COM и ETW-провайдерах.
+  - Служит защитным барьером (Safety Guardrails) и справочником для AI-интерпретатора и REST API (`/api/v1/system32/*`).
+  - Генерируется через [`build_command_registry.py`](apps/windows/sdk/core/build_command_registry.py).
 * **Движки анализа и диагностики:** `root_cause_engine.py`, `correlation_engine.py`, `diagnostics.py`.
 * **Сквозной контур безопасности и выполнения:** `safe_executor.py`, `agent_loop.py`, `atomic_capabilities.py`.
 * **Динамический реестр инструментов для AI-агентов:** `apps/windows/core/tools` (`dynamic_factory.py`, `registry.py`, `system_tools.py`).

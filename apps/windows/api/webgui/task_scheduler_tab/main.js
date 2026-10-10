@@ -13,17 +13,17 @@
  *     import { initTaskSchedulerTab } from '/windows/api/webgui/task_scheduler_tab/main.js';
  *
  * File: main.js
- * Project: ai-breadboard
+ * Project: ai-windows-admin
  * Package: windows/api/webgui/task_scheduler_tab
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-06 12:35:00
+ * Updated: 2026-10-10 17:35:00
  * =============================================================================
  */
 
 /**
  * task_scheduler_tab/main.js — Управление задачами Windows Task Scheduler
- * Updated: 2026-10-06 12:35:00
+ * Updated: 2026-10-10 17:35:00
  */
 
 const registerTabPoller = window.registerTabPoller || function() {};

@@ -1,8 +1,8 @@
 ---
 name: doc-generator
-description: Automated documentation generation, validation, and synchronization toolkit for AI-Breadboard.
+description: Automated documentation generation, validation, and synchronization toolkit for AI-Windows-Admin.
 description_i18n:
-  en: Automated documentation generation, validation, and synchronization toolkit for AI-Breadboard.
+  en: Automated documentation generation, validation, and synchronization toolkit for AI-Windows-Admin.
   ru: Набор инструментов для автоматической пакетной генерации, валидации и синхронизации документации API и скриптов.
   es: Herramientas para generación por lotes, validación y sincronización de documentación de API y scripts.
   he: ערכת כלים ליצירה באצווה, אימות וסנכרון תיעוד API ותסריטים.
@@ -10,7 +10,7 @@ description_i18n:
 
 # 📚 Document Generator & Synchronization Skill
 
-Автоматизированный навык генерации, проверки и синхронизации документации проекта **AI-Breadboard**.
+Автоматизированный навык генерации, проверки и синхронизации документации проекта **AI-Windows-Admin**.
 
 ---
 

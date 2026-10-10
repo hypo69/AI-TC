@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Modules Hardware - LHM Service
+# Process Name: AI-Windows-Admin Apps Windows Modules Hardware - LHM Service
 # =============================================================================
 # Description:
 #   Клиент веб-сервера LibreHardwareMonitor (http://127.0.0.1:8085/data.json):
@@ -14,11 +14,11 @@
 #     sensors = LhmService().get_flattened_sensors()
 #
 # File: lhm_service.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.hardware
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-04 02:20:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations
@@ -85,7 +85,7 @@ class LhmService:
     def is_running(self) -> bool:
         """Проверяет, отвечает ли веб-сервер LHM."""
         try:
-            req = urllib.request.Request(self.endpoint_url, headers={"User-Agent": "AI-Breadboard"})
+            req = urllib.request.Request(self.endpoint_url, headers={"User-Agent": "AI-Windows-Admin"})
             with urllib.request.urlopen(req, timeout=1.5) as resp:
                 return resp.status == 200
         except Exception:
@@ -122,7 +122,7 @@ class LhmService:
             Optional[Dict[str, Any]]: Дерево или None, если сервер недоступен (задокументированный возврат).
         """
         try:
-            req = urllib.request.Request(self.endpoint_url, headers={"User-Agent": "AI-Breadboard"})
+            req = urllib.request.Request(self.endpoint_url, headers={"User-Agent": "AI-Windows-Admin"})
             with urllib.request.urlopen(req, timeout=2.0) as resp:
                 return json.loads(resp.read().decode("utf-8"))
         except Exception as exc:

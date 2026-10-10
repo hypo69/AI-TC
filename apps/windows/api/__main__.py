@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Api - Main
+# Process Name: AI-Windows-Admin Apps Windows Api - Main
 # =============================================================================
 # Description:
 #   Точка входа и запуск внутреннего FastAPI сервера Windows System API (TC)
@@ -15,11 +15,11 @@
 #     res = main()
 #
 # File: __main__.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.api
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 12:05:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations
@@ -53,7 +53,7 @@ def _parse_args() -> argparse.Namespace:
         argparse.Namespace: Распарсенные аргументы.
     """
     parser = argparse.ArgumentParser(
-        description='AI-Breadboard Windows Internal API Server',
+        description='AI-Windows-Admin Windows Internal API Server',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(

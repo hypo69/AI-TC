@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows - Window Control Plane Catalog Part 3
+# Process Name: AI-Windows-Admin Apps Windows - Window Control Plane Catalog Part 3
 # =============================================================================
 # Description:
 #   Каталог параметров Window Management Control Plane (Категории 11–15, элементы 189–295).
@@ -15,11 +15,11 @@
 #     from apps.windows.sdk.modules.window_control_plane.catalog_data_3 import GET_CATALOG_PART_3
 #
 # File: catalog_data_3.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.window_control_plane
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-06 18:00:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

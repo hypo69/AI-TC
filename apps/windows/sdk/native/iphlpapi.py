@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Native - IP Helper API
+# Process Name: AI-Windows-Admin Apps Windows Native - IP Helper API
 # =============================================================================
 # Description:
 #   Win32 C-FFI вызовы к iphlpapi.dll (сетевые соединения, сокеты, интерфейсы).
@@ -10,11 +10,11 @@
 #     from apps.windows.sdk.native.iphlpapi import get_extended_tcp_table, get_extended_udp_table
 #
 # File: iphlpapi.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.native
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-08 09:36:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

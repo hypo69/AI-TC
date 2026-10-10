@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Modules Sysadmin Src - Directory Watcher
+# Process Name: AI-Windows-Admin Apps Windows Modules Sysadmin Src - Directory Watcher
 # =============================================================================
 # Description:
 #   Модуль мониторинга файловой системы в реальном времени через WinAPI (Multi-Directory & Process Resolver).
@@ -12,11 +12,11 @@
 #     service = RM_UNIQUE_PROCESS()
 #
 # File: directory_watcher.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.sysadmin.src
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-06 23:02:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations
@@ -242,7 +242,7 @@ class DirectoryWatcher:
         elif isinstance(exclusions, dict):
             self.exclusions = WatcherExclusions.from_dict(exclusions)
         else:
-            self.exclusions = WatcherExclusions(enabled=True, paths=['AppData\\Roaming\\AI-Breadboard\\apps\\windows\\telemetry\\logs', 'AppData\\Local\\Temp', '$Recycle.Bin', 'System Volume Information', '.git', '__pycache__', 'node_modules'], extensions=['.tmp', '.log', '.db-wal', '.db-shm'], patterns=['*Windows.db*', '~$*'], processes=['SearchIndexer.exe'])
+            self.exclusions = WatcherExclusions(enabled=True, paths=['AppData\\Roaming\\AI-Windows-Admin\\apps\\windows\\telemetry\\logs', 'AppData\\Local\\Temp', '$Recycle.Bin', 'System Volume Information', '.git', '__pycache__', 'node_modules'], extensions=['.tmp', '.log', '.db-wal', '.db-shm'], patterns=['*Windows.db*', '~$*'], processes=['SearchIndexer.exe'])
         self.filtered_events_count: int = 0
         from apps.windows.sdk.modules.sysadmin.src.watcher_telemetry import get_watcher_telemetry_engine
         self.telemetry = get_watcher_telemetry_engine()

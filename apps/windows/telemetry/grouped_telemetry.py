@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Telemetry - Grouped Telemetry
+# Process Name: AI-Windows-Admin Apps Windows Telemetry - Grouped Telemetry
 # =============================================================================
 # Description:
 #   Прямой экспорт сгруппированной телеметрии из аналитического ядра.
@@ -10,11 +10,11 @@
 #     from apps.windows.telemetry.grouped_telemetry import GroupedTelemetryBuilder
 #
 # File: grouped_telemetry.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.telemetry
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-08 09:37:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

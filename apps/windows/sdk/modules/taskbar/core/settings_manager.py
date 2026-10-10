@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Modules Taskbar - Settings Manager
+# Process Name: AI-Windows-Admin Apps Windows Modules Taskbar - Settings Manager
 # =============================================================================
 # Description:
 #   Управление настройками панели задач через Registry, Shell API и Win32.
@@ -13,11 +13,11 @@
 #     settings = mgr.get_settings()
 #
 # File: settings_manager.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.taskbar.core
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-06 17:30:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

@@ -11,7 +11,7 @@ All servers are **кроссплатформенные** (cross-platform) и р�
 
 | Server | Entry Point | Primary Tools | Platform Support |
 |---|---|---|---|
-| **LangChain Breadboard Agent** | `langchain_mcp_server.py` | `agent_query`, `agent_web_search`, `agent_rag_search`, `agent_python_eval` | ✅ Win/Linux/macOS |
+| **LangChain AI Windows Admin Agent** | `langchain_mcp_server.py` | `agent_query`, `agent_web_search`, `agent_rag_search`, `agent_python_eval` | ✅ Win/Linux/macOS |
 | **Gemini Search Grounding** | `gemini_search_mcp_server.py` | `gemini_web_search`, `gemini_key_pool_status` | ✅ Win/Linux/macOS |
 | **Gemini CLI Search** | `gemini_cli_search_mcp_server.py` | `gemini_cli_web_search` | ✅ Win/Linux/macOS |
 | **Antigravity Search** | `agy_search_mcp_server.py` | `agy_web_search` | ✅ Win/Linux/macOS |
@@ -58,15 +58,15 @@ Example for different clients:
 ```json
 {
   "mcpServers": {
-    "aibreadboard-gemini-search": {
+    "aiwindowsadmin-gemini-search": {
       "command": "python3",
-      "args": ["/path/to/AI-Breadboard/.mcp/gemini_search_mcp_server.py"],
-      "cwd": "/path/to/AI-Breadboard"
+      "args": ["/path/to/AI-Windows-Admin/.mcp/gemini_search_mcp_server.py"],
+      "cwd": "/path/to/AI-Windows-Admin"
     },
-    "aibreadboard-langchain": {
+    "aiwindowsadmin-langchain": {
       "command": "python3",
-      "args": ["/path/to/AI-Breadboard/.mcp/langchain_mcp_server.py"],
-      "cwd": "/path/to/AI-Breadboard"
+      "args": ["/path/to/AI-Windows-Admin/.mcp/langchain_mcp_server.py"],
+      "cwd": "/path/to/AI-Windows-Admin"
     }
   }
 }
@@ -77,12 +77,12 @@ Example for different clients:
 ```json
 {
   "mcpServers": {
-    "aibreadboard": {
+    "aiwindowsadmin": {
       "command": "python3",
-      "args": ["/path/to/AI-Breadboard/.mcp/langchain_mcp_server.py"],
+      "args": ["/path/to/AI-Windows-Admin/.mcp/langchain_mcp_server.py"],
       "environment": {
-        "AIBREADBOARD_DIR": "/path/to/AI-Breadboard",
-        "PYTHONPATH": "/path/to/AI-Breadboard"
+        "AIWINDOWSADMIN_DIR": "/path/to/AI-Windows-Admin",
+        "PYTHONPATH": "/path/to/AI-Windows-Admin"
       }
     }
   }
@@ -141,7 +141,7 @@ certs_dir = get_certs_dir()  # ~/.certs (Windows), ~/Library/Certs (macOS), ~/.l
 import os
 
 # Получить путь проекта из переменной окружения
-project_dir = os.environ.get("AIBREADBOARD_DIR", ".")
+project_dir = os.environ.get("AIWINDOWSADMIN_DIR", ".")
 
 # Использовать PYTHONPATH
 python_path = os.environ.get("PYTHONPATH", "")
@@ -214,9 +214,9 @@ certs = get_certs_dir()
 # macOS: /Users/user/Library/Certs
 
 data = get_data_dir()
-# Windows: C:\Users\user\AppData\Local\AI-Breadboard
-# Linux: /home/user/.local/share/AI-Breadboard
-# macOS: /Users/user/Library/Application Support/AI-Breadboard
+# Windows: C:\Users\user\AppData\Local\AI-Windows-Admin
+# Linux: /home/user/.local/share/AI-Windows-Admin
+# macOS: /Users/user/Library/Application Support/AI-Windows-Admin
 ```
 
 ### Пример 3: Работа с .env
@@ -236,7 +236,7 @@ api_key = get_env_var("GEMINI_API_KEY")
 
 **Старое (Windows-специфичное):**
 ```python
-config_path = r"C:\Users\user\AI-Breadboard\config.json"
+config_path = r"C:\Users\user\AI-Windows-Admin\config.json"
 if os.name == "nt":
     import subprocess
     subprocess.run(["taskkill", "/F", "/PID", str(pid)])

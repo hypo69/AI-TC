@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows - Window Management Control Plane Router
+# Process Name: AI-Windows-Admin Apps Windows - Window Management Control Plane Router
 # =============================================================================
 # Description:
 #   FastAPI REST API роутер для Windows Window Management Control Plane (/api/v1/window-management).
@@ -14,11 +14,11 @@
 #     router = init_router()
 #
 # File: router.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.window_control_plane
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-06 18:00:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

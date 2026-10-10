@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Modules Startup Tests - Test Scanner
+# Process Name: AI-Windows-Admin Apps Windows Modules Startup Tests - Test Scanner
 # =============================================================================
 # Description:
 #   Тесты сканера автозапуска StartupScanner.
@@ -12,11 +12,11 @@
 #     res = test_monitored_locations_list()
 #
 # File: test_scanner.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.startup.tests
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:28:28
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 """Тесты сканера автозапуска StartupScanner."""

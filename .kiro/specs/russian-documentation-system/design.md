@@ -1,8 +1,8 @@
-# Дизайн системы документации AI-Breadboard (Russian Documentation System)
+# Дизайн системы документации AI-Windows-Admin (Russian Documentation System)
 
 ## 1. Обзор архитектуры
 
-Система документации AI-Breadboard представляет собой комплексное решение для управления, генерации и публикации документации на русском языке. Архитектура состоит из четырёх основных уровней:
+Система документации AI-Windows-Admin представляет собой комплексное решение для управления, генерации и публикации документации на русском языке. Архитектура состоит из четырёх основных уровней:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -138,7 +138,7 @@ docs/
 ### 3.1 `.readthedocs.yml` (Read the Docs конфигурация)
 
 ```yaml
-# Конфигурация Read the Docs для проекта AI-Breadboard
+# Конфигурация Read the Docs для проекта AI-Windows-Admin
 version: 2
 
 # Версия Python для сборки
@@ -302,7 +302,7 @@ jobs:
         uses: 8398a7/action-slack@v3
         with:
           status: ${{ job.status }}
-          text: 'Ошибка при сборке документации AI-Breadboard'
+          text: 'Ошибка при сборке документации AI-Windows-Admin'
           webhook_url: ${{ secrets.SLACK_WEBHOOK }}
 ```
 
@@ -310,7 +310,7 @@ jobs:
 
 ```python
 """
-Конфигурация Sphinx для документации AI-Breadboard на русском языке.
+Конфигурация Sphinx для документации AI-Windows-Admin на русском языке.
 
 Параметры конфигурации для сборки документации с поддержкой:
 - Русского языка локализации
@@ -328,9 +328,9 @@ project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..
 sys.path.insert(0, os.path.join(project_root, 'src'))
 
 # Основные параметры проекта
-project = 'AI-Breadboard'
-copyright = f'{datetime.now().year}, AI-Breadboard Contributors'
-author = 'AI-Breadboard Team'
+project = 'AI-Windows-Admin'
+copyright = f'{datetime.now().year}, AI-Windows-Admin Contributors'
+author = 'AI-Windows-Admin Team'
 version = '1.0'
 release = '1.0.0'
 
@@ -385,7 +385,7 @@ html_theme_options = {
     'navigation_depth': 4,
     'includehidden': True,
     'titles_only': False,
-    'github_url': 'https://github.com/breadboard-ai/breadboard',
+    'github_url': 'https://github.com/ai-windows-admin-ai/ai-windows-admin',
     'language': 'ru',
 }
 
@@ -402,7 +402,7 @@ latex_elements = {
 }
 
 latex_documents = [
-    ('index', 'ai-breadboard-ru.tex', 'Документация AI-Breadboard', 'AI-Breadboard Team', 'manual'),
+    ('index', 'ai-windows-admin-ru.tex', 'Документация AI-Windows-Admin', 'AI-Windows-Admin Team', 'manual'),
 ]
 
 # Параметры автодока
@@ -641,10 +641,10 @@ if __name__ == '__main__':
     
     # Модули для генерации документации
     modules = [
-        'breadboard.skills',
-        'breadboard.agents',
-        'breadboard.core',
-        'breadboard.utils',
+        'ai-windows-admin.skills',
+        'ai-windows-admin.agents',
+        'ai-windows-admin.core',
+        'ai-windows-admin.utils',
     ]
     
     # Генерирование
@@ -928,7 +928,7 @@ class DocumentationFile:
 
 ```yaml
 docs:
-  title: "AI-Breadboard Документация"
+  title: "AI-Windows-Admin Документация"
   language: "ru"
   source_dir: "docs/ru"
   build_dir: "docs/ru/_build"
@@ -937,9 +937,9 @@ api:
   enabled: true
   output_dir: "docs/ru/api"
   modules:
-    - "breadboard.skills"
-    - "breadboard.agents"
-    - "breadboard.core"
+    - "ai-windows-admin.skills"
+    - "ai-windows-admin.agents"
+    - "ai-windows-admin.core"
 
 validation:
   check_links: true

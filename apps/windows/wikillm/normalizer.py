@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Wikillm - Normalizer
+# Process Name: AI-Windows-Admin Apps Windows Wikillm - Normalizer
 # =============================================================================
 # Description:
 #   Нормализация входных артефактов Windows и кода в стабильные канонические ключи
@@ -12,11 +12,11 @@
 #     service = CanonicalKeyNormalizer()
 #
 # File: normalizer.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.wikillm
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 07:54:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

@@ -1,4 +1,4 @@
-# Архитектура портирования AI Breadboard
+# Архитектура портирования AI Windows Admin
 
 Полное описание архитектуры кроссплатформенного решения.
 
@@ -59,7 +59,7 @@
 
 **Ответственность:**
 - Обнаружение Python интерпретатора (venv или глобальный)
-- Установка переменных окружения (AIBREADBOARD_DIR, PYTHONPATH)
+- Установка переменных окружения (AIWINDOWSADMIN_DIR, PYTHONPATH)
 - Вызов Python модулей
 
 **Преимущества:**
@@ -138,7 +138,7 @@ class CrossPlatformPaths:
 ```
 
 **Логика определения:**
-1. Проверить `AIBREADBOARD_DIR` переменную окружения
+1. Проверить `AIWINDOWSADMIN_DIR` переменную окружения
 2. Найти `config.json` или `main.py` в текущей директории
 3. Использовать `platformdirs` для OS-специфичных путей
 4. Fallback на текущую директорию
@@ -147,9 +147,9 @@ class CrossPlatformPaths:
 
 | Platform | data_dir | config_dir | certs_dir |
 |----------|----------|-----------|-----------|
-| Windows | `%LOCALAPPDATA%\AI-Breadboard` | `%LOCALAPPDATA%\AI-Breadboard\config` | `%USERPROFILE%\.certs` |
-| Linux | `~/.local/share/AI-Breadboard` | `~/.config/AI-Breadboard` | `~/.local/share/ca-certificates` |
-| macOS | `~/Library/Application Support/AI-Breadboard` | `~/Library/Preferences/AI-Breadboard` | `~/Library/Certs` |
+| Windows | `%LOCALAPPDATA%\AI-Windows-Admin` | `%LOCALAPPDATA%\AI-Windows-Admin\config` | `%USERPROFILE%\.certs` |
+| Linux | `~/.local/share/AI-Windows-Admin` | `~/.config/AI-Windows-Admin` | `~/.local/share/ca-certificates` |
+| macOS | `~/Library/Application Support/AI-Windows-Admin` | `~/Library/Preferences/AI-Windows-Admin` | `~/Library/Certs` |
 
 #### `config.py` — Управление конфигурацией
 ```python
@@ -203,7 +203,7 @@ def add_to_path(directory: Path) -> None
    ↓
 2. assist (bash обертка)
    - Найти Python интерпретатор
-   - Установить AIBREADBOARD_DIR
+   - Установить AIWINDOWSADMIN_DIR
    - Вызвать: python scripts/cli/assist.py start
    ↓
 3. assist.py:main()
@@ -257,9 +257,9 @@ paths = get_paths()
 data_dir = paths.data_dir
 
 # Результат разный для каждой ОС:
-# Windows: Path("C:\\Users\\user\\AppData\\Local\\AI-Breadboard")
-# Linux:   Path("/home/user/.local/share/AI-Breadboard")
-# macOS:   Path("/Users/user/Library/Application Support/AI-Breadboard")
+# Windows: Path("C:\\Users\\user\\AppData\\Local\\AI-Windows-Admin")
+# Linux:   Path("/home/user/.local/share/AI-Windows-Admin")
+# macOS:   Path("/Users/user/Library/Application Support/AI-Windows-Admin")
 ```
 
 **Магия:**
@@ -489,7 +489,7 @@ port = find_available_port(8000)
 
 ## 🌐 Сценарии запуска и архитектура веб-интерфейсов (WebGUI)
 
-Веб-уровень платформы AI Breadboard разделен на модульные оболочки (**shells**), каждая из которых отвечает за свой сценарий использования:
+Веб-уровень платформы AI Windows Admin разделен на модульные оболочки (**shells**), каждая из которых отвечает за свой сценарий использования:
 
 | Скрипт запуска | Профиль конфигурации | Маршрут FastAPI | Файл шаблона | Назначение сценария |
 |---|---|---|---|---|

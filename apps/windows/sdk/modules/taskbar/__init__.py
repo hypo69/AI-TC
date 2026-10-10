@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Modules Taskbar - Init
+# Process Name: AI-Windows-Admin Apps Windows Modules Taskbar - Init
 # =============================================================================
 # Description:
 #   Инициализация пакета управления панелью задач и окнами Windows.
@@ -10,11 +10,11 @@
 #     from apps.windows.sdk.modules.taskbar import TaskbarController, init_router
 #
 # File: __init__.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.taskbar
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-06 18:00:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

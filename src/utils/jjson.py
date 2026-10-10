@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard UTILS - Jjson Module
+# Process Name: AI-Windows-Admin UTILS - Jjson Module
 # =============================================================================
 # Description:
 #   Модуль сериализации и десериализации данных JSON/CSV (`jjson`).
@@ -14,11 +14,11 @@
 #     j_dumps(data, 'config.json')
 #
 # File: jjson.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: src.utils
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 11:30:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

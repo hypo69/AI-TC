@@ -1,4 +1,4 @@
-# AI Breadboard — Полная документация проекта
+# AI Windows Admin — Полная документация проекта
 
 > Интерактивный стенд для исследования, тестирования и сравнения языковых моделей ИИ.
 
@@ -52,7 +52,7 @@ docs/ru/
 
 ## 📚 Учебная книга
 
-Практическое руководство по работе со стендом AI Breadboard:
+Практическое руководство по работе со стендом AI Windows Admin:
 
 | # | Глава |
 |---|-------|
@@ -90,7 +90,7 @@ docs/ru/
 
 ## 🔗 Ссылки
 
-- **GitHub:** https://github.com/hypo69/AI-Breadboard
-- **Issues:** https://github.com/hypo69/AI-Breadboard/issues
+- **GitHub:** https://github.com/hypo69/AI-Windows-Admin
+- **Issues:** https://github.com/hypo69/AI-Windows-Admin/issues
 - **Автор:** hypo69@yandex.com
 - **Лицензия:** MIT © 2026 hypo69

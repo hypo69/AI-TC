@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Scripts Dev - Export Pdf
+# Process Name: AI-Windows-Admin Scripts Dev - Export Pdf
 # =============================================================================
 # Description:
 #   Export codebase and documentation to PDF.
@@ -14,11 +14,11 @@
 #     res = main()
 #
 # File: export_pdf.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: scripts.dev
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:27:07
+# Updated: 2026-10-10 22:22:30
 # =============================================================================
 
 from __future__ import annotations
@@ -53,18 +53,18 @@ def main(args_list: list[str] | None=None) -> int:
         logger.info(f'Generating documentation PDF: {docs_pdf}...')
         ok_docs = PDFUtils.build_docs_pdf(root_dir=root_dir, output_file=docs_pdf)
         if ok_docs:
-            print(f'✅ Saved documentation PDF: {docs_pdf}')
+            logger.console(f'✅ Saved documentation PDF: {docs_pdf}')
         else:
-            print(f'❌ Failed to generate documentation PDF')
+            logger.console(f'❌ Failed to generate documentation PDF')
             success = False
     if args.target in ('all', 'code'):
         code_pdf = output_dir / 'code.pdf'
         logger.info(f'Generating source code PDF: {code_pdf}...')
         ok_code = PDFUtils.build_code_pdf(root_dir=root_dir, output_file=code_pdf, excludes=args.exclude)
         if ok_code:
-            print(f'✅ Saved source code PDF: {code_pdf}')
+            logger.console(f'✅ Saved source code PDF: {code_pdf}')
         else:
-            print(f'❌ Failed to generate source code PDF')
+            logger.console(f'❌ Failed to generate source code PDF')
             success = False
     return 0 if success else 1
 if __name__ == '__main__':

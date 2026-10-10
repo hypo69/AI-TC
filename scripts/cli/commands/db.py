@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Scripts Cli Commands - Db
+# Process Name: AI-Windows-Admin Scripts Cli Commands - Db
 # =============================================================================
 # Description:
 #   Команды управления миграциями базы данных SQLite (db).
@@ -12,14 +12,15 @@
 #     res = register_db_parser()
 #
 # File: db.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: scripts.cli.commands
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:27:07
+# Updated: 2026-10-10 22:22:44
 # =============================================================================
 
 from __future__ import annotations
+from logger import logger
 """Команды управления миграциями базы данных SQLite (db)."""
 
 import argparse
@@ -44,23 +45,23 @@ def run_db_command(args: argparse.Namespace) -> int:
     sub = args.subcommand
     if sub == 'status':
         status = mgr.get_status()
-        print('\n--- DATABASE MIGRATION STATUS ---')
+        logger.console('\n--- DATABASE MIGRATION STATUS ---')
         for db_name, info in status.items():
-            print(f"[{db_name}] Up-to-date: {info['is_up_to_date']} | Applied: {info['applied_count']} | Pending: {info['pending_count']}")
+            logger.console(f"[{db_name}] Up-to-date: {info['is_up_to_date']} | Applied: {info['applied_count']} | Pending: {info['pending_count']}")
             if info['pending_migrations']:
-                print(f"  Pending: {', '.join(info['pending_migrations'])}")
-        print('---------------------------------\n')
+                logger.console(f"  Pending: {', '.join(info['pending_migrations'])}")
+        logger.console('---------------------------------\n')
         return 0
     if sub == 'migrate':
-        print('Applying pending database migrations...')
+        logger.console('Applying pending database migrations...')
         result = mgr.apply_all_pending()
         for db_name, res in result['databases'].items():
             status_tag = '[OK]' if res['success'] else '[ERROR]'
-            print(f"  {status_tag} {db_name}: {res['message']} ({res['applied_count']} applied)")
+            logger.console(f"  {status_tag} {db_name}: {res['message']} ({res['applied_count']} applied)")
         return 0 if result['success'] else 1
     if sub == 'create':
         path = mgr.create_migration(args.db, args.name, is_python=getattr(args, 'py', False))
-        print(f'Created migration file: {path}')
+        logger.console(f'Created migration file: {path}')
         return 0
-    print(f'Unknown db subcommand: {sub}')
+    logger.console(f'Unknown db subcommand: {sub}')
     return 1

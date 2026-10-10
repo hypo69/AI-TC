@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Modules Event_Logs Core - Manager
+# Process Name: AI-Windows-Admin Apps Windows Modules Event_Logs Core - Manager
 # =============================================================================
 # Description:
 #   Менеджер каналов и записей Windows Event Log с интеграцией Log Intelligence.
@@ -14,11 +14,11 @@
 #     intel = manager.process_intelligence(channel='System', hours=24)
 #
 # File: manager.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.event_logs.core
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-06 17:30:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

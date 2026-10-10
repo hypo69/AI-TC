@@ -9,8 +9,8 @@
 
 ```powershell
 # Clone the repository
-git clone https://github.com/hypo69/ai-breadboard.git
-cd ai-breadboard
+git clone https://github.com/hypo69/ai-windows-admin.git
+cd ai-windows-admin
 
 # Install dependencies
 .\install.ps1

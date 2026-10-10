@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard UTILS - Url Module
+# Process Name: AI-Windows-Admin UTILS - Url Module
 # =============================================================================
 # Description:
 #   Extraction of query parameters from URL string.
@@ -15,15 +15,16 @@
 #     print(res)
 #
 # File: url.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: src.utils
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:13:56
+# Updated: 2026-10-10 22:22:30
 # =============================================================================
 
 """Extraction of query parameters from URL string."""
 
+from logger import logger
 from urllib.parse import urlparse, parse_qs
 try:
     import validators
@@ -88,17 +89,17 @@ if __name__ == '__main__':
     if is_url(url):
         params = extract_url_params(url)
         if params:
-            print('URL Parameters:')
+            logger.console('URL Parameters:')
             for key, value in params.items():
-                print(f'{key}: {value}')
+                logger.console(f'{key}: {value}')
         else:
-            print('URL does not contain parameters.')
+            logger.console('URL does not contain parameters.')
         shorten = input('Would you like to shorten this URL? (y/n): ').strip().lower()
         if shorten == 'y':
             short_url = url_shortener(url)
             if short_url:
-                print(f'Shortened URL: {short_url}')
+                logger.console(f'Shortened URL: {short_url}')
             else:
-                print('Error shortening URL.')
+                logger.console('Error shortening URL.')
     else:
-        print('Entered string is not a valid URL.')
+        logger.console('Entered string is not a valid URL.')

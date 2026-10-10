@@ -1,3 +1,4 @@
+from logger import logger
 import os
 from pathlib import Path
 EXCLUDED_DIRS = {'.git', '.pytest_cache', '.vs', '__pycache__', 'venv', 'htmlcov', 'site', 'node_modules', '.venv'}
@@ -24,6 +25,6 @@ def get_files_to_index(project_root: Path=None):
     return files_to_index
 if __name__ == '__main__':
     files = get_files_to_index()
-    print(f'Всего файлов к индексации: {len(files)}')
+    logger.console(f'Всего файлов к индексации: {len(files)}')
     for f in files:
-        print(f)
+        logger.console(f)

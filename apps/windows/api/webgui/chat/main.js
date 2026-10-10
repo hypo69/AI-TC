@@ -10,11 +10,11 @@
  *     <script src="/windows/api/webgui/chat/main.js?v=20261001_v1" type="module"></script>
  *
  * File: main.js
- * Project: ai-breadboard
+ * Project: ai-windows-admin
  * Package: windows/api/webgui/chat
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-01 13:04:40
+ * Updated: 2026-10-10 17:35:00
  * =============================================================================
  */
 
@@ -22,10 +22,10 @@
 
 import { cachedApiFetch, clearCacheByTag } from '../js/api-cache.js';
 
-const STORAGE_KEY_SESSIONS = 'breadboard_chat_sessions_v2';
-const STORAGE_KEY_ACTIVE_SESSION_ID = 'breadboard_active_session_id';
-const STORAGE_KEY_SIDEBAR_COLLAPSED = 'breadboard_chat_sidebar_collapsed';
-const LEGACY_STORAGE_KEY = 'breadboard_chat_history';
+const STORAGE_KEY_SESSIONS = 'ai_windows_admin_chat_sessions_v2';
+const STORAGE_KEY_ACTIVE_SESSION_ID = 'ai_windows_admin_active_session_id';
+const STORAGE_KEY_SIDEBAR_COLLAPSED = 'ai_windows_admin_chat_sidebar_collapsed';
+const LEGACY_STORAGE_KEY = 'ai_windows_admin_chat_history';
 const CACHE_TAG = 'chat';
 
 let sessions = [];
@@ -679,10 +679,10 @@ function initChatTab() {
 
   // Check for pending external chat payload (from Chrome extension or URL parameters)
   try {
-    const pending = sessionStorage.getItem('pending_breadboard_chat');
+    const pending = sessionStorage.getItem('pending_ai_windows_admin_chat');
     if (pending) {
       const payload = JSON.parse(pending);
-      sessionStorage.removeItem('pending_breadboard_chat');
+      sessionStorage.removeItem('pending_ai_windows_admin_chat');
       setTimeout(() => handleExternalChatPrompt(payload), 300);
     } else {
       const urlParams = new URLSearchParams(window.location.search);
@@ -765,7 +765,7 @@ if (typeof window !== 'undefined') {
 
   if (typeof chrome !== 'undefined' && chrome.runtime?.onMessage) {
     chrome.runtime.onMessage.addListener((msg) => {
-      if (msg && msg.action === 'breadboard_external_chat_prompt') {
+      if (msg && msg.action === 'ai_windows_admin_external_chat_prompt') {
         handleExternalChatPrompt(msg);
       }
     });

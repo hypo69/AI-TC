@@ -1,1 +1,0 @@
-Get-Printer -ErrorAction SilentlyContinue | Select-Object Name, Type, DriverName, PortName, Shared, Default | ConvertTo-Json

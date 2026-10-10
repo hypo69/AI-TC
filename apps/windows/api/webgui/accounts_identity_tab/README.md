@@ -1,4 +1,4 @@
-# Accounts & Identity WebGUI Tab (AI Breadboard)
+# Accounts & Identity WebGUI Tab (AI Windows Admin)
 
 ## Описание
 Вкладка **Управление пользователями и Windows Identity** для веб-интерфейса `tc.ps1` (Test Computer / Apps Hub).

@@ -13,11 +13,11 @@
  *     import { setupGlobalApi, setupThemeAndLang } from '/windows/api/webgui/apps/modules/init-interface.js';
  *
  * File: init-interface.js
- * Project: ai-breadboard
+ * Project: ai-windows-admin
  * Package: windows/api/webgui/apps/modules
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-06 22:15:00
+ * Updated: 2026-10-10 17:35:00
  * =============================================================================
  */
 

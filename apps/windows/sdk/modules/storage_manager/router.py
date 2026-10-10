@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Modules Storage_Manager - Router
+# Process Name: AI-Windows-Admin Apps Windows Modules Storage_Manager - Router
 # =============================================================================
 # Description:
 #   FastAPI роутер управления физическими дисками, томами, клонированием и бенчмарком DiskSpd.
@@ -12,11 +12,11 @@
 #     router = init_router()
 #
 # File: router.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.storage_manager
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-04 08:16:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

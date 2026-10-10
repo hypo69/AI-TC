@@ -10,15 +10,15 @@
  *     <script src="/windows/api/webgui/skills_tab/main.js?v=20261001_v1" type="module"></script>
  *
  * File: main.js
- * Project: ai-breadboard
+ * Project: ai-windows-admin
  * Package: windows/api/webgui/skills_tab
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-01 13:04:40
+ * Updated: 2026-10-10 17:35:00
  * =============================================================================
  */
 
-// Skills Tab Logic for AI Breadboard Admin Interface
+// Skills Tab Logic for AI Windows Admin Admin Interface
 // Supports 3 Creation Modes (Step-by-Step Wizard, AI Assistant, Presets Library) and Live Sandbox Testing
 
 class SkillsTabManager {
@@ -69,7 +69,7 @@ class SkillsTabManager {
         protocol: '1. Parse endpoint parameters and auth tokens.\n2. Send HTTP request with exponential retry.\n3. Parse JSON response and summarize.',
         rules: '- Protect sensitive secrets and auth tokens.\n- Handle rate limits and connection timeouts gracefully.',
         hasScript: true,
-        scriptCode: `# -*- coding: utf-8 -*-\n"""REST API client script."""\nimport os, urllib.request, json\n\ndef query_api(url: str):\n    req = urllib.request.Request(url, headers={"User-Agent": "AI-Breadboard/1.0"})\n    with urllib.request.urlopen(req, timeout=10) as resp:\n        return json.loads(resp.read().decode("utf-8"))\n`,
+        scriptCode: `# -*- coding: utf-8 -*-\n"""REST API client script."""\nimport os, urllib.request, json\n\ndef query_api(url: str):\n    req = urllib.request.Request(url, headers={"User-Agent": "AI-Windows-Admin/1.0"})\n    with urllib.request.urlopen(req, timeout=10) as resp:\n        return json.loads(resp.read().decode("utf-8"))\n`,
         hasRef: true,
         refContent: `# REST API Protocol Guidelines\n\n- Standard timeout: 10s\n- Required headers: User-Agent, Accept\n`,
       },

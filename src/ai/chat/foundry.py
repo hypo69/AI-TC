@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard AI - Foundry Module
+# Process Name: AI-Windows-Admin AI - Foundry Module
 # =============================================================================
 # Description:
 #   Модуль основной системы (`foundry`).
@@ -10,11 +10,11 @@
 #     import src.ai.chat.foundry as foundry
 #
 # File: foundry.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: src.ai.chat
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:13:56
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 """Модуль основной системы (`foundry`)."""

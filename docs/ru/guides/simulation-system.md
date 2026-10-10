@@ -23,7 +23,7 @@
 
 Главная проблема обычной генерации — **потеря контекста при повторных вопросах**. Если пользователь спустя время спросит: *«Какой номер договора был у Петрова?»* или *«Какая там сумма?»*, система без сквозной памяти может выдать противоречивые данные.
 
-### Решение в AI Breadboard:
+### Решение в AI Windows Admin:
 1. **Синтетический генератор** формирует детерминированные реквизиты (номера, суммы, даты, стороны).
 2. **Дефолтная модель** (Gemini / Foundry / Ollama) обогащает ответ экспертными комментариями и советами для менеджера.
 3. **Client RAG** немедленно индексирует сгенерированную пару (запрос + ответ) в изолированное векторное хранилище конкретного `user_id`.
@@ -75,16 +75,16 @@ flowchart TD
 
 ## Ключевые компоненты
 
-Подсистема расположена в пакете [`src/ai/simulation/`](file:///c:/Users/onela/AppData/Local/AI-Breadboard/src/ai/simulation/):
+Подсистема расположена в пакете [`src/ai/simulation/`](file:///c:/Users/onela/AppData/Local/AI-Windows-Admin/src/ai/simulation/):
 
 | Модуль | Описание |
 |---|---|
-| [`models.py`](file:///c:/Users/onela/AppData/Local/AI-Breadboard/src/ai/simulation/models.py) | Pydantic и Dataclass модели: `SimulationRequest`, `SimulationResult`, `EntityType`. |
-| [`base_generator.py`](file:///c:/Users/onela/AppData/Local/AI-Breadboard/src/ai/simulation/base_generator.py) | Абстрактный интерфейс `BaseSimulationGenerator` (`entity_type`, `can_handle`, `generate`). |
-| [`generators/contract_generator.py`](file:///c:/Users/onela/AppData/Local/AI-Breadboard/src/ai/simulation/generators/contract_generator.py) | Генератор договоров: извлечение имени/контрагента, генерация номеров, сумм, дат и условий. |
-| [`generators/generic_generator.py`](file:///c:/Users/onela/AppData/Local/AI-Breadboard/src/ai/simulation/generators/generic_generator.py) | Универсальный генератор-fallback для любых кастомных сущностей. |
-| [`llm_enricher.py`](file:///c:/Users/onela/AppData/Local/AI-Breadboard/src/ai/simulation/llm_enricher.py) | Адаптер подключения дефолтных языковых моделей для обогащения ответов. |
-| [`engine.py`](file:///c:/Users/onela/AppData/Local/AI-Breadboard/src/ai/simulation/engine.py) | Главный координатор `SimulationEngine`: маршрутизация, вызов генераторов, LLM и сохранение в RAG. |
+| [`models.py`](file:///c:/Users/onela/AppData/Local/AI-Windows-Admin/src/ai/simulation/models.py) | Pydantic и Dataclass модели: `SimulationRequest`, `SimulationResult`, `EntityType`. |
+| [`base_generator.py`](file:///c:/Users/onela/AppData/Local/AI-Windows-Admin/src/ai/simulation/base_generator.py) | Абстрактный интерфейс `BaseSimulationGenerator` (`entity_type`, `can_handle`, `generate`). |
+| [`generators/contract_generator.py`](file:///c:/Users/onela/AppData/Local/AI-Windows-Admin/src/ai/simulation/generators/contract_generator.py) | Генератор договоров: извлечение имени/контрагента, генерация номеров, сумм, дат и условий. |
+| [`generators/generic_generator.py`](file:///c:/Users/onela/AppData/Local/AI-Windows-Admin/src/ai/simulation/generators/generic_generator.py) | Универсальный генератор-fallback для любых кастомных сущностей. |
+| [`llm_enricher.py`](file:///c:/Users/onela/AppData/Local/AI-Windows-Admin/src/ai/simulation/llm_enricher.py) | Адаптер подключения дефолтных языковых моделей для обогащения ответов. |
+| [`engine.py`](file:///c:/Users/onela/AppData/Local/AI-Windows-Admin/src/ai/simulation/engine.py) | Главный координатор `SimulationEngine`: маршрутизация, вызов генераторов, LLM и сохранение в RAG. |
 
 ---
 
@@ -209,7 +209,7 @@ engine.llm_model = default_chat_model
 
 ## Тестирование и валидация
 
-Пакет полностью покрыт юнит-тестами в [`tests/test_simulation.py`](file:///c:/Users/onela/AppData/Local/AI-Breadboard/tests/test_simulation.py).
+Пакет полностью покрыт юнит-тестами в [`tests/test_simulation.py`](file:///c:/Users/onela/AppData/Local/AI-Windows-Admin/tests/test_simulation.py).
 
 Запуск тестов:
 ```powershell

@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Logger - Logger
+# Process Name: AI-Windows-Admin Logger - Logger
 # =============================================================================
 # Description:
-#   Централизованный модульный логгер платформы AI-Breadboard.
+#   Централизованный модульный логгер платформы AI-Windows-Admin.
 #   Поддерживает цветной консольный вывод, JSON-форматирование, компрессию повторяющихся
 #   строк, ротацию файлов и автоматическую маршрутизацию логов по независимым
 #   подсистемам (windows, telemetry, wikillm, ai, rag, skills, apps, fastapi и др.).
@@ -17,11 +17,11 @@
 #     win_log.info("Событие подсистемы Windows")
 #
 # File: logger.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: logger
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 12:32:00
+# Updated: 2026-10-10 21:51:00
 # =============================================================================
 
 from __future__ import annotations
@@ -111,7 +111,6 @@ SUBSYSTEM_ROUTING_MAP: List[Tuple[Tuple[str, ...], str]] = [
     (('src/ai', 'src\\ai', 'unified_chat', 'model_manager'), 'ai.log'),
 
     # 4. Автономные приложения (apps/*)
-    (('apps/trading_terminal', 'apps\\trading_terminal', 'trading'), 'trading.log'),
     (('apps/helpdesk', 'apps\\helpdesk'), 'helpdesk.log'),
     (('apps/enterprise_knowledge', 'apps\\enterprise_knowledge'), 'enterprise_knowledge.log'),
     (('apps/cloudflared_monitor', 'apps\\cloudflared_monitor'), 'cloudflared.log'),
@@ -153,7 +152,6 @@ SUBSYSTEM_ALIASES: Dict[str, str] = {
     'rag': 'rag.log',
     'skills': 'skills.log',
     # Автономные приложения
-    'trading': 'trading.log',
     'helpdesk': 'helpdesk.log',
     'enterprise_knowledge': 'enterprise_knowledge.log',
     'cloudflared': 'cloudflared.log',
@@ -262,7 +260,7 @@ class PrettyConsoleFormatter(logging.Formatter):
 
 
 class Logger(metaclass=SingletonMeta):
-    """Универсальный модульный логгер AI-Breadboard.
+    """Универсальный модульный логгер AI-Windows-Admin.
 
     Обеспечивает цветной консольный вывод, JSON-журналирование и автоматическую
     маршрутизацию в отдельные файлы подсистем с ротацией.
@@ -278,13 +276,13 @@ class Logger(metaclass=SingletonMeta):
         self._lock = threading.Lock()
         self._module_loggers: Dict[str, logging.Logger] = {}
 
-        env_dir = os.environ.get('AI_BREADBOARD_LOGS_DIR') or os.environ.get('LOG_DIR')
+        env_dir = os.environ.get('AI_WINDOWS_ADMIN_LOGS_DIR') or os.environ.get('LOG_DIR')
         if env_dir:
             self.log_files_path = Path(env_dir)
         else:
             appdata = os.environ.get('APPDATA') or os.environ.get('LOCALAPPDATA')
             base_dir = Path(appdata) if appdata and os.path.exists(appdata) else Path.home() / '.config'
-            self.log_files_path = base_dir / 'AI-Breadboard' / 'logs'
+            self.log_files_path = base_dir / 'AI-Windows-Admin' / 'logs'
 
         self.info_log_path: Path = self.log_files_path / (info_log_path or 'info.log')
         self.debug_log_path: Path = self.log_files_path / (debug_log_path or 'debug.log')
@@ -615,6 +613,50 @@ class Logger(metaclass=SingletonMeta):
         color = (text_color, bg_color)
         self.log(logging.CRITICAL, message, ex, exc_info, color)
 
+    def console(
+        self,
+        message: Any = '',
+        *args: Any,
+        sep: str = ' ',
+        ex: Optional[Exception] = None,
+        exc_info: bool = False,
+        text_color: str = '',
+        bg_color: str = '',
+        level: int = logging.INFO,
+    ) -> None:
+        """Выводит сообщение исключительно в консоль без записи в файлы логов.
+
+        Args:
+            message (Any): Первое сообщение или объект для вывода.
+            *args (Any): Дополнительные позиционные аргументы.
+            sep (str): Разделитель для нескольких аргументов (по умолчанию пробел).
+            ex (Optional[Exception]): Объект исключения (если есть).
+            exc_info (bool): Флаг включения трассировки стека исключения.
+            text_color (str): Цвет текста (из TEXT_COLORS). По умолчанию без изменения цвета.
+            bg_color (str): Цвет фона (из BG_COLORS). По умолчанию без фона.
+            level (int): Уровень логирования (по умолчанию logging.INFO).
+        """
+        if level == logging.DEBUG and (not self.is_debug_mode):
+            return
+
+        if args:
+            all_parts = [message] + list(args)
+            from src.utils.printer import pformat
+            formatted_parts = [pformat(p) if isinstance(p, (dict, list, tuple, set)) else str(p) for p in all_parts]
+            combined_message = sep.join(formatted_parts)
+        else:
+            combined_message = message
+
+        color = (text_color, bg_color) if (text_color or bg_color) else None
+        colored_message = self._format_message(combined_message, ex, color)
+        if self.logger_console:
+            try:
+                self.logger_console.log(level, colored_message, exc_info=exc_info)
+            except Exception:
+                pass
+
+
+
     def get_uvicorn_log_config(self, log_filename: str = 'fastapi.log') -> Dict[str, Any]:
         """Возвращает конфигурацию логирования uvicorn с временными метками и записью в файл.
 
@@ -638,13 +680,13 @@ def get_uvicorn_log_config(log_filename: str = 'fastapi.log') -> Dict[str, Any]:
     """
     try:
         import uvicorn.config
-        env_dir = os.environ.get('AI_BREADBOARD_LOGS_DIR') or os.environ.get('LOG_DIR')
+        env_dir = os.environ.get('AI_WINDOWS_ADMIN_LOGS_DIR') or os.environ.get('LOG_DIR')
         if env_dir:
             logs_dir = Path(env_dir)
         else:
             appdata = os.environ.get('APPDATA') or os.environ.get('LOCALAPPDATA')
             base_dir = Path(appdata) if appdata and os.path.exists(appdata) else Path.home() / '.config'
-            logs_dir = base_dir / 'AI-Breadboard' / 'logs'
+            logs_dir = base_dir / 'AI-Windows-Admin' / 'logs'
 
         logs_dir.mkdir(parents=True, exist_ok=True)
         target_path = str(logs_dir / log_filename)

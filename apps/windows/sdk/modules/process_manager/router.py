@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Modules Process_Manager - Router
+# Process Name: AI-Windows-Admin Apps Windows Modules Process_Manager - Router
 # =============================================================================
 # Description:
 #   FastAPI роутер управления процессами Windows, категоризации (Apps,
@@ -13,11 +13,11 @@
 #     router = init_router()
 #
 # File: router.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.process_manager
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-08 02:08:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

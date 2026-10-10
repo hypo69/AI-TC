@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Modules Startup - Router
+# Process Name: AI-Windows-Admin Apps Windows Modules Startup - Router
 # =============================================================================
 # Description:
 #   FastAPI роутер для аудита и управления автозагрузкой Windows.
@@ -12,11 +12,11 @@
 #     res = init_router()
 #
 # File: router.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.startup
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 12:48:00
+# Updated: 2026-10-10 22:29:02
 # =============================================================================
 
 from __future__ import annotations
@@ -198,18 +198,6 @@ def init_router() -> APIRouter:
             s_lower = search.lower()
             entries = [e for e in entries if s_lower in e.name.lower() or s_lower in e.command.lower() or (e.file_path and s_lower in e.file_path.lower())]
         return entries
-        if category:
-            entries = [e for e in entries if category.lower() in (e.category.value if hasattr(e.category, 'value') else str(e.category)).lower()]
-        if risk_level:
-            entries = [e for e in entries if risk_level.lower() == (e.risk_level.value if hasattr(e.risk_level, 'value') else str(e.risk_level)).lower()]
-        if location_type:
-            entries = [e for e in entries if location_type.lower() == (e.location_type.value if hasattr(e.location_type, 'value') else str(e.location_type)).lower()]
-        if enabled_only is not None:
-            entries = [e for e in entries if e.is_enabled == enabled_only]
-        if search:
-            q = search.lower()
-            entries = [e for e in entries if q in e.name.lower() or q in e.command.lower() or q in e.executable_path.lower() or (q in e.publisher.lower())]
-        return entries
 
     @router.post('/explain', response_model=StartupExplainResponse)
     async def explain_startup_entry(req: StartupExplainRequest) -> StartupExplainResponse:
@@ -302,7 +290,7 @@ def _generate_heuristic_explanation(req: StartupExplainRequest) -> StartupExplai
     if 'msedge' in name_lower or 'edge' in name_lower:
         return StartupExplainResponse(summary='Microsoft Edge AutoLaunch — фоновый процесс ускорения запуска и обновления браузера Microsoft Edge.', developer='Microsoft Corporation', category='Браузер / Фоновый агент', security_verdict='Официальный доверенный компонент операционной системы Windows.', boot_impact_analysis='Низкое/Среднее — резервирует память под предварительный запуск.', startup_recommendation='Можно безопасно отключить для минимизации фоновых процессов при входе в систему.', action_steps=['Отключите автозапуск, если открываете браузер вручную.'])
     if 'ollama' in name_lower or 'ollama' in path_lower:
-        return StartupExplainResponse(summary='Ollama — локальный сервер и среда выполнения больших языковых моделей (LLM) с REST API на порту 11434.', developer='Ollama / Community', category='AI Runtime / Сервер LLM', security_verdict='Безопасный инструмент разработки и запуска локальных нейросетей.', boot_impact_analysis='Среднее — запускает локальный HTTP-демон в фоновом режиме.', startup_recommendation='Оставить включенным, если вы используете AI Breadboard или локальные модели постоянно.', action_steps=['Оставьте активным для постоянной готовности AI-сервисов.', 'Отключите, если запускаете модели только время от времени.'])
+        return StartupExplainResponse(summary='Ollama — локальный сервер и среда выполнения больших языковых моделей (LLM) с REST API на порту 11434.', developer='Ollama / Community', category='AI Runtime / Сервер LLM', security_verdict='Безопасный инструмент разработки и запуска локальных нейросетей.', boot_impact_analysis='Среднее — запускает локальный HTTP-демон в фоновом режиме.', startup_recommendation='Оставить включенным, если вы используете AI Windows Admin или локальные модели постоянно.', action_steps=['Оставьте активным для постоянной готовности AI-сервисов.', 'Отключите, если запускаете модели только время от времени.'])
     if 'lm studio' in name_lower or 'lm studio' in path_lower:
         return StartupExplainResponse(summary='LM Studio — графическая среда и локальный инференс-сервер для моделей GGUF и MLX.', developer='LM Studio Community', category='AI Runtime', security_verdict='Доверенная локальная среда для работы с открытыми моделями.', boot_impact_analysis='Среднее — стартует фоновый сервис моделирования.', startup_recommendation='Оставить включенным при постоянной работе с моделями или отключить для экономии системных ресурсов.', action_steps=['Управляйте состоянием в зависимости от регулярности использования LM Studio.'])
     if 'qbittorrent' in name_lower or 'torrent' in name_lower:

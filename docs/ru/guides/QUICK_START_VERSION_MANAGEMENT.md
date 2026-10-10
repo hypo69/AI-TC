@@ -17,7 +17,7 @@ python main.py
 
 **Windows:**
 ```
-C:\Users\<username>\AppData\Local\Temp\ai-breadboard\
+C:\Users\<username>\AppData\Local\Temp\ai-windows-admin\
 ├── logs/        (логи приложения)
 ├── backups/     (резервные копии)
 └── updates/     (история обновлений)
@@ -25,7 +25,7 @@ C:\Users\<username>\AppData\Local\Temp\ai-breadboard\
 
 **Linux:**
 ```
-/tmp/ai-breadboard/
+/tmp/ai-windows-admin/
 ├── logs/        (логи приложения)
 ├── backups/     (резервные копии)
 └── updates/     (история обновлений)
@@ -33,7 +33,7 @@ C:\Users\<username>\AppData\Local\Temp\ai-breadboard\
 
 **macOS:**
 ```
-/var/folders/XX/XXX...XXX/T/ai-breadboard/
+/var/folders/XX/XXX...XXX/T/ai-windows-admin/
 ├── logs/        (логи приложения)
 ├── backups/     (резервные копии)
 └── updates/     (история обновлений)
@@ -138,7 +138,7 @@ from core.version_manager import get_version_manager
 vm = get_version_manager()
 
 # Получить list резервных копий
-backup_dir = Path.home() / '.../ai-breadboard/backups'
+backup_dir = Path.home() / '.../ai-windows-admin/backups'
 backups = list(backup_dir.iterdir())
 
 if backups:
@@ -191,7 +191,7 @@ asyncio.run(check_and_update())
 1. Создать bat файл `update_app.bat`:
 ```batch
 @echo off
-cd C:\path\to\ai-breadboard
+cd C:\path\to\ai-windows-admin
 set AUTO_UPDATE=true
 python main.py --check-update
 ```
@@ -200,7 +200,7 @@ python main.py --check-update
 ```powershell
 $trigger = New-ScheduledTaskTrigger -AtStartup
 $action = New-ScheduledTaskAction -Execute "C:\path\to\update_app.bat"
-Register-ScheduledTask -TaskName "AI-Breadboard-Update" -Trigger $trigger -Action $action -RunLevel Highest
+Register-ScheduledTask -TaskName "AI-Windows-Admin-Update" -Trigger $trigger -Action $action -RunLevel Highest
 ```
 
 ### Linux/macOS Cron
@@ -208,7 +208,7 @@ Register-ScheduledTask -TaskName "AI-Breadboard-Update" -Trigger $trigger -Actio
 Добавить в crontab:
 ```bash
 # Проверять обновления каждый день в 3:00 AM
-0 3 * * * cd /path/to/ai-breadboard && AUTO_UPDATE=true python main.py --check-update >> /var/log/ai-breadboard-update.log 2>&1
+0 3 * * * cd /path/to/ai-windows-admin && AUTO_UPDATE=true python main.py --check-update >> /var/log/ai-windows-admin-update.log 2>&1
 ```
 
 ### Docker
@@ -236,10 +236,10 @@ Error: Permission denied when writing to backup directory
 **Решение:** Проверить права доступа к системной temp папке:
 ```bash
 # Linux/macOS
-chmod 755 /tmp/ai-breadboard/
+chmod 755 /tmp/ai-windows-admin/
 
 # Windows (PowerShell as Admin)
-icacls "C:\Users\<user>\AppData\Local\Temp\ai-breadboard" /grant:r "$env:USERNAME`:(OI)(CI)F"
+icacls "C:\Users\<user>\AppData\Local\Temp\ai-windows-admin" /grant:r "$env:USERNAME`:(OI)(CI)F"
 ```
 
 ### Проблема: "Недостаточно дискового пространства"
@@ -311,15 +311,15 @@ backup_20260831_120530/
   "timestamp": "2026-08-31T12:05:30.123456",
   "from_version": "v1.0.0",
   "to_version": "v1.0.1",
-  "backup_path": "/tmp/ai-breadboard/backups/backup_20260831_120530",
+  "backup_path": "/tmp/ai-windows-admin/backups/backup_20260831_120530",
   "branch": "main",
   "status": "success"
 }
 ```
 
 Файлы находятся в:
-- Windows: `C:\Users\<user>\AppData\Local\Temp\ai-breadboard\updates\`
-- Linux: `/tmp/ai-breadboard/updates/`
+- Windows: `C:\Users\<user>\AppData\Local\Temp\ai-windows-admin\updates\`
+- Linux: `/tmp/ai-windows-admin/updates/`
 
 ## Мониторинг обновлений
 

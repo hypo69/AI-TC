@@ -8,6 +8,8 @@
 > **Языковой стандарт**: Вся документация, docstrings, комментарии к коду, сообщения коммитов и описания тестов **ДОЛЖНЫ** быть написаны строго на **русском языке**. (Имена переменных, функций и классов в коде остаются на английском языке в соответствии с PEP 8).
 > [!IMPORTANT]
 > **Фиксация времени изменения в шапке файла**: При любом изменении кода в файле в шапку файла **ОБЯЗАТЕЛЬНО** записывается/обновляется время изменения файла (`Updated: YYYY-MM-DD HH:MM:SS`).
+> [!IMPORTANT]
+> **Вывод сообщений в консоль**: Когда поступает запрос вывести сообщение — вывод **ОБЯЗАТЕЛЬНО** выполняется через `logger.console()` исключительно для вывода в консоль без записи в файл.
 > [!IMPORTANT] Нет обратной совместимости! Чем меньше кода – тем лучше.
 
 ---
@@ -15,15 +17,15 @@
 
 
 - **CODE TDD & Doc Standards**: [`.ai\instructions\standards`](.ai/instructions/knowledge/tdd_standards.md)
-- **Agent Skills:** `.skills/` (Directly contained in `.skills` directory)
+- **Agent Skills:** `.agents/skills/` (Directly contained in `.agents/skills` directory)
 
 ---
 
 
 
-## 💡 Концепция проекта (AI Breadboard)
+## 💡 Концепция проекта (AI Windows Admin)
 
-**Назначение:** Интерактивный «макет» (breadboard) для тестирования, бенчмаркинга и бесшовной маршрутизации между различными провайдерами и средами выполнения ИИ (Windows AI APIs, Microsoft Foundry Local, Windows ML / ONNX Runtime, Ollama, Google Gemini, OpenAI-совместимые API и HuggingFace).
+**Назначение:** Интерактивный «макет» (ai-windows-admin) для тестирования, бенчмаркинга и бесшовной маршрутизации между различными провайдерами и средами выполнения ИИ (Windows AI APIs, Microsoft Foundry Local, Windows ML / ONNX Runtime, Ollama, Google Gemini, OpenAI-совместимые API и HuggingFace).
 
 
 
@@ -71,7 +73,7 @@
 Для активации роли используйте команду: "Твоя роль <имя>".
 
 - **Техник:** [`.ai/instructions/roles/TECHNICIAN.md`](.ai/instructions/roles/TECHNICIAN.md)
-- **Персональный секретарь:** [`.ai/instructions/roles/SECRETARY.md`](.ai/instructions/roles/SECRETARY.md)
+- **Персональный секретарь:** [.ai/instructions/roles/SECRETARY.md](.ai/instructions/roles/SECRETARY.md)
 - **Администратор:** [`.ai/instructions/roles/ADMINISTRATOR.md`](.ai/instructions/roles/ADMINISTRATOR.md)
 
 
@@ -94,9 +96,6 @@ py manage_tools.py docs generate
 .\launchers\run_tests.ps1         # Полный запуск тестов
 pytest tests/ --cov                # Pytest с отчётом о покрытии
 ```
-
-> [!IMPORTANT]
-> **Исключение тестов**: Запрещено запускать тесты `TestTradingDeskEngineApp` (исключены в `pytest.ini` и помечены `@pytest.mark.skip`).
 
 ---
 
@@ -139,7 +138,7 @@ pytest tests/ --cov                # Pytest с отчётом о покрыти�
 - [ ] Заголовок файла соответствует стандарту (`FILE_HEADERS.md`): при любом изменении кода в шапку файла записано актуальное время изменения (`Updated: YYYY-MM-DD HH:MM:SS`)
 - [ ] Все docstrings, комментарии, логи и документация написаны на **русском языке**
 - [ ] Все публичные функции и классы содержат docstrings в формате `hypo69 docblock`
-- [ ] Логирование выполняется через `logger` (без прямых вызовов `print`)
+- [ ] Логирование выполняется через `logger` (без прямых вызовов `print`), а вывод сообщений в консоль без записи в файл — через `logger.console()`
 - [ ] Все секреты и ключи вынесены в `.env`
 - [ ] Новые приложения в `/apps` зарегистрированы в общем сервере (`src/app/__init__.py`) и меню администратора (`index.html`, `main.js`) (CODE_RULES.md § 4.5)
 - [ ] При изменениях фронтенда (HTML/CSS/JS/JSON) обновлена версия ассетов `?v=YYYYMMDD_vN` и обеспечен cache-busting для предотвращения показа кешированных данных
@@ -158,6 +157,6 @@ pytest tests/ --cov                # Pytest с отчётом о покрыти�
 ---
 
 **Status:** ✅ Active (Русский стандарт)  
-**Version:** 3.2  
-**Updated:** 2026-10-10 04:54:00
+**Version:** 3.3  
+**Updated:** 2026-10-10 22:21:00
 **Author:** hypo69

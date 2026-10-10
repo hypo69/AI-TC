@@ -98,8 +98,6 @@ async def afc_example():
 - `core.py` — Базовый клиент (`GoogleGenerativeAICore`), управление ключами, клиентом `genai.Client` и ротацией моделей.
 - `config.py` — Миксин конфигурации (`GoogleGenerativeAIConfigMixin`), построение `GenerateContentConfig`, нормализация текста и параметры AFC.
 - `api.py` — Главный агрегирующий класс `GoogleGenerativeAI`, объединяющий методы `ask`, `chat`, `chat_stream`, `ask_with_tools`.
-- `api_single.py` — Методы одиночных текстовых запросов (`ask`).
-- `api_chat.py` — Методы диалогового чата и стриминга (`chat`, `chat_stream`).
 - `history.py` — Управление историей диалогов и восстановление сессий.
 - `images.py` — Мультимодальные запросы и обработка изображений.
 - `embeddings.py` — Генерация векторных представлений текста.

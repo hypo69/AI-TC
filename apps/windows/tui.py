@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows - Tui
+# Process Name: AI-Windows-Admin Apps Windows - Tui
 # =============================================================================
 # Description:
 #   Интерактивный TUI интерфейс для Windows AI Diagnostic Center.
@@ -14,14 +14,15 @@
 #     service = SystemInspectorState()
 #
 # File: tui.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:28:28
+# Updated: 2026-10-10 22:22:44
 # =============================================================================
 
 from __future__ import annotations
+from logger import logger
 """Интерактивный TUI интерфейс для Windows AI Diagnostic Center."""
 
 import sys
@@ -53,9 +54,9 @@ def render_dashboard(report: FullAuditReport, console: Console) -> None:
     score = report.health_score.score
     color = 'green' if score >= 85 else 'yellow' if score >= 60 else 'red'
     header_text = Text(' AI WINDOWS DIAGNOSTIC & ADMINISTRATION CENTER ', style='bold white on blue')
-    console.print(Panel(header_text, style='blue', expand=True))
+    console.logger.console(Panel(header_text, style='blue', expand=True))
     health_panel = Panel(f'[bold {color}]Индекс здоровья: {score}/100 ({report.health_score.status_label})[/]\nКритические проблемы: [red]{report.health_score.critical_count}[/] | Предупреждения: [yellow]{report.health_score.medium_count}[/] | Безопасные действия: [green]{report.health_score.low_count}[/]', title='[bold]System Health Score[/bold]', border_style=color)
-    console.print(health_panel)
+    console.logger.console(health_panel)
     table = Table(title='Результаты аудита 15 системных доменов', expand=True)
     table.add_column('Домен', style='cyan', ratio=2)
     table.add_column('Статус', justify='center', ratio=1)
@@ -70,14 +71,14 @@ def render_dashboard(report: FullAuditReport, console: Console) -> None:
         else:
             findings_text = '[dim]Аномалий не обнаружено[/dim]'
         table.add_row(d_res.title_ru, f'[{status_style}]{d_res.status.upper()}[/{status_style}]', findings_text)
-    console.print(table)
+    console.logger.console(table)
     footer = Panel('[bold cyan]Горячие клавиши:[/] [R] Обновить | [F] Полный аудит | [S] Безопасность | [P] Производительность | [Q] Выход', style='dim')
-    console.print(footer)
+    console.logger.console(footer)
 
 def run_tui() -> None:
     """Запуск интерактивного TUI цикла."""
     if Console is None:
-        print('Библиотека rich не установлена. Запустите: pip install rich')
+        logger.console('Библиотека rich не установлена. Запустите: pip install rich')
         sys.exit(1)
     console = Console()
     engine = RootCauseEngine()
@@ -94,10 +95,10 @@ async def run_log_dashboard(interval: float=2.0, channel: str='System', level: s
     level_display = level.capitalize() if level else 'Все'
     title_header = f'Windows Logs Monitor (Канал/Файл: {channel} | Уровень: {level_display})'
     if Console is None:
-        print(f'[System Log Center] {title_header}. Запуск базового цикла...')
+        logger.console(f'[System Log Center] {title_header}. Запуск базового цикла...')
         while True:
             events = discovery.read_source_events(channel, limit=limit, level=level, search=search, hours=hours)
-            print(f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Получено событий: {len(events)}")
+            logger.console(f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Получено событий: {len(events)}")
             await asyncio.sleep(interval)
     from rich.live import Live
     console = Console()
@@ -124,10 +125,10 @@ async def run_hardware_monitor_dashboard(interval: float=1.0) -> None:
     from apps.windows.hardware.hardware_monitor import HardwareMonitor
     monitor = HardwareMonitor()
     if Console is None:
-        print('[Hardware Monitor] Запуск базового монитора оборудования (Rich не обнаружен)...')
+        logger.console('[Hardware Monitor] Запуск базового монитора оборудования (Rich не обнаружен)...')
         while True:
             snap = monitor.get_snapshot(include_smart=False)
-            print(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] CPU: {snap.cpu.utilization_pct}% | RAM: {snap.memory.used_gb}/{snap.memory.total_gb} GB ({snap.memory.utilization_pct}%) | GPU: {len(snap.gpus)} шт | Диски: {len(snap.storage.partitions)} шт")
+            logger.console(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] CPU: {snap.cpu.utilization_pct}% | RAM: {snap.memory.used_gb}/{snap.memory.total_gb} GB ({snap.memory.utilization_pct}%) | GPU: {len(snap.gpus)} шт | Диски: {len(snap.storage.partitions)} шт")
             await asyncio.sleep(interval)
     from rich.live import Live
     from rich.columns import Columns
@@ -194,7 +195,7 @@ async def run_hardware_monitor_dashboard(interval: float=1.0) -> None:
             main_header = f'🎛️ Windows Hardware Monitor | Статус: [{status_color}]{status_text}[/{status_color}] | Время: {snap.timestamp[11:19]}'
             col1 = Columns([cpu_ram_table, gpu_table], expand=True)
             col2 = Columns([disk_table, io_table], expand=True)
-            main_panel = Panel(Text.from_markup(f'{main_header}\n\n') + Columns([col1, col2, sensor_table], expand=True), title='[bold blue]AI BREADBOARD HARDWARE CENTER[/bold blue]', border_style=status_color)
+            main_panel = Panel(Text.from_markup(f'{main_header}\n\n') + Columns([col1, col2, sensor_table], expand=True), title='[bold blue]AI AI_WINDOWS_ADMIN HARDWARE CENTER[/bold blue]', border_style=status_color)
             live.update(main_panel)
             await asyncio.sleep(interval)
 
@@ -265,7 +266,7 @@ def render_inspector_ui(state: SystemInspectorState) -> Any:
     ram_bar = f'RAM: {snap.memory.used_gb}/{snap.memory.total_gb} GB ({snap.memory.percent}%)'
     uptime_h = round(snap.uptime_seconds / 3600, 1)
     gpu_str = ', '.join([f'{g.name} ({g.memory_total_gb}GB)' for g in snap.gpus]) or 'Integrated'
-    header_text = Text.assemble(('AI-BREADBOARD SYSTEM & HARDWARE INSPECTOR\n', 'bold cyan'), (f'Host: {snap.hostname} | OS: {snap.os_name} | Uptime: {uptime_h}h | ', 'dim'), (f'{cpu_bar} | {ram_bar} | GPU: {gpu_str}', 'bold green'))
+    header_text = Text.assemble(('AI-AI_WINDOWS_ADMIN SYSTEM & HARDWARE INSPECTOR\n', 'bold cyan'), (f'Host: {snap.hostname} | OS: {snap.os_name} | Uptime: {uptime_h}h | ', 'dim'), (f'{cpu_bar} | {ram_bar} | GPU: {gpu_str}', 'bold green'))
     layout['header'].update(Panel(header_text, border_style='cyan'))
     proc_table = _render_inspector_process_table(snap, state.sort_by)
     layout['processes'].update(Panel(proc_table, border_style='blue'))
@@ -296,7 +297,7 @@ async def run_system_inspector(interval: float=1.0, sort_by: str='cpu', max_iter
     """Запуск интерактивного системного инспектора процессов и оборудования."""
     import asyncio
     if not RICH_AVAILABLE or Console is None:
-        print('Для запуска интерактивного TUI интерфейса требуется библиотека rich.')
+        logger.console('Для запуска интерактивного TUI интерфейса требуется библиотека rich.')
         return
     console = Console()
     state = SystemInspectorState(sort_by=sort_by)

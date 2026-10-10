@@ -16,7 +16,7 @@
 ## Структура данных на Google Drive
 
 ```
-AI-Breadboard-Sync/
+AI-Windows-Admin-Sync/
 ├── data/                    # Основные данные
 │   ├── news_service.db
 │   ├── rag_documents/
@@ -351,7 +351,7 @@ A: Да, используйте `/api/sync/sync-directory` для выбороч
 A: Да, если у вас есть контроль доступа к аккаунту Google Drive и использован сервис-аккаунт с ограниченными правами.
 
 **Q: Как удалить данные с Google Drive?**
-A: Просто удалите папку `AI-Breadboard-Sync` в Google Drive.
+A: Просто удалите папку `AI-Windows-Admin-Sync` в Google Drive.
 
 ## Поддержка
 
@@ -362,4 +362,4 @@ A: Просто удалите папку `AI-Breadboard-Sync` в Google Drive.
 
 ## Лицензия
 
-Этот модуль является частью AI-Breadboard и распространяется под той же лицензией.
+Этот модуль является частью AI-Windows-Admin и распространяется под той же лицензией.

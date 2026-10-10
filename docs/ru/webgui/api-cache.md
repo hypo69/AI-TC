@@ -2,7 +2,7 @@
 
 > **Версия:** 1.0.0  
 > **Дата:** 24 сентября 2026  
-> **Авторы:** hypo69, AI-Breadboard Team
+> **Авторы:** hypo69, AI-Windows-Admin Team
 
 ## 📋 Содержание
 
@@ -19,7 +19,7 @@
 
 ## 🎯 Обзор
 
-**API Cache System** — это универсальная система кеширования HTTP-запросов для всего веб-интерфейса AI-Breadboard, построенная на современных паттернах кеширования и использующая многоуровневое хранилище данных.
+**API Cache System** — это универсальная система кеширования HTTP-запросов для всего веб-интерфейса AI-Windows-Admin, построенная на современных паттернах кеширования и использующая многоуровневое хранилище данных.
 
 ### Ключевые возможности
 
@@ -518,10 +518,10 @@ setInterval(async () => {
 
 ## 📧 Контакты
 
-- **Email:** support@ai-breadboard.dev
-- **GitHub:** [AI-Breadboard](https://github.com/hypo69/hypo)
-- **Документация:** [docs.ai-breadboard.dev](https://docs.ai-breadboard.dev)
+- **Email:** support@ai-windows-admin.dev
+- **GitHub:** [AI-Windows-Admin](https://github.com/hypo69/hypo)
+- **Документация:** [docs.ai-windows-admin.dev](https://docs.ai-windows-admin.dev)
 
 ---
 
-**© 2026 AI-Breadboard Team. Все права защищены.**
+**© 2026 AI-Windows-Admin Team. Все права защищены.**

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Wikillm Tests - Test Router
+# Process Name: AI-Windows-Admin Apps Windows Wikillm Tests - Test Router
 # =============================================================================
 # Description:
 #   Тесты для REST API эндпоинтов WikiLLM с использованием TestClient.
@@ -12,11 +12,11 @@
 #     res = client()
 #
 # File: test_router.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.wikillm.tests
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-08 09:50:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

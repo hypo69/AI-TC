@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Wikillm - Command & Telemetry Indexer
+# Process Name: AI-Windows-Admin Apps Windows Wikillm - Command & Telemetry Indexer
 # =============================================================================
 # Description:
 #   Индексатор системных команд Windows, атомарных операций, коллекторов телеметрии,
@@ -16,11 +16,11 @@
 #     count = indexer.index_all()
 #
 # File: command_indexer.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.wikillm
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 07:54:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

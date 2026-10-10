@@ -198,12 +198,12 @@ def process():
 #   >>> connector.verify_status()
 #
 # File: foundry_connector.py
-# Project: AI Breadboard
+# Project: AI Windows Admin
 # Module: src.ai.providers.foundry
 # Class: FoundryConnector
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 03:22:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 ```
 
@@ -288,7 +288,7 @@ class FoundryConnector:
  * Class: ApiClient
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-01 03:22:00
+ * Updated: 2026-10-10 17:35:00
  * =============================================================================
  */
 ```
@@ -351,12 +351,17 @@ FOUNDRY_DYNAMIC_PORT=8000
 ```python
 from logger import logger
 
-# ✅ Правильно
+# ✅ Правильно (стандартное логирование в файл и консоль)
 logger.error("API connector failed", exc_info=True)
+
+# ✅ Вывод сообщений по прямому запросу пользователя (только в консоль без записи в файл)
+logger.console("Результат выполнения команды")
 
 # ❌ Запрещено
 print("Error occurred")  # MUST NOT использоваться в коде
 ```
+
+- Когда поступает запрос на вывод сообщения — вывод **MUST** выполняться через `logger.console()` исключительно для отображения в терминале/консоли без загрязнения файлов логов.
 
 ---
 

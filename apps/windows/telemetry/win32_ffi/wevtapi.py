@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Telemetry Win32_Ffi - Wevtapi
+# Process Name: AI-Windows-Admin Apps Windows Telemetry Win32_Ffi - Wevtapi
 # =============================================================================
 # Description:
 #   Низкоуровневый интерфейс к wevtapi.dll для работы с журналами событий Windows.
@@ -12,11 +12,11 @@
 #     service = ChannelMetadata()
 #
 # File: wevtapi.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.telemetry.win32_ffi
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-08 02:15:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations
@@ -261,6 +261,9 @@ class WevtAPI:
                 xpath_parts.append('Level=4')
             elif 'verb' in lvl_lower:
                 xpath_parts.append('Level=5')
+        if hours > 0:
+            millis = int(hours * 3600 * 1000)
+            xpath_parts.append(f'TimeCreated[timediff(@SystemTime) <= {millis}]')
         if isinstance(event_id, (list, tuple, set)):
             valid_eids = [e for e in event_id if isinstance(e, int) and e > 0]
             if valid_eids:

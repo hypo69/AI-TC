@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Wikillm Tests - Test Resolvers
+# Process Name: AI-Windows-Admin Apps Windows Wikillm Tests - Test Resolvers
 # =============================================================================
 # Description:
 #   Тесты для 4 уровней резолверов (Exact, Fingerprint, Semantic, Gemini).
@@ -12,11 +12,11 @@
 #     res = storage()
 #
 # File: test_resolvers.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.wikillm.tests
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:28:28
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

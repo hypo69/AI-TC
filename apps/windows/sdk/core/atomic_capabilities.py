@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Core - Atomic Capabilities
+# Process Name: AI-Windows-Admin Apps Windows Core - Atomic Capabilities
 # =============================================================================
 # Description:
 #   Реестр атомарных возможностей и операций утилит Windows.
@@ -12,11 +12,11 @@
 #     instance = WindowsAtomicCapabilitiesRegistry.get_instance()
 #
 # File: atomic_capabilities.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.core
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:28:28
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations
@@ -411,6 +411,46 @@ class WindowsAtomicCapabilitiesRegistry:
             risk_level=RiskLevel.READ_ONLY, required_privilege=PrivilegeLevel.STANDARD, execution_method=ExecutionMethod.NATIVE_API,
             http_method=HttpMethod.GET, api_route='/api/v1/users/whoami', cli_template='whoami.exe /all',
             native_api_equivalent='OpenProcessToken / GetTokenInformation'
+        ))
+        self._register(AtomicOperation(
+            id='local_user.get_info', utility='powershell.exe Get-LocalUser', category=CapabilityCategory.IDENTITY_USERS,
+            name_ru='Получение информации о пользователе', description='Извлечение данных учетной записи (SID, FullName, Enabled) через Get-LocalUser.',
+            risk_level=RiskLevel.READ_ONLY, required_privilege=PrivilegeLevel.STANDARD, execution_method=ExecutionMethod.POWERSHELL,
+            http_method=HttpMethod.GET, api_route='/api/v1/users/{name}',
+            cli_template='powershell.exe -NoProfile -Command "Get-LocalUser -Name \'{name}\' | Select-Object Name, FullName, SID, Enabled | ConvertTo-Json"',
+            parameters={'name': {'type': 'str', 'required': True, 'description': 'Имя пользователя'}}
+        ))
+        self._register(AtomicOperation(
+            id='local_user.rename', utility='powershell.exe Rename-LocalUser', category=CapabilityCategory.IDENTITY_USERS,
+            name_ru='Переименование учетной записи пользователя', description='Изменение системного имени учетной записи (sAMAccountName) через Rename-LocalUser.',
+            risk_level=RiskLevel.HIGH, required_privilege=PrivilegeLevel.ADMINISTRATOR, execution_method=ExecutionMethod.POWERSHELL,
+            http_method=HttpMethod.POST, api_route='/api/v1/users/{old_name}/rename',
+            cli_template='powershell.exe -NoProfile -Command "Rename-LocalUser -Name \'{old_name}\' -NewName \'{new_name}\'"',
+            parameters={'old_name': {'type': 'str', 'required': True}, 'new_name': {'type': 'str', 'required': True}}
+        ))
+        self._register(AtomicOperation(
+            id='local_user.set_fullname', utility='powershell.exe Set-LocalUser', category=CapabilityCategory.IDENTITY_USERS,
+            name_ru='Установка полного отображаемого имени пользователя', description='Изменение Display Name пользователя в интерфейсе Windows (FullName).',
+            risk_level=RiskLevel.MEDIUM, required_privilege=PrivilegeLevel.ADMINISTRATOR, execution_method=ExecutionMethod.POWERSHELL,
+            http_method=HttpMethod.POST, api_route='/api/v1/users/{name}/fullname',
+            cli_template='powershell.exe -NoProfile -Command "Set-LocalUser -Name \'{name}\' -FullName \'{full_name}\'"',
+            parameters={'name': {'type': 'str', 'required': True}, 'full_name': {'type': 'str', 'required': True}}
+        ))
+        self._register(AtomicOperation(
+            id='local_user.create', utility='powershell.exe New-LocalUser', category=CapabilityCategory.IDENTITY_USERS,
+            name_ru='Создание локального пользователя', description='Создание новой учетной записи пользователя Windows.',
+            risk_level=RiskLevel.HIGH, required_privilege=PrivilegeLevel.ADMINISTRATOR, execution_method=ExecutionMethod.POWERSHELL,
+            http_method=HttpMethod.POST, api_route='/api/v1/users',
+            cli_template='powershell.exe -NoProfile -Command "New-LocalUser -Name \'{name}\' -NoPassword"',
+            parameters={'name': {'type': 'str', 'required': True}}
+        ))
+        self._register(AtomicOperation(
+            id='local_user.delete', utility='powershell.exe Remove-LocalUser', category=CapabilityCategory.IDENTITY_USERS,
+            name_ru='Удаление локального пользователя', description='Удаление локальной учетной записи пользователя.',
+            risk_level=RiskLevel.CRITICAL, required_privilege=PrivilegeLevel.ADMINISTRATOR, execution_method=ExecutionMethod.POWERSHELL,
+            http_method=HttpMethod.DELETE, api_route='/api/v1/users/{name}',
+            cli_template='powershell.exe -NoProfile -Command "Remove-LocalUser -Name \'{name}\'"',
+            parameters={'name': {'type': 'str', 'required': True}}
         ))
 
         # 15. VSS и резервное копирование (VSS & Backup)

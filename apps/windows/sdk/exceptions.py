@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows SDK - Exceptions Hierarchy
+# Process Name: AI-Windows-Admin Apps Windows SDK - Exceptions Hierarchy
 # =============================================================================
 # Description:
 #   Иерархическая типизированная система исключений Windows SDK (Exceptions Hierarchy).
@@ -25,11 +25,11 @@
 #         logger.error("Общая ошибка SDK: %s", err)
 #
 # File: exceptions.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 07:16:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

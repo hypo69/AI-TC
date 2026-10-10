@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Telemetry Sqlite - Writer
+# Process Name: AI-Windows-Admin Apps Windows Telemetry Sqlite - Writer
 # =============================================================================
 # Description:
 #   Класс TelemetryWriter для сериализации и записи телеметрии в SQLite.
@@ -13,11 +13,11 @@
 #     saved = writer.batch_insert_records(records)
 #
 # File: writer.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.telemetry.sqlite
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-08 11:54:00
+# Updated: 2026-10-10 18:26:00
 # =============================================================================
 
 from __future__ import annotations
@@ -32,6 +32,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
 from .connection import TelemetryConnectionManager
+from .delta_tracker import DeltaStateTracker
 from ..models import (
     HardwareArchiveEntry,
     ProcessLifecycleEvent,
@@ -59,6 +60,12 @@ class TelemetryWriter:
             connection_manager: Менеджер соединений SQLite.
         """
         self._cm = connection_manager
+        self._delta_tracker = DeltaStateTracker()
+
+    @property
+    def delta_tracker(self) -> DeltaStateTracker:
+        """Возвращает трекер дельт."""
+        return self._delta_tracker
 
     def batch_insert_records(self, records: List[Dict[str, Any]]) -> int:
         """Выполняет пакетную вставку разнородных записей в SQLite в единой транзакции.
@@ -825,7 +832,57 @@ class TelemetryWriter:
         except Exception:
             now_epoch = now_dt.timestamp()
 
-        hardware_audit_json = json.dumps(hw_audit or {}, ensure_ascii=False, default=str)
+        hardware_audit_json = json.dumps(hw_audit or {}, ensure_ascii=False, default=str) if hw_audit else None
+
+        # Формируем полный словарь полей перед фильтрацией дельт
+        raw_fields = {
+            'timestamp': ts_str,
+            'created_at': now_epoch,
+            'hostname': hostname,
+            'username': username,
+            'uptime_seconds': uptime,
+            'os_name': os_name,
+            'os_build': os_build,
+            'os_install_date': os_install_date,
+            'system_language': system_lang,
+            'os_install_language': os_install_lang,
+            'user_locale': user_locale,
+            'system_locale': sys_locale,
+            'timezone': timezone_val,
+            'codepage': codepage_val,
+            'input_languages_json': input_langs_json,
+            'disks_json': disks_json,
+            'physical_disks_json': physical_disks_json,
+            'monitors_json': monitors_json,
+            'updates_json': updates_json,
+            'office_json': office_json,
+            'onedrive_json': onedrive_json,
+            'battery_json': battery_json,
+            'ram_sticks_json': ram_sticks_json,
+            'listening_ports_json': listening_ports_json,
+            'alerts_json': alerts_json,
+            'cpu_total_percent': cpu_pct,
+            'cpu_frequency_mhz': cpu_freq,
+            'memory_total_gb': mem_tot,
+            'memory_used_gb': mem_used,
+            'memory_percent': mem_pct,
+            'swap_percent': swap_pct,
+            'gpu_load_percent': gpu_load,
+            'gpu_temp_c': gpu_temp,
+            'disk_read_bytes_sec': disk_rb,
+            'disk_write_bytes_sec': disk_wb,
+            'disk_read_count_sec': disk_rc,
+            'disk_write_count_sec': disk_wc,
+            'network_sent_bytes_sec': net_sent,
+            'network_recv_bytes_sec': net_recv,
+            'hardware_audit': hardware_audit_json,
+        }
+
+        # Фильтруем неизменившиеся поля через DeltaStateTracker
+        delta_fields, has_changes = self._delta_tracker.filter_snapshot_delta(raw_fields)
+
+        # raw_json сохраняем только при наличии изменений
+        stored_raw_json = raw_json_str if has_changes else None
 
         cursor.execute('''
             INSERT INTO system_snapshots (
@@ -839,14 +896,26 @@ class TelemetryWriter:
                 disk_write_count_sec, network_sent_bytes_sec, network_recv_bytes_sec, hardware_audit, raw_json
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
-            ts_str, now_epoch, hostname, username, uptime, os_name, os_build, os_install_date,
-            system_lang, os_install_lang, user_locale, sys_locale, timezone_val, codepage_val,
-            input_langs_json, disks_json, physical_disks_json, monitors_json, updates_json, office_json,
-            onedrive_json, battery_json, ram_sticks_json, listening_ports_json, alerts_json,
-            cpu_pct, cpu_freq, mem_tot, mem_used,
-            mem_pct, swap_pct, gpu_load, gpu_temp,
-            disk_rb, disk_wb, disk_rc,
-            disk_wc, net_sent, net_recv, hardware_audit_json, raw_json_str
+            delta_fields.get('timestamp'), delta_fields.get('created_at'),
+            delta_fields.get('hostname'), delta_fields.get('username'), delta_fields.get('uptime_seconds'),
+            delta_fields.get('os_name'), delta_fields.get('os_build'), delta_fields.get('os_install_date'),
+            delta_fields.get('system_language'), delta_fields.get('os_install_language'),
+            delta_fields.get('user_locale'), delta_fields.get('system_locale'),
+            delta_fields.get('timezone'), delta_fields.get('codepage'),
+            delta_fields.get('input_languages_json'), delta_fields.get('disks_json'),
+            delta_fields.get('physical_disks_json'), delta_fields.get('monitors_json'),
+            delta_fields.get('updates_json'), delta_fields.get('office_json'),
+            delta_fields.get('onedrive_json'), delta_fields.get('battery_json'),
+            delta_fields.get('ram_sticks_json'), delta_fields.get('listening_ports_json'),
+            delta_fields.get('alerts_json'),
+            delta_fields.get('cpu_total_percent'), delta_fields.get('cpu_frequency_mhz'),
+            delta_fields.get('memory_total_gb'), delta_fields.get('memory_used_gb'),
+            delta_fields.get('memory_percent'), delta_fields.get('swap_percent'),
+            delta_fields.get('gpu_load_percent'), delta_fields.get('gpu_temp_c'),
+            delta_fields.get('disk_read_bytes_sec'), delta_fields.get('disk_write_bytes_sec'),
+            delta_fields.get('disk_read_count_sec'), delta_fields.get('disk_write_count_sec'),
+            delta_fields.get('network_sent_bytes_sec'), delta_fields.get('network_recv_bytes_sec'),
+            delta_fields.get('hardware_audit'), stored_raw_json
         ))
         snapshot_id = cursor.lastrowid or 0
 
@@ -925,7 +994,7 @@ class TelemetryWriter:
         # Синхронизация нормализованных таблиц оборудования и метрик
         try:
             # 1. CPU
-            cpu_data = getattr(snapshot, 'cpu', None) or snap_data.get('cpu')
+            cpu_data = getattr(snapshot, 'cpu', None) or (snap_data.get('cpu') if isinstance(snap_data, dict) else getattr(snap_data, 'cpu', None))
             if cpu_data:
                 c_dict = cpu_data if isinstance(cpu_data, dict) else (cpu_data.model_dump() if hasattr(cpu_data, 'model_dump') else vars(cpu_data))
                 if c_dict.get('model') or c_dict.get('name'):
@@ -948,7 +1017,7 @@ class TelemetryWriter:
                 })
 
             # 2. RAM
-            mem_data = getattr(snapshot, 'memory', None) or snap_data.get('memory')
+            mem_data = getattr(snapshot, 'memory', None) or (snap_data.get('memory') if isinstance(snap_data, dict) else getattr(snap_data, 'memory', None))
             if mem_data:
                 m_dict = mem_data if isinstance(mem_data, dict) else (mem_data.model_dump() if hasattr(mem_data, 'model_dump') else vars(mem_data))
                 self.insert_ram_telemetry_sample(cursor, {
@@ -964,12 +1033,12 @@ class TelemetryWriter:
                 })
 
             # 3. RAM Sticks (SPD)
-            sticks = getattr(snapshot, 'ram_sticks', None) or snap_data.get('ram_sticks') or []
+            sticks = getattr(snapshot, 'ram_sticks', None) or (snap_data.get('ram_sticks') if isinstance(snap_data, dict) else getattr(snap_data, 'ram_sticks', None)) or []
             for s in sticks:
                 self.upsert_ram_module_inventory(cursor, s)
 
             # 4. GPUs
-            gpus_list = getattr(snapshot, 'gpus', None) or snap_data.get('gpus') or []
+            gpus_list = getattr(snapshot, 'gpus', None) or (snap_data.get('gpus') if isinstance(snap_data, dict) else getattr(snap_data, 'gpus', None)) or []
             for g_idx, g_item in enumerate(gpus_list):
                 g_dict = g_item if isinstance(g_item, dict) else (g_item.model_dump() if hasattr(g_item, 'model_dump') else vars(g_item))
                 g_name = g_dict.get('name', f'GPU {g_idx}')
@@ -983,26 +1052,38 @@ class TelemetryWriter:
                 else:
                     vendor = g_dict.get('vendor') or 'Generic'
 
+                mem_total_gb = float(g_dict.get('memory_total_gb') or 0.0)
+                mem_used_gb = float(g_dict.get('memory_used_gb') or 0.0)
+                mem_pct = round((mem_used_gb / mem_total_gb) * 100.0, 1) if mem_total_gb > 0 else 0.0
+                gpu_type_str = g_dict.get('gpu_type') or ('Discrete' if vendor in ('NVIDIA', 'AMD') else 'Integrated')
+                pci_bus = 'PCIe x16' if gpu_type_str == 'Discrete' else 'Integrated / System Bus'
+
                 self.upsert_gpu_inventory(cursor, {
                     'gpu_id': g_idx,
                     'name': g_name,
                     'vendor': vendor,
-                    'vram_gb': g_dict.get('memory_total_gb', 0.0),
+                    'vram_gb': mem_total_gb,
+                    'vram_bytes': int(mem_total_gb * (1024**3)),
+                    'driver_version': g_dict.get('driver_version', ''),
+                    'pci_bus_id': pci_bus,
+                    'cuda_cores': g_dict.get('cuda_cores'),
                     'directml_supported': bool(g_dict.get('has_directml', True)),
                 })
                 self.insert_gpu_telemetry_sample(cursor, {
                     'timestamp': ts_str,
                     'created_at': now_epoch,
                     'gpu_id': g_idx,
-                    'name': g_dict.get('name', f'GPU {g_idx}'),
+                    'name': g_name,
                     'load_percent': g_dict.get('load_percent'),
-                    'memory_used_mb': (g_dict.get('memory_used_gb', 0.0) or 0.0) * 1024.0,
-                    'memory_total_mb': (g_dict.get('memory_total_gb', 0.0) or 0.0) * 1024.0,
+                    'memory_used_mb': mem_used_gb * 1024.0,
+                    'memory_total_mb': mem_total_gb * 1024.0,
+                    'memory_percent': mem_pct,
                     'temperature_gpu_c': g_dict.get('temperature_celsius') or g_dict.get('temperature_gpu_c'),
+                    'power_draw_w': g_dict.get('power_draw_w'),
                 })
 
             # 5. Network
-            net_items = getattr(snapshot, 'network', None) or snap_data.get('network') or []
+            net_items = getattr(snapshot, 'network', None) or (snap_data.get('network') if isinstance(snap_data, dict) else getattr(snap_data, 'network', None)) or []
             for n_idx, n_item in enumerate(net_items):
                 n_dict = n_item if isinstance(n_item, dict) else (n_item.model_dump() if hasattr(n_item, 'model_dump') else vars(n_item))
                 self.upsert_network_adapter_inventory(cursor, {
@@ -1015,8 +1096,8 @@ class TelemetryWriter:
                     'timestamp': ts_str,
                     'created_at': now_epoch,
                     'adapter_name': n_dict.get('name', f'Adapter {n_idx}'),
-                    'bytes_recv_sec': n_dict.get('bytes_recv_per_sec', 0.0),
-                    'bytes_sent_sec': n_dict.get('bytes_sent_per_sec', 0.0),
+                    'bytes_recv_sec': n_dict.get('bytes_recv_per_sec') or n_dict.get('bytes_recv_sec', 0.0),
+                    'bytes_sent_sec': n_dict.get('bytes_sent_per_sec') or n_dict.get('bytes_sent_sec', 0.0),
                     'link_speed_mbps': n_dict.get('speed_mbps', 0),
                     'is_connected': bool(n_dict.get('is_up', True)),
                 })

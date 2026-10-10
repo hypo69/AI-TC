@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard UTILS - Tts Module
+# Process Name: AI-Windows-Admin UTILS - Tts Module
 # =============================================================================
 # Description:
 #   Download an audio file and recognize speech in it.
@@ -13,11 +13,11 @@
 #     print(res)
 #
 # File: tts.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: src.utils.convertors
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:13:56
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 """Download an audio file and recognize speech in it."""
@@ -47,7 +47,7 @@ def speech_recognizer(audio_url: str=None, audio_file_path: Path=None, language:
         .. code::
 
             recognized_text = speech_recognizer(audio_url='https://example.com/audio.ogg')
-            print(recognized_text)  # Output: "Hello"
+            logger.console(recognized_text)  # Output: "Hello"
     """
     try:
         if audio_url:
@@ -89,7 +89,7 @@ async def text2speech(text: str, lang: str='ru') -> str:
         .. code::
 
             audio_path = await text2speech('Hello', lang='en')
-            print(audio_path)  # Output: "/tmp/response.mp3"
+            logger.console(audio_path)  # Output: "/tmp/response.mp3"
     """
     try:
         tts = gTTS(text=text, lang=lang)

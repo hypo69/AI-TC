@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Features - Manager
+# Process Name: AI-Windows-Admin Apps Windows Features - Manager
 # =============================================================================
 # Description:
 #   Управление Windows Optional Features через PowerShell/DISM.
@@ -8,11 +8,11 @@
 #   компонентов Windows. Используется FastAPI-роутером.
 #
 # File: manager.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.features
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-06 11:25:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 """Модуль менеджера Windows Optional Features.

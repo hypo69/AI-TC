@@ -2,7 +2,7 @@
 
 ## AI Providers
 
-AI-Breadboard supports multiple LLM backends with automatic routing:
+AI-Windows-Admin supports multiple LLM backends with automatic routing:
 
 | Provider | Prefix | Notes |
 |---|---|---|

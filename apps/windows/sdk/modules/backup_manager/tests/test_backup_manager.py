@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Modules Backup_Manager Tests - Test Backup Manager
+# Process Name: AI-Windows-Admin Apps Windows Modules Backup_Manager Tests - Test Backup Manager
 # =============================================================================
 # Description:
-#   Модуль реализации компонентов подсистемы Windows AI-Breadboard (test_backup_manager).
+#   Модуль реализации компонентов подсистемы Windows AI-Windows-Admin (test_backup_manager).
 #
 # Usage Examples:
 #   Python API:
@@ -12,14 +12,14 @@
 #     res = test_libraries_creation_and_parse()
 #
 # File: test_backup_manager.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.backup_manager.tests
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:28:28
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
-"""Модуль реализации компонентов подсистемы Windows AI-Breadboard (test_backup_manager)."""
+"""Модуль реализации компонентов подсистемы Windows AI-Windows-Admin (test_backup_manager)."""
 
 import pytest
 from pathlib import Path

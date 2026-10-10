@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Modules Storage Manager Core - Init
+# Process Name: AI-Windows-Admin Apps Windows Modules Storage Manager Core - Init
 # =============================================================================
 # Description:
 #   Экспорт базовых компонентов, сенсоров и сервиса бенчмарка модуля storage_manager.
@@ -10,11 +10,11 @@
 #     from apps.windows.sdk.modules.storage_manager.core import StorageBenchmarkService, WindowsStorageSensor
 #
 # File: __init__.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.storage_manager.core
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-04 08:16:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 """Экспорт базовых компонентов, сенсоров и сервиса бенчмарка модуля storage_manager."""

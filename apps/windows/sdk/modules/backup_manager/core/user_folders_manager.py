@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Modules Backup_Manager Core - User Folders Manager
+# Process Name: AI-Windows-Admin Apps Windows Modules Backup_Manager Core - User Folders Manager
 # =============================================================================
 # Description:
 #   Движок анализа и переноса пользовательских директорий Windows.
@@ -12,11 +12,11 @@
 #     service = UserFoldersManager()
 #
 # File: user_folders_manager.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.backup_manager.core
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 04:56:00
+# Updated: 2026-10-10 22:22:30
 # =============================================================================
 
 from __future__ import annotations
@@ -214,7 +214,7 @@ class UserFoldersManager:
             Optional[str]: Выбранный абсолютный путь к папке или None при отмене.
         """
         import subprocess
-        py_script = "import sys, tkinter as tk, tkinter.filedialog as fd\nroot = tk.Tk()\nroot.withdraw()\nroot.attributes('-topmost', True)\ninitial = sys.argv[1] if len(sys.argv) > 1 and sys.argv[1] else None\ntitle = sys.argv[2] if len(sys.argv) > 2 and sys.argv[2] else 'Выберите целевую папку'\npath = fd.askdirectory(parent=root, initialdir=initial, title=title, mustexist=False)\nroot.destroy()\nif path:\n    print(path.replace('/', '\\\\'))\n"
+        py_script = "import sys, tkinter as tk, tkinter.filedialog as fd\nroot = tk.Tk()\nroot.withdraw()\nroot.attributes('-topmost', True)\ninitial = sys.argv[1] if len(sys.argv) > 1 and sys.argv[1] else None\ntitle = sys.argv[2] if len(sys.argv) > 2 and sys.argv[2] else 'Выберите целевую папку'\npath = fd.askdirectory(parent=root, initialdir=initial, title=title, mustexist=False)\nroot.destroy()\nif path:\n    logger.console(path.replace('/', '\\\\'))\n"
         try:
             res = subprocess.run([sys.executable, '-c', py_script, initial_path or '', title], capture_output=True, text=True, timeout=180, encoding='utf-8')
             chosen = res.stdout.strip()

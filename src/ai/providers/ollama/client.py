@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard AI - Client Module
+# Process Name: AI-Windows-Admin AI - Client Module
 # =============================================================================
 # Description:
 #   Клиент для работы с Ollama.
@@ -12,11 +12,11 @@
 #     service = OllamaClient()
 #
 # File: client.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: src.ai.providers.ollama
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:13:56
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 """Клиент для работы с Ollama."""

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard UTILS - Smtp Module
+# Process Name: AI-Windows-Admin UTILS - Smtp Module
 # =============================================================================
 # Description:
 #   SMTP email interface utilities for sending email messages via SMTP server.
@@ -13,11 +13,11 @@
 #     print(res)
 #
 # File: smtp.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: src.utils
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:13:56
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 """SMTP email interface utilities for sending email messages via SMTP server."""

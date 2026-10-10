@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Modules Network - Network Usage
+# Process Name: AI-Windows-Admin Apps Windows Modules Network - Network Usage
 # =============================================================================
 # Description:
 #   Многоуровневый коллектор сетевой телеметрии и исторического использования трафика Windows.
@@ -12,11 +12,11 @@
 #     service = WindowsNetworkUsageCollector()
 #
 # File: network_usage.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.network
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:28:28
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

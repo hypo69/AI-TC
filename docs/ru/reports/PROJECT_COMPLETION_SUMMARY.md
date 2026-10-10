@@ -421,7 +421,7 @@ The **Hybrid RAG with PixelRAG** project has been successfully completed with al
 
 **Project Lead:** hypo69  
 **Completion Date:** September 16, 2026  
-**Repository:** https://github.com/hypo69/ai-breadboard  
+**Repository:** https://github.com/hypo69/ai-windows-admin  
 **License:** MIT License © 2026
 
 🚀 **Thank you for following this journey!** 🚀

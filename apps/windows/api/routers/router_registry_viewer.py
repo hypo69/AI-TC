@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Api Routers - Router Registry Viewer
+# Process Name: AI-Windows-Admin Apps Windows Api Routers - Router Registry Viewer
 # =============================================================================
 # Description:
 #   FastAPI роутер-адаптер для приложения Windows Registry Viewer (apps.windows.registry),
@@ -12,11 +12,11 @@
 #     res = init_router()
 #
 # File: router_registry_viewer.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.api.routers
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:28:28
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

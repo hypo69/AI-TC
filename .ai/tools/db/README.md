@@ -1,7 +1,7 @@
 # Database Management & Schema Migrations (`src/db`)
 
 ## 📋 Overview
-The `src/db` package provides unified schema migration management, version tracking, and automated database backups for all SQLite databases across the AI Breadboard ecosystem.
+The `src/db` package provides unified schema migration management, version tracking, and automated database backups for all SQLite databases across the AI Windows Admin ecosystem.
 
 ## 🚀 Core Features
 - **Transactional Migrations**: All migration files are executed inside transactions to prevent partial updates.

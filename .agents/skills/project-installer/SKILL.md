@@ -1,14 +1,14 @@
 ---
 name: project-installer
-description: Interactive full-project installer and environment configurator for AI Breadboard. Guides through pre-flight checks, venv creation, dependency installation, SSL certs, global CLI setup, and directory verification.
+description: Interactive full-project installer and environment configurator for AI Windows Admin. Guides through pre-flight checks, venv creation, dependency installation, SSL certs, global CLI setup, and directory verification.
 description_i18n:
-  en: Interactive full-project installer and environment configurator for AI Breadboard. Guides through pre-flight checks, venv creation, dependency installation, SSL certs, global CLI setup, and directory verification.
-  ru: Интерактивный установщик проекта и конфигуратор окружения для AI Breadboard. Пошагово выполняет предварительные проверки, создание venv, установку зависимостей, SSL-сертификаты и глобальный CLI.
+  en: Interactive full-project installer and environment configurator for AI Windows Admin. Guides through pre-flight checks, venv creation, dependency installation, SSL certs, global CLI setup, and directory verification.
+  ru: Интерактивный установщик проекта и конфигуратор окружения для AI Windows Admin. Пошагово выполняет предварительные проверки, создание venv, установку зависимостей, SSL-сертификаты и глобальный CLI.
 ---
 
-# 🚀 AI Breadboard Project Installer Skill
+# 🚀 AI Windows Admin Project Installer Skill
 
-This skill enables AI agents and Gemini CLI (using `gemini-3.1-flash-lite`) to interactively install, configure, troubleshoot, and verify the entire **AI Breadboard** project across Windows, Linux, and macOS.
+This skill enables AI agents and Gemini CLI (using `gemini-3.1-flash-lite`) to interactively install, configure, troubleshoot, and verify the entire **AI Windows Admin** project across Windows, Linux, and macOS.
 
 ---
 
@@ -18,7 +18,7 @@ To launch the installer interactively with Gemini CLI and the requested model:
 
 ```powershell
 # Windows (PowerShell)
-gemini --model "gemini-3.1-flash-lite" --prompt "Execute the project-installer skill. Read INSTALL-INSTRUCTION.md and guide me through full AI Breadboard installation interactively with error checks and directory verification."
+gemini --model "gemini-3.1-flash-lite" --prompt "Execute the project-installer skill. Read INSTALL-INSTRUCTION.md and guide me through full AI Windows Admin installation interactively with error checks and directory verification."
 
 # Or using the launcher script:
 .\.agents\skills\project-installer\scripts\run_installer_gemini.ps1
@@ -26,7 +26,7 @@ gemini --model "gemini-3.1-flash-lite" --prompt "Execute the project-installer s
 
 ```bash
 # Linux / macOS (Bash)
-gemini --model "gemini-3.1-flash-lite" --prompt "Execute the project-installer skill. Read INSTALL-INSTRUCTION.md and guide me through full AI Breadboard installation interactively with error checks and directory verification."
+gemini --model "gemini-3.1-flash-lite" --prompt "Execute the project-installer skill. Read INSTALL-INSTRUCTION.md and guide me through full AI Windows Admin installation interactively with error checks and directory verification."
 
 # Or using the launcher script:
 bash skills/project-installer/scripts/run_installer_gemini.sh
@@ -37,9 +37,9 @@ bash skills/project-installer/scripts/run_installer_gemini.sh
 ## 📖 Mandatory Reference
 
 Before executing any installation step, the agent **MUST** inspect:
-- [INSTALL-INSTRUCTION.md](file:///c:/Users/onela/AppData/Local/AI-Breadboard/skills/project-installer/INSTALL-INSTRUCTION.md) (Skill copy) or [INSTALL-INSTRUCTION.md](file:///c:/Users/onela/AppData/Local/AI-Breadboard/INSTALL-INSTRUCTION.md) (Root copy).
-- Windows baseline: [`install.ps1`](file:///c:/Users/onela/AppData/Local/AI-Breadboard/install.ps1) and [`install/`](file:///c:/Users/onela/AppData/Local/AI-Breadboard/install).
-- Linux / macOS baseline: [`install.sh`](file:///c:/Users/onela/AppData/Local/AI-Breadboard/install.sh), [`install/install.sh`](file:///c:/Users/onela/AppData/Local/AI-Breadboard/install/install.sh), and [`INSTALL_LINUX.md`](file:///c:/Users/onela/AppData/Local/AI-Breadboard/INSTALL_LINUX.md).
+- [INSTALL-INSTRUCTION.md](file:///c:/Users/onela/AppData/Local/AI-Windows-Admin/skills/project-installer/INSTALL-INSTRUCTION.md) (Skill copy) or [INSTALL-INSTRUCTION.md](file:///c:/Users/onela/AppData/Local/AI-Windows-Admin/INSTALL-INSTRUCTION.md) (Root copy).
+- Windows baseline: [`install.ps1`](file:///c:/Users/onela/AppData/Local/AI-Windows-Admin/install.ps1) and [`install/`](file:///c:/Users/onela/AppData/Local/AI-Windows-Admin/install).
+- Linux / macOS baseline: [`install.sh`](file:///c:/Users/onela/AppData/Local/AI-Windows-Admin/install.sh), [`install/install.sh`](file:///c:/Users/onela/AppData/Local/AI-Windows-Admin/install/install.sh), and [`INSTALL_LINUX.md`](file:///c:/Users/onela/AppData/Local/AI-Windows-Admin/INSTALL_LINUX.md).
 
 ---
 
@@ -60,7 +60,7 @@ Follow the platform rules derived from `install.ps1` and `install.sh`:
 
 1. **Language & Configuration Selection:**
    - Ask user for interface language (`ru`, `en`, `es`, `he`).
-   - Confirm target installation directory (Default: `%LOCALAPPDATA%\AI Breadboard` on Windows, current directory or `/opt/ai-breadboard` on Linux).
+   - Confirm target installation directory (Default: `%LOCALAPPDATA%\AI Windows Admin` on Windows, current directory or `/opt/ai-windows-admin` on Linux).
 
 2. **File Permissions & Unblock (Windows):**
    - Execute `Unblock-File` on project PowerShell scripts.
@@ -85,11 +85,11 @@ Follow the platform rules derived from `install.ps1` and `install.sh`:
 
 6. **Environment & Secrets (`.env`):**
    - Ensure `.env` exists (copy from `.env.example` if absent).
-   - Check key variables: `GEMINI_API_KEY_NAMES`, `JWT_SECRET`, `AIBREADBOARD_DIR`.
+   - Check key variables: `GEMINI_API_KEY_NAMES`, `JWT_SECRET`, `AIWINDOWSADMIN_DIR`.
 
 7. **Global CLI Integration (`assist`):**
    - Verify `assist.ps1`, `assist.cmd`, and `assist` wrappers.
-   - Set persistent `AIBREADBOARD_DIR` environment variable.
+   - Set persistent `AIWINDOWSADMIN_DIR` environment variable.
    - Add `%USERPROFILE%\.local\bin` or `~/.local/bin` to `PATH`.
 
 ---

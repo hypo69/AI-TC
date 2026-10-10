@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard AI Agents - Windows Personalization Tools Module
+# Process Name: AI-Windows-Admin AI Agents - Windows Personalization Tools Module
 # =============================================================================
 # Description:
 #   Инструменты прямого взаимодействия с подсистемой персонализации и оформления Windows
@@ -16,11 +16,11 @@
 #     res = await windows_personalization_overview(action="overview")
 #
 # File: personalization.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: src.ai.agents.windows_tools
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-08 22:00:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

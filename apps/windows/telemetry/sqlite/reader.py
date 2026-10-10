@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Telemetry Sqlite - Reader
+# Process Name: AI-Windows-Admin Apps Windows Telemetry Sqlite - Reader
 # =============================================================================
 # Description:
 #   Класс TelemetryReader для чтения и выборки данных телеметрии из SQLite.
@@ -13,18 +13,17 @@
 #     snapshots = reader.get_snapshots(limit=10)
 #
 # File: reader.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.telemetry.sqlite
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 05:41:00
+# Updated: 2026-10-10 20:33:00
 # =============================================================================
 
 from __future__ import annotations
 
 """Класс TelemetryReader для выполнения выборок, аналитики и чтения данных телеметрии."""
 
-import csv
 import json
 import sqlite3
 import time
@@ -33,6 +32,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
 from .connection import TelemetryConnectionManager
+from .delta_tracker import LocfReconstructor
 
 try:
     from logger import logger
@@ -51,9 +51,15 @@ class TelemetryReader:
             connection_manager: Менеджер подключений SQLite.
         """
         self._cm = connection_manager
+        self._reconstructor = LocfReconstructor()
+
+    @property
+    def reconstructor(self) -> LocfReconstructor:
+        """Возвращает экземпляр реконструктора срезов LOCF."""
+        return self._reconstructor
 
     def get_snapshots(self, limit: int = 60, since_epoch: Optional[float] = None) -> List[Dict[str, Any]]:
-        """Извлекает исторические срезы системной телеметрии."""
+        """Извлекает исторические срезы системной телеметрии с LOCF-реконструкцией параметров."""
         with self._cm.lock, self._cm.get_connection() as conn:
             cursor = conn.cursor()
             if since_epoch is not None:
@@ -63,23 +69,28 @@ class TelemetryReader:
                 )
             else:
                 cursor.execute('SELECT * FROM system_snapshots ORDER BY id DESC LIMIT ?', (limit,))
-            return [dict(row) for row in cursor.fetchall()]
+            raw_rows = [dict(row) for row in cursor.fetchall()]
+            return self._reconstructor.reconstruct_snapshots_batch(raw_rows, conn)
 
     def get_latest_cpu(self) -> Optional[Dict[str, Any]]:
-        """Извлекает последние метрики процессора из таблицы system_snapshots."""
+        """Извлекает последние метрики процессора с LOCF-восстановлением параметров."""
         with self._cm.lock, self._cm.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute('''
                 SELECT id, timestamp, created_at, hostname, cpu_total_percent, cpu_frequency_mhz
                 FROM system_snapshots
+                WHERE cpu_total_percent IS NOT NULL
                 ORDER BY id DESC
                 LIMIT 1;
             ''')
             row = cursor.fetchone()
+            if not row:
+                cursor.execute('SELECT id, timestamp, created_at, hostname, cpu_total_percent, cpu_frequency_mhz FROM system_snapshots ORDER BY id DESC LIMIT 1;')
+                row = cursor.fetchone()
             return dict(row) if row else None
 
     def get_cpu_history(self, limit: int = 60, since_epoch: Optional[float] = None) -> List[Dict[str, Any]]:
-        """Извлекает историю нагрузки процессора."""
+        """Извлекает историю нагрузки процессора с LOCF-реконструкцией пропусков."""
         with self._cm.lock, self._cm.get_connection() as conn:
             cursor = conn.cursor()
             if since_epoch is not None:
@@ -97,19 +108,52 @@ class TelemetryReader:
                     ORDER BY id DESC
                     LIMIT ?;
                 ''', (limit,))
-            return [dict(row) for row in cursor.fetchall()]
+            raw_rows = [dict(r) for r in cursor.fetchall()]
+            if not raw_rows:
+                return []
+            
+            # LOCF-заполнение для пропущенных CPU метрик
+            last_cpu_pct = 0.0
+            last_cpu_freq = 0.0
+            # Инициализация последнего известного значения до диапазона
+            min_id = min(r.get('id', 0) for r in raw_rows)
+            cursor.execute('SELECT cpu_total_percent, cpu_frequency_mhz FROM system_snapshots WHERE id < ? AND cpu_total_percent IS NOT NULL ORDER BY id DESC LIMIT 1', (min_id,))
+            init_row = cursor.fetchone()
+            if init_row:
+                last_cpu_pct = float(init_row[0] or 0.0)
+                last_cpu_freq = float(init_row[1] or 0.0)
+
+            # Проход от старых к новым для LOCF
+            raw_rows.reverse()
+            for r in raw_rows:
+                if r.get('cpu_total_percent') is not None:
+                    last_cpu_pct = float(r['cpu_total_percent'])
+                else:
+                    r['cpu_total_percent'] = last_cpu_pct
+
+                if r.get('cpu_frequency_mhz') is not None:
+                    last_cpu_freq = float(r['cpu_frequency_mhz'])
+                else:
+                    r['cpu_frequency_mhz'] = last_cpu_freq
+
+            raw_rows.reverse()
+            return raw_rows
 
     def get_latest_storage_data(self) -> Dict[str, Any]:
-        """Извлекает последние данные о накопителях и разделах."""
+        """Извлекает последние данные о накопителях и разделах с LOCF-подтяжкой."""
         with self._cm.lock, self._cm.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute('''
                 SELECT id, timestamp, created_at, disks_json, physical_disks_json
                 FROM system_snapshots
+                WHERE disks_json IS NOT NULL OR physical_disks_json IS NOT NULL
                 ORDER BY id DESC
                 LIMIT 1;
             ''')
             row = cursor.fetchone()
+            if not row:
+                cursor.execute('SELECT id, timestamp, created_at, disks_json, physical_disks_json FROM system_snapshots ORDER BY id DESC LIMIT 1;')
+                row = cursor.fetchone()
             if not row:
                 return {'partitions': [], 'physical_disks': []}
 
@@ -136,7 +180,7 @@ class TelemetryReader:
             }
 
     def get_latest_snapshot_full(self) -> Optional[Dict[str, Any]]:
-        """Извлекает и десериализует последний системный снимок со всеми метаданными и процессами."""
+        """Извлекает и десериализует последний системный снимок с полной LOCF-реконструкцией всех параметров."""
         with self._cm.lock, self._cm.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute('SELECT * FROM system_snapshots ORDER BY id DESC LIMIT 1;')
@@ -144,7 +188,8 @@ class TelemetryReader:
             if not row:
                 return None
 
-            snap_row = dict(row)
+            # Восстанавливаем срез через LOCF-реконструктор
+            snap_row = self._reconstructor.reconstruct_snapshot_row(dict(row), conn)
             snap_id = snap_row.get('id')
 
             # 1. Попытка десериализации raw_json
@@ -595,56 +640,6 @@ class TelemetryReader:
             else:
                 cursor.execute('SELECT * FROM app_param_changes ORDER BY id DESC LIMIT ?', (limit,))
             return [dict(row) for row in cursor.fetchall()]
-
-    def export_app_polls_to_csv(self, app: Optional[str] = None, output_path: Optional[Union[str, Path]] = None, limit: int = 50000) -> Path:
-        """Экспортирует историю опросов приложений в CSV-файл."""
-        polls = self.get_app_polls(app=app, limit=limit)
-        target = Path(output_path) if output_path else Path('app_polls.csv')
-        target.parent.mkdir(parents=True, exist_ok=True)
-        headers = ['timestamp', 'app', 'poll_type', 'metric_name', 'value', 'unit', 'status', 'details']
-        with open(target, 'w', newline='', encoding='utf-8-sig') as f:
-            writer = csv.writer(f)
-            writer.writerow(headers)
-            for p in polls:
-                writer.writerow([
-                    p.get('timestamp', ''), p.get('app', ''), p.get('poll_type', ''),
-                    p.get('metric_name', ''), p.get('value', ''), p.get('unit', ''),
-                    p.get('status', ''), p.get('details', ''),
-                ])
-        return target
-
-    def export_app_events_to_csv(self, app: Optional[str] = None, output_path: Optional[Union[str, Path]] = None, limit: int = 50000) -> Path:
-        """Экспортирует историю событий приложений в CSV-файл."""
-        events = self.get_app_events(app=app, limit=limit)
-        target = Path(output_path) if output_path else Path('app_events.csv')
-        target.parent.mkdir(parents=True, exist_ok=True)
-        headers = ['timestamp', 'app', 'event_type', 'status', 'user', 'details']
-        with open(target, 'w', newline='', encoding='utf-8-sig') as f:
-            writer = csv.writer(f)
-            writer.writerow(headers)
-            for e in events:
-                writer.writerow([
-                    e.get('timestamp', ''), e.get('app', ''), e.get('event_type', ''),
-                    e.get('status', ''), e.get('user', ''), e.get('details', ''),
-                ])
-        return target
-
-    def export_app_param_changes_to_csv(self, app: Optional[str] = None, output_path: Optional[Union[str, Path]] = None, limit: int = 50000) -> Path:
-        """Экспортирует историю изменения параметров в CSV-файл."""
-        params = self.get_app_param_changes(app=app, limit=limit)
-        target = Path(output_path) if output_path else Path('app_param_changes.csv')
-        target.parent.mkdir(parents=True, exist_ok=True)
-        headers = ['timestamp', 'app', 'param_name', 'old_value', 'new_value', 'status', 'user', 'details']
-        with open(target, 'w', newline='', encoding='utf-8-sig') as f:
-            writer = csv.writer(f)
-            writer.writerow(headers)
-            for p in params:
-                writer.writerow([
-                    p.get('timestamp', ''), p.get('app', ''), p.get('param_name', ''),
-                    p.get('old_value', ''), p.get('new_value', ''), p.get('status', ''),
-                    p.get('user', ''), p.get('details', ''),
-                ])
-        return target
 
     def get_custom_records(self, source_file: Optional[str] = None, limit: int = 100) -> List[Dict[str, Any]]:
         """Извлекает кастомные записи логов."""
@@ -1598,6 +1593,28 @@ class TelemetryReader:
             d['microphone_active_apps'] = json.loads(d['microphone_active_apps_json']) if d.get('microphone_active_apps_json') else []
             d['userassist_top_apps'] = json.loads(d['userassist_top_apps_json']) if d.get('userassist_top_apps_json') else []
             return d
+
+    def get_forensics_history(self, limit: int = 50, hours: float = 24.0) -> List[Dict[str, Any]]:
+        """Извлечение хронологической истории снимков форензики (переключение окон, активность)."""
+        with self._cm.lock, self._cm.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT id, snapshot_id, timestamp, foreground_window_title, foreground_process_name,
+                       foreground_pid, user_idle_seconds, camera_active_apps_json,
+                       microphone_active_apps_json, userassist_top_apps_json, created_at
+                FROM forensics_snapshots
+                ORDER BY id DESC
+                LIMIT ?
+            ''', (limit,))
+            rows = cursor.fetchall()
+            results = []
+            for row in rows:
+                d = dict(row)
+                d['camera_active_apps'] = json.loads(d['camera_active_apps_json']) if d.get('camera_active_apps_json') else []
+                d['microphone_active_apps'] = json.loads(d['microphone_active_apps_json']) if d.get('microphone_active_apps_json') else []
+                d['userassist_top_apps'] = json.loads(d['userassist_top_apps_json']) if d.get('userassist_top_apps_json') else []
+                results.append(d)
+            return results
 
     # 6. Process Leaks & Resource Starvation
     def get_latest_process_leak_report(self, limit: int = 20) -> Optional[Dict[str, Any]]:

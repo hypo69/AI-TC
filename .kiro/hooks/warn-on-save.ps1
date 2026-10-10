@@ -1,6 +1,6 @@
 <#
 =============================================================================
-Process Name: AI-Breadboard Automation - Warn On Save
+Process Name: AI-Windows-Admin Automation - Warn On Save
 =============================================================================
 Description:
   PowerShell-сценарий автоматизации и системного обслуживания (warn-on-save).
@@ -10,11 +10,11 @@ Usage Examples:
     .\warn-on-save.ps1
 
 File: warn-on-save.ps1
-Project: ai-breadboard
+Project: ai-windows-admin
 Package: .kiro/hooks
 Author: hypo69
 Copyright: © 2026 hypo69
-Updated: 2026-10-02 21:57:05
+Updated: 2026-10-10 17:35:00
 =============================================================================
 #>
 

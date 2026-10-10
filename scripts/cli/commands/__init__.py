@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Scripts Cli Commands -   Init  
+# Process Name: AI-Windows-Admin Scripts Cli Commands -   Init  
 # =============================================================================
 # Description:
 #   Модули команд для CLI и диспетчера manage_tools.
@@ -12,11 +12,11 @@
 #     res = register_all_parsers()
 #
 # File: __init__.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: scripts.cli.commands
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-08 12:00:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard UTILS - Html Module
+# Process Name: AI-Windows-Admin UTILS - Html Module
 # =============================================================================
 # Description:
 #   HTML conversion utilities.
@@ -13,11 +13,11 @@
 #     print(res)
 #
 # File: html.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: src.utils.convertors
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:13:56
+# Updated: 2026-10-10 22:22:30
 # =============================================================================
 
 """HTML conversion utilities.
@@ -144,5 +144,5 @@ def html2pdf(html_str: str, pdf_file: str | Path) -> bool | None:
         HTML(string=html_str).write_pdf(pdf_file)
         return True
     except Exception as e:
-        print(f'Error during PDF generation: {e}')
+        logger.console(f'Error during PDF generation: {e}')
         return

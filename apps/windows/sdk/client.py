@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows SDK - Main Client Facade
+# Process Name: AI-Windows-Admin Apps Windows SDK - Main Client Facade
 # =============================================================================
 # Description:
 #   Единый программный интерфейс (SDK Facade) для доступа ко всем подсистемам
@@ -21,15 +21,15 @@
 #     features = windows_sdk.features.get_features()
 #
 # File: client.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 05:45:00
+# Updated: 2026-10-10 19:20:00
 # =============================================================================
 
 from __future__ import annotations
-"""Единый фасад Windows SDK (Software Development Kit) для AI-Breadboard."""
+"""Единый фасад Windows SDK (Software Development Kit) для AI-Windows-Admin."""
 
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
@@ -173,6 +173,12 @@ class ModulesSubsystem:
         """Модуль управления окнами Windows."""
         from apps.windows.sdk.modules.window_control_plane.manager import WindowManagementControlPlane
         return WindowManagementControlPlane()
+
+    @property
+    def software_scanner(self) -> Any:
+        """Модуль глубокого сканирования следов ПО и спящих программ."""
+        from apps.windows.sdk.software_scanner import DeepSoftwareScanner
+        return DeepSoftwareScanner()
 
 
 class WindowsSDK:

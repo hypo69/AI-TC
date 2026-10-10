@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Telemetry_Research - Cli
+# Process Name: AI-Windows-Admin Apps Windows Telemetry_Research - Cli
 # =============================================================================
 # Description:
 #   CLI интерфейс для исследования логов телеметрии и построения графиков.
@@ -14,11 +14,11 @@
 #     res = parse_args()
 #
 # File: cli.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.telemetry_research
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:28:28
+# Updated: 2026-10-10 22:22:30
 # =============================================================================
 
 from __future__ import annotations
@@ -46,7 +46,7 @@ from .models import ResearchScenarioRequest
 def parse_args() -> argparse.Namespace:
     """Парсинг аргументов командной строки."""
     parser = argparse.ArgumentParser(
-        description="AI-Breadboard: Исследование логов телеметрии и генерация графиков",
+        description="AI-Windows-Admin: Исследование логов телеметрии и генерация графиков",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument(
@@ -86,23 +86,23 @@ def main() -> int:
     if args.format == "summary":
         req = ResearchScenarioRequest(source_path=args.source)
         deep_report = researcher.run_deep_research(scenario=req, chart_generator=chart_gen)
-        print("\n" + "=" * 70)
-        print(f"🔬 Отчет исследования телеметрии: {deep_report.report_id}")
-        print("=" * 70)
-        print(f"Дата формирования: {deep_report.generated_at}")
-        print(f"Проанализировано записей: {deep_report.base_report.records_analyzed}")
-        print(f"Индекс здоровья системы: {deep_report.base_report.health_score}/100")
-        print(f"Обнаружено аномалий: {len(deep_report.base_report.anomalies)}")
-        print("\n--- Проверенные гипотезы ---")
+        logger.console("\n" + "=" * 70)
+        logger.console(f"🔬 Отчет исследования телеметрии: {deep_report.report_id}")
+        logger.console("=" * 70)
+        logger.console(f"Дата формирования: {deep_report.generated_at}")
+        logger.console(f"Проанализировано записей: {deep_report.base_report.records_analyzed}")
+        logger.console(f"Индекс здоровья системы: {deep_report.base_report.health_score}/100")
+        logger.console(f"Обнаружено аномалий: {len(deep_report.base_report.anomalies)}")
+        logger.console("\n--- Проверенные гипотезы ---")
         for h in deep_report.hypotheses:
             status_icon = "⚠️ [ПОДТВЕРЖДЕНА]" if h.confirmed else "✅ [В НОРМЕ]"
-            print(f"{status_icon} {h.title} (уверенность {h.confidence * 100:.0f}%)")
+            logger.console(f"{status_icon} {h.title} (уверенность {h.confidence * 100:.0f}%)")
             for ev in h.evidence:
-                print(f"    • {ev}")
-        print("\n--- Рекомендации ---")
+                logger.console(f"    • {ev}")
+        logger.console("\n--- Рекомендации ---")
         for rec in deep_report.actionable_recommendations:
-            print(f"  👉 {rec}")
-        print("=" * 70 + "\n")
+            logger.console(f"  👉 {rec}")
+        logger.console("=" * 70 + "\n")
         return 0
 
     report = researcher.analyze(args.source)
@@ -117,25 +117,25 @@ def main() -> int:
     if args.format == "html":
         html_content = chart_gen.render_html_dashboard(report)
         out_path.write_text(html_content, encoding="utf-8")
-        print(f"✅ HTML дашборд с графиками сохранен в: {out_path.resolve()}")
+        logger.console(f"✅ HTML дашборд с графиками сохранен в: {out_path.resolve()}")
     elif args.format == "json":
         json_content = json.dumps(report.model_dump(), ensure_ascii=False, indent=2)
         out_path.write_text(json_content, encoding="utf-8")
-        print(f"✅ JSON отчет сохранен в: {out_path.resolve()}")
+        logger.console(f"✅ JSON отчет сохранен в: {out_path.resolve()}")
     elif args.format == "svg":
         for chart in report.charts:
             svg_file = out_path.parent / f"{chart.id}.svg"
             svg_content = chart_gen.render_svg_chart(chart)
             svg_file.write_text(svg_content, encoding="utf-8")
-            print(f"✅ SVG график сохранен в: {svg_file.resolve()}")
+            logger.console(f"✅ SVG график сохранен в: {svg_file.resolve()}")
 
-    print("\n--- Результаты исследования ---")
-    print(f"Проанализировано записей: {report.records_analyzed}")
-    print(f"Индекс здоровья системы (Health Score): {report.health_score}%")
-    print(f"Обнаружено аномалий: {len(report.anomalies)}")
-    print(f"Сгенерировано графиков: {len(report.charts)}")
+    logger.console("\n--- Результаты исследования ---")
+    logger.console(f"Проанализировано записей: {report.records_analyzed}")
+    logger.console(f"Индекс здоровья системы (Health Score): {report.health_score}%")
+    logger.console(f"Обнаружено аномалий: {len(report.anomalies)}")
+    logger.console(f"Сгенерировано графиков: {len(report.charts)}")
     for conclusion in report.summary_conclusions:
-        print(f" • {conclusion}")
+        logger.console(f" • {conclusion}")
 
     return 0
 

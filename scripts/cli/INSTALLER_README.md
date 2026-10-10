@@ -1,4 +1,4 @@
-# Кроссплатформенный установщик AI Breadboard
+# Кроссплатформенный установщик AI Windows Admin
 
 Новая система установки на Python, заменяющая старые PowerShell скрипты.
 
@@ -26,13 +26,13 @@ chmod +x install.sh
 ./install.sh --lang ru
 
 # Установка в пользовательскую директорию
-./install.sh --install-dir /opt/ai-breadboard
+./install.sh --install-dir /opt/ai-windows-admin
 
 # Пропустить загрузку моделей
 ./install.sh --skip-models
 
 # Все Parameters сразу
-./install.sh --lang ru --install-dir ~/.ai-breadboard --skip-models
+./install.sh --lang ru --install-dir ~/.ai-windows-admin --skip-models
 ```
 
 ### Windows
@@ -63,7 +63,7 @@ python scripts/cli/installer.py --lang ru --install-dir /custom/path
 
 ```
 --lang {en|ru|es|he}       Язык установки (по умолчанию: en)
---install-dir PATH         Директория установки (по умолчанию: ~/AI-Breadboard)
+--install-dir PATH         Директория установки (по умолчанию: ~/AI-Windows-Admin)
 --skip-models             Пропустить загрузку моделей ИИ
 --skip-venv               Пропустить создание виртуального окружения
 --skip-deps               Пропустить установку зависимостей
@@ -82,7 +82,7 @@ python scripts/cli/installer.py --lang ru --install-dir /custom/path
 ## Структура директории после установки
 
 ```
-~/AI-Breadboard/
+~/AI-Windows-Admin/
 ├── venv/                    # Виртуальное окружение Python
 ├── launchers/               # Лончеры (run.py, etc)
 ├── scripts/
@@ -105,8 +105,8 @@ python scripts/cli/installer.py --lang ru --install-dir /custom/path
 
 ```bash
 # Автоматически добавлено в ~/.bashrc / ~/.zshrc
-export AIBREADBOARD_DIR=/home/user/AI-Breadboard
-export PYTHONPATH=$AIBREADBOARD_DIR
+export AIWINDOWSADMIN_DIR=/home/user/AI-Windows-Admin
+export PYTHONPATH=$AIWINDOWSADMIN_DIR
 
 # Теперь можно использовать assist откуда угодно
 assist status
@@ -117,8 +117,8 @@ assist start
 
 ```bash
 # 1. Клонировать репо
-git clone https://github.com/hypo69/AI-Breadboard.git
-cd AI-Breadboard
+git clone https://github.com/hypo69/AI-Windows-Admin.git
+cd AI-Windows-Admin
 
 # 2. Запустить установщик (на русском)
 chmod +x install.sh
@@ -213,7 +213,7 @@ scripts/cli/
 .\install.ps1
 
 # Специфичные для Windows пути
-$env:LOCALAPPDATA\AI Breadboard
+$env:LOCALAPPDATA\AI Windows Admin
 ```
 
 **Новое:**
@@ -235,5 +235,5 @@ python scripts/cli/installer.py  # Везде
 ## Контакты
 
 Если у вас есть вопросы или проблемы при установке:
-- Создайте Issue: https://github.com/hypo69/AI-Breadboard/issues
-- Обсудите в Discussions: https://github.com/hypo69/AI-Breadboard/discussions
+- Создайте Issue: https://github.com/hypo69/AI-Windows-Admin/issues
+- Обсудите в Discussions: https://github.com/hypo69/AI-Windows-Admin/discussions

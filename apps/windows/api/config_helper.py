@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows API - Config Helper
+# Process Name: AI-Windows-Admin Apps Windows API - Config Helper
 # =============================================================================
 # Description:
 #   Унифицированное чтение и сохранение настроек AI-моделей и провайдеров в config.json.
@@ -12,11 +12,11 @@
 #     save_ai_config(provider='gemini', model_name='gemini-3.1-flash-lite')
 #
 # File: config_helper.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.api
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 12:41:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations
@@ -33,7 +33,7 @@ from logger import logger
 
 def resolve_active_config_path(profile: str = "") -> Path:
     """Находит актуальный путь к конфигурационному файлу apps/windows/config.json."""
-    cfg_env = os.getenv("AIBREADBOARD_CONFIG") or os.getenv("CONFIG_FILE")
+    cfg_env = os.getenv("AIWINDOWSADMIN_CONFIG") or os.getenv("CONFIG_FILE")
     if cfg_env:
         p = Path(cfg_env)
         active_p = p if p.is_absolute() else (__root__ / cfg_env)
@@ -41,12 +41,11 @@ def resolve_active_config_path(profile: str = "") -> Path:
             return active_p
 
     candidates = [
+        __root__ / "config.json",
         __root__ / "apps" / "windows" / "config.json",
-        __root__ / "start_scenarios_config" / "tc.json",
         __root__ / "config" / "tc.json",
         __root__ / "config_tc.json",
         __root__ / "tc.json",
-        __root__ / "config.json",
     ]
     for cand in candidates:
         if cand.exists():

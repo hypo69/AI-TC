@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Modules Sysadmin -   Main  
+# Process Name: AI-Windows-Admin Apps Windows Modules Sysadmin -   Main  
 # =============================================================================
 # Description:
 #   CLI entry point for the Windows System Administrator application.
@@ -14,14 +14,15 @@
 #     res = main()
 #
 # File: __main__.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.sysadmin
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:28:28
+# Updated: 2026-10-10 22:22:44
 # =============================================================================
 
 from __future__ import annotations
+from logger import logger
 """CLI entry point for the Windows System Administrator application."""
 
 import argparse
@@ -83,51 +84,51 @@ def main() -> None:
     if args.file_audit_status:
         status = auditor.get_audit_policy_status()
         if args.json:
-            print(json.dumps(asdict(status), indent=2))
+            logger.console(json.dumps(asdict(status), indent=2))
         else:
-            print('[Windows File Auditing Status]')
-            print(f'  Subcategory:      {status.subcategory}')
-            print(f"  Success Enabled:  {('✓ YES' if status.success_enabled else '✗ NO')}")
-            print(f"  Failure Enabled:  {('✓ YES' if status.failure_enabled else '✗ NO')}")
-            print(f"  Is Configured:    {('✓ YES' if status.is_configured else '✗ NO')}")
+            logger.console('[Windows File Auditing Status]')
+            logger.console(f'  Subcategory:      {status.subcategory}')
+            logger.console(f"  Success Enabled:  {('✓ YES' if status.success_enabled else '✗ NO')}")
+            logger.console(f"  Failure Enabled:  {('✓ YES' if status.failure_enabled else '✗ NO')}")
+            logger.console(f"  Is Configured:    {('✓ YES' if status.is_configured else '✗ NO')}")
         return
     if args.set_audit_policy:
-        print('[Windows System Administrator] Enabling File System auditpol policy...')
+        logger.console('[Windows System Administrator] Enabling File System auditpol policy...')
         res = auditor.set_audit_policy(enable_success=True, enable_failure=True)
-        print(json.dumps(res, indent=2))
+        logger.console(json.dumps(res, indent=2))
         return
     if args.configure_sacl:
         target_path = args.configure_sacl
-        print(f'[Windows System Administrator] Setting SACL Delete audit on: {target_path}...')
+        logger.console(f'[Windows System Administrator] Setting SACL Delete audit on: {target_path}...')
         res = auditor.configure_folder_sacl(folder_path=target_path, principal='Everyone', enable=True)
-        print(json.dumps(res, indent=2))
+        logger.console(json.dumps(res, indent=2))
         return
     if args.deletions:
-        print(f'[Windows System Administrator] Fetching file deletion events for last {args.hours} hours...')
+        logger.console(f'[Windows System Administrator] Fetching file deletion events for last {args.hours} hours...')
         events = auditor.fetch_deletion_events(hours=args.hours, max_events=100)
         del_events = [e for e in events if e.is_deletion]
         if args.json:
-            print(json.dumps([asdict(e) for e in del_events], indent=2))
+            logger.console(json.dumps([asdict(e) for e in del_events], indent=2))
         else:
-            print(f'Found {len(del_events)} deletion events (4663/4660):')
+            logger.console(f'Found {len(del_events)} deletion events (4663/4660):')
             for e in del_events[:20]:
-                print(f'  [{e.timestamp}] Event {e.event_id} | Object: {e.object_name} | Proc: {e.process_name} | User: {e.subject_user_name}')
+                logger.console(f'  [{e.timestamp}] Event {e.event_id} | Object: {e.object_name} | Proc: {e.process_name} | User: {e.subject_user_name}')
         return
     if args.ad_status:
-        print('[Windows System Administrator] Checking Active Directory connectivity...')
-        print('✓ Active Directory: Connected')
-        print('✓ Domain: WORKGROUP')
-        print('✓ Domain Controller: N/A (Local Machine)')
+        logger.console('[Windows System Administrator] Checking Active Directory connectivity...')
+        logger.console('✓ Active Directory: Connected')
+        logger.console('✓ Domain: WORKGROUP')
+        logger.console('✓ Domain Controller: N/A (Local Machine)')
         return
     if args.security_events:
-        print(f'[Windows System Administrator] Retrieving security events from last {args.hours} hours...')
+        logger.console(f'[Windows System Administrator] Retrieving security events from last {args.hours} hours...')
         events = auditor.fetch_deletion_events(hours=args.hours, max_events=50)
-        print(json.dumps([asdict(e) for e in events], indent=2))
+        logger.console(json.dumps([asdict(e) for e in events], indent=2))
         return
     if args.mode == 'audit' and args.audit:
-        print(f"[Windows System Administrator] Auditing {args.audit} in domain {args.domain or 'LOCAL'}...")
+        logger.console(f"[Windows System Administrator] Auditing {args.audit} in domain {args.domain or 'LOCAL'}...")
         if args.json:
-            print(json.dumps({'audit_type': args.audit, 'domain': args.domain, 'status': 'completed'}))
+            logger.console(json.dumps({'audit_type': args.audit, 'domain': args.domain, 'status': 'completed'}))
         return
     if args.mode == 'server':
         config = _load_config()
@@ -138,14 +139,14 @@ def main() -> None:
         effective_reload = args.reload if args.reload else False
         effective_workers = args.workers if args.workers != 1 else getattr(server_cfg, 'workers', 1)
         if server_mode == 'shared' and args.port == 0:
-            print("[Windows System Administrator] App configured in 'shared' server mode.")
-            print(f'[Windows System Administrator] API endpoints are routed via the main server (http://{effective_host}:8000).')
+            logger.console("[Windows System Administrator] App configured in 'shared' server mode.")
+            logger.console(f'[Windows System Administrator] API endpoints are routed via the main server (http://{effective_host}:8000).')
         _run_standalone_server(host=effective_host, port=effective_port, reload=effective_reload, workers=effective_workers)
         return
     try:
         asyncio.run(run_sysadmin_dashboard(interval=args.interval))
     except KeyboardInterrupt:
-        print('\n[Windows System Administrator] Dashboard closed.')
+        logger.console('\n[Windows System Administrator] Dashboard closed.')
         sys.exit(0)
 
 def _run_standalone_server(host: str='127.0.0.1', port: int=8001, reload: bool=False, workers: int=1) -> None:
@@ -154,21 +155,21 @@ def _run_standalone_server(host: str='127.0.0.1', port: int=8001, reload: bool=F
         import uvicorn
         from fastapi import FastAPI
         from .router import init_router
-        print('[Windows System Administrator] Starting standalone FastAPI server...')
-        print(f'  Host: {host}')
-        print(f'  Port: {port}')
-        print(f'  Reload: {reload}')
-        print(f'  Workers: {workers}')
-        print(f"\n  Available at: http://{(host if host != '0.0.0.0' else 'localhost')}:{port}")
-        print(f"  API Docs: http://{(host if host != '0.0.0.0' else 'localhost')}:{port}/docs\n")
+        logger.console('[Windows System Administrator] Starting standalone FastAPI server...')
+        logger.console(f'  Host: {host}')
+        logger.console(f'  Port: {port}')
+        logger.console(f'  Reload: {reload}')
+        logger.console(f'  Workers: {workers}')
+        logger.console(f"\n  Available at: http://{(host if host != '0.0.0.0' else 'localhost')}:{port}")
+        logger.console(f"  API Docs: http://{(host if host != '0.0.0.0' else 'localhost')}:{port}/docs\n")
         app = FastAPI(title='Windows System Administrator', description='Standalone Windows system administration, AD management, security monitoring & file auditing', version='1.1.0')
         app.include_router(init_router())
         uvicorn.run(app, host=host, port=port, reload=reload, workers=workers, log_level='info')
     except ImportError as e:
-        print(f'[ERROR] Failed to import required modules: {e}')
+        logger.console(f'[ERROR] Failed to import required modules: {e}')
         sys.exit(1)
     except Exception as e:
-        print(f'[ERROR] Server error: {e}')
+        logger.console(f'[ERROR] Server error: {e}')
         sys.exit(1)
 if __name__ == '__main__':
     main()

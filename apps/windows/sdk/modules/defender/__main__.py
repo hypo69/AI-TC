@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Modules Defender -   Main  
+# Process Name: AI-Windows-Admin Apps Windows Modules Defender -   Main  
 # =============================================================================
 # Description:
 #   Точка входа для запуска Windows Defender & Security Center.
@@ -14,14 +14,15 @@
 #     res = main()
 #
 # File: __main__.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.defender
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-08 04:11:30
+# Updated: 2026-10-10 22:22:44
 # =============================================================================
 
 from __future__ import annotations
+from logger import logger
 """Точка входа для запуска Windows Defender & Security Center."""
 
 import argparse
@@ -42,20 +43,20 @@ def main() -> None:
     args = parser.parse_args()
     svc = DefenderService()
     if args.update:
-        print('Обновление баз сигнатур Microsoft Defender...')
+        logger.console('Обновление баз сигнатур Microsoft Defender...')
         resp = svc.update_signatures()
-        print(f'Результат: {resp.message}')
+        logger.console(f'Результат: {resp.message}')
         if resp.output:
-            print(resp.output)
+            logger.console(resp.output)
         return
     if args.scan:
         st_map = {'quick': ScanType.QUICK, 'full': ScanType.FULL, 'custom': ScanType.CUSTOM, 'offline': ScanType.OFFLINE}
         req = ScanRequest(scan_type=st_map[args.scan], target_path=args.path)
-        print(f'Запуск сканирования ({args.scan})...')
+        logger.console(f'Запуск сканирования ({args.scan})...')
         resp = svc.trigger_scan(req)
-        print(f'Результат: {resp.message}')
+        logger.console(f'Результат: {resp.message}')
         if resp.output:
-            print(resp.output)
+            logger.console(resp.output)
         return
     if args.server:
         import uvicorn
@@ -63,7 +64,7 @@ def main() -> None:
         from apps.windows.sdk.modules.defender.router import init_router
         app = FastAPI(title='Windows Defender Security API', version='1.0.0')
         app.include_router(init_router())
-        print(f'Запуск сервера Windows Defender API на http://{args.host}:{args.port} ...')
+        logger.console(f'Запуск сервера Windows Defender API на http://{args.host}:{args.port} ...')
         uvicorn.run(app, host=args.host, port=args.port)
         return
     tui = DefenderTUI()

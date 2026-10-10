@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Telemetry_Research - Analyzer
+# Process Name: AI-Windows-Admin Apps Windows Telemetry_Research - Analyzer
 # =============================================================================
 # Description:
 #   Аналитический движок исследования логов телеметрии.
@@ -12,11 +12,11 @@
 #     service = TelemetryResearcher()
 #
 # File: analyzer.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.telemetry_research
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:28:28
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

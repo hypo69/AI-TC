@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Modules Taskbar - Models
+# Process Name: AI-Windows-Admin Apps Windows Modules Taskbar - Models
 # =============================================================================
 # Description:
 #   Модели данных для контроллера панели задач (TaskbarController), окон и Command Registry.
@@ -10,11 +10,11 @@
 #     from apps.windows.sdk.modules.taskbar.core.models import TaskbarSettings, WindowItem
 #
 # File: models.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.taskbar.core
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-06 17:35:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

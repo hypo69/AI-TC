@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Telemetry_Research - Extractor
+# Process Name: AI-Windows-Admin Apps Windows Telemetry_Research - Extractor
 # =============================================================================
 # Description:
 #   Загрузчик и парсер логов телеметрии из файлов и директорий.
@@ -12,11 +12,11 @@
 #     service = TelemetryDataExtractor()
 #
 # File: extractor.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.telemetry_research
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:28:28
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations
@@ -61,8 +61,8 @@ class TelemetryDataExtractor:
             if default_log_dirs
             else [
                 base_proj / "logs" / "telemetry",
-                Path(appdata) / "AI-Breadboard" / "apps" / "logs",
-                Path(appdata) / "AI-Breadboard" / "apps" / "windows" / "telemetry" / "logs",
+                Path(appdata) / "AI-Windows-Admin" / "apps" / "logs",
+                Path(appdata) / "AI-Windows-Admin" / "apps" / "windows" / "telemetry" / "logs",
                 base_proj / "data" / "telemetry" / "hardware_archives",
             ]
         )
@@ -181,9 +181,9 @@ class TelemetryDataExtractor:
             return Path(self.storage.db_path)
         appdata = os.environ.get("APPDATA") or os.environ.get("LOCALAPPDATA") or str(Path.home() / "AppData" / "Roaming")
         candidates = [
-            Path(appdata) / "AI-Breadboard" / "apps" / "windows" / "telemetry" / "logs" / "telemetry.db",
+            Path(appdata) / "AI-Windows-Admin" / "apps" / "windows" / "telemetry" / "logs" / "telemetry.db",
             Path(__file__).resolve().parents[3] / "logs" / "telemetry" / "telemetry.db",
-            Path(appdata) / "AI-Breadboard" / "apps" / "logs" / "telemetry.db",
+            Path(appdata) / "AI-Windows-Admin" / "apps" / "logs" / "telemetry.db",
         ]
         for p in candidates:
             if p.exists() and p.is_file():

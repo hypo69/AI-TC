@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Core - Process Activity Engine
+# Process Name: AI-Windows-Admin Apps Windows Core - Process Activity Engine
 # =============================================================================
 # Description:
 #   Движок Process Intelligence & Activity Deep Dive. Обеспечивает точное
@@ -16,11 +16,11 @@
 #     active = engine.get_active_instances()
 #
 # File: process_activity_engine.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.core
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-08 11:52:00
+# Updated: 2026-10-10 22:28:45
 # =============================================================================
 
 from __future__ import annotations
@@ -45,16 +45,7 @@ except ImportError:
     import logging
     logger = logging.getLogger(__name__)
 
-from apps.windows.telemetry.models import (
-    ProcessDefinitionRecord,
-    ProcessFileEventRecord,
-    ProcessInstanceRecord,
-    ProcessLineageNode,
-    ProcessSafeOpsRequest,
-    ProcessSafeOpsResponse,
-    ProcessSampleRecord,
-    ProcessSocketRecord,
-)
+from apps.windows.telemetry.models import ProcessFileEventRecord, ProcessInstanceRecord, ProcessLineageNode, ProcessSafeOpsRequest, ProcessSafeOpsResponse, ProcessSampleRecord, ProcessSocketRecord
 from apps.windows.telemetry.sqlite import TelemetryStorage
 
 
@@ -1137,7 +1128,7 @@ class ProcessActivityEngine:
                 )
 
             elif action_name == "dump":
-                dump_dir = Path(request.dump_folder) if request.dump_folder else Path(os.environ.get("TEMP", "C:/Temp")) / "ai_breadboard_dumps"
+                dump_dir = Path(request.dump_folder) if request.dump_folder else Path(os.environ.get("TEMP", "C:/Temp")) / "ai_windows_admin_dumps"
                 dump_dir.mkdir(parents=True, exist_ok=True)
                 timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
                 dump_filename = dump_dir / f"{inst.name}_{pid}_{timestamp_str}.dmp"

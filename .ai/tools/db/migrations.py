@@ -346,24 +346,24 @@ def main() -> int:
     mgr = get_migration_manager()
     if args.create:
         path = mgr.create_migration(args.db, args.create, is_python=args.py)
-        print(f'Created migration: {path}')
+        logger.console(f'Created migration: {path}')
         return 0
     if args.status or not args.apply:
         status = mgr.get_status()
-        print('\n--- DATABASE MIGRATION STATUS ---')
+        logger.console('\n--- DATABASE MIGRATION STATUS ---')
         for db, info in status.items():
-            print(f"[{db}] Up-to-date: {info['is_up_to_date']} | Applied: {info['applied_count']} | Pending: {info['pending_count']}")
+            logger.console(f"[{db}] Up-to-date: {info['is_up_to_date']} | Applied: {info['applied_count']} | Pending: {info['pending_count']}")
             if info['pending_migrations']:
-                print(f"  Pending: {', '.join(info['pending_migrations'])}")
-        print('---------------------------------\n')
+                logger.console(f"  Pending: {', '.join(info['pending_migrations'])}")
+        logger.console('---------------------------------\n')
         if not args.apply:
             return 0
     if args.apply:
-        print('Applying pending database migrations...')
+        logger.console('Applying pending database migrations...')
         result = mgr.apply_all_pending()
         for db, res in result['databases'].items():
             status_tag = '[OK]' if res['success'] else '[ERROR]'
-            print(f"  {status_tag} {db}: {res['message']} ({res['applied_count']} applied)")
+            logger.console(f"  {status_tag} {db}: {res['message']} ({res['applied_count']} applied)")
         return 0 if result['success'] else 1
     return 0
 if __name__ == '__main__':

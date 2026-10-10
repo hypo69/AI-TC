@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard AI Agents - Windows Security ACL Tools Module
+# Process Name: AI-Windows-Admin AI Agents - Windows Security ACL Tools Module
 # =============================================================================
 # Description:
 #   Инструменты управления правами доступа (ACL), шифрованием BitLocker/EFS
@@ -15,11 +15,11 @@
 #     res = await windows_security_acl_audit(action="report")
 #
 # File: security_acl.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: src.ai.agents.windows_tools
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-08 22:10:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

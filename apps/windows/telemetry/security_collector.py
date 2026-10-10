@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Telemetry - Security Collector
+# Process Name: AI-Windows-Admin Apps Windows Telemetry - Security Collector
 # =============================================================================
 # Description:
 #   Коллектор событий журнала безопасности Windows Security Event Log.
@@ -16,11 +16,11 @@
 #     report = collector.collect_incremental(batch_size=200)
 #
 # File: security_collector.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.telemetry
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 05:40:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

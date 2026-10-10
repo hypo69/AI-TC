@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Telemetry Research - Compatibility Layer
+# Process Name: AI-Windows-Admin Apps Windows Telemetry Research - Compatibility Layer
 # =============================================================================
 # Description:
 #   Слой совместимости: перенаправление импортов в apps.windows.telemetry.analytics.
@@ -10,11 +10,11 @@
 #     from apps.windows.telemetry_research import DiagnosticEngine
 #
 # File: __init__.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.telemetry_research
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-08 12:08:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

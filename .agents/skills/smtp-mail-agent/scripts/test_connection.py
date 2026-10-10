@@ -1,5 +1,6 @@
 """CLI-утилита проверки соединения с SMTP-сервером."""
 from __future__ import annotations
+from logger import logger
 import argparse
 import json
 import sys
@@ -26,16 +27,16 @@ def main() -> int:
     except Exception as exc:
         result = {'status': 'error', 'message': f'Ошибка инициализации конфигурации: {exc}', 'error_type': type(exc).__name__}
     if args.json:
-        print(json.dumps(result, ensure_ascii=False, indent=2))
+        logger.console(json.dumps(result, ensure_ascii=False, indent=2))
     elif result.get('status') == 'success':
-        print(f"✅ [OK] {result.get('message')}")
-        print(f"   Сервер: {result.get('host')}:{result.get('port')}")
-        print(f"   Пользователь: {result.get('authenticated_user')}")
-        print(f"   TLS: {result.get('tls_enabled')}, SSL: {result.get('ssl_enabled')}")
+        logger.console(f"✅ [OK] {result.get('message')}")
+        logger.console(f"   Сервер: {result.get('host')}:{result.get('port')}")
+        logger.console(f"   Пользователь: {result.get('authenticated_user')}")
+        logger.console(f"   TLS: {result.get('tls_enabled')}, SSL: {result.get('ssl_enabled')}")
     else:
-        print(f"❌ [FAIL] {result.get('message')}")
+        logger.console(f"❌ [FAIL] {result.get('message')}")
         if 'error_type' in result:
-            print(f"   Тип ошибки: {result.get('error_type')}")
+            logger.console(f"   Тип ошибки: {result.get('error_type')}")
     return 0 if result.get('status') == 'success' else 1
 if __name__ == '__main__':
     sys.exit(main())

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard UTILS - Printer Module
+# Process Name: AI-Windows-Admin UTILS - Printer Module
 # =============================================================================
 # Description:
 #   Pretty printing and text formatting module.
@@ -15,11 +15,11 @@
 #     print(res)
 #
 # File: printer.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: src.utils
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:13:56
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 """Pretty printing and text formatting module.

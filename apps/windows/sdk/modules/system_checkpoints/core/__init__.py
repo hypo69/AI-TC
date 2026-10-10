@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Modules System_Checkpoints Core -   Init  
+# Process Name: AI-Windows-Admin Apps Windows Modules System_Checkpoints Core -   Init  
 # =============================================================================
 # Description:
 #   Ядро управления контрольными точками и средами восстановления Windows.
@@ -9,11 +9,11 @@
 #
 #
 # File: __init__.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.system_checkpoints.core
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:28:28
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 """Ядро управления контрольными точками и средами восстановления Windows."""

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Scripts Dev - Scan Headers
+# Process Name: AI-Windows-Admin Scripts Dev - Scan Headers
 # =============================================================================
 # Description:
 #   Header validation scanner for Python files.
@@ -14,11 +14,11 @@
 #     res = count_words()
 #
 # File: scan_headers.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: scripts.dev
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:27:07
+# Updated: 2026-10-10 22:22:30
 # =============================================================================
 
 """Header validation scanner for Python files.
@@ -26,6 +26,7 @@
 Scans all Python files to validate header format and documentation compliance
 with project standards."""
 
+from logger import logger
 import os
 import re
 from pathlib import Path
@@ -104,13 +105,13 @@ if __name__ == '__main__':
     import sys
     root_dir = Path(__root__ if '__root__' in globals() else '.')
     python_files = list(root_dir.glob('**/*.py'))
-    print(f'Found {len(python_files)} Python files. Starting scan...')
+    logger.console(f'Found {len(python_files)} Python files. Starting scan...')
     for pf in python_files:
         if 'venv' in pf.parts or '.git' in pf.parts:
             continue
         try:
             status = check_header(pf)
             if status['has_header'] == 'no':
-                print(f'❌ {pf.relative_to(root_dir)} — header missing or invalid')
+                logger.console(f'❌ {pf.relative_to(root_dir)} — header missing or invalid')
         except Exception as e:
-            print(f'⚠️ Error processing {pf}: {e}')
+            logger.console(f'⚠️ Error processing {pf}: {e}')

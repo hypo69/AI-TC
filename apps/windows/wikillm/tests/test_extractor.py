@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Wikillm Tests - Test Extractor
+# Process Name: AI-Windows-Admin Apps Windows Wikillm Tests - Test Extractor
 # =============================================================================
 # Description:
 #   Тесты для извлечения артефактов из логов, словарей событий и инцидентов.
@@ -12,11 +12,11 @@
 #     res = test_extract_from_event_dict()
 #
 # File: test_extractor.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.wikillm.tests
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:28:28
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

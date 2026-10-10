@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard CORE - Version Manager Module
+# Process Name: AI-Windows-Admin CORE - Version Manager Module
 # =============================================================================
 # Description:
 #   Version manager and automatic update handler.
@@ -12,11 +12,11 @@
 #     service = UpdateStatus()
 #
 # File: version_manager.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: src
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:13:56
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 """Version manager and automatic update handler.
@@ -82,8 +82,8 @@ class VersionManager:
             repo_path: Path to repository (default: __root__)
         """
         self.repo_path: Path = repo_path or __root__
-        self.temp_backup_dir: Path = Path(tempfile.gettempdir()) / 'ai-breadboard' / 'backups'
-        self.update_log_dir: Path = Path(tempfile.gettempdir()) / 'ai-breadboard' / 'updates'
+        self.temp_backup_dir: Path = Path(tempfile.gettempdir()) / 'ai-windows-admin' / 'backups'
+        self.update_log_dir: Path = Path(tempfile.gettempdir()) / 'ai-windows-admin' / 'updates'
         self.current_version: str = '1.0.0'
         self.remote_url: str = 'origin'
         self.temp_backup_dir.mkdir(parents=True, exist_ok=True)

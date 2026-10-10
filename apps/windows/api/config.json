@@ -246,7 +246,7 @@
         "module": "apps.windows.api.routers.router_app_logs",
         "factory": "init_router",
         "enabled": true,
-        "description": "Анализ и стриминг внутренних логов программы (%APPDATA%/AI-Breadboard/logs) (/api/v1/app_logs/*)"
+        "description": "Анализ и стриминг внутренних логов программы (%APPDATA%/AI-Windows-Admin/logs) (/api/v1/app_logs/*)"
     },
     {
         "module": "apps.windows.wikillm.router",
@@ -277,6 +277,12 @@
         "factory": "init_router",
         "enabled": true,
         "description": "Управление API ключами и квоты Gemini (/api/keys/*)"
+    },
+    {
+        "module": "apps.windows.sdk.software_scanner.router",
+        "factory": "init_router",
+        "enabled": true,
+        "description": "Глубокое сканирование и аудит установленного ПО (/api/windows/software-scanner/*)"
     }
   ]
 }

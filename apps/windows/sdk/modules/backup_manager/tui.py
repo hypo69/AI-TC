@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Modules Backup_Manager - Tui
+# Process Name: AI-Windows-Admin Apps Windows Modules Backup_Manager - Tui
 # =============================================================================
 # Description:
 #   Терминальный интерфейс (Rich TUI) для Windows Backup Manager.
@@ -12,14 +12,15 @@
 #     service = BackupManagerTUI()
 #
 # File: tui.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.backup_manager
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:28:28
+# Updated: 2026-10-10 22:22:44
 # =============================================================================
 
 from __future__ import annotations
+from logger import logger
 """Терминальный интерфейс (Rich TUI) для Windows Backup Manager."""
 
 from rich.console import Console
@@ -54,7 +55,7 @@ class BackupManagerTUI:
         header_text.append(f'{cfg} | ', style=f'bold {cfg_style}')
         header_text.append(f'Библиотек Windows: ', style='dim')
         header_text.append(f'{report.libraries_count}\n', style='bold white')
-        self.console.print(Panel(header_text, border_style='cyan', padding=(1, 2)))
+        self.console.logger.console(Panel(header_text, border_style='cyan', padding=(1, 2)))
         lib_table = Table(title='📁 Системные Библиотеки Windows (.library-ms)', header_style='bold blue')
         lib_table.add_column('Имя Библиотеки', style='cyan', width=20)
         lib_table.add_column('Папок', justify='center', width=8)
@@ -64,8 +65,8 @@ class BackupManagerTUI:
             status_text = '[green]✓ Доступны[/green]' if lib.all_folders_exist else '[yellow]⚠ Неполный[/yellow]'
             folders_str = '\n'.join([f"• {f.path} ({f.free_space_gb or '—'} ГБ свободно)" for f in lib.folders]) if lib.folders else '[italic text-muted]Нет папок[/italic text-muted]'
             lib_table.add_row(lib.name, str(lib.folder_count), folders_str, status_text)
-        self.console.print(lib_table)
-        self.console.print()
+        self.console.logger.console(lib_table)
+        self.console.logger.console()
         if report.storage_audit and report.storage_audit.target_exists:
             st_table = Table(title='💾 Хранилище Резервных Копий File History', header_style='bold green')
             st_table.add_column('Параметр', style='bold')
@@ -75,18 +76,18 @@ class BackupManagerTUI:
             st_table.add_row('Суммарный объем', f'{report.storage_audit.total_backup_size_mb} МБ')
             st_table.add_row('Свободное место на диске', f'{report.storage_audit.free_space_gb} ГБ / {report.storage_audit.total_space_gb} ГБ')
             st_table.add_row('Архивированные тома', ', '.join(report.storage_audit.drives_in_backup) or 'Нет данных')
-            self.console.print(st_table)
-            self.console.print()
+            self.console.logger.console(st_table)
+            self.console.logger.console()
         if report.recommendations:
             rec_text = Text()
             for r in report.recommendations:
                 rec_text.append(f'• {r}\n', style='yellow')
-            self.console.print(Panel(rec_text, title='⚠️ Рекомендации по оптимизации защиты', border_style='yellow'))
+            self.console.logger.console(Panel(rec_text, title='⚠️ Рекомендации по оптимизации защиты', border_style='yellow'))
 
     def render_rag_results(self, query: str, results: list) -> None:
         """Рендеринг результатов RAG поиска по истории файлов в консоль."""
         if not results:
-            self.console.print(Panel(f"[yellow]По запросу '{query}' совпадений в истории не найдено.[/yellow]", title='🔍 Результаты RAG поиска'))
+            self.console.logger.console(Panel(f"[yellow]По запросу '{query}' совпадений в истории не найдено.[/yellow]", title='🔍 Результаты RAG поиска'))
             return
         table = Table(title=f"🔍 Найдено {len(results)} совпадений по запросу: '{query}'", header_style='bold magenta')
         table.add_column('Файл / Путь', style='cyan', width=30)
@@ -98,4 +99,4 @@ class BackupManagerTUI:
             score_str = f'{r.score:.4f}'
             snippet = r.text[:150] + ('...' if len(r.text) > 150 else '')
             table.add_row(r.original_path, dt_str, score_str, snippet)
-        self.console.print(table)
+        self.console.logger.console(table)

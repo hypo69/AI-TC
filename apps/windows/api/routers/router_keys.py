@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard API - Router Keys Module
+# Process Name: AI-Windows-Admin API - Router Keys Module
 # =============================================================================
 # Description:
 #   Router для управления API ключами.
@@ -12,11 +12,11 @@
 #     service = KeyCreateRequest()
 #
 # File: router_keys.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.api.routers
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 12:41:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 """Router для управления API ключами."""

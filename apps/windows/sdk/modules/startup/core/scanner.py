@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Modules Startup Core - Scanner
+# Process Name: AI-Windows-Admin Apps Windows Modules Startup Core - Scanner
 # =============================================================================
 # Description:
 #   Движок сканирования всех точек автозагрузки в Windows.
@@ -12,11 +12,11 @@
 #     service = StartupScanner()
 #
 # File: scanner.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.startup.core
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:28:28
+# Updated: 2026-10-10 22:28:45
 # =============================================================================
 
 from __future__ import annotations
@@ -25,7 +25,6 @@ from __future__ import annotations
 import json
 import os
 import re
-import shlex
 import subprocess
 import sys
 from pathlib import Path

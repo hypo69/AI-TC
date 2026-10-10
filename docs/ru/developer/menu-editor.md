@@ -157,7 +157,7 @@ if (appInfo && appInfo.enabled === false) return; // Пропустить отк
 ## Структура проекта
 
 ```
-AI-Breadboard/
+AI-Windows-Admin/
 ├── menu-config.json              # Конфигурация меню
 ├── src/
 │   └── api/

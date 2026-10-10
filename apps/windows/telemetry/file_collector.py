@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Telemetry - File Collector
+# Process Name: AI-Windows-Admin Apps Windows Telemetry - File Collector
 # =============================================================================
 # Description:
 #   Сбор событий файловой системы через DirectoryWatcher.
@@ -12,11 +12,11 @@
 #     service = FileCollector()
 #
 # File: file_collector.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.telemetry
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-03 23:06:40
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

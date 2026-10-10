@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Modules Process_Manager Core - Models
+# Process Name: AI-Windows-Admin Apps Windows Modules Process_Manager Core - Models
 # =============================================================================
 # Description:
 #   Модели данных для процессов, групп приложений (Apps), фоновых служб (Background)
@@ -13,11 +13,11 @@
 #     group = ProcessGroupItem(name="chrome.exe", friendly_name="Google Chrome", instance_count=25)
 #
 # File: models.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.process_manager.core
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-08 02:06:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

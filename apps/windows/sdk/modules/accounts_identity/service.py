@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows - Accounts & Identity Service
+# Process Name: AI-Windows-Admin Apps Windows - Accounts & Identity Service
 # =============================================================================
 # Description:
 #   Центральный сервис-фасад для управления аккаунтами, идентификацией,
@@ -14,11 +14,11 @@
 #     whoami_doc = srv.get_current_identity()
 #
 # File: service.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.accounts_identity
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-08 01:45:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 """Единый сервис-фасад Accounts & Identity Windows."""

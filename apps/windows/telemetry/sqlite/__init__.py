@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Telemetry - Sqlite Package
+# Process Name: AI-Windows-Admin Apps Windows Telemetry - Sqlite Package
 # =============================================================================
 # Description:
 #   Пакет персистентного хранения и выборки системной телеметрии в SQLite.
@@ -13,11 +13,11 @@
 #     cpu = storage.get_latest_cpu()
 #
 # File: __init__.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.telemetry.sqlite
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-06 00:20:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

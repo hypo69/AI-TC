@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Scripts Cli Commands - Docs
+# Process Name: AI-Windows-Admin Scripts Cli Commands - Docs
 # =============================================================================
 # Description:
 #   Команды управления документацией (docs).
@@ -12,14 +12,15 @@
 #     res = register_docs_parser()
 #
 # File: docs.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: scripts.cli.commands
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:27:07
+# Updated: 2026-10-10 22:22:44
 # =============================================================================
 
 from __future__ import annotations
+from logger import logger
 """Команды управления документацией (docs)."""
 
 import argparse
@@ -52,5 +53,5 @@ def run_docs_command(args: argparse.Namespace) -> int:
         return run_script('scripts/dev/update_docs.py', extra)
     if sub == 'pdf':
         return run_script('scripts/dev/export_pdf.py', extra)
-    print(f'Unknown docs subcommand: {sub}')
+    logger.console(f'Unknown docs subcommand: {sub}')
     return 1

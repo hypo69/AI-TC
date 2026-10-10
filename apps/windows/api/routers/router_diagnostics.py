@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Api Routers - Router Diagnostics
+# Process Name: AI-Windows-Admin Apps Windows Api Routers - Router Diagnostics
 # =============================================================================
 # Description:
 #   Универсальный REST API эндпоинт для AI-диагностики, контекстного объяснения
@@ -12,11 +12,11 @@
 #     service = DiagnosticExplainRequest()
 #
 # File: router_diagnostics.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.api.routers
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 11:40:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations
@@ -137,7 +137,7 @@ def init_router() -> APIRouter:
             return m
 
         # Поиск активного конфигурационного файла
-        cfg_env = os.getenv("AIBREADBOARD_CONFIG") or os.getenv("CONFIG_FILE")
+        cfg_env = os.getenv("AIWINDOWSADMIN_CONFIG") or os.getenv("CONFIG_FILE")
         active_path: Optional[Path] = None
         if cfg_env:
             p = Path(cfg_env)
@@ -146,7 +146,6 @@ def init_router() -> APIRouter:
         candidates = [
             active_path,
             __root__ / "apps" / "windows" / "config.json",
-            __root__ / "start_scenarios_config" / "tc.json",
             __root__ / "config" / "tc.json",
             __root__ / "config.json",
         ]
@@ -273,26 +272,14 @@ def init_router() -> APIRouter:
         tmpl = prompt_manager.get_template(req.table_type)
         sys_instruction = req.system_instruction.strip() if (req.system_instruction and req.system_instruction.strip()) else tmpl.system_instruction
 
-        # 3. Вызов языковой модели через прямой GoogleGenerativeAI с Web Grounding
+        # 3. Вызов языковой модели с поддержкой провайдеров (Gemini, Gemini CLI, AGY) и пула ключей
         try:
-            from src.ai.gemini.generative_ai import GoogleGenerativeAI
-
-            gen_cfg: Dict[str, Any] = {}
-            if req.web_search:
-                gen_cfg["use_google_search"] = True
-
+            prov = (req.provider or "gemini").lower().strip()
             model_name = _resolve_diagnostic_model(
                 requested_model=req.model,
                 web_search=req.web_search,
             )
 
-            ai = GoogleGenerativeAI(
-                model_name=model_name,
-                system_instruction=sys_instruction,
-                generation_config=gen_cfg,
-            )
-
-            import asyncio
             prompt = tmpl.format_prompt(
                 title=req.title,
                 subtitle=req.subtitle or "",
@@ -300,10 +287,44 @@ def init_router() -> APIRouter:
                 raw_data=req.raw_data or "",
             )
 
-            resp_text = await asyncio.wait_for(
-                ai.ask(prompt, attempts=1, generation_config=gen_cfg),
-                timeout=6.0
-            )
+            resp_text: str = ""
+            import asyncio
+
+            if prov == "gemini_cli":
+                from src.ai.providers.gemini_cli import GeminiCliChatBase
+                cli_agent = GeminiCliChatBase(model_id=model_name, system_prompt=sys_instruction)
+                resp_text = await asyncio.wait_for(cli_agent.ask(prompt), timeout=25.0)
+            elif prov == "agy":
+                from src.ai.providers.agy import AgyChatBase
+                agy_agent = AgyChatBase(model_id=model_name, system_prompt=sys_instruction)
+                resp_text = await asyncio.wait_for(agy_agent.ask(prompt), timeout=25.0)
+            else:
+                from src.ai.gemini.generative_ai import GoogleGenerativeAI
+                gen_cfg: Dict[str, Any] = {}
+                is_lite: bool = "lite" in model_name.lower()
+                if req.web_search and not is_lite:
+                    gen_cfg["use_google_search"] = True
+
+                ai = GoogleGenerativeAI(
+                    model_name=model_name,
+                    system_instruction=sys_instruction,
+                    generation_config=gen_cfg,
+                )
+
+                try:
+                    resp_text = await asyncio.wait_for(
+                        ai.ask(prompt, attempts=5, generation_config=gen_cfg),
+                        timeout=25.0
+                    )
+                except Exception as g_err:
+                    if req.web_search and ("429" in str(g_err) or "RESOURCE_EXHAUSTED" in str(g_err)):
+                        logger.warning(f"Google Search Grounding 429 quota reached, retrying without search grounding...")
+                        resp_text = await asyncio.wait_for(
+                            ai.ask(prompt, attempts=5, generation_config={}),
+                            timeout=25.0
+                        )
+                    else:
+                        raise g_err
 
             if resp_text and not resp_text.startswith("Model error:"):
                 cleaned = resp_text.strip()
@@ -328,7 +349,7 @@ def init_router() -> APIRouter:
                     recommendation=data.get("recommendation", "Оставить как есть."),
                     action_steps=data.get("action_steps", ["Проверьте актуальность конфигурации."]),
                     canonical_key=canonical_key,
-                    source="gemini",
+                    source=prov,
                     is_verified=False,
                 )
         except HTTPException:

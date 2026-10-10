@@ -2,10 +2,10 @@
 
 ## 📋 Обзор системы логирования
 
-Логгирование сенсоров в AI-Breadboard спроектировано по стандартам высоконагруженных телеметрических систем и разделено на **два взаимодополняющих формата**:
+Логгирование сенсоров в AI-Windows-Admin спроектировано по стандартам высоконагруженных телеметрических систем и разделено на **два взаимодополняющих формата**:
 
 1. 📊 **Табличные CSV-логи ([`AppCsvLogger`](../../apps/common/csv_logger.py)):**
-   * Располагаются в системной директории `%APPDATA%/AI-Breadboard/apps/windows/telemetry/logs/`.
+   * Располагаются в системной директории `%APPDATA%/AI-Windows-Admin/apps/windows/telemetry/logs/`.
    * Обеспечивают мгновенную интеграцию с аналитическими инструментами (Excel, Pandas, Grafana, PowerBI).
    * Стандартизированы по 3 потокам: **Опросы (`*_polls.csv`)**, **События (`*_events.csv`)**, **Изменения параметров (`*_param_changes.csv`)**.
 2. 📄 **Потоковые JSON-Lines логи ([`TelemetryJsonLogger`](../../apps/windows/telemetry/json_logger.py)):**
@@ -37,7 +37,7 @@ flowchart TD
         SysLog["📝 logger<br/>(Консоль, Уровни логов)"]
     end
 
-    subgraph ХранилищеCSV["📁 CSV Каталог (%APPDATA%/AI-Breadboard/apps/windows/telemetry/logs/)"]
+    subgraph ХранилищеCSV["📁 CSV Каталог (%APPDATA%/AI-Windows-Admin/apps/windows/telemetry/logs/)"]
         CsvPolls[("📊 *_polls.csv<br/>(lhm, hwinfo, gpuz, smart, audit)")]
         CsvEvents[("📋 *_events.csv<br/>(lhm_service, hwinfo_inventory, defender)")]
         CsvParams[("⚙️ *_param_changes.csv<br/>(admin, system_control, safeops)")]

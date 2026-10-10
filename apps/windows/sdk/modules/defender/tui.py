@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Modules Defender - Tui
+# Process Name: AI-Windows-Admin Apps Windows Modules Defender - Tui
 # =============================================================================
 # Description:
 #   Терминальный интерфейс (Rich TUI) для Microsoft Defender Security Center.
@@ -12,14 +12,15 @@
 #     service = DefenderTUI()
 #
 # File: tui.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.defender
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-08 04:11:30
+# Updated: 2026-10-10 22:22:44
 # =============================================================================
 
 from __future__ import annotations
+from logger import logger
 """Терминальный интерфейс (Rich TUI) для Microsoft Defender Security Center."""
 
 from typing import Optional
@@ -54,7 +55,7 @@ class DefenderTUI:
         hdr.append(f'{score}/100\n', style=f'bold {score_color}')
         hdr.append(f"Версия баз: {st.antivirus_signature_version or 'N/A'} | Движок: {st.engine_version or 'N/A'}\n", style='dim')
         hdr.append(f'Резюме: {rep.status_summary}', style='italic')
-        self.console.print(Panel(hdr, border_style=score_color, title='[bold]Endpoint Security Telemetry[/bold]'))
+        self.console.logger.console(Panel(hdr, border_style=score_color, title='[bold]Endpoint Security Telemetry[/bold]'))
         comp_table = Table(title='Эшелоны и компоненты защиты Defender', header_style='bold magenta')
         comp_table.add_column('Компонент', style='cyan')
         comp_table.add_column('Статус', justify='center')
@@ -71,7 +72,7 @@ class DefenderTUI:
         comp_table.add_row('PUA Protection', _fmt_bool(st.pua_protection_enabled), 'Блокировка потенциально нежелательных программ и рекламного ПО')
         comp_table.add_row('Controlled Folder Access', _fmt_bool(st.controlled_folder_access_enabled), 'Защита пользовательских папок от Ransomware (вымогателей)')
         comp_table.add_row('Network Protection', _fmt_bool(st.network_protection_enabled), 'Блокировка обращений к опасным и вредоносным веб-ресурсам')
-        self.console.print(comp_table)
+        self.console.logger.console(comp_table)
         if st.services:
             svc_table = Table(title='Системные службы и процессы Defender', header_style='bold blue')
             svc_table.add_column('Процесс / Служба', style='cyan')
@@ -84,7 +85,7 @@ class DefenderTUI:
                 pid_str = str(s.pid) if s.pid else '-'
                 mem_str = f'{s.memory_mb} MB' if s.running else '-'
                 svc_table.add_row(s.name, s.display_name, s_state, pid_str, mem_str)
-            self.console.print(svc_table)
+            self.console.logger.console(svc_table)
         exc_rep = rep.exclusions_audit
         if exc_rep.total_exclusions > 0:
             exc_table = Table(title=f'Аудит исключений ({exc_rep.total_exclusions} всего, {exc_rep.suspicious_count} подозрительных)', header_style='bold yellow')
@@ -100,7 +101,7 @@ class DefenderTUI:
                 elif itm.risk_level == ExclusionRiskLevel.MEDIUM:
                     risk_style = 'yellow'
                 exc_table.add_row(itm.type.upper(), itm.value, Text(itm.risk_level.value.upper(), style=risk_style), itm.risk_reason)
-            self.console.print(exc_table)
+            self.console.logger.console(exc_table)
         if rep.suspicious_process_chains:
             proc_table = Table(title='⚠️ Обнаруженные подозрительные цепочки процессов (Fileless индикаторы)', header_style='bold red')
             proc_table.add_column('Родитель', style='yellow')
@@ -109,9 +110,9 @@ class DefenderTUI:
             proc_table.add_column('Причина срабатывания')
             for chain in rep.suspicious_process_chains:
                 proc_table.add_row(f'{chain.parent_process} (PID: {chain.parent_pid})', chain.child_process, str(chain.child_pid), chain.reason)
-            self.console.print(proc_table)
+            self.console.logger.console(proc_table)
         if rep.recommendations:
             rec_text = Text()
             for i, r in enumerate(rep.recommendations, 1):
                 rec_text.append(f'  {i}. {r}\n', style='bold yellow')
-            self.console.print(Panel(rec_text, title='[bold yellow]🎯 Рекомендации AI по усилению безопасности[/bold yellow]', border_style='yellow'))
+            self.console.logger.console(Panel(rec_text, title='[bold yellow]🎯 Рекомендации AI по усилению безопасности[/bold yellow]', border_style='yellow'))

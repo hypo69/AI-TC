@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Scripts - Create Initial User
+# Process Name: AI-Windows-Admin Scripts - Create Initial User
 # =============================================================================
 # Description:
 #   Manager for setting up and provisioning the initial administrator account.
@@ -14,14 +14,15 @@
 #     service = InitialUserManager()
 #
 # File: create_initial_user.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: scripts
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:27:07
+# Updated: 2026-10-10 22:22:44
 # =============================================================================
 
 from __future__ import annotations
+from logger import logger
 """Manager for setting up and provisioning the initial administrator account."""
 
 import argparse
@@ -248,9 +249,9 @@ def main() -> int:
     non_interactive: bool = getattr(args, "non_interactive", False)
 
     if not non_interactive and not (args.email and args.password):
-        print("\n============================================================")
-        print("  AI Breadboard — Initial Administrator Setup")
-        print("============================================================")
+        logger.console("\n============================================================")
+        logger.console("  AI Windows Admin — Initial Administrator Setup")
+        logger.console("============================================================")
         
         input_email = input("  Administrator Email [admin@localhost]: ").strip()
         email = input_email if input_email else (email or "admin@localhost")
@@ -260,18 +261,18 @@ def main() -> int:
 
         input_pass = getpass.getpass("  Administrator Password [Enter for default 'onela']: ").strip()
         password = input_pass if input_pass else (password or "onela")
-        print("============================================================\n")
+        logger.console("============================================================\n")
 
     manager = InitialUserManager(db_path=Path(args.db_path) if args.db_path else Path(""))
     result = manager.provision_admin_user(email=email, name=name, password=password)
 
     if result["status"] == "ok":
-        print(f"✓ {result['message']}")
-        print(f"  Login Email: {result['email']}")
-        print(f"  Role: System Administrator (ID: {result['user_id']})")
+        logger.console(f"✓ {result['message']}")
+        logger.console(f"  Login Email: {result['email']}")
+        logger.console(f"  Role: System Administrator (ID: {result['user_id']})")
         return 0
     else:
-        print(f"✗ Error: {result['message']}", file=sys.stderr)
+        logger.console(f"✗ Error: {result['message']}", file=sys.stderr)
         return 1
 
 

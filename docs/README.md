@@ -1,6 +1,6 @@
 # docs
 
-MkDocs-based documentation site for AI Breadboard.
+MkDocs-based documentation site for AI Windows Admin.
 
 ## Structure
 

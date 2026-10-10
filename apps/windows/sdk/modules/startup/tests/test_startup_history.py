@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Modules Startup Tests - History Manager
+# Process Name: AI-Windows-Admin Apps Windows Modules Startup Tests - History Manager
 # =============================================================================
 # Description:
 #   Модульные тесты менеджера дифференциальной истории автозапуска
@@ -11,11 +11,11 @@
 #     pytest apps/windows/modules/startup/tests/test_startup_history.py -v
 #
 # File: test_startup_history.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.startup.tests
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-06 14:05:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 """Модульные тесты менеджера истории и расчета диффов автозапуска."""

@@ -3,7 +3,7 @@
  * Process Name: Windows Web Styles - Theme Engine
  * =============================================================================
  * Description:
- *   Шаблонизатор и менеджер тем оформления для веб-интерфейса AI Breadboard.
+ *   Шаблонизатор и менеджер тем оформления для веб-интерфейса AI Windows Admin.
  *   Поддерживает светлые темы (Light, Brick), тёмные темы (Dark Contrast, Terminal),
  *   системный режим, динамическую регистрацию и шаблонизацию UI-селекторов.
  *
@@ -13,11 +13,11 @@
  *   themeEngine.registerTheme({ id: 'custom', name: 'Custom Theme', category: 'dark' });
  *
  * File: theme-engine.js
- * Project: ai-breadboard
+ * Project: ai-windows-admin
  * Package: apps.windows.api.webgui.js
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-06 21:10:15
+ * Updated: 2026-10-10 17:35:00
  * =============================================================================
  */
 

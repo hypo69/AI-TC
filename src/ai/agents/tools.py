@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard AI - Tools Module
+# Process Name: AI-Windows-Admin AI - Tools Module
 # =============================================================================
 # Description:
 #   Поиск актуальной информации в интернете через поисковые адаптеры.
@@ -13,11 +13,11 @@
 #     print(res)
 #
 # File: tools.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: src.ai.agents
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-08 21:21:00
+# Updated: 2026-10-10 20:38:25
 # =============================================================================
 
 from __future__ import annotations
@@ -506,8 +506,6 @@ def mail_invoices_test_connection() -> str:
     try:
         import sys
         skill_scripts = __root__ / '.agents' / 'skills' / 'mail-invoice-collector' / 'scripts'
-        if not skill_scripts.exists():
-            skill_scripts = __root__ / '.skills' / 'mail-invoice-collector' / 'scripts'
         if skill_scripts.exists() and str(skill_scripts) not in sys.path:
             sys.path.insert(0, str(skill_scripts))
         from mail_client import MailClient, load_mail_config
@@ -534,8 +532,6 @@ def mail_invoices_collect(output_csv: str='data/invoices_collected/mail_invoices
     try:
         import sys
         skill_scripts = __root__ / '.agents' / 'skills' / 'mail-invoice-collector' / 'scripts'
-        if not skill_scripts.exists():
-            skill_scripts = __root__ / '.skills' / 'mail-invoice-collector' / 'scripts'
         if skill_scripts.exists() and str(skill_scripts) not in sys.path:
             sys.path.insert(0, str(skill_scripts))
         from collector import MailInvoiceCollector
@@ -561,8 +557,6 @@ def mail_watch_test_connection(account: str='default') -> str:
     try:
         import sys
         skill_scripts = __root__ / '.agents' / 'skills' / 'mail-watcher' / 'scripts'
-        if not skill_scripts.exists():
-            skill_scripts = __root__ / '.skills' / 'mail-watcher' / 'scripts'
         if skill_scripts.exists() and str(skill_scripts) not in sys.path:
             sys.path.insert(0, str(skill_scripts))
         from mail_watcher import MailWatcher, load_mail_watcher_config
@@ -594,8 +588,6 @@ def mail_watch_check_sender(sender: str, account: str='default', unread_only: bo
     try:
         import sys
         skill_scripts = __root__ / '.agents' / 'skills' / 'mail-watcher' / 'scripts'
-        if not skill_scripts.exists():
-            skill_scripts = __root__ / '.skills' / 'mail-watcher' / 'scripts'
         if skill_scripts.exists() and str(skill_scripts) not in sys.path:
             sys.path.insert(0, str(skill_scripts))
         from mail_watcher import MailWatcher, load_mail_watcher_config
@@ -662,7 +654,7 @@ def whatsapp_send_message(to: str, message: str) -> str:
 # =============================================================================
 # Инструменты управления операционной системой Windows (apps.windows)
 # =============================================================================
-# Updated: 2026-10-08 22:16:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 from src.ai.agents.windows_tools import (
     windows_collector_audit,
@@ -750,4 +742,4 @@ from src.ai.agents.windows_tools import (
 
 
 
-
+

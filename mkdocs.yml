@@ -1,7 +1,7 @@
-site_name: AI-Breadboard
-site_description: Interactive AI Model Testbench & Breadboard
+site_name: AI-Windows-Admin
+site_description: Interactive AI Model Testbench & AI Windows Admin
 site_url: !ENV [READTHEDOCS_CANONICAL_URL, 'http://localhost:8000']
-repo_url: https://github.com/hypo69/AI-Breadboard
+repo_url: https://github.com/hypo69/AI-Windows-Admin
 edit_uri: edit/master/docs/
 docs_dir: docs/ru
 exclude_docs: |

@@ -16,11 +16,11 @@
  *     import { initI18n, switchLocale, switchLang, normalizeLocaleTag, getCurrentLocale } from '/windows/api/webgui/js/i18n.js';
  *
  * File: i18n.js
- * Project: ai-breadboard
+ * Project: ai-windows-admin
  * Package: windows/api/webgui/js
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-06 22:15:00
+ * Updated: 2026-10-10 17:35:00
  * =============================================================================
  */
 

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Modules Hardware Providers - Cpuz Provider
+# Process Name: AI-Windows-Admin Apps Windows Modules Hardware Providers - Cpuz Provider
 # =============================================================================
 # Description:
 #   Провайдер интеграции с CPU-Z (CLI ghost mode, TXT/HTML отчеты).
@@ -12,11 +12,11 @@
 #     service = CpuzProvider()
 #
 # File: cpuz_provider.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.hardware.providers
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:28:28
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

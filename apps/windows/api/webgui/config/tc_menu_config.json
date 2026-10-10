@@ -53,6 +53,14 @@
         "visible": true
       },
       {
+        "id": "software_scanner",
+        "label": "Аудит ПО (Dormant)",
+        "icon": "🕵️",
+        "tab": "tab-software-scanner",
+        "order": 7,
+        "visible": true
+      },
+      {
         "id": "scenarios",
         "label": "Чат и сценарии",
         "i18n": "tabs.scenarios",
@@ -187,15 +195,6 @@
         "visible": false
       },
       {
-        "id": "trading_terminal",
-        "label": "Торговый терминал",
-        "i18n": "tabs.trading",
-        "icon": "📈",
-        "tab": "tab-trading",
-        "order": 14,
-        "visible": false
-      },
-      {
         "id": "user_assistant",
         "label": "User Assistant",
         "icon": "🗓️",
@@ -260,6 +259,14 @@
         "icon": "🔍",
         "tab": "tab-software-transparency",
         "order": 23,
+        "visible": true
+      },
+      {
+        "id": "software_scanner",
+        "label": "Глубокий аудит ПО (Dormant)",
+        "icon": "🕵️",
+        "tab": "tab-software-scanner",
+        "order": 24,
         "visible": true
       },
       {

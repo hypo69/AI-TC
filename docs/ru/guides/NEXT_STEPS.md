@@ -146,7 +146,7 @@ sync.upload_file("config.json", sync.root_folder_id)
 
 После инициализации будет создана папка:
 ```
-📁 AI-Breadboard-Sync/
+📁 AI-Windows-Admin-Sync/
    ├── data/
    ├── logs/
    ├── secrets/

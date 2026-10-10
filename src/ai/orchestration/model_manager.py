@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard AI - Model Manager Module
+# Process Name: AI-Windows-Admin AI - Model Manager Module
 # =============================================================================
 # Description:
 #   Normalize model identifier for consistent comparison.
@@ -13,11 +13,11 @@
 #     print(res)
 #
 # File: model_manager.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: src.ai.orchestration
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 10:46:20
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 """Normalize model identifier for consistent comparison."""
@@ -35,7 +35,7 @@ from src.utils.jjson import j_dumps, j_loads
 
 def _get_active_config_path() -> Path:
     """Возвращает путь к активному файлу конфигурации с учетом переменных окружения и сценария TC."""
-    cfg_env = os.getenv('AIBREADBOARD_CONFIG') or os.getenv('CONFIG_FILE')
+    cfg_env = os.getenv('AIWINDOWSADMIN_CONFIG') or os.getenv('CONFIG_FILE')
     if cfg_env:
         p = Path(cfg_env)
         if p.is_absolute() and p.exists():

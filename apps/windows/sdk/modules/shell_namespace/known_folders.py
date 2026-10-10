@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows SDK Modules Shell - Known Folders
+# Process Name: AI-Windows-Admin Apps Windows SDK Modules Shell - Known Folders
 # =============================================================================
 # Description:
 #   Инвентаризация и разрешение Known Folders Windows через Win32 API и реестр.
@@ -15,11 +15,11 @@
 #     folders = manager.list_known_folders()
 #
 # File: known_folders.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.shell_namespace
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 06:15:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

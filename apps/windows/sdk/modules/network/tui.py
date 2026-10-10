@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Modules Network - Tui
+# Process Name: AI-Windows-Admin Apps Windows Modules Network - Tui
 # =============================================================================
 # Description:
 #   Rich TUI dashboard renderer and live capture loop for Network Terminal.
@@ -12,11 +12,11 @@
 #     service = NetworkTerminalState()
 #
 # File: tui.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.network
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:28:28
+# Updated: 2026-10-10 22:22:30
 # =============================================================================
 
 from __future__ import annotations
@@ -29,7 +29,10 @@ from collections import deque
 from datetime import datetime, timezone
 from typing import Any, Deque, List, Optional
 from logger import logger
-from apps.tshark import AIDetector, AnomalyReport, CaptureFilter, NetworkInterface, PacketSummary, TSharkWrapper, TrafficAnalyzer, TrafficStats
+try:
+    from apps.tshark import AIDetector, AnomalyReport, CaptureFilter, NetworkInterface, PacketSummary, TSharkWrapper, TrafficAnalyzer, TrafficStats
+except ImportError:
+    AIDetector, AnomalyReport, CaptureFilter, NetworkInterface, PacketSummary, TSharkWrapper, TrafficAnalyzer, TrafficStats = (None,) * 8
 try:
     from rich.console import Console
     from rich.layout import Layout
@@ -109,7 +112,7 @@ def render_ui(state: NetworkTerminalState) -> Any:
     layout['right'].split_column(Layout(name='stats', ratio=1), Layout(name='alerts', ratio=1))
     status_icon = '🟢' if state.wrapper.is_available() else '🔴'
     filter_str = f"Filter: '{state.display_filter}'" if state.display_filter else 'Filter: ALL'
-    header_text = Text(f' AI Breadboard — Network Terminal | Interface: {state.interface} | {filter_str} | Status: {status_icon} {state.status_msg} ', style='bold white on blue', justify='center')
+    header_text = Text(f' AI Windows Admin — Network Terminal | Interface: {state.interface} | {filter_str} | Status: {status_icon} {state.status_msg} ', style='bold white on blue', justify='center')
     layout['header'].update(Panel(header_text, style='blue'))
     pkt_table = Table(title='Live Captured Packets (Sliding Window)', expand=True, show_edge=False)
     pkt_table.add_column('No', justify='right', style='cyan', width=5)
@@ -161,12 +164,12 @@ async def run_network_dashboard(interface: str='1', display_filter: str='', simu
     """
     state = NetworkTerminalState(interface=interface, display_filter=display_filter)
     if not RICH_AVAILABLE:
-        print(f'[Network Terminal] Running simplified console mode (rich not installed)')
-        print(f'Interface: {interface} | Filter: {display_filter}')
+        logger.console(f'[Network Terminal] Running simplified console mode (rich not installed)')
+        logger.console(f'Interface: {interface} | Filter: {display_filter}')
         return
     console = Console()
     if not state.wrapper.is_available() and (not simulate):
-        console.print('[bold yellow][Network Terminal][/bold yellow] TShark executable not found. Running in demo/simulation mode.')
+        console.logger.console('[bold yellow][Network Terminal][/bold yellow] TShark executable not found. Running in demo/simulation mode.')
         simulate = True
     with Live(render_ui(state), refresh_per_second=4, screen=True) as live:
         try:

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows - Package Root
+# Process Name: AI-Windows-Admin Apps Windows - Package Root
 # =============================================================================
 # Description:
 #   AI Windows Diagnostic & Administration Center: единый входной пакет.
@@ -10,11 +10,11 @@
 #     from apps.windows import RiskLevel, WinAPI, SafeExecutor
 #
 # File: __init__.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 05:59:30
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

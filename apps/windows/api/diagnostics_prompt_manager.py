@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows API - Diagnostics Prompt Manager
+# Process Name: AI-Windows-Admin Apps Windows API - Diagnostics Prompt Manager
 # =============================================================================
 # Description:
 #   Менеджер шаблонов промптов и системных инструкций для аудита и объяснения таблиц.
@@ -14,11 +14,11 @@
 #     print(tmpl.system_instruction)
 #
 # File: diagnostics_prompt_manager.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.api
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 12:41:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Modules Focus_Policy - Listener
+# Process Name: AI-Windows-Admin Apps Windows Modules Focus_Policy - Listener
 # =============================================================================
 # Description:
 #   Обертка над WinRT UserNotificationListener (Windows 10 1607+/11) с корректной
@@ -13,11 +13,11 @@
 #     status = WinRtNotificationListener().request_access()
 #
 # File: listener.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.focus_policy
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-06 22:05:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

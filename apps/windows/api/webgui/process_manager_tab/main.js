@@ -14,11 +14,11 @@
  *     import { initProcessManagerTab } from '/windows/api/webgui/process_manager_tab/main.js';
  *
  * File: main.js
- * Project: ai-breadboard
+ * Project: ai-windows-admin
  * Package: windows/api/webgui/process_manager_tab
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-08 02:10:00
+ * Updated: 2026-10-10 17:35:00
  * =============================================================================
  */
 

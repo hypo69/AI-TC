@@ -1,6 +1,6 @@
 # Модуль `scripts/cli` — Кроссплатформенные CLI-модули
 
-Кроссплатформенные утилиты Python, обеспечивающие работу консольного интерфейса AI Breadboard (`manage_tools.py`, `assist`) на Windows, Linux и macOS.
+Кроссплатформенные утилиты Python, обеспечивающие работу консольного интерфейса AI Windows Admin (`manage_tools.py`, `assist`) на Windows, Linux и macOS.
 
 ## Структура файлов
 
@@ -30,6 +30,6 @@ free_port = find_available_port(start_port=port)
 
 | Платформа | `data_dir` | `certs_dir` |
 |---|---|---|
-| Windows | `%LOCALAPPDATA%\AI-Breadboard` | `%USERPROFILE%\.certs` |
-| Linux | `~/.local/share/AI-Breadboard` | `~/.local/share/ca-certificates` |
-| macOS | `~/Library/Application Support/AI-Breadboard` | `~/Library/Certs` |
+| Windows | `%LOCALAPPDATA%\AI-Windows-Admin` | `%USERPROFILE%\.certs` |
+| Linux | `~/.local/share/AI-Windows-Admin` | `~/.local/share/ca-certificates` |
+| macOS | `~/Library/Application Support/AI-Windows-Admin` | `~/Library/Certs` |

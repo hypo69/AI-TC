@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Scripts Cli Commands - Network
+# Process Name: AI-Windows-Admin Scripts Cli Commands - Network
 # =============================================================================
 # Description:
 #   Команды захвата сетевого трафика и анализа TShark (network).
@@ -12,14 +12,15 @@
 #     res = register_network_parser()
 #
 # File: network.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: scripts.cli.commands
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:27:07
+# Updated: 2026-10-10 22:22:44
 # =============================================================================
 
 from __future__ import annotations
+from logger import logger
 """Команды захвата сетевого трафика и анализа TShark (network)."""
 
 import argparse
@@ -45,60 +46,60 @@ def run_network_command(args: argparse.Namespace) -> int:
     sub = args.subcommand
     wrapper = TSharkWrapper()
     if sub == 'status':
-        print(f'TShark Available: {wrapper.is_available()}')
-        print(f"TShark Binary Path: {wrapper.tshark_path or 'Not Found'}")
+        logger.console(f'TShark Available: {wrapper.is_available()}')
+        logger.console(f"TShark Binary Path: {wrapper.tshark_path or 'Not Found'}")
         return 0
     if sub == 'interfaces':
         if not wrapper.is_available():
-            print('Error: TShark is not available on this host.')
+            logger.console('Error: TShark is not available on this host.')
             return 1
         ifaces = wrapper.list_interfaces()
-        print('\n--- NETWORK CAPTURE INTERFACES ---')
+        logger.console('\n--- NETWORK CAPTURE INTERFACES ---')
         for iface in ifaces:
-            print(f'[{iface.id}] {iface.name} - {iface.description}')
-        print('----------------------------------\n')
+            logger.console(f'[{iface.id}] {iface.name} - {iface.description}')
+        logger.console('----------------------------------\n')
         return 0
     if sub == 'devices':
         from apps.windows.network.lan_scanner import WindowsLanScanner
         scanner = WindowsLanScanner()
         full_scan = bool(getattr(args, 'scan', False))
         subnet = getattr(args, 'subnet', None)
-        print(f"[*] {'Сканирование' if full_scan else 'Чтение кеша'} устройств локальной сети{' в ' + subnet if subnet else ''}...")
+        logger.console(f"[*] {'Сканирование' if full_scan else 'Чтение кеша'} устройств локальной сети{' в ' + subnet if subnet else ''}...")
         devices = scanner.discover_devices(full_scan=full_scan, subnet_cidr=subnet)
-        print(f'\nНайдено {len(devices)} устройств в локальной сети:')
-        print(f"{'IP Адрес':<18} {'MAC Адрес':<19} {'Производитель':<20} {'Имя хоста':<22} {'Статус'}")
-        print('-' * 95)
+        logger.console(f'\nНайдено {len(devices)} устройств в локальной сети:')
+        logger.console(f"{'IP Адрес':<18} {'MAC Адрес':<19} {'Производитель':<20} {'Имя хоста':<22} {'Статус'}")
+        logger.console('-' * 95)
         for d in devices:
             tag = ' [ШЛЮЗ]' if d.is_gateway else ' [ЛОКАЛЬНЫЙ]' if d.is_local else ''
             vendor_str = (d.vendor or 'Неизвестно')[:19]
             hostname_str = (d.hostname or '-')[:21]
             mac_str = d.mac or '-'
-            print(f"{d.ip:<18} {mac_str:<19} {vendor_str:<20} {hostname_str:<22} {d.state}{tag}")
-        print('-' * 95 + '\n')
+            logger.console(f"{d.ip:<18} {mac_str:<19} {vendor_str:<20} {hostname_str:<22} {d.state}{tag}")
+        logger.console('-' * 95 + '\n')
         return 0
     if sub == 'analyze':
         pcap_file = getattr(args, 'file', '')
         if not pcap_file:
-            print('Error: --file argument is required for PCAP analysis.')
+            logger.console('Error: --file argument is required for PCAP analysis.')
             return 1
         if not wrapper.is_available():
-            print('Error: TShark is not available on this host.')
+            logger.console('Error: TShark is not available on this host.')
             return 1
         packets = wrapper.read_pcap(pcap_file, display_filter=getattr(args, 'filter', '') or '')
         analyzer = TrafficAnalyzer()
         stats = analyzer.compute_stats(packets)
         heuristics = analyzer.detect_heuristics(packets)
-        print('\n--- PCAP TRAFFIC REPORT ---')
-        print(f'Total Packets: {stats.total_packets}')
-        print(f'Total Volume: {stats.total_bytes} bytes')
-        print(f'Protocol Distribution: {stats.protocol_distribution}')
-        print(f'Top Sources: {stats.top_sources}')
-        print(f'Top Destinations: {stats.top_destinations}')
+        logger.console('\n--- PCAP TRAFFIC REPORT ---')
+        logger.console(f'Total Packets: {stats.total_packets}')
+        logger.console(f'Total Volume: {stats.total_bytes} bytes')
+        logger.console(f'Protocol Distribution: {stats.protocol_distribution}')
+        logger.console(f'Top Sources: {stats.top_sources}')
+        logger.console(f'Top Destinations: {stats.top_destinations}')
         if heuristics:
-            print('\nWarnings / Heuristics:')
+            logger.console('\nWarnings / Heuristics:')
             for h in heuristics:
-                print(f'  [!] {h}')
-        print('---------------------------\n')
+                logger.console(f'  [!] {h}')
+        logger.console('---------------------------\n')
         return 0
-    print(f'Unknown network subcommand: {sub}')
+    logger.console(f'Unknown network subcommand: {sub}')
     return 1

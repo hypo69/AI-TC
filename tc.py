@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Root - Tc Launcher
+# Process Name: AI-Windows-Admin Root - Tc Launcher
 # =============================================================================
 # Description:
 #   Точка входа и лончер внутреннего сервера Windows System API (Terminal Controller / TC)
@@ -23,11 +23,11 @@
 #     run_tc(port=8001, region="ru-RU")
 #
 # File: tc.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: root
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 12:05:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations
@@ -133,7 +133,7 @@ def parse_args(args: Optional[List[str]] = None) -> argparse.Namespace:
         argparse.Namespace: Распарсенные аргументы.
     """
     parser = argparse.ArgumentParser(
-        description='AI-Breadboard Windows System API (TC) Launcher',
+        description='AI-Windows-Admin Windows System API (TC) Launcher',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
@@ -206,7 +206,7 @@ def run_tc(
     # 2. Настройка профиля конфигурации
     windows_config = __root__ / WINDOWS_CONFIG_REL_PATH
     if windows_config.exists():
-        os.environ['AIBREADBOARD_CONFIG'] = str(windows_config)
+        os.environ['AIWINDOWSADMIN_CONFIG'] = str(windows_config)
         os.environ['CONFIG_FILE'] = str(windows_config)
         logger.info(f'  [⚙️ Config Profile]: {windows_config}')
 

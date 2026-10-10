@@ -1,7 +1,7 @@
 # `src` Module — System Core Architecture
 
 ## Purpose
-The `src` directory hosts backend service components and subsystems powering the `AI-Breadboard` application:
+The `src` directory hosts backend service components and subsystems powering the `AI-Windows-Admin` application:
 
 - **Application Layer** (`src.app`): FastAPI application factory, middleware, state management, WebSocket hub, metrics collection, and CORS configuration
 - **AI Model Orchestration** (`src.ai`): Unified multi-provider model switches, Gemini SDK pooling, Microsoft AI Foundry, ONNX, Hugging Face, AGY, Ollama, and LangChain agents
@@ -100,7 +100,7 @@ register_config_api(app)
 
 ---
 
-## AI Breadboard — Concept
+## AI Windows Admin — Concept
 
 **Core Idea:** A construction kit platform for connecting and testing AI models in your projects.
 

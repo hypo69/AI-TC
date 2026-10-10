@@ -1,6 +1,6 @@
 <#
 =============================================================================
-Process Name: AI-Breadboard Automation - Show Tlm
+Process Name: AI-Windows-Admin Automation - Show Tlm
 =============================================================================
 Description:
   Лончер веб-интерфейса аналитики и визуализации системной телеметрии (show-tlm).
@@ -13,15 +13,15 @@ Description:
     3. Контроль окружения: автоматический поиск подходящего Python/venv и проверка портов.
 
 File: show-tlm.ps1
-Project: ai-breadboard
+Project: ai-windows-admin
 Package: root
 Author: hypo69
 Copyright: © 2026 hypo69
-Updated: 2026-10-06 00:05:00
+Updated: 2026-10-10 17:35:00
 =============================================================================
 
 .SYNOPSIS
-    Запуск Web GUI сервера исследования системной телеметрии AI Breadboard.
+    Запуск Web GUI сервера исследования системной телеметрии AI Windows Admin.
 
 .DESCRIPTION
     Инициализирует и запускает веб-сервер модуля telemetry_research,
@@ -109,7 +109,7 @@ $url = "http://${HostAddress}:${Port}"
 
 Write-Host ""
 Write-Host "=================================================================" -ForegroundColor Cyan
-Write-Host "  🔬 AI-Breadboard: Исследование телеметрии Windows (Web GUI)" -ForegroundColor Green
+Write-Host "  🔬 AI-Windows-Admin: Исследование телеметрии Windows (Web GUI)" -ForegroundColor Green
 Write-Host "=================================================================" -ForegroundColor Cyan
 Write-Host "  • URL веб-интерфейса: $url" -ForegroundColor Yellow
 Write-Host "  • Интерпретатор:      $pythonExe" -ForegroundColor Gray

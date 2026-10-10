@@ -27,3 +27,15 @@ description_i18n:
      - **Неиспользуемые (Dormant / Never Launched):** Программы без следов запуска пользователем.
      - **Активно используемые:** Программы со свежими метками запусков.
 4. **Формирование рекомендаций:** Предоставление структурированной таблицы с указанием даты последнего запуска, источника артефакта, описания назначения и штатных команд безопасной деинсталляции (uninstall_string).
+
+## 💻 Использование через Windows SDK
+```python
+from apps.windows.sdk.software_scanner import DeepSoftwareScanner, ScanMode, ReportFormatter
+
+scanner = DeepSoftwareScanner()
+# Режимы: ScanMode.QUICK, ScanMode.DEEP, ScanMode.FORENSIC, ScanMode.ORPHANS, ScanMode.TARGETED
+report = scanner.run_scan(mode=ScanMode.DEEP)
+
+# Сводный отчет в формате Markdown
+print(ReportFormatter.format_summary_markdown(report))
+```

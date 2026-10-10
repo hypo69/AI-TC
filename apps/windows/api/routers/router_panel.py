@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows API - Universal Panel Router
+# Process Name: AI-Windows-Admin Apps Windows API - Universal Panel Router
 # =============================================================================
 # Description:
 #   Слой 7: Универсальный REST API роутер для панелей интерфейса (Panel API).
@@ -14,11 +14,11 @@
 #   GET /api/v1/panel/panel-memory-io/sql
 #
 # File: router_panel.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.api.routers
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 10:37:00
+# Updated: 2026-10-10 19:28:00
 # =============================================================================
 
 from __future__ import annotations
@@ -359,6 +359,30 @@ PANEL_SQL_REGISTRY: Dict[str, Dict[str, str]] = {
     "panel-software-audit": {
         "table": "software_inventory",
         "sql": "SELECT * FROM software_inventory ORDER BY id DESC LIMIT :limit;",
+    },
+    "software-scanner": {
+        "table": "system_snapshots",
+        "sql": "SELECT id, timestamp, created_at, userassist_top_apps_json FROM system_snapshots ORDER BY id DESC LIMIT :limit;",
+    },
+    "panel-software-scanner": {
+        "table": "system_snapshots",
+        "sql": "SELECT id, timestamp, created_at, userassist_top_apps_json FROM system_snapshots ORDER BY id DESC LIMIT :limit;",
+    },
+    "panel-software-scanner-summary": {
+        "table": "system_snapshots",
+        "sql": "SELECT id, timestamp, created_at, userassist_top_apps_json, processes_json FROM system_snapshots ORDER BY id DESC LIMIT :limit;",
+    },
+    "panel-software-scanner-metrics": {
+        "table": "system_snapshots",
+        "sql": "SELECT id, timestamp, created_at, userassist_top_apps_json FROM system_snapshots ORDER BY id DESC LIMIT :limit;",
+    },
+    "panel-software-scanner-table": {
+        "table": "system_snapshots",
+        "sql": "SELECT id, timestamp, created_at, userassist_top_apps_json FROM system_snapshots ORDER BY id DESC LIMIT :limit;",
+    },
+    "panel-software-scanner-orphans": {
+        "table": "system_snapshots",
+        "sql": "SELECT id, timestamp, created_at FROM system_snapshots ORDER BY id DESC LIMIT :limit;",
     },
 
     # 12. Модели и настройки ИИ (AI Models & Config)

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Telemetry - Power Lifecycle
+# Process Name: AI-Windows-Admin Apps Windows Telemetry - Power Lifecycle
 # =============================================================================
 # Description:
 #   Движок сбора, разбора и корреляции событий жизненного цикла питания Windows
@@ -16,11 +16,11 @@
 #     sessions = engine.get_sessions(limit=20)
 #
 # File: power_lifecycle.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.telemetry
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-08 02:51:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

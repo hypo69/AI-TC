@@ -14,11 +14,11 @@
  *     import { initLogSettingsTab } from '/windows/api/webgui/log_settings_tab/main.js';
  *
  * File: main.js
- * Project: ai-breadboard
+ * Project: ai-windows-admin
  * Package: windows/api/webgui/log_settings_tab
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-08 02:35:00
+ * Updated: 2026-10-10 17:35:00
  * =============================================================================
  */
 

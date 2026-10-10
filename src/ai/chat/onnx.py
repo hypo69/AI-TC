@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard AI - Onnx Module
+# Process Name: AI-Windows-Admin AI - Onnx Module
 # =============================================================================
 # Description:
 #   Модуль основной системы (`onnx`).
@@ -10,11 +10,11 @@
 #     import src.ai.chat.onnx as onnx
 #
 # File: onnx.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: src.ai.chat
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:13:56
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 """Модуль основной системы (`onnx`)."""

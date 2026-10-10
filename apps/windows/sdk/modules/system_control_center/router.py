@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Modules System_Control_Center - Router
+# Process Name: AI-Windows-Admin Apps Windows Modules System_Control_Center - Router
 # =============================================================================
 # Description:
 #   FastAPI роутер для микросервиса System Control Center.
@@ -12,11 +12,11 @@
 #     service = ProfileApplyRequest()
 #
 # File: router.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.system_control_center
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-08 04:36:00
+# Updated: 2026-10-10 19:39:20
 # =============================================================================
 
 from __future__ import annotations
@@ -33,7 +33,7 @@ from typing import Any, Dict, List, Optional
 import psutil
 from fastapi import APIRouter, HTTPException, Query, Request
 from pydantic import BaseModel, Field
-from apps.common.csv_logger import AppCsvLogger
+from apps.common.telemetry_logger import AppTelemetryLogger
 from logger import logger
 from apps.windows.sdk.core.audits import CleanCollector, IntegrityCollector, PostInstallCollector, SecurityCollector, StorageCollector, UpdateCollector
 from apps.windows.sdk.core.safe_executor import SafeExecutor
@@ -41,7 +41,7 @@ from apps.windows.sdk.core.system_restore import WindowsSystemRestoreManager
 from apps.windows.sdk.core.system_param_manager import SafeSystemParamManager
 
 router = APIRouter(prefix='/api/system-control', tags=['System Control Center'])
-_csv_logger = AppCsvLogger('system_control_center')
+_telemetry_logger = AppTelemetryLogger('system_control_center')
 _executor = SafeExecutor()
 _restore_mgr = WindowsSystemRestoreManager()
 _param_mgr = SafeSystemParamManager(restore_manager=_restore_mgr)
@@ -101,7 +101,6 @@ def _collect_status_sync() -> Dict[str, Any]:
     protection_status = _restore_mgr.check_protection_status()
     restore_info = {'restore_points_count': len(rp_list), 'system_protection_enabled': protection_status.get('system_protection_enabled', True)}
     res = {'is_elevated': is_elevated, 'system': system_info, 'security': security_info, 'restore': restore_info, 'disk': disk_info, 'power': power_info, 'update': update_info, 'timestamp': datetime.now().isoformat()}
-    #_csv_logger.log_poll(poll_type='system_status', metric_name='ram_percent', value=mem.percent, unit='%', status='OK', details={'uptime_sec': uptime_seconds, 'security': security_info.get('overall_status'), 'is_elevated': is_elevated}, filename='system_control_status_polls.csv')
     return res
 
 class ProfileApplyRequest(BaseModel):
@@ -156,7 +155,7 @@ async def get_restore_points() -> Dict[str, Any]:
 async def create_restore_point(payload: RestorePointCreateRequest) -> Dict[str, Any]:
     """Создание новой точки восстановления Windows вручную."""
     res = await asyncio.to_thread(_restore_mgr.create_restore_point, description=payload.description, restore_point_type=payload.restore_point_type or 'MODIFY_SETTINGS')
-    await asyncio.to_thread(_csv_logger.log_event, event_type='restore_point_create', status='SUCCESS' if res.get('success') else 'FAILED', details={'description': payload.description, 'type': payload.restore_point_type, 'result': res.get('message')}, filename='system_control_restore_points.csv')
+    await asyncio.to_thread(_telemetry_logger.log_event, event_type='restore_point_create', status='SUCCESS' if res.get('success') else 'FAILED', details={'description': payload.description, 'type': payload.restore_point_type, 'result': res.get('message')})
     if not res.get('success'):
         raise HTTPException(status_code=500, detail=res.get('message', 'Ошибка создания точки восстановления'))
     return res
@@ -170,14 +169,14 @@ async def get_restore_policy_config() -> Dict[str, Any]:
 async def update_restore_policy_config(payload: RestorePolicyConfigRequest) -> Dict[str, Any]:
     """Обновление и применение политики хранения, лимита дискового пространства и расписания."""
     res = await asyncio.to_thread(_restore_mgr.save_policy, max_points=payload.max_points or 5, auto_prune=payload.auto_prune if payload.auto_prune is not None else True, max_storage_size=payload.max_storage_size or '10%', schedule_trigger=payload.schedule_trigger or 'daily', schedule_time=payload.schedule_time or '03:00', frequency_limit_minutes=payload.frequency_limit_minutes or 0)
-    await asyncio.to_thread(_csv_logger.log_event, event_type='restore_policy_update', status='SUCCESS' if res.get('success') else 'FAILED', details=payload.model_dump(), filename='system_control_restore_points.csv')
+    await asyncio.to_thread(_telemetry_logger.log_event, event_type='restore_policy_update', status='SUCCESS' if res.get('success') else 'FAILED', details=payload.model_dump())
     return res
 
 @router.post('/restore-points/prune')
 async def prune_restore_points(payload: RestorePruneRequest) -> Dict[str, Any]:
     """Принудительная очистка старых точек восстановления в соответствии с заданным лимитом."""
     res = await asyncio.to_thread(_restore_mgr.prune_old_restore_points, keep_count=payload.keep_count or 5)
-    await asyncio.to_thread(_csv_logger.log_event, event_type='restore_points_prune', status='SUCCESS' if res.get('success') else 'FAILED', details=res, filename='system_control_restore_points.csv')
+    await asyncio.to_thread(_telemetry_logger.log_event, event_type='restore_points_prune', status='SUCCESS' if res.get('success') else 'FAILED', details=res)
     return res
 
 @router.get('/params')
@@ -228,14 +227,14 @@ async def get_profiles() -> Dict[str, Any]:
 async def apply_profile(payload: ProfileApplyRequest) -> Dict[str, Any]:
     """Применение выбранных шагов профиля."""
     res = {'status': 'SUCCESS', 'profile_id': payload.profile_id, 'applied_steps': payload.step_ids or [], 'message': 'Optimization profile applied successfully.'}
-    _csv_logger.log_event(event_type='profile_apply', status='SUCCESS', details={'profile_id': payload.profile_id, 'steps': payload.step_ids}, filename='system_control_profile_events.csv')
+    _telemetry_logger.log_event(event_type='profile_apply', status='SUCCESS', details={'profile_id': payload.profile_id, 'steps': payload.step_ids})
     return res
 
 @router.post('/actions/reboot')
 async def trigger_reboot() -> Dict[str, Any]:
     """Запрос перезагрузки системы."""
     logger.info('Reboot requested via System Control Center')
-    _csv_logger.log_event(event_type='system_reboot_scheduled', status='SUCCESS', details='Reboot scheduled in 60s', filename='system_control_profile_events.csv')
+    _telemetry_logger.log_event(event_type='system_reboot_scheduled', status='SUCCESS', details='Reboot scheduled in 60s')
     return {'status': 'SUCCESS', 'message': 'Reboot scheduled in 60 seconds.'}
 
 @router.post('/actions/cleanup')
@@ -243,30 +242,46 @@ async def trigger_cleanup() -> Dict[str, Any]:
     """Выполнение безопасной очистки временных файлов."""
     res = await asyncio.to_thread(_clean_collector.collect)
     cleaned = getattr(res, 'total_cleanable_mb', 0)
-    await asyncio.to_thread(_csv_logger.log_event, event_type='system_cleanup_executed', status='SUCCESS', details={'cleaned_mb': cleaned}, filename='system_control_profile_events.csv')
+    await asyncio.to_thread(_telemetry_logger.log_event, event_type='system_cleanup_executed', status='SUCCESS', details={'cleaned_mb': cleaned})
     return {'status': 'SUCCESS', 'cleaned_mb': cleaned, 'message': 'System cleanup completed successfully.'}
 
 def _read_logs_sync(limit: int) -> Dict[str, Any]:
-    """Синхронное чтение CSV логов и истории в отдельном потоке."""
-    from apps.common.csv_logger import get_apps_log_dir
-    import csv
+    """Синхронное чтение истории событий и параметров из TelemetryStorage."""
     logs: List[Dict[str, Any]] = []
-    log_dir = get_apps_log_dir()
-    pattern_files = ['system_control_profile_events.csv', 'system_control_restore_points.csv', 'system_control_param_changes.csv']
-    for fname in pattern_files:
-        fpath = log_dir / fname
-        if fpath.exists():
-            try:
-                with open(fpath, mode='r', encoding='utf-8-sig') as f:
-                    reader = csv.DictReader(f)
-                    for row in reader:
-                        logs.append({'timestamp': row.get('timestamp', ''), 'action': row.get('event_type') or row.get('param_name') or 'Operation', 'target': row.get('app', 'system_control'), 'status': row.get('status', 'OK'), 'details': str(row.get('details') or row.get('new_value') or '')})
-            except Exception as e:
-                logger.warning(f'Ошибка чтения лога {fpath}: {e}')
+    try:
+        from apps.windows.telemetry.sqlite import TelemetryStorage
+        storage = TelemetryStorage.get_instance(read_only=True)
+        events = storage.get_app_events(app='system_control_center', limit=limit)
+        for ev in events:
+            logs.append({
+                'timestamp': ev.get('timestamp', ''),
+                'action': ev.get('event_type', 'Operation'),
+                'target': ev.get('app', 'system_control_center'),
+                'status': ev.get('status', 'OK'),
+                'details': str(ev.get('details') or ''),
+            })
+        param_changes = storage.get_app_param_changes(app='system_control_center', limit=limit)
+        for pc in param_changes:
+            logs.append({
+                'timestamp': pc.get('timestamp', ''),
+                'action': f"Param: {pc.get('param_name', '')}",
+                'target': pc.get('app', 'system_control_center'),
+                'status': pc.get('status', 'SUCCESS'),
+                'details': f"{pc.get('old_value')} -> {pc.get('new_value')}",
+            })
+    except Exception as e:
+        logger.warning(f'Ошибка чтения логов из TelemetryStorage: {e}')
+
     try:
         param_history = _param_mgr.get_history(limit=limit)
         for h in param_history:
-            logs.append({'timestamp': h.get('applied_at', ''), 'action': f"Param: {h.get('param_id', '')}", 'target': 'SafeParamManager', 'status': 'SUCCESS' if not h.get('is_rolled_back') else 'ROLLED_BACK', 'details': f"{h.get('old_value')} -> {h.get('new_value')} (Restore point: {h.get('restore_point_id')})"})
+            logs.append({
+                'timestamp': h.get('applied_at', ''),
+                'action': f"Param: {h.get('param_id', '')}",
+                'target': 'SafeParamManager',
+                'status': 'SUCCESS' if not h.get('is_rolled_back') else 'ROLLED_BACK',
+                'details': f"{h.get('old_value')} -> {h.get('new_value')} (Restore point: {h.get('restore_point_id')})",
+            })
     except Exception as e:
         logger.warning(f'Ошибка получения истории параметров: {e}')
     logs.sort(key=lambda x: str(x.get('timestamp', '')), reverse=True)

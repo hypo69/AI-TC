@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Native - Package Root
+# Process Name: AI-Windows-Admin Apps Windows Native - Package Root
 # =============================================================================
 # Description:
 #   Единый C-FFI слой (Слой 2) для низкоуровневых Win32 API вызовов.
@@ -10,11 +10,11 @@
 #     from apps.windows.sdk.native import win32_error_check, WindowsErrorDecoder, PDHManager
 #
 # File: __init__.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.native
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-08 09:36:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

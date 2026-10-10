@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard AI - Agent Module
+# Process Name: AI-Windows-Admin AI - Agent Module
 # =============================================================================
 # Description:
 #   Агент для автономной работы и рассуждений через LangChain + ReAct.
@@ -12,11 +12,11 @@
 #     service = MediaSearchAgent()
 #
 # File: agent.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: src.ai.agents
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:13:56
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations
@@ -58,7 +58,7 @@ class MediaSearchAgent:
         self._llm = ''
         self._langchain_cfg = langchain_cfg
         self.native_tools = [web_search, rag_search, python_eval, file_read]
-        logger.info(f'[BreadboardAgent] Инициализирован: llm={self.llm_type}, max_steps={self.max_steps}, timeout={self.timeout}')
+        logger.info(f'[AIWindowsAdminAgent] Инициализирован: llm={self.llm_type}, max_steps={self.max_steps}, timeout={self.timeout}')
 
     def _get_llm(self):
         """Ленивое создание LLM-инстанса при первом обращении."""

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Root - Header
+# Process Name: AI-Windows-Admin Root - Header
 # =============================================================================
 # Description:
 #   Определение корневого каталога проекта (__root__) и нормализация системных путей.
@@ -10,7 +10,7 @@
 #        пакетов (src, apps, logger) независимо от рабочей директории, из которой запущен скрипт.
 #     2. Кроссплатформенная нормализация: выравнивает переменные окружения USERPROFILE/HOME
 #        и добавляет __root__ в sys.path.
-#     3. Поддержка внешних переопределений: считывает переменную AIBREADBOARD_DIR при наличии.
+#     3. Поддержка внешних переопределений: считывает переменную AIWINDOWSADMIN_DIR при наличии.
 #
 # Usage Examples:
 #   Python API:
@@ -20,11 +20,11 @@
 #     config_path = __root__ / "config" / "dashboard.json"
 #
 # File: header.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: root
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-06 00:05:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 import os
@@ -46,7 +46,7 @@ def set_project_root(marker_files=('__root__', '.git')) -> Path:
     """
     Finds the root directory of the project starting from the current file's directory,
     searching upwards and stopping at the first directory containing any of the marker files.
-    Also respects the AIBREADBOARD_DIR environment variable if present.
+    Also respects the AIWINDOWSADMIN_DIR environment variable if present.
 
     Args:
         marker_files (tuple): Filenames or directory names to identify the project root.
@@ -54,7 +54,7 @@ def set_project_root(marker_files=('__root__', '.git')) -> Path:
     Returns:
         Path: Path to the root directory if found, otherwise the directory where the script is located.
     """
-    env_dir = os.environ.get('AIBREADBOARD_DIR', '')
+    env_dir = os.environ.get('AIWINDOWSADMIN_DIR', '')
     if env_dir:
         env_path = Path(env_dir).resolve()
         if env_path.exists() and (env_path / 'config.json').exists():

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Scripts Dev - Generate Coverage Report
+# Process Name: AI-Windows-Admin Scripts Dev - Generate Coverage Report
 # =============================================================================
 # Description:
 #   Code coverage report generation utility.
@@ -14,11 +14,11 @@
 #     res = generate_coverage_report()
 #
 # File: generate_coverage_report.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: scripts.dev
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:27:07
+# Updated: 2026-10-10 22:22:30
 # =============================================================================
 
 """Code coverage report generation utility.
@@ -26,6 +26,7 @@
 Generates comprehensive coverage analysis reports including terminal output,
 HTML report, and XML format. Supports threshold checking."""
 
+from logger import logger
 import os
 import sys
 from pathlib import Path
@@ -48,15 +49,15 @@ def generate_coverage_report():
         html_dir.mkdir(parents=True, exist_ok=True)
         cov.html_report(directory=str(html_dir))
         cov.xml_report(outfile='coverage.xml')
-        print(f'\nOK: Coverage report generated')
-        print(f"  HTML: {html_dir / 'index.html'}")
-        print(f'  XML: coverage.xml')
+        logger.console(f'\nOK: Coverage report generated')
+        logger.console(f"  HTML: {html_dir / 'index.html'}")
+        logger.console(f'  XML: coverage.xml')
         return 0
     except ImportError:
-        print('ERROR: coverage not installed. Install: pip install coverage')
+        logger.console('ERROR: coverage not installed. Install: pip install coverage')
         return 1
     except Exception as e:
-        print(f'ERROR: Error generating report: {e}')
+        logger.console(f'ERROR: Error generating report: {e}')
         return 1
 
 def check_coverage_threshold(threshold=80):
@@ -73,16 +74,16 @@ def check_coverage_threshold(threshold=80):
         cov = coverage.Coverage(config_file='.coveragerc')
         cov.load()
         _, missing, total, percentage = cov.report()
-        print(f'\nCode coverage: {percentage:.1f}%')
-        print(f'Minimum required: {threshold}%')
+        logger.console(f'\nCode coverage: {percentage:.1f}%')
+        logger.console(f'Minimum required: {threshold}%')
         if percentage >= threshold:
-            print('OK: Coverage threshold met')
+            logger.console('OK: Coverage threshold met')
             return 0
         else:
-            print(f'ERROR: Coverage threshold NOT met (need {threshold - percentage:.1f}% more)')
+            logger.console(f'ERROR: Coverage threshold NOT met (need {threshold - percentage:.1f}% more)')
             return 1
     except ImportError:
-        print('ERROR: coverage not installed')
+        logger.console('ERROR: coverage not installed')
         return 1
 
 def main():

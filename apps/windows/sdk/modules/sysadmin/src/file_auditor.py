@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Modules Sysadmin Src - File Auditor
+# Process Name: AI-Windows-Admin Apps Windows Modules Sysadmin Src - File Auditor
 # =============================================================================
 # Description:
 #   Движок аудита файловой системы и регистрации удаления файлов Windows.
@@ -12,11 +12,11 @@
 #     service = FileAuditEvent()
 #
 # File: file_auditor.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.sysadmin.src
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:28:28
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

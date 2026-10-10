@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Scripts Dev - Run Tests
+# Process Name: AI-Windows-Admin Scripts Dev - Run Tests
 # =============================================================================
 # Description:
-#   Test runner script for ai-breadboard project.
+#   Test runner script for ai-windows-admin project.
 #
 # Usage Examples:
 #   CLI:
@@ -14,18 +14,19 @@
 #     res = run_tests()
 #
 # File: run_tests.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: scripts.dev
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:27:07
+# Updated: 2026-10-10 22:22:30
 # =============================================================================
 
-"""Test runner script for ai-breadboard project.
+"""Test runner script for ai-windows-admin project.
 
 Provides command-line interface for running project tests with coverage
 analysis, verbose output, and filtering by test markers."""
 
+from logger import logger
 import subprocess
 import sys
 import argparse
@@ -59,11 +60,11 @@ def show_coverage():
         import webbrowser
         webbrowser.open(f'file://{html_path.absolute()}')
     else:
-        print('HTML report not found. Run tests with --coverage flag')
+        logger.console('HTML report not found. Run tests with --coverage flag')
 
 def main():
     """Main function."""
-    parser = argparse.ArgumentParser(description='Run ai-breadboard project tests')
+    parser = argparse.ArgumentParser(description='Run ai-windows-admin project tests')
     parser.add_argument('--coverage', '-c', action='store_true', help='Run with coverage analysis')
     parser.add_argument('--verbose', '-v', action='store_true', help='Verbose test output')
     parser.add_argument('--markers', '-m', type=str, help='pytest markers (unit, integration, slow)')
@@ -74,9 +75,9 @@ def main():
         return
     exit_code = run_tests(coverage=args.coverage, verbose=args.verbose, markers=args.markers)
     if exit_code == 0:
-        print('\n✓ All tests passed successfully!')
+        logger.console('\n✓ All tests passed successfully!')
     else:
-        print(f'\n✗ Tests failed (exit code: {exit_code})')
+        logger.console(f'\n✗ Tests failed (exit code: {exit_code})')
     sys.exit(exit_code)
 if __name__ == '__main__':
     main()

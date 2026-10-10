@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows API - Server & Router Auto-Discovery
+# Process Name: AI-Windows-Admin Apps Windows API - Server & Router Auto-Discovery
 # =============================================================================
 # Description:
 #   Слой 7: FastAPI сервер и механизм динамического Auto-Discovery роутеров.
@@ -10,11 +10,11 @@
 #     from apps.windows.api.server import create_app, discover_and_register_routers
 #
 # File: server.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.api
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 12:41:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations
@@ -66,18 +66,14 @@ def load_tc_config(profile: Optional[str] = None) -> Dict[str, Any]:
     candidates: List[Path] = []
 
     if profile:
-        candidates.append(_PROJECT_ROOT / "start_scenarios_config" / f"{profile}.json")
         candidates.append(_PROJECT_ROOT / "config" / f"{profile}.json")
 
-    env_cfg = os.getenv("AIBREADBOARD_CONFIG") or os.getenv("CONFIG_FILE")
+    env_cfg = os.getenv("AIWINDOWSADMIN_CONFIG") or os.getenv("CONFIG_FILE")
     if env_cfg:
         p = Path(env_cfg)
         candidates.append(p if p.is_absolute() else _PROJECT_ROOT / p)
-        candidates.append(_PROJECT_ROOT / "start_scenarios_config" / p.name)
 
     candidates.extend([
-        _PROJECT_ROOT / "start_scenarios_config" / "tc.json",
-        _PROJECT_ROOT / "start_scenarios_config" / "su.json",
         _PROJECT_ROOT / "config" / "tc.json",
         _PROJECT_ROOT / "config_tc.json",
         _MODULE_DIR.parent / "config.json",
@@ -139,7 +135,7 @@ def create_app() -> FastAPI:
     server_cfg = config.get("server", {})
 
     app = FastAPI(
-        title=server_cfg.get("title", "AI-Breadboard Windows Internal API"),
+        title=server_cfg.get("title", "AI-Windows-Admin Windows Internal API"),
         description=server_cfg.get("description", "Сервис TC/Windows: телеметрия, дашборды, диагностика."),
         version="2.0.0",
         docs_url="/docs",
@@ -420,7 +416,7 @@ def create_app() -> FastAPI:
                 return {"status": "success", "content": prompt_file.read_text(encoding="utf-8", errors="replace")}
             except Exception:
                 pass
-        return {"status": "success", "content": "Вы — интеллектуальный ассистент платформы AI Breadboard."}
+        return {"status": "success", "content": "Вы — интеллектуальный ассистент платформы AI Windows Admin."}
 
     @app.post("/api/admin/system_instruction", tags=["admin"])
     @app.post("/api/v1/admin/system_instruction", tags=["admin"])

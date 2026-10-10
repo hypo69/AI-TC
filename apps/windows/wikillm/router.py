@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Wikillm - Router
+# Process Name: AI-Windows-Admin Apps Windows Wikillm - Router
 # =============================================================================
 # Description:
 #   REST API эндпоинты для разрешения артефактов, поиска по базе знаний WikiLLM,
@@ -12,11 +12,11 @@
 #     service = ResolveRequest()
 #
 # File: router.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.wikillm
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-08 09:50:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

@@ -1,4 +1,4 @@
-# План архитектуры ролевой системы AI-Breadboard
+# План архитектуры ролевой системы AI-Windows-Admin
 
 ## Обзор
 
@@ -17,7 +17,7 @@
 ### Структура конфигов
 
 ```
-AI-Breadboard/
+AI-Windows-Admin/
 ├── config.json              # Администратор (run.ps1)
 ├── config_tc.json           # Техник (tc.ps1)
 ├── config_secretary.json    # Секретарь (планируется)
@@ -156,9 +156,8 @@ AI-Breadboard/
         "website_monitor",
         "user_assistant",
         "wikipedia_research",
-        "trading_terminal",
         "helpdesk",
-        "ai_breadboard_admin",
+        "ai_windows_admin_admin",
         "research_and_statistic"
       ]
     },

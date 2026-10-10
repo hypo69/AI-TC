@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard UTILS - Unicode Module
+# Process Name: AI-Windows-Admin UTILS - Unicode Module
 # =============================================================================
 # Description:
 #   Decoding of unicode escape sequences in dictionaries, lists, or strings to readable text.
@@ -13,11 +13,11 @@
 #     print(res)
 #
 # File: unicode.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: src.utils.convertors
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:13:56
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 """Decoding of unicode escape sequences in dictionaries, lists, or strings to readable text."""
@@ -53,9 +53,9 @@ H510M K V2'
         decoded_list = decode_unicode_escape(input_list)
         decoded_string = decode_unicode_escape(input_string)
 
-        print(decoded_dict)
-        print(decoded_list)
-        print(decoded_string)
+        logger.console(decoded_dict)
+        logger.console(decoded_list)
+        logger.console(decoded_string)
 
     """
     if isinstance(input_data, dict):

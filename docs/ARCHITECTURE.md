@@ -1,8 +1,8 @@
-# AI-Breadboard Architecture
+# AI-Windows-Admin Architecture
 
 ## Overview
 
-This document describes the modular architecture of the AI-Breadboard FastAPI application.
+This document describes the modular architecture of the AI-Windows-Admin FastAPI application.
 
 ## Architecture Principles
 
@@ -15,7 +15,7 @@ This document describes the modular architecture of the AI-Breadboard FastAPI ap
 ## Directory Structure
 
 ```
-AI-Breadboard/
+AI-Windows-Admin/
 ├── main.py                          # Application entry point (65 lines)
 ├── docs/
 │   └── ARCHITECTURE.md              # This file
@@ -42,8 +42,7 @@ AI-Breadboard/
 │   │   ├── router_admin.py
 │   │   └── ...
 │   └── ...
-└── apps/                           # Application-specific routers
-    └── trading_terminal/
+└── apps/                           # Application-specific modules
 ```
 
 ## Core Modules

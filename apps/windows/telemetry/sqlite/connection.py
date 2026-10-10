@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Telemetry Sqlite - Connection
+# Process Name: AI-Windows-Admin Apps Windows Telemetry Sqlite - Connection
 # =============================================================================
 # Description:
 #   Менеджер подключений к SQLite базе данных с поддержкой режима только чтение.
@@ -14,11 +14,11 @@
 #         ...
 #
 # File: connection.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.telemetry.sqlite
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-06 05:32:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

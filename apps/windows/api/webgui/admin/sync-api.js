@@ -10,11 +10,11 @@
  *     <script src="/windows/api/webgui/admin/sync-api.js?v=20261001_v1" type="module"></script>
  *
  * File: sync-api.js
- * Project: ai-breadboard
+ * Project: ai-windows-admin
  * Package: windows/api/webgui/admin
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-01 13:04:40
+ * Updated: 2026-10-10 17:35:00
  * =============================================================================
  */
 

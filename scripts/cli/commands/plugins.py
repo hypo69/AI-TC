@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Scripts Cli Commands - Plugins
+# Process Name: AI-Windows-Admin Scripts Cli Commands - Plugins
 # =============================================================================
 # Description:
 #   Команды управления плагинами (plugins).
@@ -12,14 +12,15 @@
 #     res = register_plugins_parser()
 #
 # File: plugins.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: scripts.cli.commands
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:27:07
+# Updated: 2026-10-10 22:22:44
 # =============================================================================
 
 from __future__ import annotations
+from logger import logger
 """Команды управления плагинами (plugins)."""
 
 import argparse
@@ -49,13 +50,13 @@ def run_plugins_command(args: argparse.Namespace) -> int:
         from plugins import load_plugins
         loaded = load_plugins()
         lang = getattr(args, 'lang', None)
-        print('\n--- INSTALLED PLUGINS ---')
+        logger.console('\n--- INSTALLED PLUGINS ---')
         for name, p in sorted(loaded.items()):
             t = p.get_title(lang) if lang else p.title
             d = p.get_description(lang) if lang else p.description
             status = 'enabled' if p.enabled else 'disabled'
-            print(f'[{p.icon}] {name} ({t}) - {status}\n    {d}')
-        print('-------------------------\n')
+            logger.console(f'[{p.icon}] {name} ({t}) - {status}\n    {d}')
+        logger.console('-------------------------\n')
         return 0
     if sub == 'create':
         from scripts.dev.init_plugin import create_plugin
@@ -70,5 +71,5 @@ def run_plugins_command(args: argparse.Namespace) -> int:
             scope=getattr(args, 'scope', 'system') or 'system',
         )
         return 0
-    print(f'Unknown plugins subcommand: {sub}')
+    logger.console(f'Unknown plugins subcommand: {sub}')
     return 1

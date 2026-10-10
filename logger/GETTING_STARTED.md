@@ -1,6 +1,6 @@
 # Getting Started with core.logger
 
-Quick guide to using the refactored logging module in your AI-Breadboard project.
+Quick guide to using the refactored logging module in your AI-Windows-Admin project.
 
 ---
 

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows SDK Core - Power Monitor
+# Process Name: AI-Windows-Admin Apps Windows SDK Core - Power Monitor
 # =============================================================================
 # Description:
 #   Модуль отслеживания состояний питания (Power-Aware Monitoring) для Windows.
@@ -15,11 +15,11 @@
 #     status = monitor.get_system_power_status()
 #
 # File: power_monitor.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.core
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 06:15:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

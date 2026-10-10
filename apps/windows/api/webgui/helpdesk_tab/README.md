@@ -1,7 +1,7 @@
 # Helpdesk Tab Module
 
 ## Overview
-The `helpdesk_tab` module provides an integrated multi-tool Helpdesk & Support Workbench directly inside the AI Breadboard administrative suite (`/admin`).
+The `helpdesk_tab` module provides an integrated multi-tool Helpdesk & Support Workbench directly inside the AI Windows Admin administrative suite (`/admin`).
 
 ## Features
 - **Real-Time WebSocket Sync:** Immediate push notifications on new user tickets and live incoming chat replies.

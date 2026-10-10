@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Api - Router System32 Catalog
+# Process Name: AI-Windows-Admin Apps Windows Api - Router System32 Catalog
 # =============================================================================
 # Description:
 #   FastAPI REST API роутер для расширенного каталога возможностей системных инструментов
@@ -13,11 +13,11 @@
 #     router = init_router()
 #
 # File: router_system32_catalog.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.api.routers
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-06 15:20:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

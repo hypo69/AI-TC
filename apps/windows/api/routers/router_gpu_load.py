@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Api Routers - Router GPU Load
+# Process Name: AI-Windows-Admin Apps Windows Api Routers - Router GPU Load
 # =============================================================================
 # Description:
 #   GET /api/v1/panel/gpu-load — метрики графического ускорителя (GPU):
@@ -14,16 +14,16 @@
 #     app.include_router(init_router())
 #
 # File: router_gpu_load.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.api.routers
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-08 08:26:00
+# Updated: 2026-10-10 18:07:00
 # =============================================================================
 
 from __future__ import annotations
 
-"""Роутер панели «Загрузка GPU»: детальные метрики видеокарты, паспорт, сенсоры и история из LHM и telemetry.db."""
+"""Роутер панели «Загрузка GPU»: детальные метрики видеокарты, паспорт, сенсоры и история строго из базы данных telemetry.db."""
 
 from datetime import datetime, timezone
 import json
@@ -33,8 +33,6 @@ from fastapi import APIRouter, Query
 from pydantic import BaseModel, Field
 
 from logger import logger
-from apps.windows.sdk.modules.hardware.lhm_service import LhmService
-from apps.windows.sdk.modules.hardware.gpu_prober import GpuProber
 from apps.windows.telemetry.sqlite import TelemetryStorage
 
 _TEMP_CATEGORIES = ("temperature", "temperatures")
@@ -253,7 +251,8 @@ def build_gpu_load(
     Returns:
         GpuLoadResponse: Полная информация по загрузке, температуре, памяти, спецификациям и истории GPU.
     """
-    gpu_name = target_gpu_name or (inventory.get("name") if inventory else "GPU")
+    inv = inventory or {}
+    gpu_name = target_gpu_name or inv.get("name") or "GPU"
     core_load: Optional[float] = None
     core_temp: Optional[float] = None
     hotspot_temp: Optional[float] = None
@@ -437,24 +436,148 @@ def build_gpu_load(
                     )
                 )
 
-    # Синхронизируем температуру для GPU Core в engines
-    if "GPU Core" in engines_dict and core_temp is not None:
+    # Fallback на данные из последних сэмплов БД / инвентаря для отсутствующих метрик
+    latest_hist = history_samples[-1] if history_samples else {}
+    if core_load is None:
+        if latest_hist.get("load_percent") is not None:
+            core_load = float(latest_hist["load_percent"])
+        elif inv.get("utilization_gpu_pct") is not None:
+            core_load = float(inv["utilization_gpu_pct"])
+
+    if core_temp is None:
+        if latest_hist.get("temperature_gpu_c") is not None:
+            core_temp = float(latest_hist["temperature_gpu_c"])
+        elif inv.get("temperature_gpu_c") is not None:
+            core_temp = float(inv["temperature_gpu_c"])
+
+    if power_draw is None:
+        if latest_hist.get("power_draw_w") is not None:
+            power_draw = float(latest_hist["power_draw_w"])
+        elif inv.get("power_draw_w") is not None:
+            power_draw = float(inv["power_draw_w"])
+
+    if fan_pct is None and inv.get("fan_speed_pct") is not None:
+        fan_pct = float(inv["fan_speed_pct"])
+
+    if vram_total is None:
+        if latest_hist.get("memory_total_mb"):
+            vram_total = float(latest_hist["memory_total_mb"])
+        elif inv.get("memory_total_mb") is not None:
+            vram_total = float(inv["memory_total_mb"])
+        elif inv.get("vram_gb") is not None and float(inv["vram_gb"]) > 0:
+            vram_total = float(inv["vram_gb"]) * 1024.0
+
+    if vram_used is None:
+        if latest_hist.get("memory_used_mb") is not None:
+            vram_used = float(latest_hist["memory_used_mb"])
+        elif inv.get("memory_used_mb") is not None:
+            vram_used = float(inv["memory_used_mb"])
+
+    if vram_free is None and vram_total is not None and vram_used is not None:
+        vram_free = max(0.0, vram_total - vram_used)
+
+    if vram_pct is None and vram_total and vram_used is not None and vram_total > 0:
+        vram_pct = round((vram_used / vram_total) * 100.0, 1)
+
+    # Добавляем движки из инвентаря GpuProber
+    inv_engines = inv.get("engines")
+    if isinstance(inv_engines, dict):
+        for eng_name, eng_val in inv_engines.items():
+            if eng_name not in engines_dict:
+                engines_dict[eng_name] = GpuEngineMetric(
+                    name=eng_name,
+                    load_percent=round(float(eng_val), 1) if eng_val is not None else None,
+                )
+
+    if "GPU Core" not in engines_dict and core_load is not None:
+        engines_dict["GPU Core"] = GpuEngineMetric(name="GPU Core", load_percent=core_load, temperature_c=core_temp)
+    elif "GPU Core" in engines_dict and core_temp is not None:
         engines_dict["GPU Core"].temperature_c = core_temp
 
-    # Вычисляем процент занятой памяти, если не пришёл явно
-    if vram_pct is None and vram_total and vram_used is not None and vram_total > 0:
-        vram_pct = round((vram_used / vram_total) * 100, 1)
-
     # Упорядочиваем список движков
-    ordered_keys = ["GPU Core", "Memory Controller", "Video Engine", "GPU Memory", "GPU Bus", "D3D 3D", "Copy Engine"]
+    ordered_keys = ["GPU Core", "3D Engine", "Memory Controller", "Video Engine", "Video Decode", "Copy Engine", "GPU Memory", "GPU Bus", "D3D 3D"]
     engines_list: List[GpuEngineMetric] = []
     for k in ordered_keys:
         if k in engines_dict:
             engines_list.append(engines_dict.pop(k))
     engines_list.extend(engines_dict.values())
 
+    # Если список сенсоров пуст, генерируем структурированный набор сенсоров из параметров GPU
+    if not general_sensors_list:
+        if core_temp is not None:
+            general_sensors_list.append(
+                GpuSensorMetric(
+                    id=f"gpu_{current_gpu_index}_temp",
+                    name="GPU Core Temperature",
+                    category="Temperatures",
+                    unit="°C",
+                    value=round(core_temp, 1),
+                    value_raw=f"{core_temp:.1f} °C",
+                    status=_calculate_gpu_sensor_status("temp", core_temp),
+                )
+            )
+        if vram_used is not None:
+            general_sensors_list.append(
+                GpuSensorMetric(
+                    id=f"gpu_{current_gpu_index}_vram_used",
+                    name="GPU VRAM Used",
+                    category="Memory",
+                    unit="MB",
+                    value=round(vram_used, 1),
+                    value_raw=f"{vram_used:.1f} MB",
+                    status="normal",
+                )
+            )
+        if vram_total is not None:
+            general_sensors_list.append(
+                GpuSensorMetric(
+                    id=f"gpu_{current_gpu_index}_vram_total",
+                    name="GPU VRAM Total",
+                    category="Memory",
+                    unit="MB",
+                    value=round(vram_total, 1),
+                    value_raw=f"{vram_total:.0f} MB",
+                    status="normal",
+                )
+            )
+        if inv.get("dedicated_memory_used_mb") is not None:
+            general_sensors_list.append(
+                GpuSensorMetric(
+                    id=f"gpu_{current_gpu_index}_dedicated_vram",
+                    name="Dedicated VRAM Used",
+                    category="Memory",
+                    unit="MB",
+                    value=round(float(inv["dedicated_memory_used_mb"]), 1),
+                    value_raw=f"{float(inv['dedicated_memory_used_mb']):.1f} MB",
+                    status="normal",
+                )
+            )
+        if inv.get("shared_memory_used_mb") is not None:
+            general_sensors_list.append(
+                GpuSensorMetric(
+                    id=f"gpu_{current_gpu_index}_shared_vram",
+                    name="Shared System Memory Used",
+                    category="Memory",
+                    unit="MB",
+                    value=round(float(inv["shared_memory_used_mb"]), 1),
+                    value_raw=f"{float(inv['shared_memory_used_mb']):.1f} MB",
+                    status="normal",
+                )
+            )
+        if power_draw is not None:
+            general_sensors_list.append(
+                GpuSensorMetric(
+                    id=f"gpu_{current_gpu_index}_power",
+                    name="GPU Board Power",
+                    category="Powers",
+                    unit="W",
+                    value=round(power_draw, 1),
+                    value_raw=f"{power_draw:.1f} W",
+                    status="normal",
+                )
+            )
+
     # Паспортные данные GPU (Specs)
-    inv = inventory or {}
     inv_name = inv.get("name") or gpu_name
     inv_name_l = inv_name.lower()
     vendor = inv.get("vendor") or ("NVIDIA" if "nvidia" in inv_name_l or "geforce" in inv_name_l else ("AMD" if "amd" in inv_name_l or "radeon" in inv_name_l else ("Intel" if "intel" in inv_name_l or "arc" in inv_name_l or "uhd" in inv_name_l else "GPU")))
@@ -467,7 +590,7 @@ def build_gpu_load(
 
     vram_str = f"{vram_g:.1f} GB" if vram_g >= 1.0 else (f"{vram_total:.0f} MB" if vram_total else "--")
     if vram_used is not None and vram_total:
-        vram_used_gb = vram_used / 1024.0 if vram_used >= 1024 else vram_used / 1024.0
+        vram_used_gb = vram_used / 1024.0
         vram_used_str = f"{vram_used_gb:.1f} / {vram_g:.1f} GB ({vram_pct or 0:.0f}%)"
     elif vram_pct is not None:
         vram_used_str = f"{vram_pct:.0f}% занято"
@@ -477,46 +600,40 @@ def build_gpu_load(
     core_clk_str = f"{clock_core:.0f} MHz" if clock_core else "--"
     mem_clk_str = f"{clock_mem:.0f} MHz" if clock_mem else "--"
 
-    pci_bus_str = str(inv.get("pci_bus_id") or ("PCIe x16" if vendor in ("NVIDIA", "AMD") else "Integrated / PCIe"))
+    pci_bus_str = str(inv.get("pci_bus_id") or ("PCIe x16" if inv.get("gpu_type") == "Discrete" or vendor in ("NVIDIA", "AMD") else "Integrated / System Bus"))
     cuda_c = inv.get("cuda_cores")
-    directml = bool(inv.get("directml_supported", True))
+    directml = bool(inv.get("directml_supported", inv.get("has_directml", True)))
 
     is_nvidia = vendor == "NVIDIA" or "nvidia" in inv_name.lower() or "geforce" in inv_name.lower()
     is_amd = vendor == "AMD" or "amd" in inv_name.lower() or "radeon" in inv_name.lower()
     is_intel = vendor == "Intel" or "intel" in inv_name.lower() or "arc" in inv_name.lower()
 
-    cuda_supp = bool(inv.get("cuda_supported", is_nvidia))
-    rocm_supp = bool(inv.get("rocm_supported", is_amd))
-    oneapi_supp = bool(inv.get("oneapi_supported", is_intel))
-    vulkan_supp = bool(inv.get("vulkan_supported", True))
-    opencl_supp = bool(inv.get("opencl_supported", True))
+    cuda_supp = bool(inv.get("cuda_supported", inv.get("has_cuda", is_nvidia)))
+    rocm_supp = bool(inv.get("rocm_supported", inv.get("has_rocm", is_amd)))
+    oneapi_supp = bool(inv.get("oneapi_supported", inv.get("has_oneapi", is_intel)))
+    vulkan_supp = bool(inv.get("vulkan_supported", inv.get("has_vulkan", True)))
+    opencl_supp = bool(inv.get("opencl_supported", inv.get("has_opencl", True)))
 
-    cmp_apis: List[str] = []
-    if cuda_supp:
-        cmp_apis.append("CUDA")
-    if rocm_supp:
-        cmp_apis.append("ROCm / HIP")
-    if oneapi_supp:
-        cmp_apis.append("oneAPI")
-    if directml:
-        cmp_apis.append("DirectML")
-    if vulkan_supp:
-        cmp_apis.append("Vulkan")
-    if opencl_supp:
-        cmp_apis.append("OpenCL")
+    cmp_apis: List[str] = inv.get("compute_apis") or []
+    if not cmp_apis:
+        if cuda_supp: cmp_apis.append("CUDA")
+        if rocm_supp: cmp_apis.append("ROCm / HIP")
+        if oneapi_supp: cmp_apis.append("oneAPI")
+        if directml: cmp_apis.append("DirectML")
+        if vulkan_supp: cmp_apis.append("Vulkan")
+        if opencl_supp: cmp_apis.append("OpenCL")
 
-    ai_bkends: List[str] = []
-    if cuda_supp:
-        ai_bkends.append("CUDA")
-    if rocm_supp:
-        ai_bkends.append("ROCm / HIP")
-    if oneapi_supp:
-        ai_bkends.append("OpenVINO / oneAPI")
-    if directml:
-        ai_bkends.append("DirectML")
-    if vulkan_supp:
-        ai_bkends.append("Vulkan")
-    ai_bkends.append("CPU")
+    ai_bkends: List[str] = inv.get("ai_backends") or []
+    if not ai_bkends:
+        if cuda_supp: ai_bkends.append("CUDA")
+        if rocm_supp: ai_bkends.append("ROCm / HIP")
+        if oneapi_supp:
+            ai_bkends.append("DirectML")
+            ai_bkends.append("Intel GPU runtime (oneAPI/OpenVINO)")
+        elif directml:
+            ai_bkends.append("DirectML")
+        if vulkan_supp: ai_bkends.append("Vulkan")
+        ai_bkends.append("CPU")
 
     specs_obj = GpuSpecsInfo(
         name=inv_name,
@@ -531,7 +648,7 @@ def build_gpu_load(
         core_clock_str=core_clk_str,
         memory_clock_mhz=clock_mem,
         memory_clock_str=mem_clk_str,
-        directx="DirectX 12 (FL 12_1)",
+        directx=inv.get("directx_version") or "DirectX 12 (FL 12_1)",
         pci_bus=pci_bus_str,
         cuda_cores=cuda_c,
         cuda_supported=cuda_supp,
@@ -594,7 +711,7 @@ def build_gpu_load(
         available_gpus=available_gpus or [],
         current_gpu_index=current_gpu_index,
         meta={
-            "source": "telemetry.db",
+            "source": "gpu_prober+telemetry_db",
             "engines_count": len(engines_list),
             "sensors_count": len(general_sensors_list),
         },
@@ -602,84 +719,92 @@ def build_gpu_load(
 
 
 def _discover_system_gpus(storage: Optional[TelemetryStorage] = None) -> List[Dict[str, Any]]:
-    """Собирает список всех физических и интегрированных видеокарт в системе строго из БД/инвентаря.
+    """Собирает список всех физических и интегрированных видеокарт строго из базы данных telemetry.db.
 
     Returns:
         List[Dict[str, Any]]: Список словарей характеристик обнаруженных GPU.
     """
     gpus: List[Dict[str, Any]] = []
+    if not storage:
+        return [{"index": 0, "name": "GPU", "vendor": "Generic", "vram_gb": 0.0, "pci_bus_id": "PCIe x16"}]
 
-    # 1. Если передано хранилище и в нем есть инвентарь GPU
-    if storage:
-        try:
-            db_inv = storage.get_gpu_inventory()
-            if db_inv:
-                for idx, item in enumerate(db_inv):
-                    g_name = item.get("name", f"GPU {idx}")
-                    g_name_l = g_name.lower()
-                    vendor = "NVIDIA" if "nvidia" in g_name_l or "geforce" in g_name_l else ("AMD" if "amd" in g_name_l or "radeon" in g_name_l else ("Intel" if "intel" in g_name_l or "arc" in g_name_l or "uhd" in g_name_l else item.get("vendor", "Generic")))
-                    gpus.append({
-                        "index": item.get("gpu_id", idx),
-                        "name": g_name,
-                        "vendor": vendor,
-                        "driver_version": item.get("driver_version", ""),
-                        "driver_date": item.get("driver_date", ""),
-                        "vram_gb": item.get("vram_gb", 0.0),
-                        "pci_bus_id": item.get("pci_bus_id", ""),
-                        "cuda_cores": item.get("cuda_cores"),
-                        "directml_supported": item.get("directml_supported", True),
-                    })
-        except Exception as exc:
-            logger.debug(f"[router_gpu_load] Ошибка чтения gpu_inventory из БД: {exc}")
-
-        # Если инвентаря нет, но в БД есть сохраненные сенсоры GPU
-        if not gpus:
-            try:
-                db_sensors = storage.get_latest_sensors()
-                if db_sensors:
-                    seen_names: Dict[str, int] = {}
-                    for s in db_sensors:
-                        ht = str(s.get("hardware_type", "")).lower()
-                        hn = str(s.get("hardware_name", "")).strip()
-                        hn_l = hn.lower()
-                        if ht == "cpu" or any(k in hn_l for k in _CPU_HARDWARE_KEYWORDS):
-                            continue
-                        if hn and ("gpu" in ht or "gpu" in hn_l or "nvidia" in hn_l or "radeon" in hn_l or "geforce" in hn_l or "rtx" in hn_l or "gtx" in hn_l or "uhd" in hn_l or "iris" in hn_l or "arc" in hn_l):
-                            if hn not in seen_names:
-                                seen_names[hn] = len(seen_names)
-                    for hn, idx in seen_names.items():
-                        hn_l = hn.lower()
-                        vendor = "NVIDIA" if "nvidia" in hn_l or "geforce" in hn_l else ("AMD" if "amd" in hn_l or "radeon" in hn_l else ("Intel" if "intel" in hn_l or "arc" in hn_l or "uhd" in hn_l else "Generic"))
-                        gpus.append({
-                            "index": idx,
-                            "name": hn,
-                            "vendor": vendor,
-                            "driver_version": "",
-                            "vram_gb": 0.0,
-                        })
-            except Exception as exc:
-                logger.debug(f"[router_gpu_load] Ошибка извлечения GPU из latest_sensors: {exc}")
-
-    # 2. Опрос через GpuProber (NVIDIA SMI + AMD SMI + WMI с дедупликацией), если хранилище пусто
-    if not gpus and storage is None:
-        try:
-            prober = GpuProber()
-            probed = prober.probe_all()
-            for g in probed:
+    # 1. Чтение паспорта GPU из таблицы gpu_inventory
+    try:
+        db_inv = storage.get_gpu_inventory()
+        if db_inv:
+            for idx, item in enumerate(db_inv):
+                g_name = item.get("name", f"GPU {idx}")
+                g_name_l = g_name.lower()
+                vendor = item.get("vendor") or ("NVIDIA" if "nvidia" in g_name_l or "geforce" in g_name_l else ("AMD" if "amd" in g_name_l or "radeon" in g_name_l else ("Intel" if "intel" in g_name_l or "arc" in g_name_l or "uhd" in g_name_l else "Generic")))
+                pci_bus = item.get("pci_bus_id") or ("PCIe x16" if vendor in ("NVIDIA", "AMD") else "Integrated / System Bus")
                 gpus.append({
-                    "index": g.index,
-                    "name": g.name,
-                    "vendor": g.vendor,
-                    "driver_version": g.driver_version,
-                    "vram_gb": round(g.memory_total_mb / 1024.0, 1) if g.memory_total_mb else 0.0,
-                    "temperature_gpu_c": g.temperature_gpu_c,
-                    "utilization_gpu_pct": g.utilization_gpu_pct,
-                    "memory_used_mb": g.memory_used_mb,
-                    "memory_total_mb": g.memory_total_mb,
+                    "index": item.get("gpu_id", idx),
+                    "name": g_name,
+                    "vendor": vendor,
+                    "driver_version": item.get("driver_version", ""),
+                    "driver_date": item.get("driver_date", ""),
+                    "vram_gb": item.get("vram_gb", 0.0),
+                    "pci_bus_id": pci_bus,
+                    "cuda_cores": item.get("cuda_cores"),
+                    "directml_supported": bool(item.get("directml_supported", 1)),
+                })
+    except Exception as exc:
+        logger.debug(f"[router_gpu_load] Ошибка чтения gpu_inventory из БД: {exc}")
+
+    # 2. Если инвентарь пуст, извлекаем список GPU из последних сэмплов gpu_telemetry_samples
+    if not gpus:
+        try:
+            samples = storage.get_gpu_telemetry_samples(limit=20)
+            seen_names: Dict[str, int] = {}
+            for s in samples:
+                hn = str(s.get("name", "")).strip()
+                g_id = int(s.get("gpu_id", len(seen_names)))
+                if hn and hn not in seen_names:
+                    seen_names[hn] = g_id
+            for hn, g_id in seen_names.items():
+                hn_l = hn.lower()
+                vendor = "NVIDIA" if "nvidia" in hn_l or "geforce" in hn_l else ("AMD" if "amd" in hn_l or "radeon" in hn_l else ("Intel" if "intel" in hn_l or "arc" in hn_l or "uhd" in hn_l else "Generic"))
+                gpus.append({
+                    "index": g_id,
+                    "name": hn,
+                    "vendor": vendor,
+                    "driver_version": "",
+                    "vram_gb": 0.0,
+                    "pci_bus_id": "PCIe x16" if vendor in ("NVIDIA", "AMD") else "Integrated / System Bus",
                 })
         except Exception as exc:
-            logger.debug(f"[router_gpu_load] Ошибка GpuProber: {exc}")
+            logger.debug(f"[router_gpu_load] Ошибка чтения сэмплов GPU из БД: {exc}")
 
+    # 3. Если сэмплов нет, извлекаем уникальные GPU из latest_sensors
+    if not gpus:
+        try:
+            db_sensors = storage.get_latest_sensors()
+            if db_sensors:
+                seen_names_sensors: Dict[str, int] = {}
+                for s in db_sensors:
+                    ht = str(s.get("hardware_type", "")).lower()
+                    hn = str(s.get("hardware_name", "")).strip()
+                    hn_l = hn.lower()
+                    if ht == "cpu" or any(k in hn_l for k in _CPU_HARDWARE_KEYWORDS):
+                        continue
+                    if hn and ("gpu" in ht or "gpu" in hn_l or "nvidia" in hn_l or "radeon" in hn_l or "geforce" in hn_l or "rtx" in hn_l or "gtx" in hn_l or "uhd" in hn_l or "iris" in hn_l or "arc" in hn_l):
+                        if hn not in seen_names_sensors:
+                            seen_names_sensors[hn] = len(seen_names_sensors)
+                for hn, idx in seen_names_sensors.items():
+                    hn_l = hn.lower()
+                    vendor = "NVIDIA" if "nvidia" in hn_l or "geforce" in hn_l else ("AMD" if "amd" in hn_l or "radeon" in hn_l else ("Intel" if "intel" in hn_l or "arc" in hn_l or "uhd" in hn_l else "Generic"))
+                    gpus.append({
+                        "index": idx,
+                        "name": hn,
+                        "vendor": vendor,
+                        "driver_version": "",
+                        "vram_gb": 0.0,
+                        "pci_bus_id": "PCIe x16" if vendor in ("NVIDIA", "AMD") else "Integrated / System Bus",
+                    })
+        except Exception as exc:
+            logger.debug(f"[router_gpu_load] Ошибка чтения latest_sensors из БД: {exc}")
+
+    # 4. Fallback заглушка при совершенно пустой БД
     if not gpus:
         gpus.append({
             "index": 0,
@@ -687,6 +812,7 @@ def _discover_system_gpus(storage: Optional[TelemetryStorage] = None) -> List[Di
             "vendor": "Generic",
             "driver_version": "N/A",
             "vram_gb": 0.0,
+            "pci_bus_id": "PCIe x16",
         })
 
     return gpus
@@ -697,12 +823,11 @@ def _fetch_single_gpu_data(
     target_gpu: Dict[str, Any],
     available_gpus: List[Dict[str, Any]],
     store: TelemetryStorage,
-    lhm: Optional[LhmService] = None,
 ) -> GpuLoadResponse:
-    """Извлекает детальные параметры и сенсоры для конкретного GPU строго из БД телеметрии."""
+    """Извлекает детальные параметры и сенсоры для конкретного GPU строго из базы данных telemetry.db."""
     target_name = target_gpu.get("name", f"GPU {target_idx}")
 
-    # 1. Загрузка истории сэмплов из SQLite базы данных
+    # 1. Загрузка истории сэмплов строго из SQLite базы данных
     try:
         db_history = store.get_gpu_telemetry_samples(gpu_id=target_idx, limit=60)
     except TypeError:
@@ -717,11 +842,12 @@ def _fetch_single_gpu_data(
             db_history = []
     db_history.reverse()
 
-    # 2. Получение последних показаний сенсоров строго из SQLite базы данных
+    # 2. Получение показаний сенсоров строго из SQLite базы данных
+    matched_sensors: List[Dict[str, Any]] = []
     try:
         db_sensors = store.get_latest_sensors()
         if db_sensors:
-            gpu_sensors = [
+            matched_sensors = [
                 s for s in db_sensors
                 if str(s.get("hardware_type", "")).lower() != "cpu"
                 and not any(k in str(s.get("hardware_name", "")).lower() for k in _CPU_HARDWARE_KEYWORDS)
@@ -739,164 +865,53 @@ def _fetch_single_gpu_data(
                 )
                 and _is_sensor_matching_gpu(str(s.get("hardware_name", "")), target_name, str(s.get("hardware_type", "")))
             ]
-            if gpu_sensors:
-                resp = build_gpu_load(
-                    sensors=gpu_sensors,
-                    inventory=target_gpu,
-                    history_samples=db_history,
-                    target_gpu_name=target_name,
-                    available_gpus=available_gpus,
-                    current_gpu_index=target_idx,
-                )
-                resp.meta["source"] = "telemetry_db"
-                return resp
     except Exception as exc:
         logger.error(f"[router_gpu_load] Ошибка чтения метрик GPU из БД: {exc}", exc_info=True)
 
-    # 3. Fallback: Живой опрос LHM, только если явно передан и доступен
-    if lhm and lhm.is_running():
-        try:
-            sensors = lhm.get_flattened_sensors()
-            gpu_sensors = [
-                s for s in sensors
-                if str(s.get("hardware_type", "")).lower() != "cpu"
-                and not any(k in str(s.get("hardware_name", "")).lower() for k in _CPU_HARDWARE_KEYWORDS)
-                and (
-                    "gpu" in str(s.get("hardware_type", "")).lower()
-                    or "gpu" in str(s.get("hardware_name", "")).lower()
-                    or "nvidia" in str(s.get("hardware_name", "")).lower()
-                    or "radeon" in str(s.get("hardware_name", "")).lower()
-                    or "geforce" in str(s.get("hardware_name", "")).lower()
-                    or "rtx" in str(s.get("hardware_name", "")).lower()
-                    or "gtx" in str(s.get("hardware_name", "")).lower()
-                    or "uhd" in str(s.get("hardware_name", "")).lower()
-                    or "iris" in str(s.get("hardware_name", "")).lower()
-                    or "arc" in str(s.get("hardware_name", "")).lower()
-                )
-                and _is_sensor_matching_gpu(str(s.get("hardware_name", "")), target_name, str(s.get("hardware_type", "")))
-            ]
-            if gpu_sensors:
-                resp = build_gpu_load(
-                    sensors=gpu_sensors,
-                    inventory=target_gpu,
-                    history_samples=db_history,
-                    target_gpu_name=target_name,
-                    available_gpus=available_gpus,
-                    current_gpu_index=target_idx,
-                )
-                resp.meta["source"] = "lhm_live+telemetry.db"
-                return resp
-        except Exception as exc:
-            logger.warning(f"[router_gpu_load] Ошибка опроса LHM для GPU {target_name}: {exc}")
-
-    # 4. Fallback: Данные из сэмплов БД или инвентаря целевого GPU
-    synthetic_sensors: List[Dict[str, Any]] = []
-    latest_sample = db_history[-1] if db_history else {}
-    sample_load = latest_sample.get("load_percent") if latest_sample else None
-    if sample_load is None:
-        sample_load = latest_sample.get("gpu_load_percent") if latest_sample else None
-    if sample_load is None:
-        sample_load = target_gpu.get("utilization_gpu_pct")
-
-    sample_temp = latest_sample.get("temperature_gpu_c") if latest_sample else None
-    if sample_temp is None:
-        sample_temp = latest_sample.get("temperature_c") if latest_sample else None
-    if sample_temp is None:
-        sample_temp = target_gpu.get("temperature_gpu_c")
-
-    sample_vram_used = latest_sample.get("memory_used_mb") if latest_sample else None
-    if sample_vram_used is None:
-        sample_vram_used = target_gpu.get("memory_used_mb")
-
-    sample_vram_total = latest_sample.get("memory_total_mb") if latest_sample else None
-    if sample_vram_total is None:
-        sample_vram_total = target_gpu.get("memory_total_mb") or ((target_gpu.get("vram_gb") or 0.0) * 1024.0)
-
-    if sample_load is not None:
-        synthetic_sensors.append({"sensor_name": "GPU Core", "sensor_category": "Load", "value": float(sample_load), "hardware_name": target_name, "hardware_type": "gpu", "unit": "%"})
-    if sample_temp is not None:
-        synthetic_sensors.append({"sensor_name": "GPU Core Temp", "sensor_category": "Temperatures", "value": float(sample_temp), "hardware_name": target_name, "hardware_type": "gpu", "unit": "°C"})
-    if sample_vram_used is not None:
-        synthetic_sensors.append({"sensor_name": "GPU Memory Used", "sensor_category": "Data", "value": float(sample_vram_used), "hardware_name": target_name, "hardware_type": "gpu", "unit": "MB"})
-    if sample_vram_total:
-        synthetic_sensors.append({"sensor_name": "GPU Memory Total", "sensor_category": "Data", "value": float(sample_vram_total), "hardware_name": target_name, "hardware_type": "gpu", "unit": "MB"})
-
-    if synthetic_sensors:
-        resp = build_gpu_load(
-            sensors=synthetic_sensors,
-            inventory=target_gpu,
-            history_samples=db_history,
-            target_gpu_name=target_name,
-            available_gpus=available_gpus,
-            current_gpu_index=target_idx,
-        )
-        resp.meta["source"] = "telemetry_db_samples"
-        return resp
-
-    # История параметров GPU при пустых сенсорах
-    history_points: List[GpuHistoryPoint] = []
-    for r in db_history:
-        ts_str = str(r.get("timestamp") or "")
-        t_label = ts_str.split("T")[-1][:8] if "T" in ts_str else ts_str[-8:]
-        history_points.append(
-            GpuHistoryPoint(
-                timestamp=ts_str,
-                time_label=t_label or "--:--:--",
-                load_percent=round(float(r.get("load_percent") or r.get("gpu_load_percent") or 0.0), 1),
-                temperature_c=r.get("temperature_gpu_c") or r.get("temperature_c"),
-                power_w=r.get("power_draw_w") or r.get("power_w"),
-                vram_percent=r.get("memory_percent") or r.get("vram_percent"),
-            )
-        )
-
-    return GpuLoadResponse(
-        status="ok",
-        name=target_name,
-        vendor=target_gpu.get("vendor", "Intel" if "intel" in target_name.lower() or "uhd" in target_name.lower() else "NVIDIA"),
-        core_load_percent=0.0,
-        engines=[],
-        sensors=[],
-        history=history_points,
+    # 3. Собираем и возвращаем объект GPU на основе данных из БД
+    resp = build_gpu_load(
+        sensors=matched_sensors,
+        inventory=target_gpu,
+        history_samples=db_history,
+        target_gpu_name=target_name,
         available_gpus=available_gpus,
         current_gpu_index=target_idx,
-        meta={"source": "none" if not history_points else "telemetry_db_empty", "engines_count": 0},
     )
+    resp.meta["source"] = "telemetry_db"
+    return resp
 
 
 def init_router(
     storage: Optional[TelemetryStorage] = None,
-    lhm_service: Optional[LhmService] = None,
 ) -> APIRouter:
-    """Инициализация роутера GET /api/v1/panel/gpu-load.
+    """Инициализация роутера GET /api/v1/panel/gpu-load строго из telemetry.db.
 
     Args:
         storage: Опциональное хранилище TelemetryStorage.
-        lhm_service: Опциональный сервис LhmService.
 
     Returns:
         APIRouter: Настроенный роутер FastAPI.
     """
     router = APIRouter(prefix="/api/v1/panel", tags=["GPU Panel"])
     store = storage or TelemetryStorage.get_instance(read_only=True)
-    lhm = lhm_service if lhm_service is not None else (LhmService() if storage is None else None)
 
     @router.get("/gpu-load", response_model=GpuLoadResponse, summary="Загрузка, температура, паспорт и метрики GPU")
     async def get_gpu_load(
         gpu_index: Optional[int] = Query(None, description="Индекс конкретной видеокарты (0, 1, ...) или None для всех")
     ) -> GpuLoadResponse:
-        """Возвращает детальную загрузку, температуру, VRAM, паспорт и историю GPU."""
+        """Возвращает детальную загрузку, температуру, VRAM, паспорт и историю GPU строго из telemetry.db."""
         available_gpus = _discover_system_gpus(store)
 
         if gpu_index is not None and 0 <= gpu_index < len(available_gpus):
-            return _fetch_single_gpu_data(gpu_index, available_gpus[gpu_index], available_gpus, store, lhm)
+            return _fetch_single_gpu_data(gpu_index, available_gpus[gpu_index], available_gpus, store)
 
-        # Собираем данные по каждому GPU
+        # Собираем данные по каждому обнаруженному GPU из БД
         devices: List[Dict[str, Any]] = []
         for idx, g in enumerate(available_gpus):
-            g_resp = _fetch_single_gpu_data(idx, g, available_gpus, store, lhm)
+            g_resp = _fetch_single_gpu_data(idx, g, available_gpus, store)
             devices.append(g_resp.model_dump())
 
-        # Выбираем основной адаптер для корневого ответа
+        # Выбираем основной дискретный адаптер для корневого ответа
         primary_idx = 0
         for idx, g in enumerate(available_gpus):
             v_up = str(g.get("vendor", "")).upper()
@@ -905,7 +920,7 @@ def init_router(
                 primary_idx = idx
                 break
 
-        main_resp = _fetch_single_gpu_data(primary_idx, available_gpus[primary_idx], available_gpus, store, lhm)
+        main_resp = _fetch_single_gpu_data(primary_idx, available_gpus[primary_idx], available_gpus, store)
         main_resp.devices = devices
         return main_resp
 

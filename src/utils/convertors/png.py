@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard UTILS - Png Module
+# Process Name: AI-Windows-Admin UTILS - Png Module
 # =============================================================================
 # Description:
 #   Text to PNG image conversion utilities.
@@ -10,11 +10,11 @@
 #     import src.utils.convertors.png as png
 #
 # File: png.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: src.utils.convertors
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 10:52:30
+# Updated: 2026-10-10 22:22:30
 # =============================================================================
 
 """Text to PNG image conversion utilities."""
@@ -219,6 +219,6 @@ def webp2png(webp_path: str, png_path: str) -> bool:
             img.save(png_path, 'PNG')
         return True
     except Exception as e:
-        print(f"Error during conversion: {e}")
+        logger.console(f"Error during conversion: {e}")
         return
 

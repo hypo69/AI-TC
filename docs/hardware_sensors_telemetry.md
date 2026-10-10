@@ -1,4 +1,4 @@
-# Система сенсоров и телеметрии AI-Breadboard
+# Система сенсоров и телеметрии AI-Windows-Admin
 
 ## Обзор
 
@@ -162,7 +162,7 @@ def _has_value_changed(self, app_name: str, new_value: Any) -> bool:
 
 ## Файлы CSV
 
-Все CSV файлы сохраняются в `%APPDATA%/AI-Breadboard/apps/logs/`:
+Все CSV файлы сохраняются в `%APPDATA%/AI-Windows-Admin/apps/logs/`:
 
 - `hardware_monitor_polls.csv` — сенсоры через `get_hardware_sensors()`
 - `librehardwaremonitor_polls.csv` — сенсоры через LHM HTTP API
@@ -219,7 +219,7 @@ def _has_value_changed(self, app_name: str, new_value: Any) -> bool:
 
 ### Автономность и ротация 50 МБ
 
-1. **Автономность модуля**: Подсистема `apps/windows/telemetry` изолирована от веб-сервера и баз данных. Запись выполняется прямо в локальные файлы `%APPDATA%\AI-Breadboard\apps\windows\telemetry\logs`, обеспечивая непрерывную работу при любых сбоях окружения.
+1. **Автономность модуля**: Подсистема `apps/windows/telemetry` изолирована от веб-сервера и баз данных. Запись выполняется прямо в локальные файлы `%APPDATA%\AI-Windows-Admin\apps\windows\telemetry\logs`, обеспечивая непрерывную работу при любых сбоях окружения.
 2. **Ротация 50 МБ**: При достижении 50 МБ файл `ai_sensors_polls.json` ротируется с меткой времени (`ai_sensors_polls_YYYYMMDD_HHMMSS.json`), и сбор продолжается в новый чистый файл.
 
 ### Управление через `Run-AI-Sensors.ps1`
@@ -262,5 +262,5 @@ def _has_value_changed(self, app_name: str, new_value: Any) -> bool:
 ## Контакты
 
 - **Author:** hypo69
-- **Project:** AI-Breadboard
+- **Project:** AI-Windows-Admin
 - **Version:** 1.0 (FastAPI Foundry Edition)

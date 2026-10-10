@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard AI - Model Manager Module
+# Process Name: AI-Windows-Admin AI - Model Manager Module
 # =============================================================================
 # Description:
 #   Модуль основной системы (`model_manager`).
@@ -10,11 +10,11 @@
 #     import src.ai.model_manager as model_manager
 #
 # File: model_manager.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: src.ai
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:13:56
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 """Модуль основной системы (`model_manager`)."""

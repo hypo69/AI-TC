@@ -10,11 +10,11 @@
  *     <script src="/windows/api/webgui/windows_backup_tab/main.js?v=20261004_v1" type="module"></script>
  *
  * File: main.js
- * Project: ai-breadboard
+ * Project: ai-windows-admin
  * Package: windows/api/webgui/windows_backup_tab
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-08 03:45:00
+ * Updated: 2026-10-10 17:35:00
  * =============================================================================
  */
 
@@ -309,7 +309,7 @@
     const btnConfigureSacl = document.getElementById('wb-btn-configure-sacl');
     if (btnConfigureSacl) {
       btnConfigureSacl.onclick = async () => {
-        const targetPath = prompt('Укажите путь к папке для настройки SACL аудита удаления:', 'c:\\Users\\onela\\AppData\\Local\\AI-Breadboard');
+        const targetPath = prompt('Укажите путь к папке для настройки SACL аудита удаления:', 'c:\\Users\\onela\\AppData\\Local\\AI-Windows-Admin');
         if (targetPath) {
           try {
             const res = await fetch('/api/v1/system/file-audit/folder-sacl', {

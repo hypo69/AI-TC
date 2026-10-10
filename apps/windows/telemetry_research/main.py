@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Telemetry_Research - Main
+# Process Name: AI-Windows-Admin Apps Windows Telemetry_Research - Main
 # =============================================================================
 # Description:
 #   Главная точка входа для запуска Web GUI и FastAPI сервиса исследования телеметрии.
@@ -14,11 +14,11 @@
 #     res = parse_args()
 #
 # File: main.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.telemetry_research
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:28:28
+# Updated: 2026-10-10 22:22:30
 # =============================================================================
 
 from __future__ import annotations
@@ -57,16 +57,16 @@ def main() -> int:
         import uvicorn
     except ImportError:
         logger.error("Для запуска Web GUI необходим пакет 'uvicorn'. Установите его: pip install uvicorn")
-        print("❌ Ошибка: пакет 'uvicorn' не установлен. Установите: pip install uvicorn")
+        logger.console("❌ Ошибка: пакет 'uvicorn' не установлен. Установите: pip install uvicorn")
         return 1
 
     logger.info("=" * 65)
     logger.info(f"🚀 Запуск Web GUI исследования телеметрии на http://{args.host}:{args.port}")
     logger.info("=" * 65)
-    print("\n" + "=" * 65)
-    print(f"🔬 Web GUI исследования телеметрии доступен по адресу:")
-    print(f"👉 http://{args.host}:{args.port}")
-    print("=" * 65 + "\n")
+    logger.console("\n" + "=" * 65)
+    logger.console(f"🔬 Web GUI исследования телеметрии доступен по адресу:")
+    logger.console(f"👉 http://{args.host}:{args.port}")
+    logger.console("=" * 65 + "\n")
 
     uvicorn.run(
         "apps.windows.telemetry_research.server:app",

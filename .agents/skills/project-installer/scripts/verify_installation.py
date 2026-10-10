@@ -1,3 +1,4 @@
+from logger import logger
 import argparse
 import importlib
 import json
@@ -25,7 +26,7 @@ class VerificationResult:
     warnings: List[str] = field(default_factory=list)
 
 class InstallationVerifier:
-    """Validates full structural integrity and runtime readiness of AI Breadboard."""
+    """Validates full structural integrity and runtime readiness of AI Windows Admin."""
     REQUIRED_DIRECTORIES: List[str] = ['scripts', 'install', 'launchers', 'docs', 'tests', 'src', '.ai', 'tmp', '.skills']
     REQUIRED_FILES: List[str] = ['header.py', 'config.json', 'requirements.txt', 'INSTALL-INSTRUCTION.md']
     ALTERNATIVE_FILES: List[Tuple[str, str]] = [('.env', '.env.example')]
@@ -171,38 +172,38 @@ def main() -> int:
     Returns:
         int: Exit code 0 if required components exist, 1 otherwise.
     """
-    parser = argparse.ArgumentParser(description='Verify AI Breadboard installation integrity and directories.')
-    parser.add_argument('--project-root', type=str, default='', help='Path to AI Breadboard project root (default: auto-detected)')
+    parser = argparse.ArgumentParser(description='Verify AI Windows Admin installation integrity and directories.')
+    parser.add_argument('--project-root', type=str, default='', help='Path to AI Windows Admin project root (default: auto-detected)')
     parser.add_argument('--json', action='store_true', help='Output structured JSON results')
     args = parser.parse_args()
     project_root_path: Optional[Path] = Path(args.project_root) if args.project_root else None
     verifier: InstallationVerifier = InstallationVerifier(project_root_path)
     result: VerificationResult = verifier.verify_all()
     if args.json:
-        print(json.dumps(asdict(result), indent=2, ensure_ascii=False))
+        logger.console(json.dumps(asdict(result), indent=2, ensure_ascii=False))
     else:
-        print('=' * 65)
-        print('🔍 AI Breadboard Installation Verification')
-        print('=' * 65)
-        print(f'Project Root: {result.project_root}')
-        print(f'Platform:     {result.os_name}')
-        print(f"Status:       {('✅ PASSED' if result.is_valid else '❌ FAILED')}")
-        print('-' * 65)
-        print(f'Directories:  {len(result.existing_directories)} verified, {len(result.missing_directories)} missing')
-        print(f'Files:        {len(result.existing_files)} verified, {len(result.missing_files)} missing')
-        print(f"Venv:         {result.venv_status.get('status', 'unknown')} ({result.venv_status.get('path', 'N/A')})")
+        logger.console('=' * 65)
+        logger.console('🔍 AI Windows Admin Installation Verification')
+        logger.console('=' * 65)
+        logger.console(f'Project Root: {result.project_root}')
+        logger.console(f'Platform:     {result.os_name}')
+        logger.console(f"Status:       {('✅ PASSED' if result.is_valid else '❌ FAILED')}")
+        logger.console('-' * 65)
+        logger.console(f'Directories:  {len(result.existing_directories)} verified, {len(result.missing_directories)} missing')
+        logger.console(f'Files:        {len(result.existing_files)} verified, {len(result.missing_files)} missing')
+        logger.console(f"Venv:         {result.venv_status.get('status', 'unknown')} ({result.venv_status.get('path', 'N/A')})")
         if result.module_status:
             ok_mods = sum((1 for v in result.module_status.values() if v == 'ok'))
-            print(f'Modules:      {ok_mods}/{len(result.module_status)} imported successfully')
+            logger.console(f'Modules:      {ok_mods}/{len(result.module_status)} imported successfully')
         if result.errors:
-            print('\n❌ Errors:')
+            logger.console('\n❌ Errors:')
             for err in result.errors:
-                print(f'  • {err}')
+                logger.console(f'  • {err}')
         if result.warnings:
-            print('\n⚠️ Warnings:')
+            logger.console('\n⚠️ Warnings:')
             for warn in result.warnings:
-                print(f'  • {warn}')
-        print('=' * 65)
+                logger.console(f'  • {warn}')
+        logger.console('=' * 65)
     return 0 if result.is_valid else 1
 if __name__ == '__main__':
     sys.exit(main())

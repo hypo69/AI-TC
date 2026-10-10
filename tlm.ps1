@@ -1,6 +1,6 @@
 <#
 =============================================================================
-Process Name: AI-Breadboard Automation - Tlm
+Process Name: AI-Windows-Admin Automation - Tlm
 =============================================================================
 Description:
   Корневая точка входа (CLI-алиас) для управления службой системной телеметрии.
@@ -13,15 +13,15 @@ Description:
        напрямую во внутренний диспетчер apps/windows/telemetry/launchers/Run-Telemetry.ps1.
 
 File: tlm.ps1
-Project: ai-breadboard
+Project: ai-windows-admin
 Package: root
 Author: hypo69
 Copyright: © 2026 hypo69
-Updated: 2026-10-06 01:26:00
+Updated: 2026-10-10 17:35:00
 =============================================================================
 
 .SYNOPSIS
-    Корневой интерфейс запуска службы системной телеметрии AI-Breadboard.
+    Корневой интерфейс запуска службы системной телеметрии AI-Windows-Admin.
 
 .DESCRIPTION
     Автоматически запускает LibreHardwareMonitor в тихом фоновом режиме (если он не активен)

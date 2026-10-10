@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Telemetry Sqlite - Schema
+# Process Name: AI-Windows-Admin Apps Windows Telemetry Sqlite - Schema
 # =============================================================================
 # Description:
 #   Схема таблиц, индексов и миграций SQLite базы данных системной телеметрии.
@@ -12,11 +12,11 @@
 #     init_database_schema(connection)
 #
 # File: schema.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.telemetry.sqlite
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 05:49:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

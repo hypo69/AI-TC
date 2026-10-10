@@ -1,11 +1,11 @@
-<!-- Updated: 2026-10-01 20:58:00 -->
-# AI-Breadboard
+<!-- Updated: 2026-10-10 17:35:00
+# AI-Windows-Admin
 
-[![Documentation Status](https://img.shields.io/badge/docs-latest-brightgreen.svg)](https://hypo69.github.io/aibreadboard/)
+[![Documentation Status](https://img.shields.io/badge/docs-latest-brightgreen.svg)](https://hypo69.github.io/aiwindowsadmin/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 
-**AI-Breadboard** — модульная платформа для исследования, прототипирования и сравнения языковых моделей искусственного интеллекта. Название отсылает к «макетной плате» (breadboard) в электронике: разные модели подключаются как сменные компоненты через единую шину, без переписывания кода.
+**AI-Windows-Admin** — модульная платформа для исследования, прототипирования и сравнения языковых моделей искусственного интеллекта. Название отсылает к «макетной плате» (ai-windows-admin) в электронике: разные модели подключаются как сменные компоненты через единую шину, без переписывания кода.
 
 > [!IMPORTANT]
 > **Философия и главная идея платформы:**  
@@ -109,24 +109,27 @@
 
 ### 🖥️ Полноценные приложения и терминальные пространства (`/apps`)
 
-В директории [`/apps`](file:///c:/Users/onela/AppData/Local/AI-Breadboard/apps) размещены автономные доменные приложения, терминалы и мониторы, работающие на хосте и интегрированные с платформой:
+В директории [`/apps`](file:///c:/Users/onela/AppData/Local/AI-Windows-Admin/apps) размещены автономные доменные приложения, терминалы и мониторы, работающие на хосте и интегрированные с платформой:
 
 | Приложение | Терминал / Путь | Описание |
 |---|---|---|
-| **AI Windows Diagnostic Center** | [`apps/windows`](file:///c:/Users/onela/AppData/Local/AI-Breadboard/apps/windows) | Центр диагностики и администрирования Windows (15 доменных коллекторов OS, железо, драйверы, SafeOps симуляция, WikiLLM база знаний) |
-| **Trading Terminal** | [`apps/trading_terminal`](file:///c:/Users/onela/AppData/Local/AI-Breadboard/apps/trading_terminal) | Биржевой терминал (тикеры в реальном времени, стакан цен, позиция, PnL и технический анализ) |
-| **Network Terminal** | [`apps/network_terminal`](file:///c:/Users/onela/AppData/Local/AI-Breadboard/apps/network_terminal) | Сетевой терминал (захват пакетов, протокольный анализ, сокеты и детекция аномалий трафика) |
-| **Google Cloud Monitor** | [`apps/gcloud_monitor`](file:///c:/Users/onela/AppData/Local/AI-Breadboard/apps/gcloud_monitor) | Монитор наблюдаемости GCP (Cloud Logging, метрики, IAM аудит, AI-диагностика сбоев) |
-| **Website Monitor** | [`apps/website_monitor`](file:///c:/Users/onela/AppData/Local/AI-Breadboard/apps/website_monitor) | Мониторинг веб-сайтов (GA4 Data API, Google Search Console, задержки и доступность) |
-| **Cloudflare Monitor** | [`apps/cloudflared_monitor`](file:///c:/Users/onela/AppData/Local/AI-Breadboard/apps/cloudflared_monitor) | Мониторинг и диагностика состояния Cloudflare туннелей |
-| **User Assistant** | [`apps/user_assistant`](file:///c:/Users/onela/AppData/Local/AI-Breadboard/apps/user_assistant) | Персональный ассистент (интеграция с Gmail, Google Календарем, файлами и агендой) |
-| **IT Support & Helpdesk** | [`apps/helpdesk`](file:///c:/Users/onela/AppData/Local/AI-Breadboard/apps/helpdesk) | Система обработки тикетов и поддержке IT-инфраструктуры |
-| **Wikipedia Research** | [`apps/wikipedia_research`](file:///c:/Users/onela/AppData/Local/AI-Breadboard/apps/wikipedia_research) | Исследовательский движок факт-чекинга по Wikipedia |
-| **Research & Statistics** | [`apps/research_and_statistic`](file:///c:/Users/onela/AppData/Local/AI-Breadboard/apps/research_and_statistic) | Терминал статистических исследований и анализа данных |
-| **AI Breadboard Admin** | [`apps/ai_breadboard_admin`](file:///c:/Users/onela/AppData/Local/AI-Breadboard/apps/ai_breadboard_admin) | Центральная панель администрирования платформы |
+| **AI Windows Diagnostic Center** | [`apps/windows`](file:///c:/Users/onela/AppData/Local/AI-Windows-Admin/apps/windows) | Центр диагностики и администрирования Windows (15 доменных коллекторов OS, железо, драйверы, SafeOps симуляция, WikiLLM база знаний) |
+| **Network Terminal** | [`apps/network_terminal`](file:///c:/Users/onela/AppData/Local/AI-Windows-Admin/apps/network_terminal) | Сетевой терминал (захват пакетов, протокольный анализ, сокеты и детекция аномалий трафика) |
+| **Google Cloud Monitor** | [`apps/gcloud_monitor`](file:///c:/Users/onela/AppData/Local/AI-Windows-Admin/apps/gcloud_monitor) | Монитор наблюдаемости GCP (Cloud Logging, метрики, IAM аудит, AI-диагностика сбоев) |
+| **Website Monitor** | [`apps/website_monitor`](file:///c:/Users/onela/AppData/Local/AI-Windows-Admin/apps/website_monitor) | Мониторинг веб-сайтов (GA4 Data API, Google Search Console, задержки и доступность) |
+| **Cloudflare Monitor** | [`apps/cloudflared_monitor`](file:///c:/Users/onela/AppData/Local/AI-Windows-Admin/apps/cloudflared_monitor) | Мониторинг и диагностика состояния Cloudflare туннелей |
+| **User Assistant** | [`apps/user_assistant`](file:///c:/Users/onela/AppData/Local/AI-Windows-Admin/apps/user_assistant) | Персональный ассистент (интеграция с Gmail, Google Календарем, файлами и агендой) |
+| **IT Support & Helpdesk** | [`apps/helpdesk`](file:///c:/Users/onela/AppData/Local/AI-Windows-Admin/apps/helpdesk) | Система обработки тикетов и поддержке IT-инфраструктуры |
+| **Wikipedia Research** | [`apps/wikipedia_research`](file:///c:/Users/onela/AppData/Local/AI-Windows-Admin/apps/wikipedia_research) | Исследовательский движок факт-чекинга по Wikipedia |
+| **Research & Statistics** | [`apps/research_and_statistic`](file:///c:/Users/onela/AppData/Local/AI-Windows-Admin/apps/research_and_statistic) | Терминал статистических исследований и анализа данных |
+| **AI Windows Admin Admin** | [`apps/ai_windows_admin_admin`](file:///c:/Users/onela/AppData/Local/AI-Windows-Admin/apps/ai_windows_admin_admin) | Центральная панель администрирования платформы |
 
 > [!NOTE]
-> Внутри подсистемы [`apps/windows`](file:///c:/Users/onela/AppData/Local/AI-Breadboard/apps/windows) выстроена глубокая ИТ-архитектура: 15 коллекторов фактов (Clean, Performance, Drivers, Software, Integrity, Storage, Security, EventLog, Processes, Services, Tasks, Network, Update, Baseline, Postinstall), протокол безопасного исполнения SafeOps (Dry-run), подсистема самообучения WikiLLM и аппаратно-системный мониторинг. Подробнее см. в [apps/windows/README.md](file:///c:/Users/onela/AppData/Local/AI-Breadboard/apps/windows/README.md).
+> Внутри подсистемы [`apps/windows`](file:///c:/Users/onela/AppData/Local/AI-TC/apps/windows) выстроена глубокая ИТ-архитектура:
+> - **Семантический реестр системных команд (`windows_command_registry.json`)**: структурированная база знаний о 149 штатных утилитах Windows (`%SystemRoot%\System32`) по 66 доменам. Включает классификацию рисков (`TelemetryTier`: `OBSERVE` / `DIAGNOSE` / `CONTROL` / `ADMIN` / `DESTRUCTIVE`), уровни привилегий и сопоставление с эквивалентами PowerShell, WMI/CIM, Win32 API и ETW. Служит фундаментом безопасности (Safety Guardrails) и справочником для AI-агентов.
+> - **Коллекторы фактов**: 15 доменных коллекторов (Clean, Performance, Drivers, Software, Integrity, Storage, Security, EventLog, Processes, Services, Tasks, Network, Update, Baseline, Postinstall).
+> - **Протокол безопасного исполнения SafeOps**: симуляция Dry-run, изоляция рисков и автоматические точки отката.
+> - **WikiLLM и аппаратно-системная телеметрия**: сбор метрик в реальном времени через `SystemCollector` и сохранение в SQLite. Подробнее см. в [apps/windows/README.md](file:///c:/Users/onela/AppData/Local/AI-TC/apps/windows/README.md).
 
 ### 🎙️ Обработка звука
 
@@ -264,20 +267,20 @@
 Откройте PowerShell **от имени администратора** и выполните:
 
 ```powershell
-irm https://raw.githubusercontent.com/hypo69/AI-Breadboard/master/install.ps1 | iex
+irm https://raw.githubusercontent.com/hypo69/AI-Windows-Admin/master/install.ps1 | iex
 ```
 
 ### Клонирование репозитория
 
 ```powershell
 # Windows:
-git clone https://github.com/hypo69/AI-Breadboard.git
-cd AI-Breadboard
+git clone https://github.com/hypo69/AI-Windows-Admin.git
+cd AI-Windows-Admin
 .\install.ps1
 
 # Linux / macOS:
-git clone https://github.com/hypo69/AI-Breadboard.git
-cd AI-Breadboard
+git clone https://github.com/hypo69/AI-Windows-Admin.git
+cd AI-Windows-Admin
 bash install.sh
 ```
 
@@ -287,7 +290,7 @@ bash install.sh
 
 - `install.ps1` / `install.sh` / `install.py` — главные оркестраторы
 - `install/Install-I18n.ps1` — мультиязычный интерфейс (RU, EN, ES, HE)
-- `install/Install-Directory.ps1` — выбор директории установки (по умолчанию `%LOCALAPPDATA%\AI Breadboard`)
+- `install/Install-Directory.ps1` — выбор директории установки (по умолчанию `%LOCALAPPDATA%\AI Windows Admin`)
 - `install/Install-Venv.ps1` — подготовка виртуальной среды Python
 - `install/Install-Deps.ps1` — установка зависимостей
 - `install/Install-Certs.ps1` — генерация локальных SSL-сертификатов
@@ -299,8 +302,8 @@ bash install.sh
 
 ```bash
 # 1. Клонировать
-git clone https://github.com/hypo69/AI-Breadboard.git
-cd AI-Breadboard
+git clone https://github.com/hypo69/AI-Windows-Admin.git
+cd AI-Windows-Admin
 
 # 2. Виртуальная среда
 python -m venv venv
@@ -469,7 +472,7 @@ certutil -addstore -f "Root" $env:USERPROFILE\.certs\localhost+2.pem
 - [Каталог MCP серверов](docs/ru/mcp/catalog.md)
 - [Каталог приложений](docs/ru/apps/catalog.md)
 
- Онлайн-документация: [GitHub Pages](https://hypo69.github.io/aibreadboard/)
+ Онлайн-документация: [GitHub Pages](https://hypo69.github.io/aiwindowsadmin/)
 
 ---
 

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard UTILS - Date Time Module
+# Process Name: AI-Windows-Admin UTILS - Date Time Module
 # =============================================================================
 # Description:
 #   Check if the current time is within the specified interval.
@@ -16,15 +16,16 @@
 #     print(result)
 #
 # File: date_time.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: src.utils
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:13:56
+# Updated: 2026-10-10 22:22:30
 # =============================================================================
 
 """Check if the current time is within the specified interval."""
 
+from logger import logger
 from datetime import datetime, time
 import threading
 from src.utils.printer import pprint as print
@@ -65,7 +66,7 @@ class TimeoutCheck:
         thread.start()
         thread.join(timeout)
         if thread.is_alive():
-            print(f'Timeout occurred after {timeout} seconds, continuing execution.')
+            logger.console(f'Timeout occurred after {timeout} seconds, continuing execution.')
             thread.join()
             return False
         return self.result
@@ -87,12 +88,12 @@ class TimeoutCheck:
         thread.start()
         thread.join(timeout)
         if thread.is_alive():
-            print(f'Timeout occurred after {timeout} seconds.')
+            logger.console(f'Timeout occurred after {timeout} seconds.')
             return
         return self.user_input
 if __name__ == '__main__':
     timeout_check = TimeoutCheck()
     if timeout_check.interval_with_timeout(timeout=5):
-        print('Current time is within the interval.')
+        logger.console('Current time is within the interval.')
     else:
-        print('Current time is outside the interval or timeout occurred.')
+        logger.console('Current time is outside the interval or timeout occurred.')

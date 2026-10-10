@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard AI - Unified Chat Module
+# Process Name: AI-Windows-Admin AI - Unified Chat Module
 # =============================================================================
 # Description:
 #   Transparent routing wrapper across all configured AI providers.
@@ -14,11 +14,11 @@
 #     print(result)
 #
 # File: unified_chat.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: src.ai.orchestration
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 06:47:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 """Transparent routing wrapper across all configured AI providers."""

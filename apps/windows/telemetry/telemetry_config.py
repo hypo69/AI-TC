@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Telemetry - Telemetry Config
+# Process Name: AI-Windows-Admin Apps Windows Telemetry - Telemetry Config
 # =============================================================================
 # Description:
 #   Менеджер конфигурации сбора телеметрии и сенсоров с поддержкой
@@ -16,11 +16,11 @@
 #         print("Конфигурация обновлена!")
 #
 # File: telemetry_config.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.telemetry
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-08 10:25:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations
@@ -43,7 +43,7 @@ def get_default_telemetry_config_path() -> Path:
     """Возвращает путь по умолчанию к файлу конфигурации телеметрии в %ProgramData%.
 
     Проверяет сначала %ProgramData%/AITelemetry/config/config.json,
-    затем %ProgramData%/AI-Breadboard/apps/windows/telemetry/config.json.
+    затем %ProgramData%/AI-Windows-Admin/apps/windows/telemetry/config.json.
     Если целевой файл отсутствует, выполняется попытка скопировать шаблон из пакета модуля.
 
     Returns:
@@ -63,7 +63,7 @@ def get_default_telemetry_config_path() -> Path:
     if ai_tel_config.is_file():
         return ai_tel_config
 
-    target_path = base_dir / 'AI-Breadboard' / 'apps' / 'windows' / 'telemetry' / 'config.json'
+    target_path = base_dir / 'AI-Windows-Admin' / 'apps' / 'windows' / 'telemetry' / 'config.json'
 
     if not target_path.exists():
         bundled_template = Path(__file__).parent / 'config.json'
@@ -132,7 +132,7 @@ class TelemetryConfigManager:
         """Инициализирует менеджер конфигурации.
 
         Args:
-            config_path: Путь к файлу конфигурации (по умолчанию: %APPDATA%/AI-Breadboard/apps/windows/telemetry/config.json).
+            config_path: Путь к файлу конфигурации (по умолчанию: %APPDATA%/AI-Windows-Admin/apps/windows/telemetry/config.json).
         """
         if config_path:
             self._config_path = str(config_path)
@@ -302,7 +302,7 @@ class TelemetryConfigManager:
                 base_dir = Path(appdata)
             else:
                 base_dir = Path.home() / '.config'
-        return base_dir / 'AI-Breadboard' / 'apps' / 'windows' / 'telemetry' / 'logs'
+        return base_dir / 'AI-Windows-Admin' / 'apps' / 'windows' / 'telemetry' / 'logs'
 
     def get_db_path(self) -> Path:
         """Возвращает настроенный или системный путь к файлу SQLite базы данных телеметрии."""
@@ -686,4 +686,4 @@ class TelemetryConfigManager:
                 self._last_mtime_ns = target_path.stat().st_mtime_ns
             return True
         except Exception:
-            return False
+            return False

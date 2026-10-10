@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard AI - Policy Module
+# Process Name: AI-Windows-Admin AI - Policy Module
 # =============================================================================
 # Description:
 #   Data privacy constraints for AI requests.
@@ -12,11 +12,11 @@
 #     service = PrivacyLevel()
 #
 # File: policy.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: src.ai.orchestration
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:13:56
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 """Data privacy constraints for AI requests."""

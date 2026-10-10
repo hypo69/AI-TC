@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard AI Agents - Windows Firewall Tools Module
+# Process Name: AI-Windows-Admin AI Agents - Windows Firewall Tools Module
 # =============================================================================
 # Description:
 #   Инструменты прямого взаимодействия с подсистемой брандмауэра Windows
@@ -15,11 +15,11 @@
 #     res = await windows_firewall_audit(action="profiles")
 #
 # File: firewall.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: src.ai.agents.windows_tools
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-08 21:35:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

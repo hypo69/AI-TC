@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Scripts Docs - Test Check Links
+# Process Name: AI-Windows-Admin Scripts Docs - Test Check Links
 # =============================================================================
 # Description:
 #   Unit-тесты для скрипта check_links.py
@@ -14,11 +14,11 @@
 #     service = TestLinkCheckerExtractLinks()
 #
 # File: test_check_links.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: scripts.docs
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:27:07
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 """Unit-тесты для скрипта check_links.py

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Telemetry - Collector
+# Process Name: AI-Windows-Admin Apps Windows Telemetry - Collector
 # =============================================================================
 # Description:
 #   Движок сбора системных метрик, аппаратной структуры и показателей производительности.
@@ -12,11 +12,11 @@
 #     service = SystemCollector()
 #
 # File: collector.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.telemetry
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-08 12:54:00
+# Updated: 2026-10-10 22:28:45
 # =============================================================================
 
 from __future__ import annotations
@@ -25,7 +25,6 @@ from __future__ import annotations
 import asyncio
 import ctypes
 import getpass
-import locale
 import os
 import platform
 import socket

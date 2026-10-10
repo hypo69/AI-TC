@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard AI - Config Module
+# Process Name: AI-Windows-Admin AI - Config Module
 # =============================================================================
 # Description:
-#   Модуль реализации компонента `GoogleGenerativeAIConfigMixin` системы AI-Breadboard.
+#   Модуль реализации компонента `GoogleGenerativeAIConfigMixin` системы AI-Windows-Admin.
 #
 # Usage Examples:
 #   Python API:
@@ -12,11 +12,11 @@
 #     service = GoogleGenerativeAIConfigMixin()
 #
 # File: config.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: src.ai.gemini
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-08 10:46:40
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 
@@ -117,6 +117,10 @@ class GoogleGenerativeAIConfigMixin:
             inst += format_rule
             cfg_kwargs['system_instruction'] = inst
         use_google_search: bool = gen_cfg.pop('use_google_search', getattr(self, 'use_google_search', False))
+        model_name: str = getattr(self, 'model_name', '') or ''
+        if 'lite' in model_name.lower():
+            use_google_search = False
+
         extra_tools = gen_cfg.pop('tools', None)
         all_tools: list = list(tools) if tools else []
         if extra_tools:

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Telemetry - Sensors
+# Process Name: AI-Windows-Admin Apps Windows Telemetry - Sensors
 # =============================================================================
 # Description:
 #   Движок считывания показаний температурных датчиков, напряжений и вентиляторов.
@@ -12,11 +12,11 @@
 #     res = get_hardware_sensors()
 #
 # File: sensors.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.telemetry
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-04 07:00:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

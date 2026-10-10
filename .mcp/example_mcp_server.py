@@ -26,13 +26,13 @@ except ImportError:
     class SimpleLogger:
 
         def info(self, msg):
-            print(f'[INFO] {msg}')
+            logger.console(f'[INFO] {msg}')
 
         def warning(self, msg):
-            print(f'[WARN] {msg}')
+            logger.console(f'[WARN] {msg}')
 
         def error(self, msg):
-            print(f'[ERROR] {msg}')
+            logger.console(f'[ERROR] {msg}')
     logger = SimpleLogger()
 mcp = FastMCP('Example-Server')
 

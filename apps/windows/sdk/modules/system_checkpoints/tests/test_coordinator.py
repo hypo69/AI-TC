@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Modules System_Checkpoints Tests - Test Coordinator
+# Process Name: AI-Windows-Admin Apps Windows Modules System_Checkpoints Tests - Test Coordinator
 # =============================================================================
 # Description:
 #   Тесты главного координатора контрольных точек системы.
@@ -12,11 +12,11 @@
 #     res = test_coordinator_catalog_save_and_load()
 #
 # File: test_coordinator.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.system_checkpoints.tests
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:28:28
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 """Тесты главного координатора контрольных точек системы."""

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard AI Agents - Windows Process Manager Tools Module
+# Process Name: AI-Windows-Admin AI Agents - Windows Process Manager Tools Module
 # =============================================================================
 # Description:
 #   Инструменты инспекции, категоризации и управления процессами Windows
@@ -15,11 +15,11 @@
 #     res = await windows_process_list(action="summary")
 #
 # File: process_manager.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: src.ai.agents.windows_tools
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-08 22:06:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Telemetry Win32_Ffi - Wevtapi
+# Process Name: AI-Windows-Admin Apps Windows Telemetry Win32_Ffi - Wevtapi
 # =============================================================================
 # Description:
 #   Низкоуровневый интерфейс к wevtapi.dll для работы с журналами событий Windows.
@@ -12,11 +12,11 @@
 #     service = ChannelMetadata()
 #
 # File: wevtapi.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.telemetry.win32_ffi
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-08 02:15:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations
@@ -906,4 +906,4 @@ class WevtAPI:
 WindowsEventLogAPI = WevtAPI
 
 
-__all__ = ['WevtAPI', 'WindowsEventLogAPI', 'ChannelMetadata', 'CHANNEL_DESCRIPTIONS']
+__all__ = ['WevtAPI', 'WindowsEventLogAPI', 'ChannelMetadata', 'CHANNEL_DESCRIPTIONS']

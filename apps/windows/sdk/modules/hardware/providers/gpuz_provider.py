@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Modules Hardware Providers - Gpuz Provider
+# Process Name: AI-Windows-Admin Apps Windows Modules Hardware Providers - Gpuz Provider
 # =============================================================================
 # Description:
 #   Провайдер интеграции с GPU-Z (Sensor Logs, CLI).
@@ -12,11 +12,11 @@
 #     service = GpuzProvider()
 #
 # File: gpuz_provider.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.hardware.providers
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:28:28
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

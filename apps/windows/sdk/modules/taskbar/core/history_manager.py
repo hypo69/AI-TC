@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Modules Taskbar - History & Telemetry Manager
+# Process Name: AI-Windows-Admin Apps Windows Modules Taskbar - History & Telemetry Manager
 # =============================================================================
 # Description:
 #   Фиксация всех изменений Taskbar и Desktop Window Control Plane в SQLite базе
@@ -15,11 +15,11 @@
 #     history_mgr.rollback(record_id, controller)
 #
 # File: history_manager.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.taskbar.core
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-06 17:58:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations
@@ -39,10 +39,10 @@ def get_telemetry_db_path() -> Path:
     """Определяет стандартный путь к базе данных telemetry.db с fallback-путями."""
     programdata = os.environ.get("ProgramData") or os.environ.get("ALLUSERSPROFILE")
     if programdata and os.path.exists(programdata):
-        primary = Path(programdata) / "AI-Breadboard" / "apps" / "windows" / "telemetry" / "logs" / "telemetry.db"
+        primary = Path(programdata) / "AI-Windows-Admin" / "apps" / "windows" / "telemetry" / "logs" / "telemetry.db"
     else:
         appdata = os.environ.get("APPDATA") or os.environ.get("LOCALAPPDATA") or str(Path.home() / ".config")
-        primary = Path(appdata) / "AI-Breadboard" / "apps" / "windows" / "telemetry" / "logs" / "telemetry.db"
+        primary = Path(appdata) / "AI-Windows-Admin" / "apps" / "windows" / "telemetry" / "logs" / "telemetry.db"
 
     # Если родительский каталог не существует, используем локальный fallback
     if not primary.parent.exists():

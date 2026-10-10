@@ -1,27 +1,44 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard UTILS - Ports Module
+# Process Name: AI-Windows-Admin UTILS - Ports Module
 # =============================================================================
 # Description:
-#   Модуль централизованного доступа к конфигурации сетевых портов (ports.json).
+#   Модуль централизованного управления сетевыми портами и топологией сервисов на основе config.json.
+#
+#   Зачем нужен этот модуль:
+#     1. Единый источник правды (SSOT): предотвращает конфликты адресов и обеспечивает
+#        централизованную конфигурацию сетевых портов всей экосистемы (config.json).
+#     2. Исключение жесткого кодирования (No Hardcoding): устраняет «магические числа»
+#        номеров портов из исходного кода FastAPI-серверов, CLI-лончеров, терминалов и роутеров.
+#     3. Динамическое разрешение коллизий (Dynamic Port Fallback): при включенном режиме
+#        dynamic_ports или занятости назначенного статического порта автоматически находит
+#        и выделяет свободный TCP-порт в операционной системе.
+#     4. Оркестрация микросервисов и AI-сред: координирует сетевые адреса для основного сервера,
+#        автономных доменных приложений (/apps/windows, network_terminal, system_inspector)
+#        и локальных сред инференса LLM.
 #
 # Usage Examples:
 #   Python API:
-#     from src.utils.ports import load_ports_config
+#     from src.utils.ports import get_port, load_ports_config, get_all_ports
 #
-#     res = load_ports_config()
-#     print(res)
+#     # Получить порт конкретного сервиса или приложения:
+#     server_port = get_port('server', default=8001)
+#     windows_port = get_port('windows', default=8001)
+#     ollama_port = get_port('ollama', default=11434)
+#
+#     # Загрузить всю структуру конфигурации:
+#     cfg = load_ports_config()
 #
 # File: ports.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: src.utils
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:13:56
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations
-"""Модуль централизованного доступа к конфигурации сетевых портов (ports.json)."""
+"""Модуль централизованного доступа к конфигурации сетевых портов (config.json)."""
 
 import json
 from pathlib import Path
@@ -30,103 +47,126 @@ from typing import Any, Dict, Optional
 from header import __root__
 from logger import logger
 from src.utils.jjson import j_loads_ns
-PORTS_FILE: Path = __root__ / 'start_scenarios_config' / 'ports.json'
 
-def load_ports_config(ports_file: Optional[Path]=None) -> SimpleNamespace:
-    """Загрузить конфигурацию портов из ports.json в виде SimpleNamespace.
+PORTS_FILE: Path = __root__ / 'config.json'
+
+
+def load_ports_config(config_file: Optional[Path] = None) -> SimpleNamespace:
+    """Загрузить конфигурацию портов из config.json в виде SimpleNamespace.
 
     Args:
-        ports_file: Необязательный путь к файлу конфигурации портов.
+        config_file: Необязательный путь к файлу конфигурации.
 
     Returns:
-        SimpleNamespace: Объект конфигурации с секциями dynamic_ports, server, static_ports.
+        SimpleNamespace: Объект конфигурации.
     """
-    target_file = ports_file or PORTS_FILE
+    target_file = config_file or PORTS_FILE
     if not target_file.exists():
-        fallback_file = __root__ / 'ports.json'
-        if fallback_file.exists():
-            target_file = fallback_file
-        else:
-            logger.warning(f'Файл портов не найден: {target_file}')
-            return SimpleNamespace(dynamic_ports=False, server=SimpleNamespace(main=8000), static_ports=SimpleNamespace(apps=SimpleNamespace(), services=SimpleNamespace()), apps=SimpleNamespace(), services=SimpleNamespace())
+        logger.warning(f'Файл конфигурации не найден: {target_file}')
+        return SimpleNamespace(dynamic_ports=False, server=SimpleNamespace(port=8001, main=8001), apps=SimpleNamespace(), services=SimpleNamespace())
     try:
         return j_loads_ns(target_file)
     except Exception as e:
-        logger.error(f'Ошибка загрузки конфигурации портов из {target_file}: {e}')
-        return SimpleNamespace(dynamic_ports=False, server=SimpleNamespace(main=8000), static_ports=SimpleNamespace(apps=SimpleNamespace(), services=SimpleNamespace()), apps=SimpleNamespace(), services=SimpleNamespace())
+        logger.error(f'Ошибка загрузки конфигурации из {target_file}: {e}')
+        return SimpleNamespace(dynamic_ports=False, server=SimpleNamespace(port=8001, main=8001), apps=SimpleNamespace(), services=SimpleNamespace())
 
-def is_dynamic_ports_enabled(ports_file: Optional[Path]=None) -> bool:
+
+def is_dynamic_ports_enabled(config_file: Optional[Path] = None) -> bool:
     """Проверить, включен ли режим динамических портов (dynamic_ports).
 
     Args:
-        ports_file: Необязательный путь к файлу ports.json.
+        config_file: Необязательный путь к файлу конфигурации.
 
     Returns:
         bool: True, если динамические порты включены, иначе False.
     """
-    cfg = load_ports_config(ports_file=ports_file)
-    return bool(getattr(cfg, 'dynamic_ports', False))
+    cfg = load_ports_config(config_file=config_file)
+    dynamic_val = getattr(cfg, 'dynamic_ports', None)
+    if dynamic_val is not None:
+        return bool(dynamic_val)
+    server_sec = getattr(cfg, 'server', None)
+    if server_sec and hasattr(server_sec, 'dynamic_ports'):
+        return bool(getattr(server_sec, 'dynamic_ports', False))
+    return False
 
-def get_all_ports(ports_file: Optional[Path]=None) -> Dict[str, int]:
-    """Получить плоский словарь со всеми сопоставлениями 'имя -> порт'.
 
-    Сканирует как секции внутри static_ports, так и корневые server/apps/services.
+def get_all_ports(config_file: Optional[Path] = None) -> Dict[str, int]:
+    """Получить плоский словарь со всеми сопоставлениями 'имя -> порт' из config.json.
 
     Args:
-        ports_file: Необязательный путь к файлу конфигурации портов.
+        config_file: Необязательный путь к файлу конфигурации.
 
     Returns:
         Dict[str, int]: Словарь имен сервисов/приложений и назначенных им портов.
     """
-    target_file = ports_file or PORTS_FILE
+    target_file = config_file or PORTS_FILE
     if not target_file.exists():
-        return {'server': 8000, 'main': 8000}
+        return {'server': 8001, 'main': 8001}
     try:
         with open(target_file, 'r', encoding='utf-8') as f:
             data = json.load(f)
     except Exception as e:
         logger.error(f'Не удалось прочитать {target_file}: {e}')
-        return {'server': 8000, 'main': 8000}
+        return {'server': 8001, 'main': 8001}
+
     flat_ports: Dict[str, int] = {}
 
     def _extract_dict_ports(d: Any) -> None:
         if isinstance(d, dict):
             for k, v in d.items():
-                if isinstance(v, int):
+                if isinstance(v, int) and not isinstance(v, bool):
                     flat_ports[k] = v
                 elif isinstance(v, dict):
+                    if 'port' in v and isinstance(v['port'], int) and not isinstance(v['port'], bool):
+                        flat_ports[k] = v['port']
                     _extract_dict_ports(v)
-    for section_key in ('server', 'apps', 'services'):
-        if section_key in data:
+
+    # Обработка секции server
+    if 'server' in data and isinstance(data['server'], dict):
+        srv_port = data['server'].get('port')
+        if isinstance(srv_port, int) and not isinstance(srv_port, bool):
+            flat_ports['server'] = srv_port
+            flat_ports['main'] = srv_port
+
+    for section_key in ('apps', 'services', 'static_ports', 'ports'):
+        if section_key in data and isinstance(data[section_key], dict):
             _extract_dict_ports(data[section_key])
-    if 'static_ports' in data and isinstance(data['static_ports'], dict):
-        _extract_dict_ports(data['static_ports'])
+
     return flat_ports
 
-def get_port(name: str, default: Optional[int]=None, ports_file: Optional[Path]=None, host: str='127.0.0.1', dynamic_fallback: bool=False) -> Optional[int]:
+
+def get_port(
+    name: str,
+    default: Optional[int] = None,
+    config_file: Optional[Path] = None,
+    host: str = '127.0.0.1',
+    dynamic_fallback: bool = False,
+) -> Optional[int]:
     """Получить номер порта для заданного приложения, сервера или сервиса.
 
     Args:
-        name: Название микроприложения (напр. 'windows_sysadmin'), сервера ('server' / 'main') или сервиса ('ollama').
+        name: Название микроприложения (напр. 'windows', 'tc'), сервера ('server' / 'main') или сервиса ('ollama').
         default: Значение по умолчанию, если порт не найден.
-        ports_file: Необязательный путь к файлу ports.json.
+        config_file: Необязательный путь к файлу config.json.
         host: Хост для проверки занятости при динамическом выделении.
-        dynamic_fallback: Если True или если dynamic_ports=True в ports.json, при занятом статическом порте выделяется свободный.
+        dynamic_fallback: Если True или если dynamic_ports=True в config.json, при занятом статическом порте выделяется свободный.
 
     Returns:
         Optional[int]: Номер порта или default.
     """
-    ports = get_all_ports(ports_file=ports_file)
+    ports = get_all_ports(config_file=config_file)
     assigned_port: Optional[int] = None
     if name in ports:
         assigned_port = ports[name]
-    elif name == 'server' and 'main' in ports:
-        assigned_port = ports['main']
+    elif name in ('server', 'main', 'tc', 'windows') and ('server' in ports or 'main' in ports):
+        assigned_port = ports.get('server') or ports.get('main')
     else:
         assigned_port = default
+
     if assigned_port is None:
         return None
-    dynamic_active = dynamic_fallback or is_dynamic_ports_enabled(ports_file=ports_file)
+
+    dynamic_active = dynamic_fallback or is_dynamic_ports_enabled(config_file=config_file)
     if dynamic_active:
         from src.utils.get_free_port import _is_port_in_use, get_free_port
         if _is_port_in_use(host, assigned_port):

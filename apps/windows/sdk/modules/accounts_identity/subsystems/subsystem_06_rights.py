@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows - Subsystem 06 LSA Rights
+# Process Name: AI-Windows-Admin Apps Windows - Subsystem 06 LSA Rights
 # =============================================================================
 # Description:
 #   Подсистема 06: Управление правами учетных записей LSA (User Rights Assignment,
@@ -14,11 +14,11 @@
 #     rdp_users = subsys.get_accounts_with_remote_logon()
 #
 # File: subsystem_06_rights.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.accounts_identity.subsystems
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-08 00:50:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 """Подсистема назначения прав и привилегий LSA (Local Security Authority)."""

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard AI - Gemini Api Key State Module
+# Process Name: AI-Windows-Admin AI - Gemini Api Key State Module
 # =============================================================================
 # Description:
 #   Ensure that the secrets directory exists on the filesystem.
@@ -13,11 +13,11 @@
 #     print(res)
 #
 # File: gemini_api_key_state.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: src.ai.gemini
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 11:26:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

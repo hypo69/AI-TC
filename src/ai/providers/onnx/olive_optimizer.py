@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard AI - Olive Optimizer Module
+# Process Name: AI-Windows-Admin AI - Olive Optimizer Module
 # =============================================================================
 # Description:
 #   Check if Microsoft Olive package is installed in the current environment.
@@ -13,11 +13,11 @@
 #     print(res)
 #
 # File: olive_optimizer.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: src.ai.providers.onnx
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:13:56
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Modules Startup - Tui
+# Process Name: AI-Windows-Admin Apps Windows Modules Startup - Tui
 # =============================================================================
 # Description:
 #   Терминальный интерфейс (Rich TUI) для Startup Auditor.
@@ -12,14 +12,15 @@
 #     service = StartupAuditorTUI()
 #
 # File: tui.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.startup
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:28:28
+# Updated: 2026-10-10 22:22:44
 # =============================================================================
 
 from __future__ import annotations
+from logger import logger
 """Терминальный интерфейс (Rich TUI) для Startup Auditor."""
 
 from typing import Optional
@@ -53,7 +54,7 @@ class StartupAuditorTUI:
         header_text.append(f'Отключено: {report.summary.disabled_entries} | ', style='dim')
         header_text.append(f'Битых записей: {report.summary.broken_entries} | ', style='yellow')
         header_text.append(f'Угроз: {report.summary.critical_count + report.summary.suspicious_count}', style='bold red')
-        self.console.print(Panel(header_text, border_style='cyan', title='[bold]AI Breadboard[/bold]', subtitle=report.timestamp[:19]))
+        self.console.logger.console(Panel(header_text, border_style='cyan', title='[bold]AI Windows Admin[/bold]', subtitle=report.timestamp[:19]))
         table = Table(title='📋 Обнаруженные элементы автозапуска', expand=True, border_style='blue')
         table.add_column('Статус', justify='center', width=8)
         table.add_column('Имя / Элемент', style='bold white', width=24)
@@ -70,12 +71,12 @@ class StartupAuditorTUI:
             if not e.file_exists and e.executable_path:
                 display_path = f'[red][ФАЙЛ ОТСУТСТВУЕТ][/red] {display_path}'
             table.add_row(status_badge, e.name[:24], e.location_type.value if hasattr(e.location_type, 'value') else str(e.location_type), cat_str, risk_badge, display_path, e.boot_impact)
-        self.console.print(table)
+        self.console.logger.console(table)
         if report.recommendations:
             rec_text = Text()
             for rec in report.recommendations:
                 rec_text.append(f'• {rec}\n')
-            self.console.print(Panel(rec_text, title='[bold yellow]💡 Рекомендации по оптимизации[/bold yellow]', border_style='yellow'))
+            self.console.logger.console(Panel(rec_text, title='[bold yellow]💡 Рекомендации по оптимизации[/bold yellow]', border_style='yellow'))
 
     def _format_risk(self, risk: RiskLevel) -> str:
         """Форматирование бейджа уровня риска."""

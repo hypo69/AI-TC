@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Scripts Cli - Terminal Manager
+# Process Name: AI-Windows-Admin Scripts Cli - Terminal Manager
 # =============================================================================
 # Description:
 #   Terminal manager utility for configuring and launching multi-pane workspaces.
@@ -14,11 +14,11 @@
 #     res = get_terminal_profiles()
 #
 # File: terminal_manager.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: scripts.cli
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:27:07
+# Updated: 2026-10-10 22:22:30
 # =============================================================================
 
 """Terminal manager utility for configuring and launching multi-pane workspaces.
@@ -26,6 +26,7 @@
 This module inspects system terminal capabilities (e.g. Windows Terminal wt.exe)
 and generates launch commands for multi-pane or multi-window layouts."""
 
+from logger import logger
 import argparse
 import os
 import shutil
@@ -42,7 +43,7 @@ def get_terminal_profiles() -> Dict[str, List[Dict[str, str]]]:
         Dict[str, List[Dict[str, str]]]: Mapping of profile name to list of pane definitions.
     """
     python_exe = sys.executable
-    return {'breadboard': [{'title': 'FastAPI Server', 'command': f'''powershell.exe -NoExit -ExecutionPolicy Bypass -File "{PROJECT_ROOT / 'launchers' / 'Run-Unicorn.ps1'}"'''}, {'title': 'Assist CLI', 'command': f'''powershell.exe -NoExit -ExecutionPolicy Bypass -File "{PROJECT_ROOT / 'assist.ps1'}"'''}, {'title': 'Telegram Bot', 'command': f'''powershell.exe -NoExit -ExecutionPolicy Bypass -File "{PROJECT_ROOT / 'launchers' / 'Run-TelegramBot.ps1'}" -Foreground'''}, {'title': 'System Log Stream', 'command': f'''powershell.exe -NoExit -Command "Get-Content -Path '{PROJECT_ROOT / 'logs' / 'app.log'}' -Wait -Tail 30 -ErrorAction SilentlyContinue"'''}], 'trading': [{'title': 'Trading Desk (BTC/USDT)', 'command': f'"{python_exe}" -m apps.trading_terminal --symbol BTC/USDT'}, {'title': 'Trading Desk (ETH/USDT)', 'command': f'"{python_exe}" -m apps.trading_terminal --symbol ETH/USDT'}, {'title': 'Execution Feed', 'command': f'''powershell.exe -NoExit -Command "Write-Host '[Execution Feed Active]' -ForegroundColor Green; Start-Sleep 1"'''}], 'network': [{'title': 'Network DPI Terminal', 'command': f'"{python_exe}" -m apps.windows.network'}, {'title': 'Network Traffic Stream', 'command': f'"{python_exe}" -m apps.windows.network --simulate'}], 'cloudflared': [{'title': 'Cloudflared Monitor Dashboard', 'command': f'"{python_exe}" -m apps.cloudflared_monitor'}, {'title': 'Cloudflared Live Log Stream', 'command': f'''powershell.exe -NoExit -Command "Get-Content -Path '{PROJECT_ROOT / 'logs' / 'cloudflared.log'}' -Wait -Tail 30 -ErrorAction SilentlyContinue"'''}, {'title': 'Tunnel Launcher Control', 'command': f'''powershell.exe -NoExit -ExecutionPolicy Bypass -File "{PROJECT_ROOT / 'launchers' / 'Run-Cloudflared.ps1'}"'''}]}
+    return {'ai-windows-admin': [{'title': 'FastAPI Server', 'command': f'''powershell.exe -NoExit -ExecutionPolicy Bypass -File "{PROJECT_ROOT / 'launchers' / 'Run-Unicorn.ps1'}"'''}, {'title': 'Assist CLI', 'command': f'''powershell.exe -NoExit -ExecutionPolicy Bypass -File "{PROJECT_ROOT / 'assist.ps1'}"'''}, {'title': 'Telegram Bot', 'command': f'''powershell.exe -NoExit -ExecutionPolicy Bypass -File "{PROJECT_ROOT / 'launchers' / 'Run-TelegramBot.ps1'}" -Foreground'''}, {'title': 'System Log Stream', 'command': f'''powershell.exe -NoExit -Command "Get-Content -Path '{PROJECT_ROOT / 'logs' / 'app.log'}' -Wait -Tail 30 -ErrorAction SilentlyContinue"'''}], 'network': [{'title': 'Network DPI Terminal', 'command': f'"{python_exe}" -m apps.windows.network'}, {'title': 'Network Traffic Stream', 'command': f'"{python_exe}" -m apps.windows.network --simulate'}], 'cloudflared': [{'title': 'Cloudflared Monitor Dashboard', 'command': f'"{python_exe}" -m apps.cloudflared_monitor'}, {'title': 'Cloudflared Live Log Stream', 'command': f'''powershell.exe -NoExit -Command "Get-Content -Path '{PROJECT_ROOT / 'logs' / 'cloudflared.log'}' -Wait -Tail 30 -ErrorAction SilentlyContinue"'''}, {'title': 'Tunnel Launcher Control', 'command': f'''powershell.exe -NoExit -ExecutionPolicy Bypass -File "{PROJECT_ROOT / 'launchers' / 'Run-Cloudflared.ps1'}"'''}]}
 
 def is_windows_terminal_available() -> bool:
     """Check if Windows Terminal (wt.exe) is available in PATH.
@@ -52,7 +53,7 @@ def is_windows_terminal_available() -> bool:
     """
     return shutil.which('wt.exe') is not None or shutil.which('wt') is not None
 
-def build_wt_command(profile_name: str='breadboard') -> Optional[List[str]]:
+def build_wt_command(profile_name: str='ai-windows-admin') -> Optional[List[str]]:
     """Build Windows Terminal CLI command arguments for multi-pane layout.
 
     Args:
@@ -81,18 +82,18 @@ def build_wt_command(profile_name: str='breadboard') -> Optional[List[str]]:
 def main() -> None:
     """CLI entrypoint for terminal manager."""
     parser = argparse.ArgumentParser(description='Terminal Workspace Manager')
-    parser.add_argument('--profile', type=str, default='breadboard', choices=['breadboard', 'trading', 'network', 'cloudflared'], help='Workspace layout profile')
+    parser.add_argument('--profile', type=str, default='ai-windows-admin', choices=['ai-windows-admin', 'network', 'cloudflared'], help='Workspace layout profile')
     parser.add_argument('--list', action='store_true', help='List available profiles')
     args = parser.parse_args()
     if args.list:
         profiles = get_terminal_profiles()
-        print('Available terminal profiles:')
+        logger.console('Available terminal profiles:')
         for name, panes in profiles.items():
-            print(f'  - {name} ({len(panes)} panes)')
+            logger.console(f'  - {name} ({len(panes)} panes)')
         return
     wt_cmd = build_wt_command(args.profile)
     if wt_cmd:
-        print(f"Constructed wt command for profile '{args.profile}':")
-        print(' '.join(wt_cmd))
+        logger.console(f"Constructed wt command for profile '{args.profile}':")
+        logger.console(' '.join(wt_cmd))
 if __name__ == '__main__':
     main()

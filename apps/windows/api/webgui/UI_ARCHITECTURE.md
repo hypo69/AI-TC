@@ -1,20 +1,20 @@
 <!--
 =============================================================================
-Process Name: AI-Breadboard UI - Architecture Specification
+Process Name: AI-Windows-Admin UI - Architecture Specification
 =============================================================================
 Description:
-  Архитектурный стандарт и спецификация построения веб-интерфейса AI-Breadboard.
+  Архитектурный стандарт и спецификация построения веб-интерфейса AI-Windows-Admin.
 
 Usage Examples:
   Документация и руководство разработчика:
     UI_ARCHITECTURE.md
 
 File: UI_ARCHITECTURE.md
-Project: ai-breadboard
+Project: ai-windows-admin
 Package: windows/api/webgui
 Author: hypo69
 Copyright: © 2026 hypo69
-Updated: 2026-10-08 12:25:00
+Updated: 2026-10-10 17:35:00
 =============================================================================
 -->
 
@@ -29,7 +29,7 @@ Updated: 2026-10-08 12:25:00
 
 | URL Роут | Файл разметки (Shell) | Скрипт запуска | Конфигурация | Назначение |
 |---|---|---|---|---|
-| `/admin` | `admin/index.html` | `Run-Dashboard.ps1` | `config/dashboard.json` | Главная панель управления AI Breadboard (администрирование, RAG, модели, ReAct-агенты) |
+| `/admin` | `admin/index.html` | `Run-Dashboard.ps1` | `config/dashboard.json` | Главная панель управления AI Windows Admin (администрирование, RAG, модели, ReAct-агенты) |
 | `/tc`, `/apps`, `/su` | `apps/index.html` | `Run-TC.ps1` / `su.ps1` | `config/tc_menu_config.json` | Хаб приложений Test Computer и консоль суперпользователя (диагностика, системный стек) |
 | `/` | `apps/index.html` (или `user/index.html`) | `Run-UserAssistant.ps1` | `config/dashboard.json` | Пользовательский интерфейс и персональный ассистент (Telegram Mini App) |
 | `/helpdesk` | `helpdesk/index.html` | `launchers/helpdesk.ps1` | `config.json` | Рабочее место службы поддержки (тикеты, операторы) |

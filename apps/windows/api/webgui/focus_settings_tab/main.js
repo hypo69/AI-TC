@@ -11,11 +11,11 @@
  *     initFocusSettingsTab();
  *
  * File: main.js
- * Project: ai-breadboard
+ * Project: ai-windows-admin
  * Package: windows/api/webgui/focus_settings_tab
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-06 19:35:00
+ * Updated: 2026-10-10 17:35:00
  * =============================================================================
  */
 

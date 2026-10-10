@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Scripts Dev - Package Skill
+# Process Name: AI-Windows-Admin Scripts Dev - Package Skill
 # =============================================================================
 # Description:
 #   Gemini skills packaging utility.
@@ -14,11 +14,11 @@
 #     res = package_skill()
 #
 # File: package_skill.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: scripts.dev
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:27:07
+# Updated: 2026-10-10 22:22:30
 # =============================================================================
 
 """Gemini skills packaging utility.
@@ -26,6 +26,7 @@
 Packages skill directories into ZIP archive format for distribution,
 automatically excluding build artifacts and version control files."""
 
+from logger import logger
 import os
 import zipfile
 import argparse
@@ -44,7 +45,7 @@ def package_skill(skill_dir, output_dir):
         output_path.mkdir(parents=True)
     skill_name = skill_path.name
     skill_file = output_path / f'{skill_name}.skill'
-    print(f'Packaging skill from {skill_path} to {skill_file}...')
+    logger.console(f'Packaging skill from {skill_path} to {skill_file}...')
     with zipfile.ZipFile(skill_file, 'w', zipfile.ZIP_DEFLATED) as zipf:
         for root, dirs, files in os.walk(skill_path):
             dirs[:] = [d for d in dirs if d not in ['dist', '.git', '__pycache__']]
@@ -52,7 +53,7 @@ def package_skill(skill_dir, output_dir):
                 file_path = Path(root) / file
                 arcname = file_path.relative_to(skill_path)
                 zipf.write(file_path, arcname)
-    print(f'Skill packaged successfully: {skill_file}')
+    logger.console(f'Skill packaged successfully: {skill_file}')
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Gemini CLI skills packager')
     parser.add_argument('skill_dir', help='Path to skill directory')

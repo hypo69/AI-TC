@@ -10,11 +10,11 @@
  *     <script src="/windows/api/webgui/windows_admin_tab/main.js?v=20261001_v1" type="module"></script>
  *
  * File: main.js
- * Project: ai-breadboard
+ * Project: ai-windows-admin
  * Package: windows/api/webgui/windows_admin_tab
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-10 11:47:00
+ * Updated: 2026-10-10 17:35:00
  * =============================================================================
  */
 
@@ -30,7 +30,7 @@
 //   - Интерактивное досье с поддержкой AI-аудита прав и безопасности
 //
 // File: main.js
-// Project: ai-breadboard
+// Project: ai-windows-admin
 // Package: src.api.webgui.windows_admin_tab
 // Author: hypo69
 // Copyright: © 2026 hypo69

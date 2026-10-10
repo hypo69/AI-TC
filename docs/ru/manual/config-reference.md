@@ -1,6 +1,6 @@
 # Справочник конфигурации: `config.json`
 
-Файл `config.json` является **центральным публичным конфигурационным файлом** проекта **AI-Breadboard**. Он определяет параметры запуска веб-сервера, маршрутизацию AI-провайдеров, настройки ONNX/DirectML, поисковых движков, MCP-серверов и автономных агентов.
+Файл `config.json` является **центральным публичным конфигурационным файлом** проекта **AI-Windows-Admin**. Он определяет параметры запуска веб-сервера, маршрутизацию AI-провайдеров, настройки ONNX/DirectML, поисковых движков, MCP-серверов и автономных агентов.
 
 > [!IMPORTANT]
 > **Разделение конфигурации и секретов:**  
@@ -97,7 +97,6 @@
     "system_control_center",
     "system_log_viewer",
     "network_terminal",
-    "trading_terminal",
     "user_assistant",
     "gcloud_monitor",
     "website_monitor",
@@ -109,7 +108,7 @@
 
 | Параметр | Тип | Описание |
 |---|---|---|
-| `enabled` | `array[string]` | Список идентификаторов или алиасов активных приложений (`"chat"`, `"windows_admin"`, `"system_inspector"`, `"system_control_center"`, `"system_log_viewer"`, `"network_terminal"`, `"trading_terminal"`, `"user_assistant"`, `"gcloud_monitor"`, `"website_monitor"`, `"cloudflared_monitor"`). |
+| `enabled` | `array[string]` | Список идентификаторов или алиасов активных приложений (`"chat"`, `"windows_admin"`, `"system_inspector"`, `"system_control_center"`, `"system_log_viewer"`, `"network_terminal"`, `"user_assistant"`, `"gcloud_monitor"`, `"website_monitor"`, `"cloudflared_monitor"`). |
 | `disabled` | `array[string]` | Список явно отключенных приложений (имеет наивысший приоритет над `enabled`). |
 | `enable_all` | `boolean` | Резервный флаг доступности всех приложений при отсутствии списков `enabled`/`disabled`. |
 
@@ -121,7 +120,7 @@
 
 ```json
 "telegram": {
-  "bot_name": "ai_breadboard_bot"
+  "bot_name": "ai_windows_admin_bot"
 }
 ```
 

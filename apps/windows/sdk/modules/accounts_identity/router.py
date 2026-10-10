@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows - Accounts & Identity Router
+# Process Name: AI-Windows-Admin Apps Windows - Accounts & Identity Router
 # =============================================================================
 # Description:
 #   FastAPI роутер для REST API каталога Accounts & Identity и Windows Identity Graph.
@@ -10,11 +10,11 @@
 #     from apps.windows.sdk.modules.accounts_identity.router import router as identity_router
 #
 # File: router.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.accounts_identity
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-08 01:46:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 """FastAPI роутер для Accounts & Identity."""

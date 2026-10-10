@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Launch interactive AI Breadboard Project Installer using Gemini CLI with gemini-3.1-flash-lite
+# Launch interactive AI Windows Admin Project Installer using Gemini CLI with gemini-3.1-flash-lite
 #
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -19,7 +19,7 @@ echo "Project Root: $PROJECT_ROOT"
 echo "Instruction:  $INSTRUCTION_FILE"
 echo ""
 
-PROMPT="You are the AI Breadboard Interactive Installer. Read and follow all instructions from '$INSTRUCTION_FILE'. Guide me step by step through installing AI Breadboard, perform pre-flight checks, handle errors, and verify directories and components at the end."
+PROMPT="You are the AI Windows Admin Interactive Installer. Read and follow all instructions from '$INSTRUCTION_FILE'. Guide me step by step through installing AI Windows Admin, perform pre-flight checks, handle errors, and verify directories and components at the end."
 
 # Execute Gemini CLI with gemini-3.1-flash-lite model
 gemini --model "gemini-3.1-flash-lite" --prompt "$PROMPT"

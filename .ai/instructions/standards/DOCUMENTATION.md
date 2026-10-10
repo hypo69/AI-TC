@@ -337,11 +337,11 @@ active_connections = set()
 #     connector.verify_status()
 #
 # File: foundry_connector.py
-# Project: AI Breadboard
+# Project: AI Windows Admin
 # Package: src.ai.providers.foundry
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-05 23:55:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 ```
 
@@ -352,7 +352,7 @@ active_connections = set()
 ```powershell
 <#
 =============================================================================
-Process Name: AI-Breadboard Automation - Start FastApi Server
+Process Name: AI-Windows-Admin Automation - Start FastApi Server
 =============================================================================
 Description:
   Запуск FastAPI сервера и оркестрация рабочих процессов бэкенда.
@@ -367,15 +367,15 @@ Description:
     - Background (-bg): запуск в скрытом режиме службы с фиксацией PID.
 
 File: Run-Unicorn.ps1
-Project: ai-breadboard
+Project: ai-windows-admin
 Package: launchers
 Author: hypo69
 Copyright: © 2026 hypo69
-Updated: 2026-10-06 00:05:00
+Updated: 2026-10-10 17:35:00
 =============================================================================
 
 .SYNOPSIS
-    Запуск FastAPI-сервера AI Breadboard с проверкой портов и venv.
+    Запуск FastAPI-сервера AI Windows Admin с проверкой портов и venv.
 
 .DESCRIPTION
     Подготавливает окружение, считывает конфигурацию из config.json/dashboard.json,
@@ -414,7 +414,7 @@ Updated: 2026-10-06 00:05:00
  * Class: ApiClient
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-01 03:22:00
+ * Updated: 2026-10-10 17:35:00
  * =============================================================================
  */
 ```

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard AI - Approved Responses Store Module
+# Process Name: AI-Windows-Admin AI - Approved Responses Store Module
 # =============================================================================
 # Description:
 #   Возвращает текущую директорию хранения одобренных ответов.
@@ -13,11 +13,11 @@
 #     print(res)
 #
 # File: approved_responses_store.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: src.ai.gemini
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:13:56
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

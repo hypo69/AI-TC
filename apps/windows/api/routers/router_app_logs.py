@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Api Routers - Router App Logs
+# Process Name: AI-Windows-Admin Apps Windows Api Routers - Router App Logs
 # =============================================================================
 # Description:
 #   FastAPI роутер для интеллектуального анализа, экспорта и потокового
-#   мониторинга внутренних логов программы строго из %APPDATA%\AI-Breadboard\logs
+#   мониторинга внутренних логов программы строго из %APPDATA%\AI-Windows-Admin\logs
 #   (log.json, info.log, errors.log, debug.log, windows_api.log и др.).
 #   Оптимизирован для высокопроизводительной работы с большими файлами (>20MB).
 #
@@ -15,11 +15,11 @@
 #     router = init_router()
 #
 # File: router_app_logs.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.api.routers
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 12:35:00
+# Updated: 2026-10-10 19:37:00
 # =============================================================================
 
 from __future__ import annotations
@@ -48,18 +48,18 @@ router = APIRouter(prefix="/api/v1/app_logs", tags=["Internal Application Logs"]
 def get_logs_dir() -> Path:
     """Определяет базовую директорию внутренних логов программы.
 
-    Строго использует каталог %APPDATA%/AI-Breadboard/logs либо
-    переопределенный через AI_BREADBOARD_LOGS_DIR / LOG_DIR.
+    Строго использует каталог %APPDATA%/AI-Windows-Admin/logs либо
+    переопределенный через AI_WINDOWS_ADMIN_LOGS_DIR / LOG_DIR.
     """
-    env_dir = os.environ.get("AI_BREADBOARD_LOGS_DIR") or os.environ.get("LOG_DIR")
+    env_dir = os.environ.get("AI_WINDOWS_ADMIN_LOGS_DIR") or os.environ.get("LOG_DIR")
     if env_dir:
         return Path(env_dir)
 
     appdata = os.environ.get("APPDATA") or os.environ.get("LOCALAPPDATA")
     if appdata and os.path.exists(appdata):
-        return Path(appdata) / "AI-Breadboard" / "logs"
+        return Path(appdata) / "AI-Windows-Admin" / "logs"
 
-    return Path.home() / ".config" / "AI-Breadboard" / "logs"
+    return Path.home() / ".config" / "AI-Windows-Admin" / "logs"
 
 
 def _format_size(size_bytes: int) -> str:
@@ -135,7 +135,7 @@ class ClearLogRequest(BaseModel):
 
 @router.get("/overview")
 async def get_logs_overview() -> Dict[str, Any]:
-    """Возвращает сводную информацию по всем файлам логов системы AI-Breadboard.
+    """Возвращает сводную информацию по всем файлам логов системы AI-Windows-Admin.
 
     Включает общий объем, распределение по подсистемам и количество активных ошибок.
     """
@@ -225,7 +225,7 @@ async def get_logs_overview() -> Dict[str, Any]:
 
 @router.get("/files")
 async def list_log_files() -> Dict[str, Any]:
-    """Возвращает список всех доступных файлов внутренних логов в %APPDATA%/AI-Breadboard/logs."""
+    """Возвращает список всех доступных файлов внутренних логов в %APPDATA%/AI-Windows-Admin/logs."""
     def _scan_files():
         logs_dir = get_logs_dir()
         if not logs_dir.exists():
@@ -706,9 +706,33 @@ async def download_log_file(
     )
 
 
+def _truncate_file(file_path: Path) -> Tuple[bool, str]:
+    """Безопасно очищает файл логов (усекает содержимое до 0 байт).
+
+    Args:
+        file_path: Путь к файлу логов
+
+    Returns:
+        Tuple[bool, str]: (успех, сообщение об ошибке при сбое)
+    """
+    try:
+        with open(file_path, "r+", encoding="utf-8", errors="replace") as f:
+            f.truncate(0)
+            f.flush()
+        return True, ""
+    except Exception:
+        try:
+            with open(file_path, "w", encoding="utf-8", errors="replace") as f:
+                f.truncate(0)
+                f.flush()
+            return True, ""
+        except Exception as err:
+            return False, str(err)
+
+
 @router.post("/clear")
 async def clear_log_file(payload: ClearLogRequest) -> Dict[str, Any]:
-    """Очищает (усекает) указанный файл логов с созданием безопасной резервной копии."""
+    """Очищает (усекает) указанный файл логов."""
     def _do_clear():
         logs_dir = get_logs_dir()
         target_file = (logs_dir / payload.file_name).resolve()
@@ -719,22 +743,65 @@ async def clear_log_file(payload: ClearLogRequest) -> Dict[str, Any]:
         if not target_file.is_file():
             raise HTTPException(status_code=404, detail="Файл логов не найден")
 
-        try:
-            with open(target_file, "w", encoding="utf-8") as f:
-                f.truncate(0)
+        ok, err = _truncate_file(target_file)
+        if not ok:
+            logger.error(f"[AppLogs] Ошибка при очистке {payload.file_name}: {err}")
+            raise HTTPException(status_code=500, detail=f"Ошибка очистки файла: {err}")
 
-            logger.info(f"[AppLogs] Файл логов {payload.file_name} успешно очищен пользователем")
-            return {
-                "success": True,
-                "file_name": payload.file_name,
-                "message": f"Файл {payload.file_name} успешно очищен",
-                "timestamp": datetime.datetime.now().isoformat(),
-            }
-        except Exception as e:
-            logger.error(f"[AppLogs] Ошибка при очистке {payload.file_name}: {e}")
-            raise HTTPException(status_code=500, detail=f"Ошибка очистки файла: {e}")
+        logger.info(f"[AppLogs] Файл логов {payload.file_name} успешно очищен пользователем")
+        return {
+            "success": True,
+            "file_name": payload.file_name,
+            "message": f"Файл {payload.file_name} успешно очищен",
+            "timestamp": datetime.datetime.now().isoformat(),
+        }
 
     return await asyncio.to_thread(_do_clear)
+
+
+@router.post("/clear_all")
+@router.post("/clear-all")
+async def clear_all_logs() -> Dict[str, Any]:
+    """Очищает (усекает до 0 байт) все файлы логов программы в каталоге логов."""
+    def _do_clear_all():
+        logs_dir = get_logs_dir()
+        if not logs_dir.exists():
+            return {
+                "success": True,
+                "cleared_files": [],
+                "failed_files": [],
+                "message": "Каталог логов пуст",
+                "timestamp": datetime.datetime.now().isoformat(),
+            }
+
+        cleared_files: List[str] = []
+        failed_files: List[Dict[str, str]] = []
+
+        for fp in logs_dir.glob("*"):
+            if not fp.is_file():
+                continue
+
+            # Фильтруем файлы журналов
+            if not (fp.suffix.lower() in (".log", ".json", ".txt", ".err", ".out") or fp.name.endswith(".log")):
+                continue
+
+            ok, err = _truncate_file(fp)
+            if ok:
+                cleared_files.append(fp.name)
+            else:
+                failed_files.append({"name": fp.name, "error": err})
+                logger.warning(f"[AppLogs] Не удалось очистить файл {fp.name}: {err}")
+
+        logger.info(f"[AppLogs] Очистка всех логов: очищено {len(cleared_files)} файлов, ошибок: {len(failed_files)}")
+        return {
+            "success": len(failed_files) == 0,
+            "cleared_files": cleared_files,
+            "failed_files": failed_files,
+            "message": f"Очищено файлов логов: {len(cleared_files)}" + (f" (заблокировано: {len(failed_files)})" if failed_files else ""),
+            "timestamp": datetime.datetime.now().isoformat(),
+        }
+
+    return await asyncio.to_thread(_do_clear_all)
 
 
 @router.post("/diagnose")

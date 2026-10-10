@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Modules Network - Router
+# Process Name: AI-Windows-Admin Apps Windows Modules Network - Router
 # =============================================================================
 # Description:
 #   FastAPI router integration for Network Terminal.
@@ -12,11 +12,11 @@
 #     res = get_state()
 #
 # File: router.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.network
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 12:48:00
+# Updated: 2026-10-10 22:28:45
 # =============================================================================
 
 from __future__ import annotations
@@ -28,19 +28,22 @@ import tempfile
 import time
 from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, File, HTTPException, Request, UploadFile
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import StreamingResponse
 import httpx
 import psutil
 from logger import logger
 from apps.windows.api.auth import require_admin_user
-from apps.common.csv_logger import AppCsvLogger
-from apps.tshark import AIDetector, TSharkWrapper, TrafficAnalyzer
+from apps.common.telemetry_logger import AppTelemetryLogger
+try:
+    from apps.tshark import AIDetector, TSharkWrapper, TrafficAnalyzer
+except ImportError:
+    AIDetector, TSharkWrapper, TrafficAnalyzer = None, None, None
 from .lan_scanner import WindowsLanScanner
 from .sensors import NetworkTerminalSensor
 from .speedtest import NetworkSpeedTester
 from .tui import NetworkTerminalState
 router = APIRouter(prefix='/api/network', tags=['network'])
-_csv_logger = AppCsvLogger('network_terminal')
+_telemetry_logger = AppTelemetryLogger('network_terminal')
 _sensor = NetworkTerminalSensor()
 _speedtester = NetworkSpeedTester()
 _lan_scanner = WindowsLanScanner()
@@ -82,7 +85,7 @@ async def get_status(request: Request) -> dict:
     except Exception:
         pass
     adapter_count = len(psutil.net_if_addrs())
-    _csv_logger.log_poll(poll_type='network_status', metric_name='total_packets', value=state.total_packets_captured, unit='packets', status='OK', details={'interface': state.interface, 'bytes': state.total_bytes_captured, 'adapters': adapter_count, 'established': conn_count, 'listening': listen_count}, filename='network_terminal_status_polls.csv')
+    _telemetry_logger.log_poll(poll_type='network_status', metric_name='total_packets', value=state.total_packets_captured, unit='packets', status='OK', details={'interface': state.interface, 'bytes': state.total_bytes_captured, 'adapters': adapter_count, 'established': conn_count, 'listening': listen_count})
     return {'available': True, 'tshark_available': tshark_avail, 'interface': state.interface, 'filter': state.display_filter, 'total_packets': state.total_packets_captured, 'total_bytes': state.total_bytes_captured, 'protocol_counts': state.protocol_counts, 'latest_ai_report': state.latest_ai_report.model_dump() if state.latest_ai_report else None, 'latest_heuristics': state.latest_heuristics, 'total_adapters': adapter_count, 'active_connections_count': conn_count, 'listening_ports_count': listen_count}
 
 @router.get('/interfaces')
@@ -212,7 +215,7 @@ async def start_capture(request: Request, interface: str='1', display_filter: st
     require_admin_user(request)
     global _state
     _state = NetworkTerminalState(interface=interface, display_filter=display_filter)
-    _csv_logger.log_event(event_type='start_capture', status='SUCCESS', details={'interface': interface, 'filter': display_filter}, filename='network_terminal_events.csv')
+    _telemetry_logger.log_event(event_type='start_capture', status='SUCCESS', details={'interface': interface, 'filter': display_filter})
     return {'success': True, 'message': f'Capture started on interface {interface}'}
 
 @router.post('/stop-capture')
@@ -221,7 +224,7 @@ async def stop_capture(request: Request) -> dict:
     require_admin_user(request)
     global _state
     _state = None
-    _csv_logger.log_event(event_type='stop_capture', status='SUCCESS', details='Capture stopped', filename='network_terminal_events.csv')
+    _telemetry_logger.log_event(event_type='stop_capture', status='SUCCESS', details='Capture stopped')
     return {'success': True, 'message': 'Capture stopped'}
 
 @router.post('/analyze/pcap')
@@ -276,11 +279,10 @@ async def get_lan_devices(request: Request, scan: bool = False, subnet: Optional
 async def trigger_lan_scan(request: Request, subnet: Optional[str] = None) -> dict:
     """Trigger active ARP sweep and SSDP scan of the local subnet."""
     devices = await asyncio.to_thread(_lan_scanner.discover_devices, full_scan=True, subnet_cidr=subnet)
-    _csv_logger.log_event(
+    _telemetry_logger.log_event(
         event_type='lan_scan',
         status='SUCCESS',
         details={'devices_found': len(devices), 'subnet': subnet or 'all'},
-        filename='network_terminal_events.csv',
     )
     return {
         'devices': [d.model_dump() for d in devices],

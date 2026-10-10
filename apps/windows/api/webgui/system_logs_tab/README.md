@@ -3,7 +3,7 @@
 Web interface tab for viewing, filtering, analyzing, and streaming system logs.
 
 ## Features
-- Dynamic source selection across Windows Event Logs, AI-Breadboard logs, and daemons.
+- Dynamic source selection across Windows Event Logs, AI-Windows-Admin logs, and daemons.
 - Live stream mode with automatic polling interval.
 - Severity level badges and formatted event tables.
 - Real-time diagnostics drawer and health scoring.

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Modules Task_Scheduler -   Main  
+# Process Name: AI-Windows-Admin Apps Windows Modules Task_Scheduler -   Main  
 # =============================================================================
 # Description:
 #   # Description:
@@ -14,11 +14,11 @@
 #     res = main()
 #
 # File: __main__.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.task_scheduler
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:28:28
+# Updated: 2026-10-10 22:22:30
 # =============================================================================
 
 from __future__ import annotations
@@ -53,7 +53,7 @@ def main() -> None:
     mgr = TaskSchedulerManager()
     if args.json:
         report = mgr.generate_report()
-        print(report.model_dump_json(indent=2))
+        logger.console(report.model_dump_json(indent=2))
         return
 
     tui = TaskSchedulerTUI(manager=mgr)

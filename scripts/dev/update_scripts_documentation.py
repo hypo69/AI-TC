@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Scripts Dev - Update Scripts Documentation
+# Process Name: AI-Windows-Admin Scripts Dev - Update Scripts Documentation
 # =============================================================================
 # Description:
 #   Automatic scripts documentation generation and update script.
@@ -14,11 +14,11 @@
 #     res = get_script_info()
 #
 # File: update_scripts_documentation.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: scripts.dev
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-06 10:10:00
+# Updated: 2026-10-10 22:22:30
 # =============================================================================
 
 """Automatic scripts documentation generation and update script.
@@ -26,6 +26,7 @@
 Scans all project scripts, categorizes them, extracts metadata and
 generates comprehensive markdown documentation."""
 
+from logger import logger
 import os
 import sys
 import re
@@ -103,7 +104,7 @@ def generate_documentation():
     Scans all project scripts, categorizes them, and creates comprehensive
     markdown documentation file.
     """
-    print('Generating scripts documentation...')
+    logger.console('Generating scripts documentation...')
     all_scripts = []
     for py_file in PROJECT_ROOT.glob('*.py'):
         if py_file.name not in ['analyze_dependencies.py', 'update_scripts_documentation.py']:
@@ -118,7 +119,7 @@ def generate_documentation():
     for category in categorized_scripts:
         categorized_scripts[category].sort(key=lambda x: x['name'].lower())
     md_content = []
-    md_content.append(f'# Scripts Documentation for ai-breadboard project\n')
+    md_content.append(f'# Scripts Documentation for ai-windows-admin project\n')
     md_content.append(f'**Version:** 1.0  \n')
     md_content.append(f"**Updated:** {datetime.now().strftime('%d %B %Y')}  \n")
     md_content.append(f'**Status:** Current (auto-updated)\n')
@@ -165,14 +166,14 @@ def generate_documentation():
     md_content.append('\n### 3. Dependency analysis\n')
     md_content.append('```bash\n# Analyze dependencies between scripts\npython analyze_dependencies.py\n```\n')
     md_content.append('\n## Contacts and Support\n')
-    md_content.append(f'**Project:** ai-breadboard  \n')
+    md_content.append(f'**Project:** ai-windows-admin  \n')
     md_content.append(f"**Last updated:** {datetime.now().strftime('%d %B %Y %H:%M')}  \n")
     md_content.append(f'**Update script:** `update_scripts_documentation.py`  \n')
     md_content.append('\n*Documentation automatically updates when repository changes.*\n')
     doc_file = PROJECT_ROOT / 'SCRIPTS_DOCUMENTATION.md'
     doc_file.write_text('\n'.join(md_content), encoding='utf-8')
-    print(f'✅ Documentation saved to {doc_file}')
-    print(f'📊 Processed {len(all_scripts)} scripts')
+    logger.console(f'✅ Documentation saved to {doc_file}')
+    logger.console(f'📊 Processed {len(all_scripts)} scripts')
     create_summary(categorized_scripts)
 
 def create_summary(categorized_scripts):
@@ -195,32 +196,32 @@ def create_summary(categorized_scripts):
                 summary.append(f"- `{script['name']}` - Python ({script['lines']} lines)")
     summary_file = PROJECT_ROOT / 'SCRIPTS_SUMMARY.md'
     summary_file.write_text('\n'.join(summary), encoding='utf-8')
-    print(f'📋 Brief summary saved to {summary_file}')
+    logger.console(f'📋 Brief summary saved to {summary_file}')
 
 def main():
     """Main function."""
-    print('=' * 60)
-    print('SCRIPTS DOCUMENTATION UPDATE')
-    print('=' * 60)
+    logger.console('=' * 60)
+    logger.console('SCRIPTS DOCUMENTATION UPDATE')
+    logger.console('=' * 60)
     try:
         generate_documentation()
-        print('\n' + '=' * 60)
-        print('ADDITIONAL DEPENDENCY ANALYSIS')
-        print('=' * 60)
+        logger.console('\n' + '=' * 60)
+        logger.console('ADDITIONAL DEPENDENCY ANALYSIS')
+        logger.console('=' * 60)
         dep_script = PROJECT_ROOT / 'analyze_dependencies.py'
         if dep_script.exists():
             import subprocess
             result = subprocess.run([sys.executable, str(dep_script)], capture_output=True, text=True)
-            print(result.stdout)
+            logger.console(result.stdout)
             if result.stderr:
-                print(f'Warnings: {result.stderr}')
+                logger.console(f'Warnings: {result.stderr}')
         else:
-            print('Script analyze_dependencies.py not found, skipping dependency analysis.')
-        print('\n' + '=' * 60)
-        print('✅ UPDATE COMPLETED SUCCESSFULLY')
-        print('=' * 60)
+            logger.console('Script analyze_dependencies.py not found, skipping dependency analysis.')
+        logger.console('\n' + '=' * 60)
+        logger.console('✅ UPDATE COMPLETED SUCCESSFULLY')
+        logger.console('=' * 60)
     except Exception as e:
-        print(f'\n❌ Error during documentation update: {e}')
+        logger.console(f'\n❌ Error during documentation update: {e}')
         import traceback
         traceback.print_exc()
         sys.exit(1)

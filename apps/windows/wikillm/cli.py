@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Wikillm - Cli
+# Process Name: AI-Windows-Admin Apps Windows Wikillm - Cli
 # =============================================================================
 # Description:
 #   Консольный интерфейс управления и запросов к базе знаний WikiLLM.
@@ -14,14 +14,15 @@
 #     res = main()
 #
 # File: cli.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.wikillm
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 07:54:00
+# Updated: 2026-10-10 22:22:44
 # =============================================================================
 
 from __future__ import annotations
+from logger import logger
 """Консольный интерфейс управления и запросов к базе знаний WikiLLM."""
 
 import argparse
@@ -48,57 +49,57 @@ async def _async_cli_main(args: argparse.Namespace) -> None:
     if args.command == "resolve":
         extracted = ArtifactExtractor.from_raw_text(args.query)
         art = extracted[0] if extracted else ArtifactInput(raw_query=args.query)
-        print(f"[*] Разрешение артефакта: {args.query}...")
+        logger.console(f"[*] Разрешение артефакта: {args.query}...")
         res = await engine.resolve(art, sync_gemini=not args.no_llm)
-        print(f"\n[+] Результат ({res.lookup_level.value}, cached={res.cached}, {res.execution_time_ms:.1f}ms):")
+        logger.console(f"\n[+] Результат ({res.lookup_level.value}, cached={res.cached}, {res.execution_time_ms:.1f}ms):")
         if res.entity:
-            print(f"  Ключ:        {res.entity.canonical_key}")
-            print(f"  Имя:         {res.entity.name}")
-            print(f"  Категория:   {res.entity.category} ({res.entity.severity})")
-            print(f"  Сводка:      {res.entity.summary}")
+            logger.console(f"  Ключ:        {res.entity.canonical_key}")
+            logger.console(f"  Имя:         {res.entity.name}")
+            logger.console(f"  Категория:   {res.entity.category} ({res.entity.severity})")
+            logger.console(f"  Сводка:      {res.entity.summary}")
             if res.entity.diagnostic_info:
                 if res.entity.diagnostic_info.possible_causes:
-                    print(f"  Причины:     {', '.join(res.entity.diagnostic_info.possible_causes)}")
+                    logger.console(f"  Причины:     {', '.join(res.entity.diagnostic_info.possible_causes)}")
                 if res.entity.diagnostic_info.remediation_steps:
-                    print("  Шаги устранения / Команда:")
+                    logger.console("  Шаги устранения / Команда:")
                     for s in res.entity.diagnostic_info.remediation_steps:
                         cmd_info = f" -> `{s.command}`" if s.command else ""
-                        print(f"    • {s.title}: {s.description}{cmd_info}")
+                        logger.console(f"    • {s.title}: {s.description}{cmd_info}")
         else:
-            print(f"  [-] {res.message}")
+            logger.console(f"  [-] {res.message}")
 
     elif args.command == "search":
         results = engine.storage.search_fts(args.query, limit=args.limit)
-        print(f"[+] Найдено результатов: {len(results)}")
+        logger.console(f"[+] Найдено результатов: {len(results)}")
         for ent in results:
-            print(f"  • [{ent.canonical_key}] {ent.name} - {ent.summary[:80]}...")
+            logger.console(f"  • [{ent.canonical_key}] {ent.name} - {ent.summary[:80]}...")
 
     elif args.command == "index-code":
         indexer = CodeKnowledgeIndexer(engine.storage)
-        print(f"[*] Индексация исходного кода из {args.path}...")
+        logger.console(f"[*] Индексация исходного кода из {args.path}...")
         count = indexer.index_directory(args.path)
-        print(f"[+] Успешно проиндексировано {count} символов.")
+        logger.console(f"[+] Успешно проиндексировано {count} символов.")
 
     elif args.command == "index-commands":
         indexer = CommandKnowledgeIndexer(engine.storage)
-        print(f"[*] Индексация атомарных команд, скриптов и коллекторов телеметрии...")
+        logger.console(f"[*] Индексация атомарных команд, скриптов и коллекторов телеметрии...")
         stats = indexer.index_all()
-        print(f"[+] Индексация завершена успешно:")
-        print(f"    • Атомарные команды Windows: {stats['atomic_capabilities']}")
-        print(f"    • Коллекторы телеметрии:     {stats['telemetry_collectors']}")
-        print(f"    • Параметры SafeOps:         {stats['system_params']}")
-        print(f"    • ИТОГО в базе знаний:       {stats['total_commands_indexed']}")
+        logger.console(f"[+] Индексация завершена успешно:")
+        logger.console(f"    • Атомарные команды Windows: {stats['atomic_capabilities']}")
+        logger.console(f"    • Коллекторы телеметрии:     {stats['telemetry_collectors']}")
+        logger.console(f"    • Параметры SafeOps:         {stats['system_params']}")
+        logger.console(f"    • ИТОГО в базе знаний:       {stats['total_commands_indexed']}")
 
     elif args.command == "stats":
         metrics = engine.get_metrics()
-        print(json.dumps(metrics, indent=2, ensure_ascii=False))
+        logger.console(json.dumps(metrics, indent=2, ensure_ascii=False))
 
     elif args.command == "tui":
         from .tui import run_tui
         await run_tui(engine)
 
     else:
-        print("Неизвестная команда. Используйте --help для справки.")
+        logger.console("Неизвестная команда. Используйте --help для справки.")
 
 
 def main() -> None:

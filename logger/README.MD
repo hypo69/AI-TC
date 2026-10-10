@@ -75,6 +75,7 @@ Central logging facade providing all logging methods with automatic pretty-print
 - `debug(message, ex=None, exc_info=False, text_color="cyan", bg_color="")` - Debug information (filtered in production)
 - `error(message, ex=None, exc_info=True, text_color="red", bg_color="")` - Error messages
 - `critical(message, ex=None, exc_info=True, text_color="white", bg_color="red")` - Critical errors
+- `console(message, ex=None, exc_info=False, text_color="", bg_color="", level=logging.INFO)` - Console-only output without writing to file logs
 
 ---
 
@@ -193,7 +194,7 @@ except Exception as ex:
 
 ## Log File Organization
 
-Logs are stored in the system temporary directory (`%TEMP%/ai-breadboard/logs/` on Windows):
+Logs are stored in the system temporary directory (`%TEMP%/ai-windows-admin/logs/` on Windows):
 
 ```
 logs/
@@ -539,6 +540,9 @@ Logs an error message with exception details.
 #### `critical(message, ex=None, exc_info=True, text_color="white", bg_color="red")`
 Logs a critical error message.
 
+#### `console(message, ex=None, exc_info=False, text_color="", bg_color="", level=logging.INFO)`
+Logs a message strictly to the console without writing to any log files.
+
 #### `log(level, message, ex=None, exc_info=False, color=None)`
 Low-level method for custom logging with specific level.
 
@@ -586,6 +590,6 @@ When adding new features to the logger:
 
 ## License
 
-Part of the AI-Breadboard project. © 2026 Development Team.
+Part of the AI-Windows-Admin project. © 2026 Development Team.
 
 For support and contributions, refer to the main project documentation.

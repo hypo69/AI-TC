@@ -1,6 +1,6 @@
 # 🪟 Windows SDK (Software Development Kit)
 
-Единый комплексный SDK для низкоуровневой диагностики, мониторинга, управления оборудованием, безопасного администрирования, SafeOps-оркестрации и типизированной обработки системных исключений Windows в среде **AI-Breadboard**.
+Единый комплексный SDK для низкоуровневой диагностики, мониторинга, управления оборудованием, безопасного администрирования, SafeOps-оркестрации и типизированной обработки системных исключений Windows в среде **AI-Windows-Admin**.
 
 ---
 
@@ -66,7 +66,7 @@ apps/windows/sdk/
 
 ## ⚠️ Система исключений SDK (Exceptions Hierarchy)
 
-Все сбои и ошибки подсистем строго типизированы и наследуются от базового класса [`WindowsSDKError`](file:///c:/Users/onela/AppData/Local/AI-Breadboard/apps/windows/sdk/exceptions.py#L22-L46):
+Все сбои и ошибки подсистем строго типизированы и наследуются от базового класса [`WindowsSDKError`](file:///c:/Users/onela/AppData/Local/AI-Windows-Admin/apps/windows/sdk/exceptions.py#L22-L46):
 
 ```mermaid
 classDiagram

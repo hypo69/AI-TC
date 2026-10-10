@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Modules Network - Speedtest
+# Process Name: AI-Windows-Admin Apps Windows Modules Network - Speedtest
 # =============================================================================
 # Description:
 #   Движок измерения скорости и качества интернет-соединения для Network Terminal.
@@ -16,11 +16,11 @@
 #     print(report['record'])  # плоская запись для time-series / ai-diagnostics
 #
 # File: speedtest.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.network
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-04 04:55:00
+# Updated: 2026-10-10 19:37:25
 # =============================================================================
 
 from __future__ import annotations
@@ -36,11 +36,11 @@ from typing import Any, Dict, List, Optional
 import httpx
 
 from logger import logger
-from apps.common.csv_logger import AppCsvLogger
+from apps.common.telemetry_logger import AppTelemetryLogger
 
 _FAST_HOME = 'https://fast.com/'
 _FAST_API = 'https://api.fast.com/netflix/speedtest/v2'
-_UA = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AI-Breadboard/NetworkTerminal'}
+_UA = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AI-Windows-Admin/NetworkTerminal'}
 _CHUNK = b'0' * 65536
 _GRADES = [
     {'grade': 'Отличное (Ultra Fast)', 'rating': 'A+', 'color': '#4ade80', 'summary': 'Идеально подходит для 4K-стриминга, онлайн-гейминга, быстрой работы AI-моделей и больших загрузок.'},
@@ -67,12 +67,12 @@ class NetworkSpeedTester:
     ]
 
     def __init__(self, duration_s: float = 8.0, warmup_s: float = 1.5, connections: int = 4, probe_interval_s: float = 0.2) -> None:
-        """Инициализация тестера с CSV-логгером."""
+        """Инициализация тестера с логгером телеметрии."""
         self._duration_s = duration_s
         self._warmup_s = min(warmup_s, duration_s / 2)
         self._connections = connections
         self._probe_interval_s = probe_interval_s
-        self._csv_logger = AppCsvLogger('network_terminal')
+        self._telemetry_logger = AppTelemetryLogger('network_terminal')
 
     # ------------------------------------------------------------------ meta
     async def get_meta_info(self, client: httpx.AsyncClient) -> Dict[str, Any]:
@@ -351,14 +351,13 @@ class NetworkSpeedTester:
                         'bufferbloat_ms': 0.0
                     }
                 }
-                self._csv_logger.log_poll(
+                self._telemetry_logger.log_poll(
                     poll_type='speedtest',
                     metric_name='download_mbps',
                     value=0.0,
                     unit='Mbps',
                     status='ERROR',
                     details={'provider': 'fast.com', 'error': 'FAST.com unavailable'},
-                    filename='network_terminal_speedtests.csv'
                 )
                 return report
 
@@ -429,7 +428,7 @@ class NetworkSpeedTester:
             'quality': quality,
             'record': record
         }
-        self._csv_logger.log_poll(
+        self._telemetry_logger.log_poll(
             poll_type='speedtest',
             metric_name='download_mbps',
             value=download['speed_mbps'],
@@ -445,6 +444,5 @@ class NetworkSpeedTester:
                 'isp': meta.get('isp'),
                 'ip': meta.get('ip')
             },
-            filename='network_terminal_speedtests.csv'
         )
         return report

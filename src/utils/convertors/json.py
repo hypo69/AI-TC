@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard UTILS - Json Module
+# Process Name: AI-Windows-Admin UTILS - Json Module
 # =============================================================================
 # Description:
 #   JSON data conversion module.
@@ -13,11 +13,11 @@
 #     print(res)
 #
 # File: json.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: src.utils.convertors
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:13:56
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 """JSON data conversion module.
@@ -35,7 +35,10 @@ from pathlib import Path
 from typing import List, Dict
 from src.utils.csv import save_csv_file
 from src.utils.jjson import j_dumps, j_loads, j_loads_ns
-from src.utils.xls import save_xls_file
+try:
+    from src.utils.xls import save_xls_file
+except ImportError:
+    save_xls_file = None
 from src.utils.convertors.dict import dict2xml
 from logger import logger
 

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Modules Process_Manager Core - Manager
+# Process Name: AI-Windows-Admin Apps Windows Modules Process_Manager Core - Manager
 # =============================================================================
 # Description:
 #   Диспетчер процессов Windows с поддержкой классификации на Apps,
@@ -15,11 +15,11 @@
 #     categorized = service.generate_categorized_report()
 #
 # File: manager.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.process_manager.core
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-08 02:08:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

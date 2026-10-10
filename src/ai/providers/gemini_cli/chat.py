@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard AI - Chat Module
+# Process Name: AI-Windows-Admin AI - Chat Module
 # =============================================================================
 # Description:
 #   Высокоуровневый адаптер взаимодействия с Google Gemini CLI.
@@ -14,11 +14,11 @@
 #     print(result)
 #
 # File: chat.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: src.ai.providers.gemini_cli
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 06:33:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

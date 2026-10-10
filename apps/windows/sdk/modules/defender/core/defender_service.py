@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Modules Defender Core - Defender Service
+# Process Name: AI-Windows-Admin Apps Windows Modules Defender Core - Defender Service
 # =============================================================================
 # Description:
 #   Модуль взаимодействия с Microsoft Defender Antivirus и утилитой MpCmdRun.exe.
@@ -12,11 +12,11 @@
 #     service = DefenderService()
 #
 # File: defender_service.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.defender.core
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-08 04:11:30
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Modules Storage Manager Core - Windows Storage Sensor
+# Process Name: AI-Windows-Admin Apps Windows Modules Storage Manager Core - Windows Storage Sensor
 # =============================================================================
 # Description:
 #   Сенсор диагностики накопителей Windows без сторонних утилит.
@@ -16,11 +16,11 @@
 #     disks = sensor.get_physical_disks()
 #
 # File: windows_storage_sensor.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.storage_manager.core
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-08 03:18:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

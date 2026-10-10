@@ -1,6 +1,6 @@
 # Руководство по интеграции Google Workspace (Gmail, Google Drive, Google Docs)
 
-Практическое руководство по подключению и сценариям работы с экосистемой Google в AI Breadboard.
+Практическое руководство по подключению и сценариям работы с экосистемой Google в AI Windows Admin.
 
 ---
 

@@ -1,6 +1,6 @@
-# 📦 AI Breadboard Cross-Platform Installation Instructions
+# 📦 AI Windows Admin Cross-Platform Installation Instructions
 
-This document specifies the exact installation lifecycle, platform rules, prerequisite validations, configuration steps, and troubleshooting remedies for **AI Breadboard** on Windows, Linux, and macOS.
+This document specifies the exact installation lifecycle, platform rules, prerequisite validations, configuration steps, and troubleshooting remedies for **AI Windows Admin** on Windows, Linux, and macOS.
 
 > [!NOTE]
 > This instruction is used by the **`project-installer`** AI agent skill (`skills/project-installer/SKILL.md`) and by humans for manual or automated installation.
@@ -11,8 +11,8 @@ This document specifies the exact installation lifecycle, platform rules, prereq
 
 1. **Host-Native Execution:** Everything runs natively in a dedicated Python virtual environment (`venv`).
 2. **Platform Scripts Baseline:** 
-   - Windows execution and environment rules are governed by [`install.ps1`](file:///c:/Users/onela/AppData/Local/AI-Breadboard/install.ps1) and modular scripts in [`install/`](file:///c:/Users/onela/AppData/Local/AI-Breadboard/install).
-   - Linux and macOS execution rules are governed by [`install.sh`](file:///c:/Users/onela/AppData/Local/AI-Breadboard/install.sh) and [`install/install.py`](file:///c:/Users/onela/AppData/Local/AI-Breadboard/install/install.py).
+   - Windows execution and environment rules are governed by [`install.ps1`](file:///c:/Users/onela/AppData/Local/AI-Windows-Admin/install.ps1) and modular scripts in [`install/`](file:///c:/Users/onela/AppData/Local/AI-Windows-Admin/install).
+   - Linux and macOS execution rules are governed by [`install.sh`](file:///c:/Users/onela/AppData/Local/AI-Windows-Admin/install.sh) and [`install/install.py`](file:///c:/Users/onela/AppData/Local/AI-Windows-Admin/install/install.py).
 3. **Configuration over Hardcoding:** System parameters are read from `config.json` and secrets from `.env`.
 4. **Cross-Platform Parity:** Core installation logic is unified across Windows (PowerShell/CMD) and Linux/macOS (Bash/Python).
 5. **Resilient Self-Healing:** Any failure during dependency installation, SSL generation, or path configuration must trigger diagnostic checks and automated remedy steps.
@@ -82,7 +82,7 @@ Users can select their desired dependency profile:
 
 | Profile | Description | Target Requirements Files |
 |---|---|---|
-| **1 (Full - Recommended)** | Full AI Breadboard suite (Core + AI + Utils) | `requirements.txt` |
+| **1 (Full - Recommended)** | Full AI Windows Admin suite (Core + AI + Utils) | `requirements.txt` |
 | **2 (Core Only)** | Minimal lightweight server | `install/req/requirements-core.txt` |
 | **3 (Core + AI)** | Server + AI Providers (Ollama, Gemini, Foundry) | `install/req/requirements-core.txt`, `install/req/requirements-ai.txt` |
 | **4 (Full + Dev)** | Full suite + Tests + Docs | `requirements.txt`, `install/req/requirements-test.txt`, `install/req/requirements-docs.txt` |
@@ -100,7 +100,7 @@ Generate local development SSL certificates for `localhost`, `127.0.0.1`, and lo
 
 ### Step 6: Global CLI Registration (`assist` & Environment Variables)
 1. Set persistent user environment variable:
-   - `AIBREADBOARD_DIR = <ProjectRoot>`
+   - `AIWINDOWSADMIN_DIR = <ProjectRoot>`
    - `ASSIST_DIR = <ProjectRoot>`
    - `PYTHONUTF8 = 1`
 2. Create `assist.ps1`, `assist.cmd`, and `assist` (Bash wrapper).

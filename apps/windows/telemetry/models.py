@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Telemetry - Models
+# Process Name: AI-Windows-Admin Apps Windows Telemetry - Models
 # =============================================================================
 # Description:
 #   Data models for system metrics, hardware specs, sensors, and telemetry.
@@ -12,11 +12,11 @@
 #     service = TelemetryProvider()
 #
 # File: models.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.telemetry
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-08 12:38:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

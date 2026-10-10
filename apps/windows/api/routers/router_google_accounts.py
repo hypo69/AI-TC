@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows - Router Google Accounts
+# Process Name: AI-Windows-Admin Apps Windows - Router Google Accounts
 # =============================================================================
 # Description:
 #   Роутер управления учетными записями Google (OAuth2 / Service Account) для Windows API.
@@ -12,11 +12,11 @@
 #     router = init_router()
 #
 # File: router_google_accounts.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.api.routers
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 12:41:00
+# Updated: 2026-10-10 22:28:45
 # =============================================================================
 
 from __future__ import annotations
@@ -26,7 +26,7 @@ import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from pydantic import BaseModel
 
 from src.ai.google_accounts_state import (
@@ -34,9 +34,6 @@ from src.ai.google_accounts_state import (
     delete_google_account,
     get_account_info,
     list_google_accounts,
-    load_account_credentials,
-    mark_account_exhausted,
-    reset_account_status,
     save_google_account,
     set_default_account,
 )
@@ -48,16 +45,6 @@ router = APIRouter(
     tags=["google-accounts"],
     dependencies=[Depends(require_admin_user)],
 )
-
-
-class GoogleAccountCreateRequest(BaseModel):
-    """Модель запроса добавления Google аккаунта."""
-    account_name: str
-    account_type: str = "oauth2"
-    email: Optional[str] = None
-    credentials_json: Optional[str] = None
-    credentials_dict: Optional[Dict[str, Any]] = None
-    set_as_default: bool = False
 
 
 class GoogleAccountResponse(BaseModel):

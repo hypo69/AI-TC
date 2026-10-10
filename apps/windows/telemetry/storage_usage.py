@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Telemetry - Storage Usage
+# Process Name: AI-Windows-Admin Apps Windows Telemetry - Storage Usage
 # =============================================================================
 # Description:
 #   Четырехуровневый стек сбора телеметрии накопителей Windows:
@@ -24,11 +24,11 @@
 #     report = collector.get_disk_usage_period_report()
 #
 # File: storage_usage.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.telemetry
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-06 01:35:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

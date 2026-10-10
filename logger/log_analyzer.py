@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Logger - Log Analyzer
+# Process Name: AI-Windows-Admin Logger - Log Analyzer
 # =============================================================================
 # Description:
 #   Intelligent log analyzer with Gemini AI integration.
@@ -12,11 +12,11 @@
 #     res = get_max_size_bytes()
 #
 # File: log_analyzer.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: logger
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-08 09:09:30
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 """Intelligent log analyzer with Gemini AI integration.
@@ -46,21 +46,21 @@ from header import __root__
 
 def get_default_log_dir() -> Path:
     """Возвращает целевую директорию логов."""
-    env_dir = os.environ.get('AI_BREADBOARD_LOGS_DIR') or os.environ.get('LOG_DIR')
+    env_dir = os.environ.get('AI_WINDOWS_ADMIN_LOGS_DIR') or os.environ.get('LOG_DIR')
     if env_dir:
         return Path(env_dir)
     appdata = os.environ.get('APPDATA') or os.environ.get('LOCALAPPDATA')
     base_dir = Path(appdata) if appdata and os.path.exists(appdata) else Path.home() / '.config'
-    return base_dir / 'AI-Breadboard' / 'logs'
+    return base_dir / 'AI-Windows-Admin' / 'logs'
 
 def get_default_reports_dir() -> Path:
     """Возвращает целевую директорию отчетов."""
-    env_dir = os.environ.get('AI_BREADBOARD_REPORTS_DIR') or os.environ.get('REPORTS_DIR')
+    env_dir = os.environ.get('AI_WINDOWS_ADMIN_REPORTS_DIR') or os.environ.get('REPORTS_DIR')
     if env_dir:
         return Path(env_dir)
     appdata = os.environ.get('APPDATA') or os.environ.get('LOCALAPPDATA')
     base_dir = Path(appdata) if appdata and os.path.exists(appdata) else Path.home() / '.config'
-    return base_dir / 'AI-Breadboard' / 'reports'
+    return base_dir / 'AI-Windows-Admin' / 'reports'
 
 LOG_DIR: Path = get_default_log_dir()
 REPORTS_DIR: Path = get_default_reports_dir()

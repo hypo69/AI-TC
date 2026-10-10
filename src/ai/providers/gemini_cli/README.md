@@ -2,7 +2,7 @@
 
 ## Обзор
 
-Провайдер `gemini_cli` обеспечивает интеграцию с локальной CLI-утилитой Google Gemini CLI (`gemini`) из Python для платформы **AI-Breadboard**.
+Провайдер `gemini_cli` обеспечивает интеграцию с локальной CLI-утилитой Google Gemini CLI (`gemini`) из Python для платформы **AI-Windows-Admin**.
 
 Компонент разделен на два уровня:
 1. **`GeminiCliProvider`** — низкоуровневый клиент управления процессом CLI, обнаружения исполняемого файла в Windows/Linux, обработки таймаутов, потокового вывода stdout, валидации JSON и запуска агентного режима.
@@ -13,7 +13,7 @@
 ## Архитектура
 
 ```text
-               AI-Breadboard / API Router
+               AI-Windows-Admin / API Router
                            │
                            ▼
                    UnifiedChatModel
@@ -96,7 +96,7 @@ from pathlib import Path
 from src.ai.providers.gemini_cli import GeminiCliProvider
 
 provider = GeminiCliProvider()
-project_dir = Path(r"C:\Users\onela\AppData\Local\AI-Breadboard")
+project_dir = Path(r"C:\Users\onela\AppData\Local\AI-Windows-Admin")
 
 response = provider.run_agent(
     prompt="Проанализируй структуру проекта и перечисли основные модули в src/ai",

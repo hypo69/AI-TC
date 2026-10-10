@@ -4,7 +4,7 @@
  * =============================================================================
  * Description:
  *   Клиентский контроллер продвинутого анализатора внутренних логов программы
- *   AI-Breadboard строго из %APPDATA%\AI-Breadboard\logs.
+ *   AI-Windows-Admin строго из %APPDATA%\AI-Windows-Admin\logs.
  *   Включает глубокую интеграцию с AIModalDialog (WikiLLM L1 Cache + AI Root Cause),
  *   интерактивный Timeline-график, быстрые пресеты фильтрации, экспорт (CSV/JSON/MD)
  *   и высокопроизводительный Live Tail Terminal.
@@ -15,11 +15,11 @@
  *     <script type="module" src="/html/app_logs_tab/main.js?v=20261010_v3"></script>
  *
  * File: main.js
- * Project: ai-breadboard
+ * Project: ai-windows-admin
  * Package: windows/api/webgui/app_logs_tab
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-10 12:45:00
+ * Updated: 2026-10-10 19:37:00
  * =============================================================================
  */
 
@@ -181,31 +181,48 @@ function bindEvents() {
     });
   }
 
-  // Очистка лог-файла
+  // Очистка активного лог-файла из выпадающего меню
   const btnClear = document.getElementById('btn-apl-clear');
   if (btnClear) {
     btnClear.addEventListener('click', async (e) => {
       e.preventDefault();
-      if (!confirm(`Вы действительно хотите очистить файл ${state.currentFile}? Это действие необратимо.`)) {
-        return;
-      }
-      try {
-        const res = await fetch('/api/v1/app_logs/clear', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ file_name: state.currentFile })
-        });
-        const data = await res.json();
-        if (res.ok && data.success) {
-          if (window.toast) window.toast.success('Очищено', data.message);
-          await loadOverviewAndFiles();
-          await refreshCurrentView();
-        } else {
-          if (window.toast) window.toast.error('Ошибка', data.detail || 'Не удалось очистить файл');
-        }
-      } catch (err) {
-        if (window.toast) window.toast.error('Ошибка', err.message);
-      }
+      await clearSingleLog(state.currentFile);
+    });
+  }
+
+  // Очистка активного лог-файла из Raw View
+  const btnClearRaw = document.getElementById('btn-apl-clear-raw');
+  if (btnClearRaw) {
+    btnClearRaw.addEventListener('click', async (e) => {
+      e.preventDefault();
+      await clearSingleLog(state.currentFile);
+    });
+  }
+
+  // Очистка ВСЕХ файлов логов (основная кнопка в шапке)
+  const btnClearAll = document.getElementById('btn-apl-clear-all');
+  if (btnClearAll) {
+    btnClearAll.addEventListener('click', async (e) => {
+      e.preventDefault();
+      await clearAllLogs();
+    });
+  }
+
+  // Очистка ВСЕХ файлов логов (кнопка в строке файлов)
+  const btnClearAllInline = document.getElementById('btn-apl-clear-all-inline');
+  if (btnClearAllInline) {
+    btnClearAllInline.addEventListener('click', async (e) => {
+      e.preventDefault();
+      await clearAllLogs();
+    });
+  }
+
+  // Очистка ВСЕХ файлов логов (из выпадающего меню)
+  const btnMenuClearAll = document.getElementById('btn-apl-menu-clear-all');
+  if (btnMenuClearAll) {
+    btnMenuClearAll.addEventListener('click', async (e) => {
+      e.preventDefault();
+      await clearAllLogs();
     });
   }
 
@@ -366,7 +383,62 @@ async function loadOverviewAndFiles() {
 }
 
 /**
- * Отрисовка бейджей файлов журналов со статусными индикаторами
+ * Очистка одного файла логов
+ */
+async function clearSingleLog(fileName) {
+  if (!fileName) return;
+  if (!confirm(`Вы действительно хотите очистить файл "${fileName}"? Содержимое журнала будет безвозвратно удалено.`)) {
+    return;
+  }
+  try {
+    const res = await fetch('/api/v1/app_logs/clear', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ file_name: fileName })
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      if (window.toast) window.toast.success('Очищено', data.message || `Файл ${fileName} успешно очищен`);
+      await loadOverviewAndFiles();
+      await refreshCurrentView();
+    } else {
+      if (window.toast) window.toast.error('Ошибка', data.detail || 'Не удалось очистить файл');
+    }
+  } catch (err) {
+    if (window.toast) window.toast.error('Ошибка', err.message);
+  }
+}
+
+/**
+ * Очистка всех файлов логов программы
+ */
+async function clearAllLogs() {
+  if (!confirm('Вы действительно хотите очистить ВСЕ файлы логов программы (%APPDATA%\\AI-Windows-Admin\\logs)? Все журналы будут обнулены.')) {
+    return;
+  }
+  try {
+    const res = await fetch('/api/v1/app_logs/clear_all', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      if (window.toast) window.toast.success('Все логи очищены', data.message || 'Все файлы логов успешно очищены');
+      await loadOverviewAndFiles();
+      await refreshCurrentView();
+    } else {
+      const errMsg = data.detail || (data.failed_files?.length ? `Некоторые файлы заблокированы процессами: ${data.failed_files.map(f => f.name).join(', ')}` : 'Не удалось очистить все логи');
+      if (window.toast) window.toast.warning('Внимание', errMsg);
+      await loadOverviewAndFiles();
+      await refreshCurrentView();
+    }
+  } catch (err) {
+    if (window.toast) window.toast.error('Ошибка', err.message);
+  }
+}
+
+/**
+ * Отрисовка бейджей файлов журналов со статусными индикаторами и кнопками очистки
  */
 function renderFilesBadges() {
   const container = document.getElementById('apl-files-badges-container');
@@ -400,6 +472,17 @@ function renderFilesBadges() {
     const errIndicator = hasError ? `<span class="badge bg-danger ms-1" style="font-size:0.65rem;" title="Ошибок: ${errorsCount}">${errorsCount}</span>` : '';
 
     btn.innerHTML = `<i class="bi ${icon} me-1"></i><strong>${f.name}</strong> <span class="badge apl-card border border-secondary-subtle ms-1">${f.size_formatted}</span>${errIndicator}`;
+
+    // Кнопка очистки конкретно этого файла лога
+    const clearBtn = document.createElement('span');
+    clearBtn.className = 'apl-badge-clear-btn';
+    clearBtn.title = `Очистить лог-файл ${f.name}`;
+    clearBtn.innerHTML = '<i class="bi bi-trash3" style="font-size: 0.72rem;"></i>';
+    clearBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      await clearSingleLog(f.name);
+    });
+    btn.appendChild(clearBtn);
 
     btn.addEventListener('click', async () => {
       state.currentFile = f.name;

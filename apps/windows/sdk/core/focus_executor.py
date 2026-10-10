@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Core - Focus Executor
+# Process Name: AI-Windows-Admin Apps Windows Core - Focus Executor
 # =============================================================================
 # Description:
 #   Точка входа для Windows Task Scheduler: запуск/остановка фокус-сессии профиля.
@@ -9,11 +9,11 @@
 #   python -m apps.windows.sdk.core.focus_executor --action start --profile-id prof-work-default
 #
 # File: focus_executor.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.core
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-06 22:05:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

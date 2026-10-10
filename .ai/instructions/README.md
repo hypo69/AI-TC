@@ -68,23 +68,7 @@
 
 ---
 
-### `/reference/` — Знание о системе
-**Как устроена система и её компоненты.**
 
-- **`ARCHITECTURE.md`**  
-  Система в целом: основные компоненты, слои, поток данных, модульная структура `src/`, FastAPI роутеры, AI провайдеры.
-
-- **`API_REFERENCE.md`**  
-  Все REST/WebSocket endpoints: роутеры, пути, назначение, параметры.
-
-- **`CHAT_IMPLEMENTATION.md`**  
-  Как работает `UnifiedChatModel`: переключение провайдеров, RAG интеграция, потоковые ответы.
-
-- **`PLUGIN_SYSTEM.md`**  
-  Архитектура плагинов и система расширений.
-
-- **`LEGACY_CONTEXT.md`**  
-  Историческое знание о проекте (зачем сделано так, а не иначе).
 
 ---
 
@@ -124,19 +108,7 @@
 4. Реализуй согласно 6-этапному протоколу
 ```
 
-### Сценарий 3: Понять как работает система
-```
-1. reference/ARCHITECTURE.md    (Общая архитектура)
-2. reference/API_REFERENCE.md   (API)
-3. Специфичный guide из /guides/
-```
 
-### Сценарий 4: Отладить проблему с провайдером
-```
-1. reference/ARCHITECTURE.md    (Как провайдеры встроены)
-2. reference/CHAT_IMPLEMENTATION.md (Как выбираются провайдеры)
-3. guides/LAUNCHERS.md         (Как запустить для отладки)
-```
 
 ---
 
@@ -162,15 +134,6 @@
 
 ---
 
-## 🏗️ Устаревшие файлы (архивированы)
-
-Следующие файлы **удалены как устаревшие и заменены на новую структуру**:
-
-- ~~`rules/CODE_RULES.md`~~ → [`standards/ENGINEERING.md`](standards/ENGINEERING.md) (часть содержимого)
-- ~~`rules/DOCS_RULES.md`~~ → [`standards/DOCUMENTATION.md`](standards/DOCUMENTATION.md) + [`workflows/TDD.md`](workflows/TDD.md)
-- ~~`rules/REUSE_RULES.md`~~ → [`standards/REUSE.md`](standards/REUSE.md)
-- ~~`knowledge/tdd_standards.md`~~ → [`workflows/TDD.md`](workflows/TDD.md)
-- ~~`knowledge/project_overview.md`~~ → [`reference/ARCHITECTURE.md`](reference/ARCHITECTURE.md)
 
 ---
 

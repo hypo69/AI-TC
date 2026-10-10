@@ -1,7 +1,7 @@
 # MCP Servers Tab Component
 
 ## Overview
-The **MCP Servers Tab** (`src/fastapi/webinterface/mcp_tab/`) provides an interactive administrative dashboard for managing Model Context Protocol (MCP) servers within AI Breadboard. It allows administrators to register, edit, toggle, inspect, and test MCP servers running via `stdio`, `sse`, and `streamable_http` transports.
+The **MCP Servers Tab** (`src/fastapi/webinterface/mcp_tab/`) provides an interactive administrative dashboard for managing Model Context Protocol (MCP) servers within AI Windows Admin. It allows administrators to register, edit, toggle, inspect, and test MCP servers running via `stdio`, `sse`, and `streamable_http` transports.
 
 ## Features
 - **Server Registry:** List and manage configured MCP servers persisted in `config.json` (`langchain.mcp_servers`).

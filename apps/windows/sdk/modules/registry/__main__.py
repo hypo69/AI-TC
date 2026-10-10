@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Modules Registry -   Main  
+# Process Name: AI-Windows-Admin Apps Windows Modules Registry -   Main  
 # =============================================================================
 # Description:
 #   Точка входа CLI и standalone-сервера Windows Registry Viewer.
@@ -14,11 +14,11 @@
 #     res = run_cli()
 #
 # File: __main__.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.registry
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:28:28
+# Updated: 2026-10-10 22:22:30
 # =============================================================================
 
 from __future__ import annotations
@@ -68,7 +68,7 @@ def run_cli() -> None:
         target_path = args.path or 'SOFTWARE'
         search_res = viewer.search(query=args.search, hive=target_hive, path=target_path, max_results=args.max_results)
         if args.json:
-            print(search_res.model_dump_json(indent=2))
+            logger.console(search_res.model_dump_json(indent=2))
         else:
             tui.render_search_results(search_res)
         return
@@ -77,7 +77,7 @@ def run_cli() -> None:
     if args.bookmark:
         bm = viewer.get_bookmark_by_id(args.bookmark)
         if not bm:
-            print(f"Ошибка: Закладка '{args.bookmark}' не найдена. Используйте --bookmarks для списка.")
+            logger.console(f"Ошибка: Закладка '{args.bookmark}' не найдена. Используйте --bookmarks для списка.")
             sys.exit(1)
         target_hive = bm.hive
         target_path = bm.path
@@ -92,7 +92,7 @@ def run_cli() -> None:
     try:
         key_details = viewer.read_key(hive=target_hive, path=target_path)
     except Exception as e:
-        print(f'Ошибка чтения раздела реестра {target_hive}\\{target_path}: {e}')
+        logger.console(f'Ошибка чтения раздела реестра {target_hive}\\{target_path}: {e}')
         sys.exit(1)
     if args.export:
         target = Path(args.export)
@@ -100,13 +100,13 @@ def run_cli() -> None:
             viewer.export_key_to_csv(key_details, target)
         else:
             viewer.export_key_to_json(key_details, target)
-        print(f'Данные успешно экспортированы в: {target}')
+        logger.console(f'Данные успешно экспортированы в: {target}')
         return
     if args.json:
-        print(viewer.export_key_to_json(key_details))
+        logger.console(viewer.export_key_to_json(key_details))
         return
     if args.csv:
-        print(viewer.export_key_to_csv(key_details))
+        logger.console(viewer.export_key_to_csv(key_details))
         return
     tui.render_key_details(key_details)
 if __name__ == '__main__':

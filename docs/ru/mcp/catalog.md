@@ -1,6 +1,6 @@
 # 📚 Каталог MCP Серверов (.mcp/)
 
-Полный каталог MCP-серверов и утилит интеграции платформы AI Breadboard.
+Полный каталог MCP-серверов и утилит интеграции платформы AI Windows Admin.
 
 ---
 
@@ -26,7 +26,7 @@ mindmap
 
 ### 1. `gemini_search_mcp_server.py`
 * **Файл:** `.mcp/gemini_search_mcp_server.py`
-* **Назначение:** Предоставляет внешним агентам инструменты поиска и RAG-запросов через Google Gemini API и векторное хранилище AI-Breadboard.
+* **Назначение:** Предоставляет внешним агентам инструменты поиска и RAG-запросов через Google Gemini API и векторное хранилище AI-Windows-Admin.
 * **Инструменты:**
   - `gemini_rag_search(query: str, top_k: int)` — семантический поиск по индексированным документам.
   - `gemini_grounded_search(query: str)` — поиск с вызовом Google Search Grounding.
@@ -52,7 +52,7 @@ mindmap
 
 ### 4. `fastapi_mcp_server.py`
 * **Файл:** `.mcp/fastapi_mcp_server.py`
-* **Назначение:** MCP-мост к REST API центрального сервера AI Breadboard.
+* **Назначение:** MCP-мост к REST API центрального сервера AI Windows Admin.
 * **Инструменты:**
   - `get_api_routes()` — инспекция зарегистрированных эндпоинтов FastAPI.
   - `invoke_api_endpoint(path: str, method: str, payload: dict)` — выполнение REST вызова к локальному серверу.

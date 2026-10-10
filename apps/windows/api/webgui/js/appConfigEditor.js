@@ -10,11 +10,11 @@
  *     <script src="/windows/api/webgui/js/appConfigEditor.js?v=20261001_v1" type="module"></script>
  *
  * File: appConfigEditor.js
- * Project: ai-breadboard
+ * Project: ai-windows-admin
  * Package: windows/api/webgui/js
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-01 13:04:40
+ * Updated: 2026-10-10 19:41:00
  * =============================================================================
  */
 
@@ -23,10 +23,10 @@
 // =============================================================================
 // Description:
 //   Reusable client-side controller for inspecting and modifying config.json
-//   across /apps microservices in the AI-Breadboard web administrative panel.
+//   across /apps microservices in the AI-Windows-Admin web administrative panel.
 //
 // File: appConfigEditor.js
-// Project: ai-breadboard
+// Project: ai-windows-admin
 // Package: src.api.webinterface.js
 // Author: hypo69
 // Copyright: © 2026 hypo69
@@ -406,8 +406,8 @@
 
   /**
    * Open the configuration modal for an app
-   * @param {string} appName e.g. 'trading_terminal', 'network_terminal', etc.
-   * @param {string} displayName e.g. 'Exchange Trading Terminal'
+   * @param {string} appName e.g. 'network_terminal', 'cloudflared_monitor', etc.
+   * @param {string} displayName e.g. 'Network Terminal'
    */
   window.openAppConfigModal = async function(appName, displayName = '') {
     ensureModalExists();

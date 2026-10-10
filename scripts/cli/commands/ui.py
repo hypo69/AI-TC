@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Scripts Cli Commands - UI Capture
+# Process Name: AI-Windows-Admin Scripts Cli Commands - UI Capture
 # =============================================================================
 # Description:
 #   Команды управления и захвата веб-интерфейсов (ui).
@@ -10,14 +10,15 @@
 #     from scripts.cli.commands.ui import register_ui_parser, run_ui_command
 #
 # File: scripts/cli/commands/ui.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: scripts.cli.commands
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-08 12:00:00
+# Updated: 2026-10-10 22:22:44
 # =============================================================================
 
 from __future__ import annotations
+from logger import logger
 """Команды захвата веб-интерфейсов (ui)."""
 
 import argparse
@@ -65,5 +66,5 @@ def run_ui_command(args: argparse.Namespace) -> int:
             extra,
         )
 
-    print(f'Неизвестная подкоманда ui: {sub}')
+    logger.console(f'Неизвестная подкоманда ui: {sub}')
     return 1

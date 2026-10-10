@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows - AI Spotlight Engine
+# Process Name: AI-Windows-Admin Apps Windows - AI Spotlight Engine
 # =============================================================================
 # Description:
 #   Интеллектуальный движок медиа-анализа и распознавания фоновых изображений
@@ -16,11 +16,11 @@
 #     info = engine.analyze_image("C:\\wallpapers\\petra.jpg")
 #
 # File: ai_spotlight.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.personalization
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-06 18:30:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations
@@ -154,7 +154,7 @@ class AISpotlightEngine:
             objects_detected=analysis.get("objects_detected", []),
             historical_era=analysis.get("historical_era"),
             fun_facts=analysis.get("fun_facts", []),
-            sources=["Wikipedia", "Wikimedia Commons", "AI Breadboard Knowledge Base"],
+            sources=["Wikipedia", "Wikimedia Commons", "AI Windows Admin Knowledge Base"],
             resolution=resolution_str,
             file_size_mb=file_size_mb,
             analyzed_at=datetime.now().isoformat(),

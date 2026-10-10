@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Modules Backup_Manager - Versions Router
+# Process Name: AI-Windows-Admin Apps Windows Modules Backup_Manager - Versions Router
 # =============================================================================
 # Description:
 #   REST API версионирования файлов: /api/v1/versions/{save,list,restore}.
@@ -12,11 +12,11 @@
 #     router = init_router()
 #
 # File: versions_router.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.backup_manager
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-06 21:50:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

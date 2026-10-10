@@ -1,9 +1,9 @@
 # Project Installer Skill
 
-Package containing the interactive project installer skill for AI Breadboard.
+Package containing the interactive project installer skill for AI Windows Admin.
 
 ## Overview
-This skill empowers AI models running via Gemini CLI (`gemini --model "gemini-3.1-flash-lite"`) or Antigravity to perform end-to-end installation of the AI Breadboard repository, handle platform-specific environment settings, resolve installation errors interactively, and verify that all system directories and dependencies are installed.
+This skill empowers AI models running via Gemini CLI (`gemini --model "gemini-3.1-flash-lite"`) or Antigravity to perform end-to-end installation of the AI Windows Admin repository, handle platform-specific environment settings, resolve installation errors interactively, and verify that all system directories and dependencies are installed.
 
 ## Directory Structure
 ```

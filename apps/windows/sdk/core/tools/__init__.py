@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Core Tools -   Init  
+# Process Name: AI-Windows-Admin Apps Windows Core Tools -   Init  
 # =============================================================================
 # Description:
 #   Пакет инструментов и реестра подсистемы Windows.
@@ -9,11 +9,11 @@
 #
 #
 # File: __init__.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.core.tools
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:28:28
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 """Пакет инструментов и реестра подсистемы Windows."""

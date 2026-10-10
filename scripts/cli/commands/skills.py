@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Scripts Cli Commands - Skills
+# Process Name: AI-Windows-Admin Scripts Cli Commands - Skills
 # =============================================================================
 # Description:
 #   Команды управления каталогом навыков (skills).
@@ -12,14 +12,15 @@
 #     res = register_skills_parser()
 #
 # File: skills.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: scripts.cli.commands
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:27:07
+# Updated: 2026-10-10 22:22:44
 # =============================================================================
 
 from __future__ import annotations
+from logger import logger
 """Команды управления каталогом навыков (skills)."""
 
 import argparse
@@ -55,11 +56,11 @@ def run_skills_command(args: argparse.Namespace) -> int:
     lang = getattr(args, 'lang', None)
     if sub == 'list':
         for skill in registry.discover(lang=lang):
-            print(f'{skill.name}\t{(skill.get_description(lang) if lang else skill.description)}')
+            logger.console(f'{skill.name}\t{(skill.get_description(lang) if lang else skill.description)}')
         return 0
     if sub == 'search':
         for skill in registry.search(args.query, lang=lang):
-            print(f'{skill.name}\t{(skill.get_description(lang) if lang else skill.description)}')
+            logger.console(f'{skill.name}\t{(skill.get_description(lang) if lang else skill.description)}')
         return 0
     if sub == 'create':
         return run_script('scripts/dev/init_skill.py', ['--name', args.name, '--description', args.description, '--description-ru', args.description_ru])
@@ -67,12 +68,12 @@ def run_skills_command(args: argparse.Namespace) -> int:
         try:
             if sub == 'show':
                 skill = registry.get(args.name)
-                print(skill.prompt())
+                logger.console(skill.prompt())
             else:
-                print(registry.export_json(args.name, include_instructions=not args.without_instructions, lang=lang))
+                logger.console(registry.export_json(args.name, include_instructions=not args.without_instructions, lang=lang))
             return 0
         except KeyError as error:
-            print(f'Error: {error}')
+            logger.console(f'Error: {error}')
             return 1
-    print(f'Unknown skills subcommand: {sub}')
+    logger.console(f'Unknown skills subcommand: {sub}')
     return 1

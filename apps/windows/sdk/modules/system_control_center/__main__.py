@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Modules System_Control_Center -   Main  
+# Process Name: AI-Windows-Admin Apps Windows Modules System_Control_Center -   Main  
 # =============================================================================
 # Description:
 #   CLI точка входа для приложения System Control Center.
@@ -14,14 +14,15 @@
 #     res = main()
 #
 # File: __main__.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.system_control_center
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:28:28
+# Updated: 2026-10-10 22:22:44
 # =============================================================================
 
 from __future__ import annotations
+from logger import logger
 """CLI точка входа для приложения System Control Center."""
 
 import argparse
@@ -69,7 +70,7 @@ def main() -> None:
         try:
             asyncio.run(run_control_dashboard(interval=args.interval))
         except KeyboardInterrupt:
-            print('\n[System Control Center] Dashboard closed.')
+            logger.console('\n[System Control Center] Dashboard closed.')
             sys.exit(0)
         return
     config = _load_config()
@@ -86,21 +87,21 @@ def _run_standalone_server(host: str='127.0.0.1', port: int=8109, reload: bool=F
         import uvicorn
         from fastapi import FastAPI
         from .router import init_router
-        print('[System Control Center] Starting standalone FastAPI server...')
-        print(f'  Host: {host}')
-        print(f'  Port: {port}')
-        print(f'  Reload: {reload}')
-        print(f'  Workers: {workers}')
-        print(f"\n  Available at: http://{(host if host != '0.0.0.0' else 'localhost')}:{port}")
-        print(f"  API Docs: http://{(host if host != '0.0.0.0' else 'localhost')}:{port}/docs\n")
+        logger.console('[System Control Center] Starting standalone FastAPI server...')
+        logger.console(f'  Host: {host}')
+        logger.console(f'  Port: {port}')
+        logger.console(f'  Reload: {reload}')
+        logger.console(f'  Workers: {workers}')
+        logger.console(f"\n  Available at: http://{(host if host != '0.0.0.0' else 'localhost')}:{port}")
+        logger.console(f"  API Docs: http://{(host if host != '0.0.0.0' else 'localhost')}:{port}/docs\n")
         app = FastAPI(title='System Control Center', description='Windows Management, Security & Post-Install Control Hub', version='1.0.0')
         app.include_router(init_router())
         uvicorn.run(app, host=host, port=port, reload=reload, workers=workers, log_level='info')
     except ImportError as e:
-        print(f'[ERROR] Failed to import required modules: {e}')
+        logger.console(f'[ERROR] Failed to import required modules: {e}')
         sys.exit(1)
     except Exception as e:
-        print(f'[ERROR] Server error: {e}')
+        logger.console(f'[ERROR] Server error: {e}')
         sys.exit(1)
 if __name__ == '__main__':
     main()

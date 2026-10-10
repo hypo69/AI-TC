@@ -12,7 +12,7 @@
 
 $$\mathbf{v} = \text{Embed}(T) \in \mathbb{R}^D$$
 
-В `aibreadboard` по умолчанию используется модель **Google Gemini Embedding** (`models/gemini-embedding-2` / `text-embedding-004`), формирующая векторы размерности $D = 3072$.
+В `aiwindowsadmin` по умолчанию используется модель **Google Gemini Embedding** (`models/gemini-embedding-2` / `text-embedding-004`), формирующая векторы размерности $D = 3072$.
 
 ### Косинусное сходство (Cosine Similarity)
 Степень семантической близости между запросом пользователя $\mathbf{q}$ и документом базы $\mathbf{d}$ вычисляется как косинус угла между нормализованными векторами:
@@ -76,7 +76,7 @@ class GeminiRAG:
 
 ## 4.4. Индексатор кодовой базы: `rebuild_dev_rag.py`
 
-В скрипте `scripts/maintenance/rebuild_dev_rag.py` реализован механизм семантического поиска по самой кодовой базе `AI-Breadboard`.
+В скрипте `scripts/maintenance/rebuild_dev_rag.py` реализован механизм семантического поиска по самой кодовой базе `AI-Windows-Admin`.
 
 Функция сканирует директории `src/`, `docs/`, `prompts/`, извлекает структуру файлов `.py` и `.md` и строит локальный векторный индекс. Это позволяет ИИ-агентам мгновенно находить релевантные функции и документацию по естественному описанию.
 
@@ -86,7 +86,7 @@ class GeminiRAG:
 
 Если база документов насчитывает десятки тысяч записей, векторизация на локальном компьютере может занять длительное время.
 
-В каталоге [`colab/RAG_Media_Colab.ipynb`](file:///c:/Users/onela/AppData/Local/aibreadboard/colab/RAG_Media_Colab.ipynb) представлен готовый Colab-пайплайн:
+В каталоге [`colab/RAG_Media_Colab.ipynb`](file:///c:/Users/onela/AppData/Local/aiwindowsadmin/colab/RAG_Media_Colab.ipynb) представлен готовый Colab-пайплайн:
 1. Loading SQLite базы или текстового корпуса на Google Drive.
 2. Параллельный батчинг запросов к Gemini Embedding API на мощностях Google Cloud.
 3. Генерация готового компактного индекса `media_rag.db` / `dev_rag.faiss`.

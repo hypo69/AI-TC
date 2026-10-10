@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Scripts Docs - Generate Api
+# Process Name: AI-Windows-Admin Scripts Docs - Generate Api
 # =============================================================================
 # Description:
 #   Скрипт для автоматической генерации API-документации из Python docstrings.
@@ -14,11 +14,11 @@
 #     service = DocstringParser()
 #
 # File: generate_api.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: scripts.docs
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:27:07
+# Updated: 2026-10-10 22:22:30
 # =============================================================================
 
 """Скрипт для автоматической генерации API-документации из Python docstrings.
@@ -31,9 +31,10 @@
 - src.ai.agents
 - src.utils
 
-Автор: AI-Breadboard Team
+Автор: AI-Windows-Admin Team
 Язык: Русский"""
 
+from logger import logger
 import os
 import ast
 import sys
@@ -340,7 +341,7 @@ class APIDocumentationGenerator:
                 content = f.read()
             tree = ast.parse(content)
         except Exception as e:
-            print(f'⚠️  Ошибка чтения файла {file_path}: {e}')
+            logger.console(f'⚠️  Ошибка чтения файла {file_path}: {e}')
             return {'file': str(file_path.relative_to(self.src_root)), 'classes': [], 'functions': [], 'error': str(e)}
         docs = {'file': str(file_path.relative_to(self.src_root)), 'classes': [], 'functions': []}
         module_docstring = ast.get_docstring(tree)
@@ -358,7 +359,7 @@ class APIDocumentationGenerator:
         Генерирует документацию для модуля.
         
         Args:
-            module_name: Имя модуля (например, 'breadboard.skills')
+            module_name: Имя модуля (например, 'ai-windows-admin.skills')
             module_path: Опциональный путь к модулю
             
         Returns:
@@ -398,9 +399,9 @@ class APIDocumentationGenerator:
         Args:
             modules: Список имён модулей для обработки
         """
-        print('📚 Начало генерации API-документации...')
-        print(f'   Исходный код: {self.src_root}')
-        print(f'   Выходная директория: {self.api_dir}\n')
+        logger.console('📚 Начало генерации API-документации...')
+        logger.console(f'   Исходный код: {self.src_root}')
+        logger.console(f'   Выходная директория: {self.api_dir}\n')
         for module in modules:
             try:
                 output_file = self.api_dir / f"{module.split('.')[-1]}.md"
@@ -408,15 +409,15 @@ class APIDocumentationGenerator:
                 with open(output_file, 'w', encoding='utf-8') as f:
                     f.write(content)
                 self.generated_modules.append(module)
-                print(f'✓ Сгенерирована документация для модуля: {module}')
+                logger.console(f'✓ Сгенерирована документация для модуля: {module}')
                 try:
                     rel_path = output_file.relative_to(Path.cwd())
-                    print(f'  Выходной файл: {rel_path}')
+                    logger.console(f'  Выходной файл: {rel_path}')
                 except ValueError:
-                    print(f'  Выходной файл: {output_file}')
+                    logger.console(f'  Выходной файл: {output_file}')
             except Exception as e:
-                print(f'✗ Ошибка при генерации документации для {module}: {e}')
-        print()
+                logger.console(f'✗ Ошибка при генерации документации для {module}: {e}')
+        logger.console()
         self.generate_api_index(modules)
 
     def generate_api_index(self, modules: List[str]) -> None:
@@ -428,7 +429,7 @@ class APIDocumentationGenerator:
         """
         index_file = self.api_dir / 'index.md'
         md = MarkdownGenerator.generate_header('API-документация', 1)
-        md += 'Автоматически сгенерированная документация API проекта AI-Breadboard.\n\n'
+        md += 'Автоматически сгенерированная документация API проекта AI-Windows-Admin.\n\n'
         md += 'Документация содержит полное описание:\n'
         md += '- Классов и их методов\n'
         md += '- Функций верхнего уровня\n'
@@ -447,34 +448,34 @@ class APIDocumentationGenerator:
         md += '*Последнее обновление: автоматическое при обновлении кода*\n'
         with open(index_file, 'w', encoding='utf-8') as f:
             f.write(md)
-        print(f'✓ Сгенерирован индекс API')
+        logger.console(f'✓ Сгенерирован индекс API')
         try:
             rel_path = index_file.relative_to(Path.cwd())
-            print(f'  Выходной файл: {rel_path}\n')
+            logger.console(f'  Выходной файл: {rel_path}\n')
         except ValueError:
-            print(f'  Выходной файл: {index_file}\n')
+            logger.console(f'  Выходной файл: {index_file}\n')
 
     def print_summary(self) -> None:
         """Выводит сводку по генерации."""
-        print('=' * 60)
-        print('📊 СВОДКА ПО ГЕНЕРАЦИИ API-ДОКУМЕНТАЦИИ')
-        print('=' * 60)
-        print(f'\nСгенерировано модулей: {len(self.generated_modules)}')
+        logger.console('=' * 60)
+        logger.console('📊 СВОДКА ПО ГЕНЕРАЦИИ API-ДОКУМЕНТАЦИИ')
+        logger.console('=' * 60)
+        logger.console(f'\nСгенерировано модулей: {len(self.generated_modules)}')
         if self.generated_modules:
-            print('\nМодули:')
+            logger.console('\nМодули:')
             for module in sorted(self.generated_modules):
-                print(f'  • {module}')
-        print(f'\nВыходная директория: {self.api_dir}')
-        print(f'Файлы:')
+                logger.console(f'  • {module}')
+        logger.console(f'\nВыходная директория: {self.api_dir}')
+        logger.console(f'Файлы:')
         if self.api_dir.exists():
             for md_file in sorted(self.api_dir.glob('*.md')):
                 size = md_file.stat().st_size
                 try:
                     rel_path = md_file.relative_to(Path.cwd())
-                    print(f'  • {rel_path} ({size} байт)')
+                    logger.console(f'  • {rel_path} ({size} байт)')
                 except ValueError:
-                    print(f'  • {md_file.name} ({size} байт)')
-        print('\n' + '=' * 60 + '\n')
+                    logger.console(f'  • {md_file.name} ({size} байт)')
+        logger.console('\n' + '=' * 60 + '\n')
 
 def main():
     """Главная функция скрипта."""
@@ -483,24 +484,24 @@ def main():
     src_root = project_root / 'src'
     docs_root = project_root / 'docs'
     if not src_root.exists():
-        print(f'❌ Ошибка: директория исходного кода не найдена: {src_root}')
+        logger.console(f'❌ Ошибка: директория исходного кода не найдена: {src_root}')
         sys.exit(1)
     if not docs_root.exists():
-        print(f'❌ Ошибка: директория документации не найдена: {docs_root}')
+        logger.console(f'❌ Ошибка: директория документации не найдена: {docs_root}')
         sys.exit(1)
-    print(f'\n🔍 Конфигурация генератора:')
-    print(f'   Корень проекта: {project_root}')
-    print(f'   Исходный код: {src_root}')
-    print(f'   Документация: {docs_root}\n')
+    logger.console(f'\n🔍 Конфигурация генератора:')
+    logger.console(f'   Корень проекта: {project_root}')
+    logger.console(f'   Исходный код: {src_root}')
+    logger.console(f'   Документация: {docs_root}\n')
     modules = ['src.skills', 'src.ai.agents', 'src.ai', 'src.utils']
     generator = APIDocumentationGenerator(src_root, docs_root)
     try:
         generator.generate(modules)
         generator.print_summary()
-        print('✅ API-документация успешно сгенерирована!')
+        logger.console('✅ API-документация успешно сгенерирована!')
         sys.exit(0)
     except Exception as e:
-        print(f'\n❌ Критическая ошибка при генерации: {e}')
+        logger.console(f'\n❌ Критическая ошибка при генерации: {e}')
         import traceback
         traceback.print_exc()
         sys.exit(1)

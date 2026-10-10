@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Core - ETW Pipeline
+# Process Name: AI-Windows-Admin Apps Windows Core - ETW Pipeline
 # =============================================================================
 # Description:
 #   Конвейер сбора и инспекции системной телеметрии ETW и Performance Counters
@@ -14,11 +14,11 @@
 #     sessions = await pipeline.get_active_etw_sessions()
 #
 # File: etw_pipeline.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.core
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-06 15:10:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

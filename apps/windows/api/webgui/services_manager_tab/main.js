@@ -13,11 +13,11 @@
  *     import { initServicesManagerTab } from '/windows/api/webgui/services_manager_tab/main.js';
  *
  * File: main.js
- * Project: ai-breadboard
+ * Project: ai-windows-admin
  * Package: windows/api/webgui/services_manager_tab
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-06 11:24:00
+ * Updated: 2026-10-10 17:35:00
  * =============================================================================
  */
 

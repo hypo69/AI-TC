@@ -35,7 +35,7 @@ def perform_update(branch: str='main', auto_backup: bool=True) -> dict:
 
 def main() -> int:
     """CLI entry point for system-updater skill helper."""
-    parser = argparse.ArgumentParser(description='AI Breadboard System Updater')
+    parser = argparse.ArgumentParser(description='AI Windows Admin System Updater')
     parser.add_argument('--check', action='store_true', help='Check for available updates')
     parser.add_argument('--apply', action='store_true', help='Apply application updates')
     parser.add_argument('--branch', type=str, default='main', help='Target git branch')
@@ -45,33 +45,33 @@ def main() -> int:
     if args.status_db:
         db_mgr = get_migration_manager(__root__)
         status = db_mgr.get_status()
-        print('\n--- DATABASE MIGRATION STATUS ---')
+        logger.console('\n--- DATABASE MIGRATION STATUS ---')
         for db, info in status.items():
-            print(f"[{db}] Up-to-date: {info['is_up_to_date']} | Applied: {info['applied_count']} | Pending: {info['pending_count']}")
+            logger.console(f"[{db}] Up-to-date: {info['is_up_to_date']} | Applied: {info['applied_count']} | Pending: {info['pending_count']}")
             if info['pending_migrations']:
-                print(f"  Pending: {', '.join(info['pending_migrations'])}")
-        print('---------------------------------\n')
+                logger.console(f"  Pending: {', '.join(info['pending_migrations'])}")
+        logger.console('---------------------------------\n')
         return 0
     if args.check or not args.apply:
         res = check_updates()
-        print('\n--- SYSTEM VERSION & UPDATE STATUS ---')
-        print(f"Current version: {res.get('current_version')}")
-        print(f"Remote version:  {res.get('remote_version')}")
-        print(f"Update available: {res.get('is_update_available')}")
-        print(f"Status:          {res.get('status')}")
-        print('--------------------------------------\n')
+        logger.console('\n--- SYSTEM VERSION & UPDATE STATUS ---')
+        logger.console(f"Current version: {res.get('current_version')}")
+        logger.console(f"Remote version:  {res.get('remote_version')}")
+        logger.console(f"Update available: {res.get('is_update_available')}")
+        logger.console(f"Status:          {res.get('status')}")
+        logger.console('--------------------------------------\n')
         if not args.apply:
             return 0
     if args.apply:
-        print(f'Starting update (branch: {args.branch})...')
+        logger.console(f'Starting update (branch: {args.branch})...')
         res = perform_update(branch=args.branch, auto_backup=not args.no_backup)
         if res.get('success'):
-            print(f"✅ Update successful: {res.get('version')}")
+            logger.console(f"✅ Update successful: {res.get('version')}")
             if res.get('backup_path'):
-                print(f"📦 Backup created at: {res.get('backup_path')}")
+                logger.console(f"📦 Backup created at: {res.get('backup_path')}")
             return 0
         else:
-            print(f"❌ Update failed: {res.get('message')}")
+            logger.console(f"❌ Update failed: {res.get('message')}")
             return 1
     return 0
 if __name__ == '__main__':

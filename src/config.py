@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard CORE - Config Module
+# Process Name: AI-Windows-Admin CORE - Config Module
 # =============================================================================
 # Description:
 #   Модуль основной системы (`config`).
@@ -13,11 +13,11 @@
 #     print(res)
 #
 # File: config.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: src
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 08:47:35
+# Updated: 2026-10-10 19:41:00
 # =============================================================================
 
 """Модуль основной системы (`config`)."""
@@ -28,7 +28,7 @@ from types import SimpleNamespace
 from src.utils.jjson import j_loads_ns
 from header import __root__
 from logger import logger
-_cfg_env = os.getenv('AIBREADBOARD_CONFIG') or os.getenv('CONFIG_FILE')
+_cfg_env = os.getenv('AIWINDOWSADMIN_CONFIG') or os.getenv('CONFIG_FILE')
 if _cfg_env:
     _cfg_path = Path(_cfg_env)
     if _cfg_path.is_absolute() and _cfg_path.exists():
@@ -37,8 +37,6 @@ if _cfg_env:
         CONFIG_FILE = __root__ / _cfg_env
     elif (__root__ / 'apps' / 'windows' / _cfg_path.name).exists():
         CONFIG_FILE = __root__ / 'apps' / 'windows' / _cfg_path.name
-    elif (__root__ / 'start_scenarios_config' / _cfg_path.name).exists():
-        CONFIG_FILE = __root__ / 'start_scenarios_config' / _cfg_path.name
     elif (__root__ / 'config' / _cfg_path.name).exists():
         CONFIG_FILE = __root__ / 'config' / _cfg_path.name
     else:
@@ -86,7 +84,7 @@ def is_app_enabled(app_name: str) -> bool:
     """Проверяет, активно ли приложение согласно текущей конфигурации.
 
     Args:
-        app_name (str): Идентификатор приложения (например, 'wikipedia_research', 'trading_terminal').
+        app_name (str): Идентификатор приложения (например, 'wikipedia_research', 'network_terminal').
 
     Returns:
         bool: True, если приложение разрешено и не находится в списке отключенных; иначе False.

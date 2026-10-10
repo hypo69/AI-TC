@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Logger - Compress Logs
+# Process Name: AI-Windows-Admin Logger - Compress Logs
 # =============================================================================
 # Description:
 #   Script for log file compression - combines repeated lines.
@@ -14,11 +14,11 @@
 #     res = compress_lines()
 #
 # File: compress_logs.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: logger
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:29:02
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 """Script for log file compression - combines repeated lines.

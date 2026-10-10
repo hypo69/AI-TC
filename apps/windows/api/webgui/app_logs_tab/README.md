@@ -1,6 +1,6 @@
 # Вкладка «Внутренние логи программы» (App Logs Intelligence)
 
-Вкладка клиентского веб-интерфейса модуля `apps/windows/api/webgui/app_logs_tab` предназначена для глубокого анализа, поиска, AI-диагностики первопричин сбоев и потокового мониторинга внутренних журналов работы программы AI-Breadboard строго из каталога `%APPDATA%\AI-Breadboard\logs`.
+Вкладка клиентского веб-интерфейса модуля `apps/windows/api/webgui/app_logs_tab` предназначена для глубокого анализа, поиска, AI-диагностики первопричин сбоев и потокового мониторинга внутренних журналов работы программы AI-Windows-Admin строго из каталога `%APPDATA%\AI-Windows-Admin\logs`.
 
 ## Возможности
 
@@ -30,7 +30,7 @@
 
 ## Роутер API
 
-- `GET /api/v1/app_logs/files` — список доступных файлов логов в `%APPDATA%\AI-Breadboard\logs`.
+- `GET /api/v1/app_logs/files` — список доступных файлов логов в `%APPDATA%\AI-Windows-Admin\logs`.
 - `GET /api/v1/app_logs/records` — выборка и фильтрация структурированных записей.
 - `GET /api/v1/app_logs/tail` — потоковый хвост строк лог-файла.
 - `GET /api/v1/app_logs/download` — скачивание файла лога.

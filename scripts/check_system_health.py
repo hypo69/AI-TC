@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Scripts - Check System Health
+# Process Name: AI-Windows-Admin Scripts - Check System Health
 # =============================================================================
 # Description:
-#   Скрипт/модуль системы AI-Breadboard (`check_system_health`).
+#   Скрипт/модуль системы AI-Windows-Admin (`check_system_health`).
 #
 # Usage Examples:
 #   CLI:
@@ -14,15 +14,16 @@
 #     res = check_health()
 #
 # File: check_system_health.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: scripts
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:27:07
+# Updated: 2026-10-10 22:22:30
 # =============================================================================
 
-"""Скрипт/модуль системы AI-Breadboard (`check_system_health`)."""
+"""Скрипт/модуль системы AI-Windows-Admin (`check_system_health`)."""
 
+from logger import logger
 import requests
 import json
 import datetime
@@ -30,14 +31,14 @@ from pathlib import Path
 SERVER_URL = 'https://localhost:8000'
 
 def check_health():
-    print(f'Проверка состояния системы на {SERVER_URL}...')
+    logger.console(f'Проверка состояния системы на {SERVER_URL}...')
     try:
         response = requests.get(f'{SERVER_URL}/', verify=False, timeout=5)
         status = {'timestamp': datetime.datetime.now().isoformat(), 'server_url': SERVER_URL, 'status_code': response.status_code, 'healthy': response.status_code == 200}
-        print(f"Результат: статус {response.status_code}, здорова: {status['healthy']}")
+        logger.console(f"Результат: статус {response.status_code}, здорова: {status['healthy']}")
         return status
     except requests.exceptions.RequestException as e:
-        print(f'Ошибка подключения к серверу: {e}')
+        logger.console(f'Ошибка подключения к серверу: {e}')
         return {'timestamp': datetime.datetime.now().isoformat(), 'server_url': SERVER_URL, 'error': str(e), 'healthy': False}
 if __name__ == '__main__':
     report = check_health()
@@ -45,4 +46,4 @@ if __name__ == '__main__':
     report_file.parent.mkdir(exist_ok=True)
     with open(report_file, 'w', encoding='utf-8') as f:
         json.dump(report, f, indent=4, ensure_ascii=False)
-    print(f'Отчет сохранен в {report_file}')
+    logger.console(f'Отчет сохранен в {report_file}')

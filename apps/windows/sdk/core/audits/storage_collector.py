@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Core Audits - Storage Collector
+# Process Name: AI-Windows-Admin Apps Windows Core Audits - Storage Collector
 # =============================================================================
 # Description:
 #   Коллектор аудита дисковой подсистемы, VSS и файловых томов.
@@ -12,11 +12,11 @@
 #     service = StorageCollector()
 #
 # File: storage_collector.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.core.audits
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-04 06:25:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

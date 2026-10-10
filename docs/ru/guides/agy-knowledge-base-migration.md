@@ -39,7 +39,7 @@
 Для обеспечения **100% автономности** база знаний и накопленные решения должны быть организованы внутри репозитория:
 
 ```text
-AI-Breadboard/
+AI-Windows-Admin/
 ├── GEMINI.md                    # Главная точка входа (Master Index правил и базы знаний)
 ├── AGENTS.md                    # (Опционально) Инструкции и роли агентов
 │
@@ -100,7 +100,7 @@ from datetime import datetime
 
 USER_HOME = Path.home()
 BRAIN_DIR = USER_HOME / ".gemini" / "antigravity" / "brain"
-PROJECT_ROOT = Path(__file__).resolve().parents[2]  # AI-Breadboard
+PROJECT_ROOT = Path(__file__).resolve().parents[2]  # AI-Windows-Admin
 TARGET_DIR = PROJECT_ROOT / "docs" / "brain"
 
 def export_brain_artifacts():

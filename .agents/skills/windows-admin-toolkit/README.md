@@ -1,6 +1,6 @@
 # Windows Admin Toolkit Skill
 
-This skill provides an interface to control the `windows_sysadmin` application within the AI Breadboard ecosystem.
+This skill provides an interface to control the `windows_sysadmin` application within the AI Windows Admin ecosystem.
 
 ## Features
 - Active Directory (AD) management.

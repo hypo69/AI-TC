@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows - Subsystem 02 Users
+# Process Name: AI-Windows-Admin Apps Windows - Subsystem 02 Users
 # =============================================================================
 # Description:
 #   Подсистема 02: Управление локальными и доменными пользователями
@@ -14,11 +14,11 @@
 #     users = subsys.list_users()
 #
 # File: subsystem_02_users.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.accounts_identity.subsystems
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-08 00:50:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 """Подсистема управления учетными записями пользователей Windows SAM."""

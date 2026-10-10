@@ -12,11 +12,11 @@
  *     import { initModelTester, sendModelPing } from '/windows/api/webgui/js/model-tester.js';
  *
  * File: model-tester.js
- * Project: ai-breadboard
+ * Project: ai-windows-admin
  * Package: windows/api/webgui/js
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-08 04:22:00
+ * Updated: 2026-10-10 17:35:00
  * =============================================================================
  */
 

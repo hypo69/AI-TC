@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Core - Data Model
+# Process Name: AI-Windows-Admin Apps Windows Core - Data Model
 # =============================================================================
 # Description:
 #   Normalized data models for Windows system information
@@ -12,11 +12,11 @@
 #     service = ProcessState()
 #
 # File: data_model.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.core
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 04:56:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 """Normalized data models for Windows system information"""

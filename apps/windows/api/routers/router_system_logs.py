@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Api Routers - Router System Logs
+# Process Name: AI-Windows-Admin Apps Windows Api Routers - Router System Logs
 # =============================================================================
 # Description:
 #   FastAPI роутер для вкладки System Logs Viewer с интеграцией Log Intelligence,
@@ -13,11 +13,11 @@
 #     router = init_router()
 #
 # File: router_system_logs.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.api.routers
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-06 13:32:00
+# Updated: 2026-10-10 22:29:02
 # =============================================================================
 
 from __future__ import annotations
@@ -56,8 +56,9 @@ class SystemLogExplainRequest(BaseModel):
 class RagQueryRequest(BaseModel):
     """Запрос к Adaptive RAG хранилищу."""
     query: str = Field(..., description="Поисковый запрос")
-    top_k: int = Field(5, ge=1, le=50, description="Максимум результатов")
+    top_k: int = Field(20, ge=1, le=100, description="Максимум результатов")
     channel: Optional[str] = Field('', description="Фильтр по каналу")
+    aggregate: bool = Field(True, description="Агрегировать и группировать однотипные ошибки")
 
 
 @router.get('/scan')
@@ -93,7 +94,7 @@ async def get_events(
     level: str = Query('', description='Фильтр по уровню'),
     search: str = Query('', description='Поиск по тексту'),
     query: str = Query('', description='Поиск по тексту (алиас search)'),
-    hours: int = Query(24, ge=1, le=720, description='Часы выборки'),
+    hours: int = Query(24, ge=0, le=8760, description='Часы выборки'),
     event_id: int = Query(0, description='Event ID фильтр'),
     file_path: str = Query('', description='Путь к лог-файлу (если файловый источник)'),
 ) -> Dict[str, Any]:
@@ -187,8 +188,6 @@ async def get_events(
 
     return await asyncio.to_thread(_fetch)
 
-    return await asyncio.to_thread(_fetch)
-
 
 @router.get('/incidents')
 async def get_incidents(window_seconds: float = 25.0) -> Dict[str, Any]:
@@ -227,39 +226,256 @@ async def get_incidents(window_seconds: float = 25.0) -> Dict[str, Any]:
 
 
 @router.get('/timeline')
-async def get_timeline() -> Dict[str, Any]:
-    """Построение временной гистограммы частоты событий."""
-    def _build_timeline():
-        events = _wevtapi.read_events(channel='System', limit=200, hours=24)
-        buckets: Dict[str, Dict[str, int]] = {}
-        for ev in events:
-            ts = ev.get('timestamp', '')
-            hour_bucket = ts[:13] + ':00' if len(ts) >= 13 else 'Recent'
-            if hour_bucket not in buckets:
-                buckets[hour_bucket] = {'total': 0, 'errors': 0, 'warnings': 0, 'info': 0}
-            buckets[hour_bucket]['total'] += 1
-            lvl = (ev.get('level', '')).lower()
-            if 'err' in lvl or 'crit' in lvl:
-                buckets[hour_bucket]['errors'] += 1
-            elif 'warn' in lvl:
-                buckets[hour_bucket]['warnings'] += 1
-            else:
-                buckets[hour_bucket]['info'] += 1
+async def get_timeline(
+    channel: str = Query('System', description='Имя канала или источника'),
+    limit: int = Query(1000, ge=10, le=5000, description='Лимит выборки событий'),
+    hours: int = Query(24, ge=0, le=8760, description='Часы выборки (0 = за все доступное время)'),
+    level: str = Query('', description='Фильтр по уровню важности'),
+    search: str = Query('', description='Поиск по тексту'),
+    query: str = Query('', description='Поиск по тексту (алиас search)'),
+    event_id: int = Query(0, description='Event ID фильтр'),
+    file_path: str = Query('', description='Путь к лог-файлу'),
+) -> Dict[str, Any]:
+    """Построение временной шкалы (Timeline) и тепловой карты (GitHub Activity) событий выбранного журнала."""
+    search_query = (query or search).strip()
+    clean_channel = re.sub(r'^evt:', '', (channel or 'System').split(' (')[0]).strip()
 
+    def _build_timeline() -> Dict[str, Any]:
+        raw_events: List[Dict[str, Any]] = []
+
+        if file_path and Path(file_path).is_file():
+            try:
+                p = Path(file_path)
+                with open(p, 'r', encoding='utf-8', errors='replace') as f:
+                    lines = f.readlines()
+                for line in lines[-limit:]:
+                    line_clean = line.strip()
+                    if not line_clean:
+                        continue
+                    if search_query and search_query.lower() not in line_clean.lower():
+                        continue
+                    lvl = 'Information'
+                    if 'error' in line_clean.lower() or 'fail' in line_clean.lower():
+                        lvl = 'Error'
+                    elif 'warn' in line_clean.lower():
+                        lvl = 'Warning'
+                    elif 'crit' in line_clean.lower():
+                        lvl = 'Critical'
+
+                    # Извлечение таймштампа из строки регулярным выражением
+                    ts_match = re.search(r'(\d{4}[-/]\d{2}[-/]\d{2}[ T]\d{2}:\d{2}:\d{2})', line_clean)
+                    ts = ts_match.group(1).replace('/', '-') if ts_match else datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+                    raw_events.append({
+                        'timestamp': ts,
+                        'level': lvl,
+                        'event_id': 0,
+                        'provider': p.name,
+                        'source': p.name,
+                        'message': line_clean,
+                    })
+            except Exception as e:
+                logger.debug(f'[router_system_logs] Чтение файла для timeline: {e}')
+        else:
+            try:
+                events = _wevtapi.read_events(
+                    channel=clean_channel,
+                    limit=limit,
+                    level=level,
+                    hours=hours,
+                    search=search_query,
+                )
+                for ev in events:
+                    eid = int(ev.get('event_id', 0))
+                    if event_id > 0 and eid != event_id:
+                        continue
+                    raw_events.append(ev)
+            except Exception as e:
+                logger.debug(f'[router_system_logs] Ошибка сбора событий timeline: {e}')
+
+        # Подготовка структур агрегации
+        buckets: Dict[str, Dict[str, Any]] = {}
+        provider_counts: Dict[str, int] = {}
+        event_id_counts: Dict[int, int] = {}
+
+        # Матрица активности 7 дней недели x 24 часа (GitHub Activity Matrix)
+        # 0 = Monday, ..., 6 = Sunday
+        heatmap_matrix: List[List[Dict[str, Any]]] = [
+            [{'count': 0, 'errors': 0, 'warnings': 0, 'level': 0} for _ in range(24)]
+            for _ in range(7)
+        ]
+
+        total_critical = 0
+        total_errors = 0
+        total_warnings = 0
+        total_info = 0
+
+        # Обработка собранных событий
+        for ev in raw_events:
+            ts = (ev.get('timestamp', '') or ev.get('time_created', '')).replace('T', ' ')
+            lvl = (ev.get('level', 'Information')).lower()
+            eid = int(ev.get('event_id', 0))
+            provider = ev.get('provider', '') or ev.get('source', '') or clean_channel
+
+            if provider:
+                provider_counts[provider] = provider_counts.get(provider, 0) + 1
+            if eid > 0:
+                event_id_counts[eid] = event_id_counts.get(eid, 0) + 1
+
+            is_crit = 'crit' in lvl
+            is_err = 'err' in lvl
+            is_warn = 'warn' in lvl
+
+            if is_crit:
+                total_critical += 1
+            elif is_err:
+                total_errors += 1
+            elif is_warn:
+                total_warnings += 1
+            else:
+                total_info += 1
+
+            # Определение временного слота (bucket)
+            dt_obj = None
+            if len(ts) >= 10:
+                try:
+                    dt_obj = datetime.datetime.strptime(ts[:19], '%Y-%m-%d %H:%M:%S')
+                except Exception:
+                    try:
+                        dt_obj = datetime.datetime.strptime(ts[:16], '%Y-%m-%d %H:%M')
+                    except Exception:
+                        pass
+
+            if dt_obj:
+                day_idx = dt_obj.weekday() # 0 = Пн, 6 = Вс
+                hour_idx = dt_obj.hour
+                cell = heatmap_matrix[day_idx][hour_idx]
+                cell['count'] += 1
+                if is_crit or is_err:
+                    cell['errors'] += 1
+                elif is_warn:
+                    cell['warnings'] += 1
+
+                if hours > 0 and hours <= 6:
+                    # 15-минутные слоты для коротких интервалов
+                    minute_bucket = (dt_obj.minute // 15) * 15
+                    bucket_key = dt_obj.strftime(f'%Y-%m-%d %H:{minute_bucket:02d}')
+                elif hours > 0 and hours <= 48:
+                    # Часовые слоты
+                    bucket_key = dt_obj.strftime('%Y-%m-%d %H:00')
+                else:
+                    # Дневные слоты для длительных периодов
+                    bucket_key = dt_obj.strftime('%Y-%m-%d')
+            else:
+                bucket_key = ts[:13] + ':00' if len(ts) >= 13 else 'Recent'
+
+            if bucket_key not in buckets:
+                buckets[bucket_key] = {
+                    'total': 0,
+                    'critical': 0,
+                    'errors': 0,
+                    'warnings': 0,
+                    'info': 0,
+                    'events': [],
+                }
+
+            b = buckets[bucket_key]
+            b['total'] += 1
+            if is_crit:
+                b['critical'] += 1
+            elif is_err:
+                b['errors'] += 1
+            elif is_warn:
+                b['warnings'] += 1
+            else:
+                b['info'] += 1
+
+            if len(b['events']) < 25:
+                b['events'].append({
+                    'timestamp': ts,
+                    'level': ev.get('level', 'Information'),
+                    'event_id': eid,
+                    'provider': provider,
+                    'process_id': ev.get('process_id', 0),
+                    'message': ev.get('message', ''),
+                })
+
+        # Нормализация уровней GitHub Heatmap (шкала 0..4)
+        max_heat_count = max((cell['count'] for row in heatmap_matrix for cell in row), default=0)
+        for row in heatmap_matrix:
+            for cell in row:
+                c = cell['count']
+                if c == 0:
+                    cell['level'] = 0
+                elif max_heat_count > 0:
+                    ratio = c / max_heat_count
+                    if ratio < 0.25:
+                        cell['level'] = 1
+                    elif ratio < 0.5:
+                        cell['level'] = 2
+                    elif ratio < 0.75:
+                        cell['level'] = 3
+                    else:
+                        cell['level'] = 4
+
+        # Формирование сортированного временного ряда
         histogram = [
             {
                 'time': k,
                 'total': v['total'],
+                'critical': v['critical'],
                 'errors': v['errors'],
                 'warnings': v['warnings'],
                 'info': v['info'],
+                'events': v['events'],
             }
-            for k, v in sorted(buckets.items())
+            for k, v in sorted(buckets.items(), key=lambda item: item[0])
         ]
+
+        # Если событий нет, сформировать демонстрационную сетку
         if not histogram:
-            now_h = datetime.datetime.now().strftime('%Y-%m-%d %H:00')
-            histogram = [{'time': now_h, 'total': 12, 'errors': 1, 'warnings': 2, 'info': 9}]
-        return {'histogram': histogram}
+            now_dt = datetime.datetime.now()
+            for h in range(12, 0, -1):
+                slot_time = (now_dt - datetime.timedelta(hours=h)).strftime('%Y-%m-%d %H:00')
+                histogram.append({
+                    'time': slot_time,
+                    'total': 0,
+                    'critical': 0,
+                    'errors': 0,
+                    'warnings': 0,
+                    'info': 0,
+                    'events': [],
+                })
+
+        peak_bucket = max(histogram, key=lambda b: b['total']) if histogram else {'time': 'N/A', 'total': 0}
+
+        top_providers = [
+            {'provider': k, 'count': v}
+            for k, v in sorted(provider_counts.items(), key=lambda x: x[1], reverse=True)[:6]
+        ]
+        top_event_ids = [
+            {'event_id': k, 'count': v}
+            for k, v in sorted(event_id_counts.items(), key=lambda x: x[1], reverse=True)[:6]
+        ]
+
+        return {
+            'channel': clean_channel,
+            'file_path': file_path,
+            'histogram': histogram,
+            'heatmap': heatmap_matrix,
+            'summary': {
+                'total_events': len(raw_events) if raw_events else 0,
+                'critical_count': total_critical,
+                'error_count': total_errors,
+                'warning_count': total_warnings,
+                'info_count': total_info,
+                'peak_time': peak_bucket.get('time', 'N/A'),
+                'peak_count': peak_bucket.get('total', 0),
+                'bucket_count': len(histogram),
+            },
+            'top_providers': top_providers,
+            'top_event_ids': top_event_ids,
+        }
 
     return await asyncio.to_thread(_build_timeline)
 
@@ -268,7 +484,7 @@ async def get_timeline() -> Dict[str, Any]:
 async def get_audit(
     channel: str = Query('System', description='Имя канала'),
     limit: int = Query(500, ge=10, le=2000, description='Лимит выборки'),
-    hours: int = Query(24, ge=1, le=720, description='Часы выборки'),
+    hours: int = Query(24, ge=0, le=8760, description='Часы выборки'),
     file_path: str = Query('', description='Путь к лог-файлу'),
 ) -> Dict[str, Any]:
     """Многоуровневый EDA аудит массива логов с помощью Data Researcher."""
@@ -365,29 +581,50 @@ async def get_audit(
     return await asyncio.to_thread(_run_audit)
 
 
+@router.get('/rag/status')
+async def get_rag_status() -> Dict[str, Any]:
+    """Получение текущего состояния In-Memory (RAM) RAG индекса."""
+    def _status():
+        return _pipeline.rag.get_status()
+
+    return await asyncio.to_thread(_status)
+
+
 @router.post('/rag/query')
 async def query_rag(req: RagQueryRequest) -> Dict[str, Any]:
-    """Семантический и ключевой поиск по Adaptive Log RAG."""
+    """Семантический и гибридный поиск по In-Memory RAG хранилищу логов с умной агрегацией."""
     def _search():
-        results = _pipeline.search_rag(query=req.query, top_k=req.top_k, channel=req.channel or '')
-        return {'results': results, 'total_found': len(results)}
+        results = _pipeline.rag.search(
+            query=req.query,
+            top_k=req.top_k,
+            channel=req.channel or '',
+            aggregate=req.aggregate,
+        )
+        return {
+            'results': results,
+            'total_found': len(results),
+            'storage_mode': 'RAM_IN_MEMORY',
+            'query': req.query,
+            'aggregated': req.aggregate,
+        }
 
     return await asyncio.to_thread(_search)
 
 
 @router.post('/rag/build')
 async def build_rag(
-    channel: str = Query('System', description='Имя канала'),
-    limit: int = Query(500, ge=10, le=2000, description='Лимит выборки'),
-    hours: int = Query(24, ge=1, le=720, description='Часы выборки'),
-    file_path: str = Query('', description='Лог-файл'),
+    channel: str = Query('all', description='Имя канала или all для всех журналов'),
+    limit: int = Query(150, ge=10, le=2000, description='Лимит выборки на канал'),
+    hours: int = Query(24, ge=0, le=8760, description='Часы выборки (по умолчанию 24ч)'),
+    all_channels: bool = Query(True, description='Сканировать все активные журналы Windows'),
+    file_path: str = Query('', description='Опциональный лог-файл'),
 ) -> Dict[str, Any]:
-    """Генерация и индексация чанков в Adaptive Log RAG."""
+    """Сбор событий за последние сутки со всех журналов и построение RAG-индекса в RAM."""
     def _build():
-        entries_data = []
         if file_path and Path(file_path).is_file():
             try:
                 p = Path(file_path)
+                entries_data: List[IntelLogEntry] = []
                 with open(p, 'r', encoding='utf-8', errors='replace') as f:
                     for line in f.readlines()[-limit:]:
                         line_clean = line.strip()
@@ -403,24 +640,28 @@ async def build_rag(
                                     message=line_clean,
                                 )
                             )
+                _pipeline.rag.clear()
+                indexed = _pipeline.rag.index_events(entries_data, channel=p.name)
+                return {
+                    'status': 'ok',
+                    'storage_mode': 'RAM_IN_MEMORY',
+                    'indexed_events': indexed,
+                    'scanned_channels': 1,
+                    'channels_list': [p.name],
+                    'generated_at': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                }
             except Exception as e:
-                logger.debug(f'[router_system_logs] Ошибка чтения файла: {e}')
-        else:
-            raw = _wevtapi.read_events(channel=channel, limit=limit, hours=hours)
-            for r in raw:
-                entries_data.append(
-                    IntelLogEntry(
-                        timestamp=r.get('timestamp', ''),
-                        level=r.get('level', 'Information'),
-                        source=r.get('provider', '') or r.get('source', ''),
-                        provider=r.get('provider', '') or r.get('source', ''),
-                        channel=channel,
-                        event_id=int(r.get('event_id', 0)),
-                        message=r.get('message', ''),
-                    )
-                )
+                logger.error(f'[router_system_logs] Ошибка чтения файла: {e}')
+                raise HTTPException(status_code=500, detail=str(e))
 
-        return _pipeline.process_events(entries_data, channel=channel)
+        is_all = all_channels or not channel or channel.lower() == 'all'
+        target_ch = None if is_all else channel
+        return _pipeline.rag.index_all_system_logs(
+            hours=hours,
+            limit_per_channel=limit,
+            all_channels=is_all,
+            target_channel=target_ch,
+        )
 
     return await asyncio.to_thread(_build)
 

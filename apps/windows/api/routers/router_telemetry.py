@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows API Routers - Telemetry
+# Process Name: AI-Windows-Admin Apps Windows API Routers - Telemetry
 # =============================================================================
 # Description:
 #   Слой 7: Высокопроизводительный REST API роутер попроцессной телеметрии
@@ -12,11 +12,11 @@
 #   POST /api/v1/telemetry/tracked-directories {"action": "add", "directory_path": "C:\\Projects"}
 #
 # File: router_telemetry.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.api.routers
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-08 13:31:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

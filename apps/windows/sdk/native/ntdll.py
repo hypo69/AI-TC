@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Telemetry Win32_Ffi - Ntdll
+# Process Name: AI-Windows-Admin Apps Windows Telemetry Win32_Ffi - Ntdll
 # =============================================================================
 # Description:
 #   ntdll.dll wrapper for native NT API functions.
@@ -12,11 +12,11 @@
 #     service = SYSTEM_INFO()
 #
 # File: ntdll.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.telemetry.win32_ffi
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:28:28
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 """ntdll.dll wrapper for native NT API functions."""
@@ -208,4 +208,4 @@ __all__ = [
     "PROCESS_BASIC_INFORMATION",
     "OBJECT_NAME_INFORMATION",
     "RTL_OSVERSIONINFOEXW",
-]
+]

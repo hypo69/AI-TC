@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Ai - Prompt Templates
+# Process Name: AI-Windows-Admin Apps Windows Ai - Prompt Templates
 # =============================================================================
 # Description:
 #   Системный промпт для эксперта-диагноста Windows.
@@ -12,11 +12,11 @@
 #     res = build_system_prompt()
 #
 # File: prompt_templates.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.ai
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:28:28
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

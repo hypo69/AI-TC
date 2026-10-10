@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows - Accounts & Identity Models
+# Process Name: AI-Windows-Admin Apps Windows - Accounts & Identity Models
 # =============================================================================
 # Description:
 #   Модели данных, перечисления и структуры домена Accounts & Identity
@@ -13,11 +13,11 @@
 #     principal = Principal(sid="S-1-5-21-...", name="onela", domain="WORKGROUP")
 #
 # File: models.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.accounts_identity
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-08 00:48:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 """Модели данных и схемы для подсистемы Accounts & Identity Windows."""

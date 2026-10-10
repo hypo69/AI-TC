@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Modules Network -   Main  
+# Process Name: AI-Windows-Admin Apps Windows Modules Network -   Main  
 # =============================================================================
 # Description:
 #   CLI entry point for the Network Analyzer Terminal dashboard.
@@ -14,22 +14,26 @@
 #     res = main()
 #
 # File: __main__.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.network
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:28:28
+# Updated: 2026-10-10 22:22:30
 # =============================================================================
 
 """CLI entry point for the Network Analyzer Terminal dashboard."""
 
+from logger import logger
 import argparse
 import asyncio
 import sys
 from pathlib import Path
 from types import SimpleNamespace
 from .tui import run_network_dashboard
-from apps.tshark import TSharkWrapper
+try:
+    from apps.tshark import TSharkWrapper
+except ImportError:
+    TSharkWrapper = None
 
 def _load_config() -> SimpleNamespace:
     """Load app-specific configuration from config.json."""
@@ -64,7 +68,7 @@ def _get_server_mode(config: SimpleNamespace) -> str:
 
 def main() -> None:
     """Parse CLI arguments and launch interactive network terminal dashboard."""
-    parser = argparse.ArgumentParser(description='AI Breadboard Network Analyzer Terminal')
+    parser = argparse.ArgumentParser(description='AI Windows Admin Network Analyzer Terminal')
     parser.add_argument('--mode', '-m', type=str, choices=['dashboard', 'server'], default='dashboard', help='Operation mode (default: dashboard)')
     parser.add_argument('--interface', '-i', type=str, default='1', help='Capture interface index or name (default: 1)')
     parser.add_argument('--filter', '-f', type=str, default='', help="Wireshark display filter string (e.g. 'tcp or udp', 'http', 'tls')")
@@ -82,28 +86,28 @@ def main() -> None:
         from .lan_scanner import WindowsLanScanner
         scanner = WindowsLanScanner()
         full_scan = bool(args.scan_lan)
-        print(f"[*] {'Scanning' if full_scan else 'Listing'} LAN devices{' on ' + args.subnet if args.subnet else ''}...")
+        logger.console(f"[*] {'Scanning' if full_scan else 'Listing'} LAN devices{' on ' + args.subnet if args.subnet else ''}...")
         devices = scanner.discover_devices(full_scan=full_scan, subnet_cidr=args.subnet)
-        print(f'\nDiscovered {len(devices)} device(s) on local network:')
-        print(f"{'IP Address':<18} {'MAC Address':<19} {'Vendor':<20} {'Hostname':<22} {'Type/State'}")
-        print('-' * 95)
+        logger.console(f'\nDiscovered {len(devices)} device(s) on local network:')
+        logger.console(f"{'IP Address':<18} {'MAC Address':<19} {'Vendor':<20} {'Hostname':<22} {'Type/State'}")
+        logger.console('-' * 95)
         for d in devices:
             tag = ' [GATEWAY]' if d.is_gateway else ' [LOCAL]' if d.is_local else ''
             vendor_str = (d.vendor or 'Unknown')[:19]
             hostname_str = (d.hostname or '-')[:21]
             mac_str = d.mac or '-'
-            print(f"{d.ip:<18} {mac_str:<19} {vendor_str:<20} {hostname_str:<22} {d.state}{tag}")
-        print('-' * 95 + '\n')
+            logger.console(f"{d.ip:<18} {mac_str:<19} {vendor_str:<20} {hostname_str:<22} {d.state}{tag}")
+        logger.console('-' * 95 + '\n')
         sys.exit(0)
     if args.list_interfaces:
         wrapper = TSharkWrapper()
         if not wrapper.is_available():
-            print('[Error] TShark executable not found on host. Please install Wireshark / TShark.')
+            logger.console('[Error] TShark executable not found on host. Please install Wireshark / TShark.')
             sys.exit(1)
         interfaces = wrapper.list_interfaces()
-        print(f'Available capture interfaces ({len(interfaces)} found):')
+        logger.console(f'Available capture interfaces ({len(interfaces)} found):')
         for iface in interfaces:
-            print(f"  [{iface.index}] {iface.name} - {iface.description or 'No description'}")
+            logger.console(f"  [{iface.index}] {iface.name} - {iface.description or 'No description'}")
         sys.exit(0)
     if args.mode == 'server':
         config = _load_config()
@@ -114,14 +118,14 @@ def main() -> None:
         effective_reload = args.reload if args.reload else False
         effective_workers = args.workers if args.workers != 1 else getattr(server_cfg, 'workers', 1)
         if server_mode == 'shared' and args.port == 0:
-            print("[Network Terminal] App configured in 'shared' server mode.")
-            print(f'[Network Terminal] API endpoints are routed via the main server (http://{effective_host}:8000).')
+            logger.console("[Network Terminal] App configured in 'shared' server mode.")
+            logger.console(f'[Network Terminal] API endpoints are routed via the main server (http://{effective_host}:8000).')
         _run_standalone_server(host=effective_host, port=effective_port, reload=effective_reload, workers=effective_workers)
         return
     try:
         asyncio.run(run_network_dashboard(interface=args.interface, display_filter=args.filter, simulate=args.simulate))
     except KeyboardInterrupt:
-        print('\n[Network Terminal] Closed gracefully.')
+        logger.console('\n[Network Terminal] Closed gracefully.')
         sys.exit(0)
 
 def _run_standalone_server(host: str='127.0.0.1', port: int=8101, reload: bool=False, workers: int=1) -> None:
@@ -137,23 +141,23 @@ def _run_standalone_server(host: str='127.0.0.1', port: int=8101, reload: bool=F
         import uvicorn
         from fastapi import FastAPI
         from .router import init_router
-        print('[Network Terminal] Starting standalone FastAPI server...')
-        print(f'  Host: {host}')
-        print(f'  Port: {port}')
-        print(f'  Reload: {reload}')
-        print(f'  Workers: {workers}')
-        print(f"\n  Available at: http://{(host if host != '0.0.0.0' else 'localhost')}:{port}")
-        print(f"  API Docs: http://{(host if host != '0.0.0.0' else 'localhost')}:{port}/docs")
-        print(f"  Interactive API: http://{(host if host != '0.0.0.0' else 'localhost')}:{port}/redoc\n")
+        logger.console('[Network Terminal] Starting standalone FastAPI server...')
+        logger.console(f'  Host: {host}')
+        logger.console(f'  Port: {port}')
+        logger.console(f'  Reload: {reload}')
+        logger.console(f'  Workers: {workers}')
+        logger.console(f"\n  Available at: http://{(host if host != '0.0.0.0' else 'localhost')}:{port}")
+        logger.console(f"  API Docs: http://{(host if host != '0.0.0.0' else 'localhost')}:{port}/docs")
+        logger.console(f"  Interactive API: http://{(host if host != '0.0.0.0' else 'localhost')}:{port}/redoc\n")
         app = FastAPI(title='Network Terminal', description='Standalone network monitoring, packet capture, traffic statistics & AI security', version='1.0.0')
         app.include_router(init_router())
         uvicorn.run(app, host=host, port=port, reload=reload, workers=workers, log_level='info')
     except ImportError as e:
-        print(f'[ERROR] Failed to import required modules: {e}')
-        print('[INFO] Make sure uvicorn and fastapi are installed: pip install uvicorn fastapi')
+        logger.console(f'[ERROR] Failed to import required modules: {e}')
+        logger.console('[INFO] Make sure uvicorn and fastapi are installed: pip install uvicorn fastapi')
         sys.exit(1)
     except Exception as e:
-        print(f'[ERROR] Server error: {e}')
+        logger.console(f'[ERROR] Server error: {e}')
         sys.exit(1)
 if __name__ == '__main__':
     main()

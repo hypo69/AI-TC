@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Api Routers - Router Telemetry Config
+# Process Name: AI-Windows-Admin Apps Windows Api Routers - Router Telemetry Config
 # =============================================================================
 # Description:
 #   FastAPI REST эндпоинты для чтения, редактирования, валидации и сохранения
-#   файла конфигурации телеметрии (%APPDATA%\AI-Breadboard\apps\windows\telemetry\config.json)
+#   файла конфигурации телеметрии (%APPDATA%\AI-Windows-Admin\apps\windows\telemetry\config.json)
 #   с мгновенным применением изменений на лету.
 #
 # Usage Examples:
@@ -14,11 +14,11 @@
 #     router = init_router()
 #
 # File: router_telemetry_config.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.api.routers
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-06 03:20:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

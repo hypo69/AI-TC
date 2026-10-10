@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard AI - System Logs Agent Module
+# Process Name: AI-Windows-Admin AI - System Logs Agent Module
 # =============================================================================
 # Description:
 #   Модуль автономного агента анализа системных логов и диагностики ОС.
@@ -14,11 +14,11 @@
 #     print(result)
 #
 # File: system_logs_agent.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: src.ai.agents
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:13:56
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

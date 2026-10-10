@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows SDK Core - Package Root
+# Process Name: AI-Windows-Admin Apps Windows SDK Core - Package Root
 # =============================================================================
 # Description:
 #   Ядро SafeOps, системной диагностики, аудита и безопасности Windows.
@@ -10,11 +10,11 @@
 #     from apps.windows.sdk.core import SafeExecutor, WinAPI, DiagnosticsEngine
 #
 # File: __init__.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.core
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 05:45:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

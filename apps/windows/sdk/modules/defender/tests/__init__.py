@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Modules Defender Tests -   Init  
+# Process Name: AI-Windows-Admin Apps Windows Modules Defender Tests -   Init  
 # =============================================================================
 # Description:
-#   Модуль реализации компонентов подсистемы Windows AI-Breadboard (__init__).
+#   Модуль реализации компонентов подсистемы Windows AI-Windows-Admin (__init__).
 #
 # Usage Examples:
 #
 #
 # File: __init__.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.defender.tests
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:28:28
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
-"""Модуль реализации компонентов подсистемы Windows AI-Breadboard (__init__)."""
+"""Модуль реализации компонентов подсистемы Windows AI-Windows-Admin (__init__)."""
 

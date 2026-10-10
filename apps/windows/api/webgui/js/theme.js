@@ -13,11 +13,11 @@
  *     import { getThemeMode, getResolvedTheme, setTheme, themeEngine } from '/windows/api/webgui/js/theme.js';
  *
  * File: theme.js
- * Project: ai-breadboard
+ * Project: ai-windows-admin
  * Package: windows/api/webgui/js
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-04 12:12:00
+ * Updated: 2026-10-10 17:35:00
  * =============================================================================
  */
 

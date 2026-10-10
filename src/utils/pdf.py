@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard UTILS - Pdf Module
+# Process Name: AI-Windows-Admin UTILS - Pdf Module
 # =============================================================================
 # Description:
 #   Extract text content from a PDF file using pypdf -> pdfminer -> regex stream fallback.
@@ -14,11 +14,11 @@
 #     print(result)
 #
 # File: pdf.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: src.utils
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:13:56
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

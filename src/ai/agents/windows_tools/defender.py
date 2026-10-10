@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard AI Agents - Windows Defender Tools Module
+# Process Name: AI-Windows-Admin AI Agents - Windows Defender Tools Module
 # =============================================================================
 # Description:
 #   Инструменты прямого взаимодействия с подсистемой Microsoft Defender & AI Security
@@ -16,11 +16,11 @@
 #     res = await windows_defender_status_scan(action="status")
 #
 # File: defender.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: src.ai.agents.windows_tools
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-08 21:17:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

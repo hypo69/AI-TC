@@ -2,9 +2,9 @@
 
 ## 📌 Обзор
 
-Веб-интерфейс **AI-Breadboard** спроектирован по модульной компонентной архитектуре. Каждая страница системы (`/` — главный интерфейс, `/admin` — панель управления, `/tc` и `/apps` — тестовый стенд и каталог приложений) представляет собой легковесную **оболочку (Shell)**, в которую динамически загружаются и монтируются независимые **шаблоны вкладок (Tabs)**.
+Веб-интерфейс **AI-Windows-Admin** спроектирован по модульной компонентной архитектуре. Каждая страница системы (`/` — главный интерфейс, `/admin` — панель управления, `/tc` и `/apps` — тестовый стенд и каталог приложений) представляет собой легковесную **оболочку (Shell)**, в которую динамически загружаются и монтируются независимые **шаблоны вкладок (Tabs)**.
 
-Управление навигацией, переключением панелей, жизненным циклом и делегированием событий стандартизировано через единый диспетчер [`src/api/webgui/js/tab-core.js`](file:///c:/Users/onela/AppData/Local/AI-Breadboard/src/api/webgui/js/tab-core.js).
+Управление навигацией, переключением панелей, жизненным циклом и делегированием событий стандартизировано через единый диспетчер [`src/api/webgui/js/tab-core.js`](file:///c:/Users/onela/AppData/Local/AI-Windows-Admin/src/api/webgui/js/tab-core.js).
 
 ---
 
@@ -65,7 +65,7 @@ src/api/webgui/
 
 ## 🔄 Диспетчер `tab-core.js` и Жизненный Цикл
 
-Диспетчер [`tab-core.js`](file:///c:/Users/onela/AppData/Local/AI-Breadboard/src/api/webgui/js/tab-core.js) предоставляет унифицированный API:
+Диспетчер [`tab-core.js`](file:///c:/Users/onela/AppData/Local/AI-Windows-Admin/src/api/webgui/js/tab-core.js) предоставляет унифицированный API:
 
 ```javascript
 import { switchTab, loadTab, setupTabClicks } from '/html/js/tab-core.js';
@@ -111,14 +111,14 @@ setupTabClicks();
 
 Для проверки целостности UI и пользовательского опыта разработан автоматизированный набор тестов:
 
-- [`tests/test_webgui_menus_and_buttons.py`](file:///c:/Users/onela/AppData/Local/AI-Breadboard/tests/test_webgui_menus_and_buttons.py):
+- [`tests/test_webgui_menus_and_buttons.py`](file:///c:/Users/onela/AppData/Local/AI-Windows-Admin/tests/test_webgui_menus_and_buttons.py):
   - **Архитектурные инварианты**: Проверка единого делегирования кликов, формата именования `tab-*`, вызова хуков `init<Name>Tab` и закрытия `Offcanvas`.
   - **Главный интерфейс (`/`)**: Наличие кнопок шапки, профиля Google, тем, кеша и соответствия кнопок offcanvas-меню DOM-контейнерам.
   - **Панель администрирования (`/admin`)**: Валидация выпадающих списков, авторизационных диалогов и всех 20+ вкладок.
   - **Каталог приложений (`/tc`, `/apps`)**: Соответствие конфигурации `tc_menu_config.json`, редактора меню и доступности всех `tab-pane`.
   - **Локализация (i18n)**: Наличие всех ключей навигации в словарях `ru.json`, `en.json`, `he.json`.
-- [`tests/test_admin_apps_tabs.py`](file:///c:/Users/onela/AppData/Local/AI-Breadboard/tests/test_admin_apps_tabs.py):
-  - Проверка интеграции приложений `/apps` (Trading, Network, System Inspector, About System).
+- [`tests/test_admin_apps_tabs.py`](file:///c:/Users/onela/AppData/Local/AI-Windows-Admin/tests/test_admin_apps_tabs.py):
+  - Проверка интеграции приложений `/apps` (Network, System Inspector, About System).
   - Проверка физического наличия файлов `index.html`, `main.js` и `README.md` для каждого компонента.
 
 ### Запуск тестов:

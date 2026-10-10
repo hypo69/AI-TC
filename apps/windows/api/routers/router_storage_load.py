@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Api Routers - Router Storage Load
+# Process Name: AI-Windows-Admin Apps Windows Api Routers - Router Storage Load
 # =============================================================================
 # Description:
 #   GET /api/v1/panel/storage-load — детальные параметры и метрики всех дисков
@@ -14,11 +14,11 @@
 #     app.include_router(init_router())
 #
 # File: router_storage_load.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.api.routers
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-08 13:56:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

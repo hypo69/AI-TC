@@ -1,6 +1,6 @@
 # Messenger Web Interface & PWA Client
 
-This directory contains the responsive web application, progressive web app (PWA), and embeddable widget for the AI Breadboard Messenger.
+This directory contains the responsive web application, progressive web app (PWA), and embeddable widget for the AI Windows Admin Messenger.
 
 ---
 

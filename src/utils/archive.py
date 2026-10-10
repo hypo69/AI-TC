@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard UTILS - Archive Module
+# Process Name: AI-Windows-Admin UTILS - Archive Module
 # =============================================================================
 # Description:
 #   Модуль основной системы (`archive`).
@@ -13,11 +13,11 @@
 #     print(res)
 #
 # File: archive.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: src.utils
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:13:56
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

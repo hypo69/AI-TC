@@ -22,15 +22,15 @@
  *     });
  *
  * File: main.js
- * Project: ai-breadboard
+ * Project: ai-windows-admin
  * Package: apps.windows.api.webgui.ai_modal_dialog
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-10 11:45:00
+ * Updated: 2026-10-10 17:35:00
  * =============================================================================
  */
 
-// Universal AI Modal Dialog Module for AI-Breadboard
+// Universal AI Modal Dialog Module for AI-Windows-Admin
 // Enables interactive row inspection, WikiLLM grounding, in-place system instruction editing, and AI contextual explanation.
 
 (function () {
@@ -110,7 +110,9 @@
                     <div class="input-group input-group-sm">
                       <span class="input-group-text text-secondary small py-0">Провайдер</span>
                       <select class="form-select form-select-sm" id="uai-modal-provider-select">
-                        <option value="gemini">Google Gemini</option>
+                        <option value="gemini">Google Gemini (Direct SDK)</option>
+                        <option value="gemini_cli">Google Gemini CLI</option>
+                        <option value="agy">Antigravity (AGY SDK)</option>
                         <option value="openai">OpenAI / Compatible</option>
                         <option value="ollama">Ollama Local</option>
                         <option value="foundry">Foundry Local</option>
@@ -614,7 +616,7 @@
             web_search: true,
             force_refresh: Boolean(forceRefresh)
           })
-        }, 12000);
+        }, 30000);
 
         renderDiagnosticResult(data, false);
       } catch (err) {

@@ -5,6 +5,7 @@
 Опрашивает локальный сервер LibreHardwareMonitor (http://localhost:8085/data.json)
 и выводит показатели температуры, мощности, напряжений и загрузки компонентов.
 """
+from logger import logger
 import json
 import sys
 import urllib.request
@@ -17,7 +18,7 @@ def fetch_lhm_data(url: str=DEFAULT_LHM_URL, timeout: float=3.0) -> Optional[Dic
     Получает JSON-данные от веб-сервера LibreHardwareMonitor.
     """
     try:
-        req = urllib.request.Request(url, headers={'User-Agent': 'AI-Breadboard/HardwareMonitor'})
+        req = urllib.request.Request(url, headers={'User-Agent': 'AI-Windows-Admin/HardwareMonitor'})
         with urllib.request.urlopen(req, timeout=timeout) as response:
             return json.loads(response.read().decode('utf-8'))
     except Exception as e:
@@ -95,51 +96,51 @@ def get_gpu_info(url: str=DEFAULT_LHM_URL) -> Dict[str, Any]:
 
 def print_cpu_summary(cpu: Dict[str, Any]):
     """Форматированный вывод показателей CPU."""
-    print(f"\n🖥️  Процессор: {cpu['model']}")
-    print('-' * 50)
-    print('🌡️  Температуры:')
+    logger.console(f"\n🖥️  Процессор: {cpu['model']}")
+    logger.console('-' * 50)
+    logger.console('🌡️  Температуры:')
     for k, v in cpu['temperatures'].items():
-        print(f"   • {k:<20}: {v['value']:<10} (Min: {v['min']}, Max: {v['max']})")
+        logger.console(f"   • {k:<20}: {v['value']:<10} (Min: {v['min']}, Max: {v['max']})")
     if cpu['powers']:
-        print('\n⚡ Мощность:')
+        logger.console('\n⚡ Мощность:')
         for k, v in cpu['powers'].items():
-            print(f'   • {k:<20}: {v}')
+            logger.console(f'   • {k:<20}: {v}')
     if cpu['clocks']:
-        print('\n⏱️  Частоты:')
+        logger.console('\n⏱️  Частоты:')
         for k, v in list(cpu['clocks'].items())[:6]:
-            print(f'   • {k:<20}: {v}')
+            logger.console(f'   • {k:<20}: {v}')
 
 def main():
     mode = sys.argv[1].lower() if len(sys.argv) > 1 else 'all'
     cpu = get_cpu_info()
     gpu = get_gpu_info()
     if not cpu['temperatures'] and (not gpu['temperatures']):
-        print('❌ Ошибка: Не удалось получить данные от LibreHardwareMonitor.')
-        print('Убедитесь, что приложение LibreHardwareMonitor запущено и в меню включен веб-сервер:')
-        print('  Options -> Remote Web Server -> Run (порт 8085)')
+        logger.console('❌ Ошибка: Не удалось получить данные от LibreHardwareMonitor.')
+        logger.console('Убедитесь, что приложение LibreHardwareMonitor запущено и в меню включен веб-сервер:')
+        logger.console('  Options -> Remote Web Server -> Run (порт 8085)')
         sys.exit(1)
     if mode in ['--json', '-j']:
-        print(json.dumps({'cpu': cpu, 'gpu': gpu}, indent=2, ensure_ascii=False))
+        logger.console(json.dumps({'cpu': cpu, 'gpu': gpu}, indent=2, ensure_ascii=False))
         return
     if mode in ['cpu', 'temp', 'temperature']:
         print_cpu_summary(cpu)
     elif mode == 'gpu':
-        print(f"\n🎮 Видеокарта: {gpu['model']}")
-        print('-' * 50)
-        print('🌡️  Температуры:')
+        logger.console(f"\n🎮 Видеокарта: {gpu['model']}")
+        logger.console('-' * 50)
+        logger.console('🌡️  Температуры:')
         for k, v in gpu['temperatures'].items():
-            print(f"   • {k:<20}: {v['value']:<10} (Min: {v['min']}, Max: {v['max']})")
+            logger.console(f"   • {k:<20}: {v['value']:<10} (Min: {v['min']}, Max: {v['max']})")
         if gpu['load']:
-            print('\n📊 Загрузка:')
+            logger.console('\n📊 Загрузка:')
             for k, v in gpu['load'].items():
-                print(f'   • {k:<20}: {v}')
+                logger.console(f'   • {k:<20}: {v}')
     else:
         print_cpu_summary(cpu)
         if gpu['temperatures']:
-            print(f"\n🎮 Видеокарта: {gpu['model']}")
-            print('-' * 50)
-            print('🌡️  Температуры:')
+            logger.console(f"\n🎮 Видеокарта: {gpu['model']}")
+            logger.console('-' * 50)
+            logger.console('🌡️  Температуры:')
             for k, v in gpu['temperatures'].items():
-                print(f"   • {k:<20}: {v['value']:<10} (Min: {v['min']}, Max: {v['max']})")
+                logger.console(f"   • {k:<20}: {v['value']:<10} (Min: {v['min']}, Max: {v['max']})")
 if __name__ == '__main__':
     main()

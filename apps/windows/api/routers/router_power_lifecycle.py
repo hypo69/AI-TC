@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Api Routers - Router Power Lifecycle
+# Process Name: AI-Windows-Admin Apps Windows Api Routers - Router Power Lifecycle
 # =============================================================================
 # Description:
 #   FastAPI REST эндпоинты для управления, анализа и мониторинга жизненного цикла
@@ -14,11 +14,11 @@
 #     router = init_router()
 #
 # File: router_power_lifecycle.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.api.routers
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-08 02:51:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

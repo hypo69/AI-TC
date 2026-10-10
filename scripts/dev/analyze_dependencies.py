@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Scripts Dev - Analyze Dependencies
+# Process Name: AI-Windows-Admin Scripts Dev - Analyze Dependencies
 # =============================================================================
 # Description:
 #   Script dependency analysis utility.
@@ -14,11 +14,11 @@
 #     service = ScriptAnalyzer()
 #
 # File: analyze_dependencies.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: scripts.dev
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-06 10:10:30
+# Updated: 2026-10-10 22:22:30
 # =============================================================================
 
 """Script dependency analysis utility.
@@ -26,6 +26,7 @@
 Analyzes dependencies between project scripts to identify usage patterns
 and help determine which scripts can be safely removed."""
 
+from logger import logger
 import ast
 import os
 import re
@@ -104,18 +105,18 @@ class ScriptAnalyzer:
 
     def report(self) -> None:
         """Generate dependency report."""
-        print('\n' + '=' * 70)
-        print('SCRIPT DEPENDENCY ANALYSIS REPORT')
-        print('=' * 70 + '\n')
-        print(f'Total scripts analyzed: {len(self.scripts)}\n')
-        print('Scripts with most dependencies:')
-        print('-' * 70)
+        logger.console('\n' + '=' * 70)
+        logger.console('SCRIPT DEPENDENCY ANALYSIS REPORT')
+        logger.console('=' * 70 + '\n')
+        logger.console(f'Total scripts analyzed: {len(self.scripts)}\n')
+        logger.console('Scripts with most dependencies:')
+        logger.console('-' * 70)
         sorted_scripts = sorted(self.scripts.items(), key=lambda x: len(x[1]['imports']), reverse=True)
         for script_name, info in sorted_scripts[:5]:
-            print(f"  {script_name}: {len(info['imports'])} imports")
-        print('\n' + '=' * 70)
-        print('Import inventory:')
-        print('-' * 70)
+            logger.console(f"  {script_name}: {len(info['imports'])} imports")
+        logger.console('\n' + '=' * 70)
+        logger.console('Import inventory:')
+        logger.console('-' * 70)
         all_imports = set()
         for imports in self.imports.values():
             all_imports.update(imports)
@@ -130,18 +131,18 @@ class ScriptAnalyzer:
                 standard_imports.append(imp)
             else:
                 external_imports.append(imp)
-        print(f'\nStandard library: {len(standard_imports)} modules')
-        print(f'Internal modules: {len(internal_imports)} modules')
+        logger.console(f'\nStandard library: {len(standard_imports)} modules')
+        logger.console(f'Internal modules: {len(internal_imports)} modules')
         if internal_imports:
             for imp in internal_imports:
-                print(f'  - {imp}')
-        print(f'\nExternal packages: {len(external_imports)} packages')
+                logger.console(f'  - {imp}')
+        logger.console(f'\nExternal packages: {len(external_imports)} packages')
         if external_imports:
             for imp in external_imports[:10]:
-                print(f'  - {imp}')
+                logger.console(f'  - {imp}')
             if len(external_imports) > 10:
-                print(f'  ... and {len(external_imports) - 10} more')
-        print('\n' + '=' * 70 + '\n')
+                logger.console(f'  ... and {len(external_imports) - 10} more')
+        logger.console('\n' + '=' * 70 + '\n')
 
 def main():
     """Main entry point."""

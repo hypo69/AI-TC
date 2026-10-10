@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Telemetry_Research - Aggregator
+# Process Name: AI-Windows-Admin Apps Windows Telemetry_Research - Aggregator
 # =============================================================================
 # Description:
 #   Централизованный агрегатор телеметрии, синхронизирующий фоновый сбор данных
@@ -12,11 +12,11 @@
 #     service = TelemetryAggregator()
 #
 # File: aggregator.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.telemetry_research
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:28:28
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations
@@ -67,7 +67,7 @@ class TelemetryAggregator:
 
         Args:
             config_manager: Менеджер конфигурации (если None, создается новый).
-            log_dir: Директория для логов (по умолчанию: %APPDATA%\\AI-Breadboard\\apps\\logs).
+            log_dir: Директория для логов (по умолчанию: %APPDATA%\\AI-Windows-Admin\\apps\\logs).
             storage: Экземпляр постоянного SQLite хранилища TelemetryStorage.
             sensor_collector: Коллектор аппаратных сенсоров.
             file_collector: Коллектор файловых событий.
@@ -110,7 +110,7 @@ class TelemetryAggregator:
             str: Путь к лог-директории.
         """
         appdata = os.environ.get("APPDATA", os.path.expanduser("~\\AppData\\Roaming"))
-        return os.path.join(appdata, "AI-Breadboard", "apps", "windows", "telemetry", "logs")
+        return os.path.join(appdata, "AI-Windows-Admin", "apps", "windows", "telemetry", "logs")
 
     def start(self) -> bool:
         """Запускает фоновый поток сбора телеметрии.

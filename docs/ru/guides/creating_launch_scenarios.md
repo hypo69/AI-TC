@@ -2,11 +2,11 @@
 
 **Статус:** ✅ Актуально  
 **Языковой стандарт:** Русский  
-**Область применения:** AI Breadboard (FastAPI, WebGUI, PowerShell Launchers, Config Profiles)
+**Область применения:** AI Windows Admin (FastAPI, WebGUI, PowerShell Launchers, Config Profiles)
 
 ---
 
-## 🧭 1. Концепция сценариев в AI Breadboard
+## 🧭 1. Концепция сценариев в AI Windows Admin
 
 Каждый сценарий запуска в проекте представляет собой **связанную цепочку из четырёх уровней**:
 
@@ -76,7 +76,7 @@ flowchart LR
    <head>
        <meta charset="UTF-8">
        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-       <title>AI Breadboard — Информационный терминал</title>
+       <title>AI Windows Admin — Информационный терминал</title>
        <link rel="stylesheet" href="/html/vendor/bootstrap/bootstrap.min.css">
        <link rel="stylesheet" href="/html/css/common.css">
    </head>
@@ -145,7 +145,7 @@ async def kiosk_static(full_path: str) -> Response:
 ```powershell
 <#
 .SYNOPSIS
-    Запускает специализированный терминал Kiosk (AI Breadboard /kiosk).
+    Запускает специализированный терминал Kiosk (AI Windows Admin /kiosk).
 
 .DESCRIPTION
     Читает конфигурацию из config/kiosk.json.
@@ -171,7 +171,7 @@ $OutputEncoding = [System.Text.Encoding]::UTF8
 
 $scriptDir = $PSScriptRoot
 if ([string]::IsNullOrEmpty($scriptDir)) { $scriptDir = (Get-Location).Path }
-$env:AIBREADBOARD_DIR  = $scriptDir
+$env:AIWINDOWSADMIN_DIR  = $scriptDir
 $env:ASSIST_DIR        = $scriptDir
 $env:ENABLE_OAUTH      = 'false'
 $env:DISABLE_AUTH      = 'true'
@@ -197,7 +197,7 @@ if (Test-Path $configPath) {
 }
 
 $env:CONFIG_FILE         = 'config/kiosk.json'
-$env:AIBREADBOARD_CONFIG = 'config/kiosk.json'
+$env:AIWINDOWSADMIN_CONFIG = 'config/kiosk.json'
 
 $host_ = if ($HostAddress) { $HostAddress } else { $cfgHost }
 $port_ = if ($Port)        { $Port }        else { $cfgPort }
@@ -229,7 +229,7 @@ foreach ($pid_ in $occupied) {
 if ($enableTray) {
     $trayScript = Join-Path $scriptDir 'launchers\ShowHide-InTray.ps1'
     if (Test-Path $trayScript) {
-        try { & $trayScript -Action start -WebUrl $targetUrl -Title "AI Breadboard Kiosk ($port_)" }
+        try { & $trayScript -Action start -WebUrl $targetUrl -Title "AI Windows Admin Kiosk ($port_)" }
         catch { Write-Host "  [WARN] Трей: $_" -ForegroundColor Yellow }
     }
 }
@@ -251,16 +251,15 @@ if (Test-Path $unicornScript) {
 
 ### Шаг 5. Регистрация в реестре портов и документации
 
-1. Зарегистрируйте порт в [`start_scenarios_config/ports.json`](file:///c:/Users/onela/AppData/Local/AI-Breadboard/start_scenarios_config/ports.json).
-2. Добавьте запись в таблицу сценариев в [`start_scenarios_config/README.md`](file:///c:/Users/onela/AppData/Local/AI-Breadboard/start_scenarios_config/README.md).
-3. При необходимости добавьте пункт в меню диспетчера [`launcher.ps1`](file:///c:/Users/onela/AppData/Local/AI-Breadboard/launcher.ps1).
+1. Зарегистрируйте порт в [`config.json`](file:///c:/Users/onela/AppData/Local/AI-Windows-Admin/config.json).
+2. При необходимости добавьте пункт в меню диспетчера [`launcher.ps1`](file:///c:/Users/onela/AppData/Local/AI-Windows-Admin/launcher.ps1).
 
 ---
 
 ## 📋 3. Чек-лист проверки нового сценария
 
-- [ ] Файл конфигурации создан в `start_scenarios_config/<name>.json` (без секретов).
-- [ ] Порт не конфликтует с существующими сервисами в `start_scenarios_config/ports.json`.
+- [ ] Файл конфигурации создан в `config/<name>.json` (без секретов).
+- [ ] Порт не конфликтует с существующими сервисами в `config.json`.
 - [ ] Роут зарегистрирован в `src/app/pages/__init__.py`.
 - [ ] HTML-страница создана в `src/api/webgui/<name>/index.html` (или подключена к хабу `apps`).
 - [ ] PowerShell-скрипт корректно запускает `Run-Unicorn.ps1` с передачей `-ConfigFile` и целевого `-OpenUrl`.

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Scripts Docs - Check Links
+# Process Name: AI-Windows-Admin Scripts Docs - Check Links
 # =============================================================================
 # Description:
 #   Скрипт для проверки внутренних и внешних ссылок в документации.
@@ -14,11 +14,11 @@
 #     service = LinkChecker()
 #
 # File: check_links.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: scripts.docs
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:27:07
+# Updated: 2026-10-10 22:22:30
 # =============================================================================
 
 """Скрипт для проверки внутренних и внешних ссылок в документации.
@@ -27,6 +27,7 @@
 валидирует внутренние ссылки путём проверки существования файлов,
 пропускает якоря (#раздел) и внешние ссылки (http/https)."""
 
+from logger import logger
 import re
 import sys
 from pathlib import Path
@@ -184,10 +185,10 @@ class LinkChecker:
             - успех: True если нет ошибок, False если найдены ошибки
             - список сообщений: отчёт о неверных ссылках
         """
-        print('🔗 Проверка ссылок в документации...')
+        logger.console('🔗 Проверка ссылок в документации...')
         self.collect_all_files()
         if not self.all_files:
-            print('⚠️  Документация не найдена в структуре.')
+            logger.console('⚠️  Документация не найдена в структуре.')
             return (True, [])
         for md_file in sorted(self.docs_root.rglob('*.md')):
             self.check_file(md_file)
@@ -208,19 +209,19 @@ def main() -> int:
     project_root = script_path.parent.parent.parent
     docs_root = project_root / 'docs' / 'ru'
     if not docs_root.exists():
-        print(f'❌ Директория документации не найдена: {docs_root}')
+        logger.console(f'❌ Директория документации не найдена: {docs_root}')
         return 1
     checker = LinkChecker(docs_root)
     success, messages = checker.check_all()
-    print()
+    logger.console()
     if messages:
-        print('📋 Результаты проверки ссылок:')
+        logger.console('📋 Результаты проверки ссылок:')
         for msg in messages:
-            print(msg)
-        print()
-        print(f'❌ Найдено {len(messages)} ошибок')
+            logger.console(msg)
+        logger.console()
+        logger.console(f'❌ Найдено {len(messages)} ошибок')
     else:
-        print('✓ Все ссылки корректны!')
+        logger.console('✓ Все ссылки корректны!')
     return 0 if success else 1
 if __name__ == '__main__':
     sys.exit(main())

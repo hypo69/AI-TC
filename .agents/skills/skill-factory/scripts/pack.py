@@ -1,3 +1,4 @@
+from logger import logger
 import argparse
 import os
 import sys
@@ -25,7 +26,7 @@ def package_skill(skill_target: str) -> Path:
     output_path.mkdir(parents=True, exist_ok=True)
     skill_name = skill_path.name
     skill_file = output_path / f'{skill_name}.skill'
-    print(f'📦 Packaging skill from {skill_path} into {skill_file}...')
+    logger.console(f'📦 Packaging skill from {skill_path} into {skill_file}...')
     with zipfile.ZipFile(skill_file, 'w', zipfile.ZIP_DEFLATED) as zipf:
         for root, dirs, files in os.walk(skill_path):
             dirs[:] = [d for d in dirs if d not in ['dist', '.git', '__pycache__', '.pytest_cache']]
@@ -33,19 +34,19 @@ def package_skill(skill_target: str) -> Path:
                 file_path = Path(root) / file
                 arcname = file_path.relative_to(skill_path)
                 zipf.write(file_path, arcname)
-    print(f'✅ Skill successfully packaged: {skill_file}')
+    logger.console(f'✅ Skill successfully packaged: {skill_file}')
     return skill_file
 
 def main() -> int:
     """CLI Entry point for pack utility."""
-    parser = argparse.ArgumentParser(description='Package an AI Breadboard agent skill.')
+    parser = argparse.ArgumentParser(description='Package an AI Windows Admin agent skill.')
     parser.add_argument('skill', help='Name or path to skill folder (e.g. project-installer)')
     args = parser.parse_args()
     try:
         package_skill(args.skill)
         return 0
     except Exception as ex:
-        print(f'❌ Failed to package skill: {ex}', file=sys.stderr)
+        logger.console(f'❌ Failed to package skill: {ex}', file=sys.stderr)
         return 1
 if __name__ == '__main__':
     sys.exit(main())

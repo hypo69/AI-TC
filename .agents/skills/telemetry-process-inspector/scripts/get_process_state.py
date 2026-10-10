@@ -1,4 +1,5 @@
 from __future__ import annotations
+from logger import logger
 import argparse
 import sys
 from pathlib import Path
@@ -8,7 +9,7 @@ if _project_root not in sys.path:
 try:
     from apps.windows.telemetry.storage import TelemetryStorage
 except ImportError as e:
-    print(f'Error: Could not import TelemetryStorage: {e}', file=sys.stderr)
+    logger.console(f'Error: Could not import TelemetryStorage: {e}', file=sys.stderr)
     sys.exit(1)
 
 def parse_args() -> argparse.Namespace:
@@ -25,11 +26,11 @@ def main() -> None:
         storage = TelemetryStorage.get_instance()
         procs = storage.get_latest_processes(limit=args.limit, sort_by=args.sort)
     except Exception as ex:
-        print(f'Error accessing telemetry storage: {ex}', file=sys.stderr)
+        logger.console(f'Error accessing telemetry storage: {ex}', file=sys.stderr)
         sys.exit(1)
-    print(f'=== TELEMETRY PROCESS INSPECTOR ({storage.db_path}) ===')
-    print(f"{'PID':<8} {'Process Name':<25} {'CPU %':<10} {'Memory (MB)':<15} {'Threads':<8} {'User'}")
-    print('-' * 85)
+    logger.console(f'=== TELEMETRY PROCESS INSPECTOR ({storage.db_path}) ===')
+    logger.console(f"{'PID':<8} {'Process Name':<25} {'CPU %':<10} {'Memory (MB)':<15} {'Threads':<8} {'User'}")
+    logger.console('-' * 85)
     for p in procs:
         pid = p.get('pid', 0)
         name = p.get('name', 'unknown')
@@ -37,6 +38,6 @@ def main() -> None:
         mem = p.get('memory_mb', 0.0)
         threads = p.get('num_threads', 0)
         user = p.get('username', '-') or '-'
-        print(f'{pid:<8} {name:<25} {cpu:<10.1f} {mem:<15.1f} {threads:<8} {user}')
+        logger.console(f'{pid:<8} {name:<25} {cpu:<10.1f} {mem:<15.1f} {threads:<8} {user}')
 if __name__ == '__main__':
     main()

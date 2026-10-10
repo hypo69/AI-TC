@@ -2,7 +2,7 @@
 
 ## 📋 Обзор
 
-Аппаратная телеметрия в AI-Breadboard реализует сбор ключевых параметров физического состояния компьютера: температуры компонентов, тактовые частоты ядер, потребляемая мощность, уровни напряжения, скорость вращения вентиляторов, состояние накопителей (S.M.A.R.T., наработка в часах, износ, TBW) и системные ресурсы операционной системы.
+Аппаратная телеметрия в AI-Windows-Admin реализует сбор ключевых параметров физического состояния компьютера: температуры компонентов, тактовые частоты ядер, потребляемая мощность, уровни напряжения, скорость вращения вентиляторов, состояние накопителей (S.M.A.R.T., наработка в часах, износ, TBW) и системные ресурсы операционной системы.
 
 ---
 
@@ -18,7 +18,7 @@
 
 ## 📈 Собираемые метрики и CSV-файлы опроса
 
-| Группа метрик | Источники | Примеры параметров | Целевой CSV-файл (`%APPDATA%/AI-Breadboard/apps/windows/telemetry/logs/`) |
+| Группа метрик | Источники | Примеры параметров | Целевой CSV-файл (`%APPDATA%/AI-Windows-Admin/apps/windows/telemetry/logs/`) |
 | :--- | :--- | :--- | :--- |
 | **Температуры (°C)** | LHM / HWiNFO / AIDA64 / NVIDIA-SMI | `CPU Package`, `GPU Core Temp`, `GPU Hotspot`, `Motherboard`, `Thermal Zone 1` | `lhm_sensor_polls.csv`, `hwinfo_sensor_polls.csv`, `aida64_sensor_polls.csv` |
 | **Напряжения (V)** | LHM / HWiNFO / CPU-Z | `CPU Core Voltage (VCORE)`, `+3.3V`, `+5V`, `+12V`, `DRAM Voltage` | `lhm_sensor_polls.csv`, `cpuz_hardware_polls.csv` |
@@ -53,7 +53,7 @@
 ## 💾 Форматы хранения телеметрии
 
 1. **Табличные CSV-файлы:**
-   * Расположение: `%APPDATA%\AI-Breadboard\apps\windows\telemetry\logs\`
+   * Расположение: `%APPDATA%\AI-Windows-Admin\apps\windows\telemetry\logs\`
    * Формат строк: `timestamp,app,poll_type,metric_name,value,unit,status,details`
 2. **Потоковые JSONL-файлы:**
    * Расположение: `logs/telemetry/ai_sensors_polls.jsonl`

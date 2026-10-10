@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Modules Process_Manager Tests - Test Process Manager
+# Process Name: AI-Windows-Admin Apps Windows Modules Process_Manager Tests - Test Process Manager
 # =============================================================================
 # Description:
 #   Тесты для проверки функционала диспетчера процессов, категоризации
@@ -10,11 +10,11 @@
 #   pytest apps/windows/modules/process_manager/tests/test_process_manager.py
 #
 # File: test_process_manager.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.process_manager.tests
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-08 02:10:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

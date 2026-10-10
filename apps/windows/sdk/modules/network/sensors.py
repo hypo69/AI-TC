@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Modules Network - Sensors
+# Process Name: AI-Windows-Admin Apps Windows Modules Network - Sensors
 # =============================================================================
 # Description:
 #   Движок считывания показаний температурных датчиков, напряжений и вентиляторов.
@@ -12,11 +12,11 @@
 #     service = NetworkTerminalSensor()
 #
 # File: sensors.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.network
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:28:28
+# Updated: 2026-10-10 19:37:15
 # =============================================================================
 
 from __future__ import annotations
@@ -28,15 +28,15 @@ import time
 from datetime import datetime, timezone
 from typing import List, Optional
 from logger import logger
-from apps.common.csv_logger import AppCsvLogger
+from apps.common.telemetry_logger import AppTelemetryLogger
 from apps.windows.telemetry.models import HardwareSensor
 
 class NetworkTerminalSensor:
     """Network monitoring sensor using Windows native tools only."""
 
     def __init__(self) -> None:
-        """Initialize network sensor with CSV logging."""
-        self._csv_logger = AppCsvLogger('network_terminal')
+        """Initialize network sensor with telemetry buffering."""
+        self._telemetry_logger = AppTelemetryLogger('network_terminal')
         self._last_net_io = None
         self._last_time = time.time()
 
@@ -202,7 +202,7 @@ class NetworkTerminalSensor:
             return []
 
     def log_network_metrics(self, interface: str, bytes_sent: float, bytes_recv: float, packets_sent: float, packets_recv: float) -> None:
-        """Log network metrics to CSV.
+        """Сохранить сетевые метрики в буфер телеметрии.
 
         Args:
             interface: Network interface name.
@@ -212,10 +212,10 @@ class NetworkTerminalSensor:
             packets_recv: Packets received per second.
         """
         try:
-            self._csv_logger.log_poll(poll_type='network_metrics', metric_name=f'{interface}_bytes_sent', value=round(bytes_sent, 2), unit='B/s', status='OK', details={'interface': interface}, filename='network_terminal_sensors.csv')
-            self._csv_logger.log_poll(poll_type='network_metrics', metric_name=f'{interface}_bytes_recv', value=round(bytes_recv, 2), unit='B/s', status='OK', details={'interface': interface}, filename='network_terminal_sensors.csv')
-            self._csv_logger.log_poll(poll_type='network_metrics', metric_name=f'{interface}_packets_sent', value=round(packets_sent, 2), unit='pkt/s', status='OK', details={'interface': interface}, filename='network_terminal_sensors.csv')
-            self._csv_logger.log_poll(poll_type='network_metrics', metric_name=f'{interface}_packets_recv', value=round(packets_recv, 2), unit='pkt/s', status='OK', details={'interface': interface}, filename='network_terminal_sensors.csv')
+            self._telemetry_logger.log_poll(poll_type='network_metrics', metric_name=f'{interface}_bytes_sent', value=round(bytes_sent, 2), unit='B/s', status='OK', details={'interface': interface})
+            self._telemetry_logger.log_poll(poll_type='network_metrics', metric_name=f'{interface}_bytes_recv', value=round(bytes_recv, 2), unit='B/s', status='OK', details={'interface': interface})
+            self._telemetry_logger.log_poll(poll_type='network_metrics', metric_name=f'{interface}_packets_sent', value=round(packets_sent, 2), unit='pkt/s', status='OK', details={'interface': interface})
+            self._telemetry_logger.log_poll(poll_type='network_metrics', metric_name=f'{interface}_packets_recv', value=round(packets_recv, 2), unit='pkt/s', status='OK', details={'interface': interface})
         except Exception as ex:
             logger.error(f'Failed to log network metrics: {ex}')
 

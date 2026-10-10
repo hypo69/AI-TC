@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Contracts - Hardware Models
+# Process Name: AI-Windows-Admin Apps Windows Contracts - Hardware Models
 # =============================================================================
 # Description:
 #   Zero-dependency контракты для спецификаций аппаратного обеспечения и датчиков.
@@ -10,11 +10,11 @@
 #     from apps.windows.contracts.hardware import CpuMetrics, GpuMetrics, MemoryMetrics
 #
 # File: hardware.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.contracts
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-08 12:20:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

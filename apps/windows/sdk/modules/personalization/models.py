@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows - Personalization Models
+# Process Name: AI-Windows-Admin Apps Windows - Personalization Models
 # =============================================================================
 # Description:
 #   Pydantic модели данных для подсистемы персонализации Windows:
@@ -14,11 +14,11 @@
 #     cursor = CursorSettings(size=32, color="white", shadow=True)
 #
 # File: models.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.personalization
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-06 18:30:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

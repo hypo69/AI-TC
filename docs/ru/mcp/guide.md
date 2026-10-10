@@ -30,17 +30,17 @@ py .mcp/config_helper.py --json
 ```json
 {
   "mcpServers": {
-    "ai-breadboard-fastapi": {
+    "ai-windows-admin-fastapi": {
       "command": "py",
-      "args": ["C:/Users/onela/AppData/Local/AI-Breadboard/.mcp/fastapi_mcp_server.py"]
+      "args": ["C:/Users/onela/AppData/Local/AI-Windows-Admin/.mcp/fastapi_mcp_server.py"]
     },
-    "ai-breadboard-gemini": {
+    "ai-windows-admin-gemini": {
       "command": "py",
-      "args": ["C:/Users/onela/AppData/Local/AI-Breadboard/.mcp/gemini_search_mcp_server.py"]
+      "args": ["C:/Users/onela/AppData/Local/AI-Windows-Admin/.mcp/gemini_search_mcp_server.py"]
     },
-    "ai-breadboard-langchain": {
+    "ai-windows-admin-langchain": {
       "command": "py",
-      "args": ["C:/Users/onela/AppData/Local/AI-Breadboard/.mcp/langchain_mcp_server.py"]
+      "args": ["C:/Users/onela/AppData/Local/AI-Windows-Admin/.mcp/langchain_mcp_server.py"]
     }
   }
 }
@@ -55,7 +55,7 @@ py .mcp/config_helper.py --json
 ```json
 {
   "mcpServers": {
-    "breadboard-tools": {
+    "ai-windows-admin-tools": {
       "command": "py",
       "args": [
         "${workspaceFolder}/.mcp/gemini_cli_search_mcp_server.py"

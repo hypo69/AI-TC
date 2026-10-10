@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Scripts Cli Commands - Common
+# Process Name: AI-Windows-Admin Scripts Cli Commands - Common
 # =============================================================================
 # Description:
 #   Утилита запуска внешних скриптов как подпроцессов.
@@ -12,14 +12,15 @@
 #     res = run_script()
 #
 # File: common.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: scripts.cli.commands
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:27:07
+# Updated: 2026-10-10 22:22:44
 # =============================================================================
 
 from __future__ import annotations
+from logger import logger
 """Утилита запуска внешних скриптов как подпроцессов."""
 
 import subprocess
@@ -40,7 +41,7 @@ def run_script(script_rel_path: str, extra_args: list[str] = []) -> int:
     """
     target_path = __root__ / script_rel_path
     if not target_path.exists():
-        print(f'Error: script not found: {target_path}')
+        logger.console(f'Error: script not found: {target_path}')
         return 1
     cmd = [sys.executable, str(target_path)]
     if extra_args:

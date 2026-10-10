@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Scripts Cli Commands - Rag
+# Process Name: AI-Windows-Admin Scripts Cli Commands - Rag
 # =============================================================================
 # Description:
 #   Команды управления RAG-индексацией (rag).
@@ -12,14 +12,15 @@
 #     res = register_rag_parser()
 #
 # File: rag.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: scripts.cli.commands
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:27:07
+# Updated: 2026-10-10 22:22:44
 # =============================================================================
 
 from __future__ import annotations
+from logger import logger
 """Команды управления RAG-индексацией (rag)."""
 
 import argparse
@@ -48,34 +49,34 @@ def run_rag_command(args: argparse.Namespace) -> int:
         try:
             from src.rag import build_rules_index
             index_path, docs_path = build_rules_index(*extra)
-            print(f'RAG index rebuilt successfully: {index_path}, {docs_path}')
+            logger.console(f'RAG index rebuilt successfully: {index_path}, {docs_path}')
             return 0
         except TypeError:
             from src.rag import build_rules_index
             index_path, docs_path = build_rules_index()
-            print(f'RAG index rebuilt successfully: {index_path}, {docs_path}')
+            logger.console(f'RAG index rebuilt successfully: {index_path}, {docs_path}')
             return 0
         except Exception as e:
-            print(f'Error rebuilding RAG: {e}')
+            logger.console(f'Error rebuilding RAG: {e}')
             return 1
     if sub == 'status':
         try:
             idx_file = __root__ / 'tmp' / 'rag' / 'rules.index'
-            print(f"Core RAG status: {('Ready' if idx_file.exists() else 'Not built')}")
+            logger.console(f"Core RAG status: {('Ready' if idx_file.exists() else 'Not built')}")
             return 0
         except Exception as e:
-            print(f'Error checking RAG status: {e}')
+            logger.console(f'Error checking RAG status: {e}')
             return 1
     if sub == 'tc-status':
         try:
             from src.ai.gemini.approved_responses_store import list_responses, get_store_dir
             responses = list_responses()
             store_dir = get_store_dir()
-            print(f'TC Approved Responses Directory: {store_dir}')
-            print(f'Total Approved TC Q&A items: {len(responses)}')
+            logger.console(f'TC Approved Responses Directory: {store_dir}')
+            logger.console(f'Total Approved TC Q&A items: {len(responses)}')
             return 0
         except Exception as e:
-            print(f'Error checking TC RAG status: {e}')
+            logger.console(f'Error checking TC RAG status: {e}')
             return 1
     if sub == 'tc-export':
         try:
@@ -85,10 +86,10 @@ def run_rag_command(args: argparse.Namespace) -> int:
                 fmt = extra[0]
             out_file = __root__ / 'data' / 'tc' / 'datasets' / f'tc_qa_{fmt}.jsonl'
             count = export_tuning_dataset(out_file, fmt=fmt)
-            print(f'Exported {count} TC Q&A items to {out_file} (format: {fmt})')
+            logger.console(f'Exported {count} TC Q&A items to {out_file} (format: {fmt})')
             return 0
         except Exception as e:
-            print(f'Error exporting TC dataset: {e}')
+            logger.console(f'Error exporting TC dataset: {e}')
             return 1
-    print(f'Unknown rag subcommand: {sub}')
+    logger.console(f'Unknown rag subcommand: {sub}')
     return 1

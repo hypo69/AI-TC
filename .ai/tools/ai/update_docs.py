@@ -4,6 +4,8 @@ import subprocess
 from pathlib import Path
 from typing import List
 
+from logger import logger
+
 def get_modified_python_files() -> List[Path]:
     """Returns list измененных файлов .py в git репозитории."""
     modified_files = []
@@ -25,23 +27,23 @@ def validate_docblocks(files: List[Path]) -> bool:
     for f in files:
         content = f.read_text(encoding='utf-8')
         if '"""' not in content and "'''" not in content:
-            print(f'⚠️  Файл {f.name} изменен, но не содержит docstring!')
+            logger.console(f'⚠️  Файл {f.name} изменен, но не содержит docstring!')
             all_valid = False
     return all_valid
 
 def main() -> int:
-    print('🔎 Запуск проверки актуальности документации и комментариев...')
+    logger.console('🔎 Запуск проверки актуальности документации и комментариев...')
     modified = get_modified_python_files()
     if not modified:
-        print('✅ Измененных файлов Python в Git не найдено. Дополнительная validation не требуется.')
+        logger.console('✅ Измененных файлов Python в Git не найдено. Дополнительная validation не требуется.')
         return 0
-    print(f'Обнаружено измененных файлов: {len(modified)}')
+    logger.console(f'Обнаружено измененных файлов: {len(modified)}')
     valid = validate_docblocks(modified)
     if valid:
-        print('✅ Все измененные файлы содержат docstring.')
+        logger.console('✅ Все измененные файлы содержат docstring.')
         return 0
     else:
-        print('❌ Рекомендуется добавить или обновить комментарии/документацию.')
+        logger.console('❌ Рекомендуется добавить или обновить комментарии/документацию.')
         return 1
 if __name__ == '__main__':
     sys.exit(main())

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard AI - Discovery Module
+# Process Name: AI-Windows-Admin AI - Discovery Module
 # =============================================================================
 # Description:
 #   Discovers available backends, models, and hardware capabilities dynamically.
@@ -14,11 +14,11 @@
 #     print(result)
 #
 # File: discovery.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: src.ai.orchestration
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:13:56
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 """Discovers available backends, models, and hardware capabilities dynamically."""

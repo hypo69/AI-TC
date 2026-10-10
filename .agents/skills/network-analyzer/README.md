@@ -1,6 +1,6 @@
 # Network Analyzer Skill
 
-This skill provides an interface to control the `network_terminal` application within the AI Breadboard ecosystem.
+This skill provides an interface to control the `network_terminal` application within the AI Windows Admin ecosystem.
 
 ## Features
 - Packet capture initiation (TShark integration).

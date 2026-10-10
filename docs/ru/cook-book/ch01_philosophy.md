@@ -1,6 +1,6 @@
 # Глава 1. Архитектура макетной платы и устройство стенда
 
-> **Цель главы:** Понять архитектурную концепцию AI Breadboard как открытого исследовательского стенда, структуру модулей, конфигурирование разъемов (сокетов) и управление питанием и сервисами.
+> **Цель главы:** Понять архитектурную концепцию AI Windows Admin как открытого исследовательского стенда, структуру модулей, конфигурирование разъемов (сокетов) и управление питанием и сервисами.
 
 ---
 
@@ -15,19 +15,19 @@
 
 ```mermaid
 graph LR
-    Breadboard["AI Breadboard (Макетная плата)"]
+    AI Windows Admin["AI Windows Admin (Макетная плата)"]
 
-    Breadboard --> Socket1["Сокет A: Облачная LLM ( OpenAI)"]
-    Breadboard --> Socket2["Сокет B: Gemini, gemini cli, agy, agy cli"]
-    Breadboard --> Socket3["Сокет C: Аппаратный ONNX DirectML (Локальный GPU)"]
-    Breadboard --> Socket4["Сокет D: In-Process PyTorch (Transformers)"]
-    Breadboard --> Memory["Шина памяти: Векторный FAISS RAM + SQLite ROM"]
-    Breadboard --> Bus["Универсальная шина: UnifiedChatModel & FastAPI"]
+    AI Windows Admin --> Socket1["Сокет A: Облачная LLM ( OpenAI)"]
+    AI Windows Admin --> Socket2["Сокет B: Gemini, gemini cli, agy, agy cli"]
+    AI Windows Admin --> Socket3["Сокет C: Аппаратный ONNX DirectML (Локальный GPU)"]
+    AI Windows Admin --> Socket4["Сокет D: In-Process PyTorch (Transformers)"]
+    AI Windows Admin --> Memory["Шина памяти: Векторный FAISS RAM + SQLite ROM"]
+    AI Windows Admin --> Bus["Универсальная шина: UnifiedChatModel & FastAPI"]
 
     Bus --> Probes["Контрольные точки: Логи, SSE-потоки и профилировщики"]
 ```
 
-В проекте **`aibreadboard`** воплощена именно эта физическая метафора:
+В проекте **`aiwindowsadmin`** воплощена именно эта физическая метафора:
 1. **Базовая плата (Host Board):** Легковесный нативный Python/FastAPI рантайм с открытым доступом ко всем узлам.
 2. **Модели как сменные чипы:** Каждая языковая модель выступает в роли сменной микросхемы со стандартизированным интерфейсом контактов.
 3. **Универсальная сигнальная шина:** Маршрутизатор `UnifiedChatModel` направляет запросы к тому чипу, который установлен в активный сокет.
@@ -174,7 +174,7 @@ flowchart LR
 Структура каталогов проекта отражает компоновку функциональных блоков на плате:
 
 ```
-AI-Breadboard/
+AI-Windows-Admin/
 ├── src/                        # Архитектура и ядро базовой платы
 │   ├── ai/                     # Сокеты для чипов и адаптеры моделей
 │   │   ├── providers/          # Модульные пакеты провайдеров (gemini, ollama, onnx, etc.)
@@ -250,16 +250,16 @@ JWT_SECRET_KEY=supersecretjwtkey...
 
 | Скрипт | Назначение |
 |---|---|
-| [`run.ps1`](file:///c:/Users/onela/AppData/Local/aibreadboard/run.ps1) | Главный запуск стенда: check портов, старт локальных демонов и запуск FastAPI с живой перезагрузкой. |
-| [`Run-Unicorn.ps1`](file:///c:/Users/onela/AppData/Local/aibreadboard/Run-Unicorn.ps1) | Включение ASGI-сервера Uvicorn с автоперезагрузкой при изменении кода. |
-| [`Run-Foundry.ps1`](file:///c:/Users/onela/AppData/Local/aibreadboard/Run-Foundry.ps1) | Запуск локального сервиса Microsoft AI Foundry на порту 54837. |
-| [`Run-Agy.ps1`](file:///c:/Users/onela/AppData/Local/aibreadboard/Run-Agy.ps1) | Запуск агента Google Antigravity AGY. |
-| [`Run-GeminiCli.ps1`](file:///c:/Users/onela/AppData/Local/aibreadboard/Run-GeminiCli.ps1) | Запуск консольного агента Gemini CLI. |
+| [`run.ps1`](file:///c:/Users/onela/AppData/Local/aiwindowsadmin/run.ps1) | Главный запуск стенда: check портов, старт локальных демонов и запуск FastAPI с живой перезагрузкой. |
+| [`Run-Unicorn.ps1`](file:///c:/Users/onela/AppData/Local/aiwindowsadmin/Run-Unicorn.ps1) | Включение ASGI-сервера Uvicorn с автоперезагрузкой при изменении кода. |
+| [`Run-Foundry.ps1`](file:///c:/Users/onela/AppData/Local/aiwindowsadmin/Run-Foundry.ps1) | Запуск локального сервиса Microsoft AI Foundry на порту 54837. |
+| [`Run-Agy.ps1`](file:///c:/Users/onela/AppData/Local/aiwindowsadmin/Run-Agy.ps1) | Запуск агента Google Antigravity AGY. |
+| [`Run-GeminiCli.ps1`](file:///c:/Users/onela/AppData/Local/aiwindowsadmin/Run-GeminiCli.ps1) | Запуск консольного агента Gemini CLI. |
 
 ---
 
 ## 1.6. Резюме
 
-1. `aibreadboard` — это открытый стенд для исследований ИИ: модели являются сменными чипами, шины передают данные, а контрольные точки позволяют снимать показания.
+1. `aiwindowsadmin` — это открытый стенд для исследований ИИ: модели являются сменными чипами, шины передают данные, а контрольные точки позволяют снимать показания.
 2. Четкое splitting настроек в `config.json` и секретов в `.env` обеспечивает безопасность и удобство конфигурирования.
 3. Moduleные лаунчеры дают возможность включать только те блоки стенда, которые необходимы для конкретного эксперимента.

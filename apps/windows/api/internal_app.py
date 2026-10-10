@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Api - Internal App
+# Process Name: AI-Windows-Admin Apps Windows Api - Internal App
 # =============================================================================
 # Description:
-#   Главный FastAPI сервер управления подсистемой Windows AI-Breadboard.
+#   Главный FastAPI сервер управления подсистемой Windows AI-Windows-Admin.
 #
 # Usage Examples:
 #   Python API:
@@ -12,15 +12,15 @@
 #     app = create_internal_app()
 #
 # File: internal_app.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.api
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-08 13:36:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations
-"""Главный FastAPI сервер управления подсистемой Windows AI-Breadboard."""
+"""Главный FastAPI сервер управления подсистемой Windows AI-Windows-Admin."""
 
 from apps.windows.api.server import (
     create_app,

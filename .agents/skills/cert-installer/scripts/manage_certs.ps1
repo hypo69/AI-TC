@@ -1,23 +1,23 @@
 <#
 =============================================================================
-Process Name: AI-Breadboard Automation - Manage Certs
+Process Name: AI-Windows-Admin Automation - Manage Certs
 =============================================================================
 Description:
-  Проверка, генерация и установка локальных SSL-сертификатов для ai-breadboard
+  Проверка, генерация и установка локальных SSL-сертификатов для ai-windows-admin
 
 Usage Examples:
   PowerShell Execution:
     .\manage_certs.ps1
 
 File: manage_certs.ps1
-Project: ai-breadboard
+Project: ai-windows-admin
 Package: .skills/cert-installer/scripts
 Author: hypo69
 Copyright: © 2026 hypo69
-Updated: 2026-10-02 21:57:05
+Updated: 2026-10-10 17:35:00
 =============================================================================
 .SYNOPSIS
-    Проверка, генерация и установка локальных SSL-сертификатов для ai-breadboard
+    Проверка, генерация и установка локальных SSL-сертификатов для ai-windows-admin
 .DESCRIPTION
     1
 #>
@@ -34,7 +34,7 @@ $certsDir  = Join-Path $env:USERPROFILE ".certs"
 $certPath  = Join-Path $certsDir "localhost+2.pem"
 $keyPath   = Join-Path $certsDir "localhost+2-key.pem"
 $rootDir   = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path) # Root of the skill
-$projectRoot = Split-Path -Parent (Split-Path -Parent $rootDir) # Path to AI-Breadboard
+$projectRoot = Split-Path -Parent (Split-Path -Parent $rootDir) # Path to AI-Windows-Admin
 $pythonExe = Join-Path $projectRoot "venv\Scripts\python.exe"
 
 if (-not (Test-Path $certsDir)) {

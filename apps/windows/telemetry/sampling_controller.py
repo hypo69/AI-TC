@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Telemetry - Sampling Controller
+# Process Name: AI-Windows-Admin Apps Windows Telemetry - Sampling Controller
 # =============================================================================
 # Description:
 #   Контроллер адаптивного изменения частоты сбора телеметрии (Sampling Controller).
@@ -12,11 +12,11 @@
 #     service = SamplingController()
 #
 # File: sampling_controller.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.telemetry
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-06 05:34:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

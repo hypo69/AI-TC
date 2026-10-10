@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Telemetry - Security Normalizer
+# Process Name: AI-Windows-Admin Apps Windows Telemetry - Security Normalizer
 # =============================================================================
 # Description:
 #   Нормализатор событий журнала безопасности Windows Security Event Log.
@@ -14,11 +14,11 @@
 #     item, raw = normalizer.normalize_event(event_dict)
 #
 # File: security_normalizer.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.telemetry
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 05:40:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

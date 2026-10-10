@@ -10,7 +10,7 @@
 | [`analyze_dependencies.py`](analyze_dependencies.py) | Аудит импортов модулей и сопоставление с `requirements.txt`. | `python scripts/dev/analyze_dependencies.py` |
 | [`scan_headers.py`](scan_headers.py) | Валидация шапок файлов (`FILE_HEADERS.md`) на соответствие стандартам проекта. | `python scripts/dev/scan_headers.py` |
 | [`export_pdf.py`](export_pdf.py) | Экспорт кодовой базы и документации проекта в сводные PDF-книги (`code.pdf`, `docs.pdf`). | `python -m scripts.dev.export_pdf` |
-| [`init_skill.py`](init_skill.py) | Генератор каркаса нового агентурного навыка (`.skills/<name>/SKILL.md`). | `python scripts/dev/init_skill.py --name <name>` |
+| [`init_skill.py`](init_skill.py) | Генератор каркаса нового агентурного навыка (`.agents/skills/<name>/SKILL.md`). | `python scripts/dev/init_skill.py --name <name>` |
 | [`package_skill.py`](package_skill.py) | Упаковка и валидация манифеста агентурного навыка. | `python scripts/dev/package_skill.py <name>` |
 | [`init_plugin.py`](init_plugin.py) | Генератор каркаса нового плагина системы (`plugins/<name>/`). | `python scripts/dev/init_plugin.py --name <name>` |
 | [`bot_runner.py`](bot_runner.py) | Автономный запуск Telegram-бота в отдельном процессе. | `python scripts/dev/bot_runner.py` |

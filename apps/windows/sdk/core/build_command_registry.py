@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Core - Build Command Registry
+# Process Name: AI-Windows-Admin Apps Windows Core - Build Command Registry
 # =============================================================================
 # Description:
 #   Скрипт генерации полного реестра штатных команд Windows 10/11
@@ -10,13 +10,14 @@
 #   python apps/windows/core/build_command_registry.py
 #
 # File: build_command_registry.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.core
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-06 15:15:00
+# Updated: 2026-10-10 22:22:30
 # =============================================================================
 
+from logger import logger
 import json
 from pathlib import Path
 
@@ -266,7 +267,7 @@ def build_catalog():
             "catalog": items
         }, f, indent=2, ensure_ascii=False)
 
-    print(f"Успешно сохранен полный реестр: {len(items)} инструментов в {DATA_PATH}")
+    logger.console(f"Успешно сохранен полный реестр: {len(items)} инструментов в {DATA_PATH}")
 
 if __name__ == '__main__':
     build_catalog()

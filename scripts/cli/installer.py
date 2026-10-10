@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Scripts Cli - Installer
+# Process Name: AI-Windows-Admin Scripts Cli - Installer
 # =============================================================================
 # Description:
-#   Cross-platform installation system for AI Breadboard.
+#   Cross-platform installation system for AI Windows Admin.
 #
 # Usage Examples:
 #   CLI:
@@ -14,14 +14,14 @@
 #     service = Language()
 #
 # File: installer.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: scripts.cli
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:27:07
+# Updated: 2026-10-10 22:22:30
 # =============================================================================
 
-"""Cross-platform installation system for AI Breadboard.
+"""Cross-platform installation system for AI Windows Admin.
 
 Ported from legacy install.ps1 to work on Windows, Linux, and macOS.
 
@@ -30,6 +30,7 @@ Usage:
     python scripts/cli/installer.py --lang en
     python scripts/cli/installer.py --skip-models"""
 
+from logger import logger
 import argparse
 import json
 import os
@@ -50,7 +51,7 @@ class Language(Enum):
     RU = 'ru'
     ES = 'es'
     HE = 'he'
-MESSAGES = {'en': {'welcome': '🎯 AI Breadboard Installation', 'step_venv': '[1/6] Creating Python virtual environment...', 'step_deps': '[2/6] Installing dependencies...', 'step_certs': '[3/6] Setting up SSL certificates...', 'step_cli': '[4/6] Configuring CLI assistant...', 'step_user': 'Configuring default administrator account...', 'step_verify': '[5/6] Verifying installation...', 'step_models': '[6/6] Downloading AI models (optional)...', 'success': '✅ Installation completed successfully!', 'error': '❌ Installation failed:', 'abort': '⚠️  Installation aborted by user'}, 'ru': {'welcome': '🎯 AI Breadboard Installation', 'step_venv': '[1/6] Creating Python virtual environment...', 'step_deps': '[2/6] Installing dependencies...', 'step_certs': '[3/6] Setting up SSL certificates...', 'step_cli': '[4/6] Configuring CLI assistant...', 'step_user': 'Настройка учетной записи администратора по умолчанию...', 'step_verify': '[5/6] Verifying installation...', 'step_models': '[6/6] Downloading AI models (optional)...', 'success': '✅ Installation completed successfully!', 'error': '❌ Installation failed:', 'abort': '⚠️  Installation aborted by user'}}
+MESSAGES = {'en': {'welcome': '🎯 AI Windows Admin Installation', 'step_venv': '[1/6] Creating Python virtual environment...', 'step_deps': '[2/6] Installing dependencies...', 'step_certs': '[3/6] Setting up SSL certificates...', 'step_cli': '[4/6] Configuring CLI assistant...', 'step_user': 'Configuring default administrator account...', 'step_verify': '[5/6] Verifying installation...', 'step_models': '[6/6] Downloading AI models (optional)...', 'success': '✅ Installation completed successfully!', 'error': '❌ Installation failed:', 'abort': '⚠️  Installation aborted by user'}, 'ru': {'welcome': '🎯 AI Windows Admin Installation', 'step_venv': '[1/6] Creating Python virtual environment...', 'step_deps': '[2/6] Installing dependencies...', 'step_certs': '[3/6] Setting up SSL certificates...', 'step_cli': '[4/6] Configuring CLI assistant...', 'step_user': 'Настройка учетной записи администратора по умолчанию...', 'step_verify': '[5/6] Verifying installation...', 'step_models': '[6/6] Downloading AI models (optional)...', 'success': '✅ Installation completed successfully!', 'error': '❌ Installation failed:', 'abort': '⚠️  Installation aborted by user'}}
 
 class Installer:
     """Main installer class"""
@@ -72,51 +73,51 @@ class Installer:
         """Get default installation directory"""
         if sys.platform == 'win32':
             localappdata = os.environ.get('LOCALAPPDATA', str(Path.home() / 'AppData' / 'Local'))
-            return Path(localappdata) / 'AI-Breadboard'
+            return Path(localappdata) / 'AI-Windows-Admin'
         else:
-            return Path.home() / 'AI-Breadboard'
+            return Path.home() / 'AI-Windows-Admin'
 
     def print_header(self):
         """Print installation header"""
-        print()
-        print('╔' + '═' * 68 + '╗')
-        print('║' + self.msg('welcome').center(68) + '║')
-        print('╚' + '═' * 68 + '╝')
-        print()
+        logger.console()
+        logger.console('╔' + '═' * 68 + '╗')
+        logger.console('║' + self.msg('welcome').center(68) + '║')
+        logger.console('╚' + '═' * 68 + '╝')
+        logger.console()
         if self.light_version:
-            print('Mode: LIGHT VERSION (Gemini / AGY / Cloud Only)')
-        print(f'Installing to: {self.install_dir}')
-        print()
+            logger.console('Mode: LIGHT VERSION (Gemini / AGY / Cloud Only)')
+        logger.console(f'Installing to: {self.install_dir}')
+        logger.console()
 
     def create_venv(self) -> bool:
         """Create virtual environment"""
-        print(self.msg('step_venv'))
+        logger.console(self.msg('step_venv'))
         try:
             if self.venv_dir.exists():
-                print(f'  Removing old venv...', end=' ', flush=True)
+                logger.console(f'  Removing old venv...', end=' ', flush=True)
                 shutil.rmtree(self.venv_dir)
-                print('[OK]')
-            print(f'  Creating venv...', end=' ', flush=True)
+                logger.console('[OK]')
+            logger.console(f'  Creating venv...', end=' ', flush=True)
             subprocess.run([sys.executable, '-m', 'venv', str(self.venv_dir)], check=True, capture_output=True)
-            print('[OK]')
-            print()
+            logger.console('[OK]')
+            logger.console()
             return True
         except Exception as e:
-            print(f'[ERROR] {e}')
-            print()
+            logger.console(f'[ERROR] {e}')
+            logger.console()
             return False
 
     def install_dependencies(self) -> bool:
         """Install dependencies"""
-        print(self.msg('step_deps'))
+        logger.console(self.msg('step_deps'))
         try:
             if sys.platform == 'win32':
                 pip_exe = self.venv_dir / 'Scripts' / 'pip.exe'
             else:
                 pip_exe = self.venv_dir / 'bin' / 'pip'
             if not pip_exe.exists():
-                print(f'  [ERROR] pip not found in venv')
-                print()
+                logger.console(f'  [ERROR] pip not found in venv')
+                logger.console()
                 return False
             if self.light_version:
                 req_light = self.install_dir / 'install' / 'req' / 'requirements-light.txt'
@@ -125,86 +126,86 @@ class Installer:
                 req_files = [self.install_dir / 'requirements.txt', self.install_dir / 'install' / 'req' / 'requirements-core.txt', self.install_dir / 'install' / 'req' / 'requirements-ai.txt']
             for req_file in req_files:
                 if req_file.exists():
-                    print(f'  Installing from {req_file.name}...', end=' ', flush=True)
+                    logger.console(f'  Installing from {req_file.name}...', end=' ', flush=True)
                     result = subprocess.run([str(pip_exe), 'install', '-r', str(req_file)], capture_output=True, text=True)
                     if result.returncode == 0:
-                        print('[OK]')
+                        logger.console('[OK]')
                     else:
-                        print(f'[WARN]')
+                        logger.console(f'[WARN]')
                         if result.stderr:
-                            print(f'    {result.stderr[:100]}')
+                            logger.console(f'    {result.stderr[:100]}')
             if self.light_version:
-                print('  Installing Google AI providers (gemini, agy)...', end=' ', flush=True)
+                logger.console('  Installing Google AI providers (gemini, agy)...', end=' ', flush=True)
                 subprocess.run([str(pip_exe), 'install', 'google-genai', 'google-antigravity', 'langchain-google-genai'], capture_output=True, text=True)
-                print('[OK]')
-            print()
+                logger.console('[OK]')
+            logger.console()
             return True
         except Exception as e:
-            print(f'[ERROR] {e}')
-            print()
+            logger.console(f'[ERROR] {e}')
+            logger.console()
             return False
 
     def setup_ssl_certificates(self) -> bool:
         """Setup SSL certificates"""
-        print(self.msg('step_certs'))
+        logger.console(self.msg('step_certs'))
         try:
             certs_dir = CrossPlatformPaths().certs_dir
             certs_dir.mkdir(parents=True, exist_ok=True)
-            print(f'  Certificates directory: {certs_dir}')
+            logger.console(f'  Certificates directory: {certs_dir}')
             if which('mkcert'):
-                print(f'  mkcert found, generating certificates...', end=' ', flush=True)
+                logger.console(f'  mkcert found, generating certificates...', end=' ', flush=True)
                 subprocess.run(['mkcert', '-install'], cwd=str(certs_dir), capture_output=True)
                 subprocess.run(['mkcert', '-key-file', str(certs_dir / 'localhost+2-key.pem'), '-cert-file', str(certs_dir / 'localhost+2.pem'), 'localhost', '127.0.0.1', '::1'], cwd=str(certs_dir), capture_output=True)
-                print('[OK]')
+                logger.console('[OK]')
             else:
-                print(f'  mkcert not installed (optional)')
-                print(f'  Installation: https://github.com/FiloSottile/mkcert')
-            print()
+                logger.console(f'  mkcert not installed (optional)')
+                logger.console(f'  Installation: https://github.com/FiloSottile/mkcert')
+            logger.console()
             return True
         except Exception as e:
-            print(f'[WARN] Error setting up certificates: {e}')
-            print()
+            logger.console(f'[WARN] Error setting up certificates: {e}')
+            logger.console()
             return True
 
     def configure_cli(self) -> bool:
         """Configure CLI assistant"""
-        print(self.msg('step_cli'))
+        logger.console(self.msg('step_cli'))
         try:
             from scripts.cli.utils import ensure_in_path, add_to_env_var
-            print(f'  Adding to PATH...', end=' ', flush=True)
+            logger.console(f'  Adding to PATH...', end=' ', flush=True)
             if ensure_in_path(self.install_dir / 'assist'):
-                print('[OK]')
+                logger.console('[OK]')
             else:
-                print('[WARN]')
-            print(f'  Setting environment variables...', end=' ', flush=True)
-            add_to_env_var('AIBREADBOARD_DIR', str(self.install_dir))
+                logger.console('[WARN]')
+            logger.console(f'  Setting environment variables...', end=' ', flush=True)
+            add_to_env_var('AIWINDOWSADMIN_DIR', str(self.install_dir))
             add_to_env_var('PYTHONPATH', str(self.install_dir))
-            print('[OK]')
-            print()
+            logger.console('[OK]')
+            logger.console()
             return True
         except Exception as e:
-            print(f'[WARN] {e}')
-            print()
+            logger.console(f'[WARN] {e}')
+            logger.console()
             return True
 
     def verify_installation(self) -> bool:
         """Verify installation"""
-        print(self.msg('step_verify'))
+        logger.console(self.msg('step_verify'))
         try:
             if sys.platform == 'win32':
                 python_exe = self.venv_dir / 'Scripts' / 'python.exe'
             else:
                 python_exe = self.venv_dir / 'bin' / 'python'
             if not python_exe.exists():
-                print(f'  [ERROR] Python not found in venv')
-                print()
+                logger.console(f'  [ERROR] Python not found in venv')
+                logger.console()
                 return False
-            print(f'  Checking dependencies...', end=' ', flush=True)
-            result = subprocess.run([str(python_exe), '-c', "import fastapi, uvicorn, dotenv; print('OK')"], capture_output=True, text=True, timeout=10)
+            logger.console(f'  Checking dependencies...', end=' ', flush=True)
+            result = subprocess.run([str(python_exe), '-c', "import fastapi, uvicorn, dotenv; logger.console('OK')"], capture_output=True, text=True, timeout=10)
             if result.returncode == 0 and 'OK' in result.stdout:
-                print('[OK]')
+                logger.console('[OK]')
             else:
-                print('[WARN] Some dependencies may not be installed')
+                logger.console('[WARN] Some dependencies may not be installed')
             if self.light_version:
                 config_path = self.install_dir / 'config.json'
                 if config_path.exists():
@@ -222,48 +223,48 @@ class Installer:
                         cfg['ai']['use_agy'] = True
                         with open(config_path, 'w', encoding='utf-8') as f:
                             json.dump(cfg, f, indent=4)
-                        print('  Patched config.json for light version [OK]')
+                        logger.console('  Patched config.json for light version [OK]')
                     except Exception as ex:
-                        print(f'  [WARN] Failed to patch config.json: {ex}')
+                        logger.console(f'  [WARN] Failed to patch config.json: {ex}')
             assist_file = self.install_dir / 'assist'
             if assist_file.exists() or (self.install_dir / 'assist.cmd').exists():
-                print(f'  Checking assist CLI...', end=' ', flush=True)
-                print('[OK]')
+                logger.console(f'  Checking assist CLI...', end=' ', flush=True)
+                logger.console('[OK]')
             else:
-                print(f'  [WARN] assist not found')
-            print()
+                logger.console(f'  [WARN] assist not found')
+            logger.console()
             return True
         except Exception as e:
-            print(f'[WARN] {e}')
-            print()
+            logger.console(f'[WARN] {e}')
+            logger.console()
             return True
 
     def download_models(self, skip: bool=False) -> bool:
         """Download models (optional)"""
         if skip or self.light_version:
-            print(self.msg('step_models'))
-            print(f'  Skipping local models (light mode)')
-            print()
+            logger.console(self.msg('step_models'))
+            logger.console(f'  Skipping local models (light mode)')
+            logger.console()
             return True
-        print(self.msg('step_models'))
-        print(f'  TODO: Implement model download')
-        print()
+        logger.console(self.msg('step_models'))
+        logger.console(f'  TODO: Implement model download')
+        logger.console()
         return True
 
     def setup_initial_user(self) -> bool:
         """Configure initial default administrator user"""
-        print(self.msg('step_user'))
+        logger.console(self.msg('step_user'))
         try:
             python_exe = self.venv_dir / ('Scripts/python.exe' if sys.platform == 'win32' else 'bin/python')
             user_script = self.install_dir / 'scripts' / 'create_initial_user.py'
             if user_script.exists():
                 subprocess.run([str(python_exe), str(user_script), '--non-interactive'], capture_output=True, text=True, timeout=30)
-                print('  Administrator account initialized [OK]')
-            print()
+                logger.console('  Administrator account initialized [OK]')
+            logger.console()
             return True
         except Exception as e:
-            print(f'  [WARN] Failed to setup initial user: {e}')
-            print()
+            logger.console(f'  [WARN] Failed to setup initial user: {e}')
+            logger.console()
             return True
 
     def run(self, skip_models: bool=False, skip_venv: bool=False, skip_deps: bool=False, skip_certs: bool=False) -> int:
@@ -275,36 +276,36 @@ class Installer:
             for should_run, step_func, step_name in steps:
                 if should_run:
                     if not step_func():
-                        print(f"{self.msg('error')} {step_name}")
+                        logger.console(f"{self.msg('error')} {step_name}")
                         return 1
-            print('╔' + '═' * 68 + '╗')
-            print('║' + self.msg('success').center(68) + '║')
-            print('╚' + '═' * 68 + '╝')
-            print()
-            print(f'Next steps:')
-            print(f'  1. Go to installation directory:')
-            print(f'     cd {self.install_dir}')
-            print(f'  2. Activate venv:')
+            logger.console('╔' + '═' * 68 + '╗')
+            logger.console('║' + self.msg('success').center(68) + '║')
+            logger.console('╚' + '═' * 68 + '╝')
+            logger.console()
+            logger.console(f'Next steps:')
+            logger.console(f'  1. Go to installation directory:')
+            logger.console(f'     cd {self.install_dir}')
+            logger.console(f'  2. Activate venv:')
             if sys.platform == 'win32':
-                print(f'     venv\\Scripts\\activate')
+                logger.console(f'     venv\\Scripts\\activate')
             else:
-                print(f'     source venv/bin/activate')
-            print(f'  3. Start the server:')
-            print(f'     python run.py')
-            print()
+                logger.console(f'     source venv/bin/activate')
+            logger.console(f'  3. Start the server:')
+            logger.console(f'     python run.py')
+            logger.console()
             return 0
         except KeyboardInterrupt:
-            print()
-            print(self.msg('abort'))
-            print()
+            logger.console()
+            logger.console(self.msg('abort'))
+            logger.console()
             return 1
         except Exception as e:
-            print(f"{self.msg('error')} {e}")
+            logger.console(f"{self.msg('error')} {e}")
             return 1
 
 def main():
     """Main function"""
-    parser = argparse.ArgumentParser(description='AI Breadboard installer', formatter_class=argparse.RawDescriptionHelpFormatter, epilog='\nExamples:\n  python scripts/cli/installer.py\n  python scripts/cli/installer.py --install-light-version\n  python scripts/cli/installer.py --lang en\n  python scripts/cli/installer.py --install-dir /path/to/install\n  python scripts/cli/installer.py --skip-models\n        ')
+    parser = argparse.ArgumentParser(description='AI Windows Admin installer', formatter_class=argparse.RawDescriptionHelpFormatter, epilog='\nExamples:\n  python scripts/cli/installer.py\n  python scripts/cli/installer.py --install-light-version\n  python scripts/cli/installer.py --lang en\n  python scripts/cli/installer.py --install-dir /path/to/install\n  python scripts/cli/installer.py --skip-models\n        ')
     parser.add_argument('--lang', choices=['en', 'ru', 'es', 'he'], default='en', help='Installation language (default: en)')
     parser.add_argument('--install-dir', type=Path, default=None, help='Installation directory')
     parser.add_argument('--install-light-version', '--light', dest='install_light_version', action='store_true', help='Install lightweight version (Gemini/AGY only, no local heavy AI models/providers)')

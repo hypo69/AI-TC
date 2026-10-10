@@ -51,7 +51,7 @@ src/ai/agents/
 # Process Name: Custom Python ReAct Agent
 # Description: Агент для автономного выполнения пользовательских задач.
 # File: my_custom_agent.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: src.ai.agents
 # Author: hypo69
 # Copyright: © 2026 hypo69

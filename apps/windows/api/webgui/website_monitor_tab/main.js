@@ -10,11 +10,11 @@
  *     <script src="/windows/api/webgui/website_monitor_tab/main.js?v=20261001_v1" type="module"></script>
  *
  * File: main.js
- * Project: ai-breadboard
+ * Project: ai-windows-admin
  * Package: windows/api/webgui/website_monitor_tab
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-01 13:04:40
+ * Updated: 2026-10-10 17:35:00
  * =============================================================================
  */
 
@@ -26,7 +26,7 @@
 //   administrative web interface tab.
 //
 // File: main.js
-// Project: ai-breadboard
+// Project: ai-windows-admin
 // Package: src.api.webinterface.website_monitor_tab
 // Author: hypo69
 // Copyright: © 2026 hypo69

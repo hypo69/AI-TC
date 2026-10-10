@@ -7,7 +7,7 @@
 
 ## 📋 Overview
 
-The `/apps` directory hosts standalone domain applications, interactive terminal desks, and specialized monitoring workspaces that run natively on the host system and integrate seamlessly with the AI Breadboard ecosystem and FastAPI backend.
+The `/apps` directory hosts standalone domain applications, interactive terminal desks, and specialized monitoring workspaces that run natively on the host system and integrate seamlessly with the AI Windows Admin ecosystem and FastAPI backend.
 
 ---
 
@@ -22,7 +22,6 @@ apps/
 │   ├── telemetry/             # Hardware sensors, performance metrics, and tunnels
 │   └── router.py              # FastAPI REST endpoints (/api/windows/*)
 │
-├── trading_terminal/          # 📈 Exchange & Stock Control Desk (CLI, TUI, FastAPI Router)
 ├── network_terminal/          # 🌐 Network Traffic & Deep Packet Inspection Terminal
 ├── gcloud_monitor/            # ☁️ Google Cloud Console & Observability Monitor
 ├── cloudflared_monitor/       # 🔒 Cloudflare Tunnel Supervisor & Diagnostics Desk
@@ -36,7 +35,7 @@ apps/
 ├── windows_backup_manager/    # 💾 Windows Backup, Libraries & File History Manager
 ├── windows_defender/          # 🛡️ Microsoft Defender & AI Security Diagnostic Center
 ├── dashboard/                 # 🖥️ Interactive System Dashboard
-└── ai_breadboard_admin/       # ⚙️ Platform Administration Workspace
+└── ai_windows_admin_admin/       # ⚙️ Platform Administration Workspace
 ```
 
 ---
@@ -51,7 +50,6 @@ apps/
 | **Windows Backup Manager** | `python -m apps.windows_backup_manager` | `8114` | `/api/v1/backup-manager/*` | Управление библиотеками Windows, File History, теневыми копиями VSS и RAG-поиском по резервным копиям. |
 | **Windows System Checkpoints** | `python -m apps.windows.system_checkpoints` | `8000` | `/api/v1/windows-checkpoints/*` | Управление контрольными точками системы, базовыми и периодическими WIM-образами (DISM), средой WinRE и аудитом актуальности (System Drift). |
 | **Network Terminal** | `python -m apps.network_terminal` | `8101` | `/api/v1/network/*` | Live packet capture, protocol distribution, and traffic anomaly detection. |
-| **Trading Terminal** | `python -m apps.trading_terminal` | `8103` | `/api/v1/trading/*` | Interactive exchange desk with real-time tickers, orderbook, position & PnL tracking. |
 | **Google Cloud Monitor** | `python -m apps.gcloud_monitor` | `8104` | `/api/gcloud/*` | Cloud Logging, metrics, IAM security audit, and AI diagnostics. |
 | **Website Monitor** | `python -m apps.website_monitor` | `8106` | `/api/v1/website-monitor/*` | GA4 Data API, Google Search Console metrics, and latency/uptime probes. |
 | **User Assistant** | `python -m apps.user_assistant` | `8107` | `/api/v1/assistant/*` | Personal agenda, Gmail and Google Calendar integration. |

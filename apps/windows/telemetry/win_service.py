@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Telemetry - Windows Service Entry
+# Process Name: AI-Windows-Admin Apps Windows Telemetry - Windows Service Entry
 # =============================================================================
 # Description:
 #   Точка входа и обертка Windows Service для фоновой службы AITelemetry.
@@ -17,15 +17,15 @@
 #     AITelemetry.exe --mode hybrid
 #
 # File: win_service.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.telemetry
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-06 07:58:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations
-"""Windows Service реализация для фонового демона сбора телеметрии AI-Breadboard."""
+"""Windows Service реализация для фонового демона сбора телеметрии AI-Windows-Admin."""
 
 import logging
 import os
@@ -96,10 +96,10 @@ except ImportError:
 
 if PYWIN32_AVAILABLE:
     class AITelemetryWindowsService(win32serviceutil.ServiceFramework):
-        """Windows Service адаптер для службы сбора системной телеметрии AI-Breadboard."""
+        """Windows Service адаптер для службы сбора системной телеметрии AI-Windows-Admin."""
         _svc_name_ = 'AITelemetry'
-        _svc_display_name_ = 'AI-Breadboard Telemetry Service'
-        _svc_description_ = 'Фоновая служба мониторинга, сбора телеметрии и аналитики метрик AI-Breadboard'
+        _svc_display_name_ = 'AI-Windows-Admin Telemetry Service'
+        _svc_description_ = 'Фоновая служба мониторинга, сбора телеметрии и аналитики метрик AI-Windows-Admin'
 
         def __init__(self, args: List[str]) -> None:
             """Инициализирует экземпляр службы Windows Service."""

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Log_Intelligence Src - Pipeline
+# Process Name: AI-Windows-Admin Apps Windows Log_Intelligence Src - Pipeline
 # =============================================================================
 # Description:
 #   Единый фасад пайплайна: Data Researcher -> Decision Gate -> Adaptive RAG.
@@ -12,11 +12,11 @@
 #     service = LogIntelligencePipeline()
 #
 # File: pipeline.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.log_intelligence.src
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:28:28
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard AI -   Init   Module
+# Process Name: AI-Windows-Admin AI -   Init   Module
 # =============================================================================
 # Description:
 #   Модуль основной системы (`__init__`).
@@ -9,11 +9,11 @@
 #
 #
 # File: __init__.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: src.ai.gemini
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 10:46:35
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 """Модуль основной системы (`__init__`)."""

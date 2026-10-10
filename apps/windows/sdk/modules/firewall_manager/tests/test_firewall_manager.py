@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Modules Firewall_Manager Tests - Test Firewall Manager
+# Process Name: AI-Windows-Admin Apps Windows Modules Firewall_Manager Tests - Test Firewall Manager
 # =============================================================================
 # Description:
 #   # Description:
@@ -12,11 +12,11 @@
 #     res = manager()
 #
 # File: test_firewall_manager.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.firewall_manager.tests
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-06 17:30:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations
@@ -54,7 +54,7 @@ def test_firewall_report(manager: FirewallManager):
 async def test_firewall_rule_simulation(manager: FirewallManager):
     """Проверка симуляции безопасного действия с правилом."""
     req = FirewallRuleActionRequest(
-        rule_name='AI-Breadboard Test Rule',
+        rule_name='AI-Windows-Admin Test Rule',
         action='add',
         port='9000',
         dry_run=True,

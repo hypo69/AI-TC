@@ -112,19 +112,11 @@
         "visible": true
       },
       {
-        "id": "storage_wear",
-        "label": "4. Износ дисков и батареи",
-        "icon": "💽",
-        "tab": "tab-storage-wear",
-        "order": 6,
-        "visible": true
-      },
-      {
         "id": "peripherals",
         "label": "5. Сеть и периферия",
         "icon": "🔌",
         "tab": "tab-peripherals",
-        "order": 7,
+        "order": 6,
         "visible": true
       },
       {
@@ -133,7 +125,7 @@
         "i18n": "tabs.network",
         "icon": "🌐",
         "tab": "tab-network",
-        "order": 8,
+        "order": 7,
         "visible": true
       },
       {
@@ -142,7 +134,7 @@
         "i18n": "tabs.startupAuditor",
         "icon": "🚀",
         "tab": "tab-startup-auditor",
-        "order": 9,
+        "order": 8,
         "visible": true
       },
       {
@@ -150,7 +142,7 @@
         "label": "Cloudflared",
         "icon": "☁️",
         "tab": "tab-cloudflared",
-        "order": 10,
+        "order": 9,
         "visible": false
       },
       {
@@ -158,7 +150,7 @@
         "label": "Google Cloud",
         "icon": "☁️",
         "tab": "tab-gcloud",
-        "order": 11,
+        "order": 10,
         "visible": false
       },
       {
@@ -166,16 +158,7 @@
         "label": "Website Intelligence",
         "icon": "📊",
         "tab": "tab-website-monitor",
-        "order": 12,
-        "visible": false
-      },
-      {
-        "id": "trading_terminal",
-        "label": "Торговый терминал",
-        "i18n": "tabs.trading",
-        "icon": "📈",
-        "tab": "tab-trading",
-        "order": 13,
+        "order": 11,
         "visible": false
       },
       {
@@ -183,7 +166,7 @@
         "label": "User Assistant",
         "icon": "🗓️",
         "tab": "tab-user-assistant",
-        "order": 14,
+        "order": 12,
         "visible": false
       },
       {
@@ -192,7 +175,7 @@
         "i18n": "tabs.helpdesk",
         "icon": "🎧",
         "tab": "tab-helpdesk",
-        "order": 15,
+        "order": 13,
         "visible": false
       },
       {
@@ -200,7 +183,7 @@
         "label": "Wikipedia Lab",
         "icon": "🌐",
         "tab": "tab-wikipedia-research",
-        "order": 16,
+        "order": 14,
         "visible": false
       },
       {
@@ -208,7 +191,7 @@
         "label": "Windows Backup",
         "icon": "💾",
         "tab": "tab-windows-backup",
-        "order": 17,
+        "order": 15,
         "visible": true
       },
       {
@@ -217,7 +200,7 @@
         "i18n": "tabs.sensorLogs",
         "icon": "⚡",
         "tab": "tab-hardware-monitor",
-        "order": 18,
+        "order": 16,
         "visible": true
       },
       {
@@ -225,7 +208,7 @@
         "label": "Телеметрия и логи",
         "icon": "⚡",
         "tab": "tab-autolog",
-        "order": 19,
+        "order": 17,
         "visible": true
       },
       {
@@ -233,7 +216,7 @@
         "label": "Исследования телеметрии",
         "icon": "🔬",
         "tab": "tab-telemetry-research",
-        "order": 20,
+        "order": 18,
         "visible": true
       },
       {
@@ -242,7 +225,15 @@
         "i18n": "tabs.softwareTransparency",
         "icon": "🔍",
         "tab": "tab-software-transparency",
-        "order": 21,
+        "order": 19,
+        "visible": true
+      },
+      {
+        "id": "software_scanner",
+        "label": "Глубокий аудит ПО (Dormant)",
+        "icon": "🕵️",
+        "tab": "tab-software-scanner",
+        "order": 20,
         "visible": true
       },
       {
@@ -251,7 +242,7 @@
         "i18n": "tabs.userDirectories",
         "icon": "📁",
         "tab": "tab-user-directories",
-        "order": 22,
+        "order": 21,
         "visible": true
       },
       {
@@ -259,7 +250,7 @@
         "label": "Установить Ninite",
         "icon": "⚡",
         "tab": "tab-ninite-updater",
-        "order": 23,
+        "order": 22,
         "visible": true
       },
       {
@@ -268,7 +259,7 @@
         "i18n": "tabs.fileRecovery",
         "icon": "🗂️",
         "tab": "tab-file-recovery",
-        "order": 24,
+        "order": 23,
         "visible": true
       },
       {
@@ -277,7 +268,7 @@
         "i18n": "tabs.rag",
         "icon": "🧠",
         "tab": "tab-rag",
-        "order": 25,
+        "order": 24,
         "visible": false
       },
       {
@@ -285,7 +276,7 @@
         "label": "PixelRAG",
         "icon": "🖼️",
         "tab": "tab-pixelrag",
-        "order": 26,
+        "order": 25,
         "visible": false
       },
       {
@@ -294,7 +285,7 @@
         "i18n": "tabs.agents",
         "icon": "🧩",
         "tab": "tab-agents",
-        "order": 27,
+        "order": 26,
         "visible": false
       },
       {
@@ -303,7 +294,7 @@
         "i18n": "tabs.skills",
         "icon": "⚡",
         "tab": "tab-skills",
-        "order": 28,
+        "order": 27,
         "visible": false
       },
       {
@@ -312,7 +303,7 @@
         "i18n": "tabs.mcp",
         "icon": "🔌",
         "tab": "tab-mcp",
-        "order": 29,
+        "order": 28,
         "visible": false
       },
       {
@@ -320,7 +311,7 @@
         "label": "AI Benchmark",
         "icon": "🏎️",
         "tab": "tab-ai-benchmark",
-        "order": 30,
+        "order": 29,
         "visible": false
       },
       {
@@ -328,7 +319,7 @@
         "label": "Google User Desktop",
         "icon": "🌐",
         "tab": "tab-google-desktop",
-        "order": 31,
+        "order": 30,
         "visible": false
       },
       {
@@ -337,7 +328,7 @@
         "i18n": "tabs.fileHistorySearch",
         "icon": "🔍",
         "tab": "tab-file-history-search",
-        "order": 32,
+        "order": 31,
         "visible": false
       },
       {
@@ -346,6 +337,14 @@
         "i18n": "tabs.models",
         "icon": "🤖",
         "tab": "tab-models",
+        "order": 32,
+        "visible": false
+      },
+      {
+        "id": "storage_wear",
+        "label": "4. Износ дисков и батареи",
+        "icon": "💽",
+        "tab": "tab-storage-wear",
         "order": 33,
         "visible": false
       },
@@ -355,7 +354,7 @@
         "icon": "💽",
         "tab": "tab-storage-manager",
         "order": 34,
-        "visible": true
+        "visible": false
       },
       {
         "id": "boot_recovery",
@@ -492,6 +491,14 @@
         "icon": "bi-journal-code",
         "tab": "tab-app-logs",
         "order": 51,
+        "visible": true
+      },
+      {
+        "id": "software_scanner",
+        "label": "Аудит ПО (Dormant)",
+        "icon": "🕵️",
+        "tab": "tab-software-scanner",
+        "order": 52,
         "visible": true
       }
     ]

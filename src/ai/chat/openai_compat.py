@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard AI - Openai Compat Module
+# Process Name: AI-Windows-Admin AI - Openai Compat Module
 # =============================================================================
 # Description:
 #   Модуль основной системы (`openai_compat`).
@@ -10,11 +10,11 @@
 #     import src.ai.chat.openai_compat as openai_compat
 #
 # File: openai_compat.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: src.ai.chat
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:13:56
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 """Модуль основной системы (`openai_compat`)."""

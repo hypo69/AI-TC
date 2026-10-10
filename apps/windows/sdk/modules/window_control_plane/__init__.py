@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows - Window Management Control Plane
+# Process Name: AI-Windows-Admin Apps Windows - Window Management Control Plane
 # =============================================================================
 # Description:
 #   Пакет Windows Window Management Control Plane: унифицированный каталог из 295 параметров
@@ -13,11 +13,11 @@
 #     )
 #
 # File: __init__.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.window_control_plane
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-06 18:25:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

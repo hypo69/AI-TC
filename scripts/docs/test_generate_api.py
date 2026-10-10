@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Scripts Docs - Test Generate Api
+# Process Name: AI-Windows-Admin Scripts Docs - Test Generate Api
 # =============================================================================
 # Description:
 #   Unit-тесты для скрипта generate_api.py
@@ -14,11 +14,11 @@
 #     service = TestDocstringParser()
 #
 # File: test_generate_api.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: scripts.docs
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:27:07
+# Updated: 2026-10-10 22:22:30
 # =============================================================================
 
 """Unit-тесты для скрипта generate_api.py
@@ -29,6 +29,7 @@
 - Обработку функций и классов
 - Создание индекса API"""
 
+from logger import logger
 import unittest
 import ast
 import tempfile
@@ -91,7 +92,7 @@ class TestMarkdownGenerator(unittest.TestCase):
 
     def test_generate_code_block(self):
         """Тестирует генерацию блока кода."""
-        code = 'print("Hello")'
+        code = 'logger.console("Hello")'
         result = MarkdownGenerator.generate_code_block(code)
         self.assertTrue(result.startswith('```python\n'))
         self.assertTrue(result.endswith('\n```\n\n'))
@@ -207,14 +208,14 @@ def run_tests():
     suite.addTests(loader.loadTestsFromTestCase(TestIntegration))
     runner = unittest.TextTestRunner(verbosity=2)
     result = runner.run(suite)
-    print('\n' + '=' * 60)
-    print('📊 РЕЗУЛЬТАТЫ ТЕСТИРОВАНИЯ')
-    print('=' * 60)
-    print(f'Всего тестов: {result.testsRun}')
-    print(f'Успешных: {result.testsRun - len(result.failures) - len(result.errors)}')
-    print(f'Ошибок: {len(result.failures)}')
-    print(f'Исключений: {len(result.errors)}')
-    print('=' * 60)
+    logger.console('\n' + '=' * 60)
+    logger.console('📊 РЕЗУЛЬТАТЫ ТЕСТИРОВАНИЯ')
+    logger.console('=' * 60)
+    logger.console(f'Всего тестов: {result.testsRun}')
+    logger.console(f'Успешных: {result.testsRun - len(result.failures) - len(result.errors)}')
+    logger.console(f'Ошибок: {len(result.failures)}')
+    logger.console(f'Исключений: {len(result.errors)}')
+    logger.console('=' * 60)
     return result.wasSuccessful()
 if __name__ == '__main__':
     import sys

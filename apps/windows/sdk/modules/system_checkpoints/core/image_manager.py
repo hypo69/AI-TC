@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Modules System_Checkpoints Core - Image Manager
+# Process Name: AI-Windows-Admin Apps Windows Modules System_Checkpoints Core - Image Manager
 # =============================================================================
 # Description:
 #   Модуль управления системными WIM-образами восстановления Windows через DISM.
@@ -12,11 +12,11 @@
 #     service = SystemImageManager()
 #
 # File: image_manager.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.system_checkpoints.core
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:28:28
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations
@@ -41,7 +41,7 @@ class SystemImageManager:
 
     def __init__(
         self,
-        default_dir: str = "C:\\Recovery\\AI-Breadboard",
+        default_dir: str = "C:\\Recovery\\AI-Windows-Admin",
         compress_level: str = "fast",
         timeout_seconds: int = 3600,
     ) -> None:

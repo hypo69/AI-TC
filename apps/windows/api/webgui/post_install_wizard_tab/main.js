@@ -10,11 +10,11 @@
  *     <script src="/html/post_install_wizard_tab/main.js?v=20261006_v1" type="module"></script>
  *
  * File: main.js
- * Project: ai-breadboard
+ * Project: ai-windows-admin
  * Package: windows/api/webgui/post_install_wizard_tab
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-06 05:55:00
+ * Updated: 2026-10-10 17:35:00
  * =============================================================================
  */
 

@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Scripts Cli Commands - Agents
+# Process Name: AI-Windows-Admin Scripts Cli Commands - Agents
 # =============================================================================
 # Description:
-#   Команды управления и запуска AI-агентов платформы AI Breadboard из каталога .agents.
+#   Команды управления и запуска AI-агентов платформы AI Windows Admin из каталога .agents.
 #
 # Usage Examples:
 #   CLI:
@@ -11,14 +11,15 @@
 #     py manage_tools.py agents run --name windows_controller_agent --query "Проверь диски"
 #
 # File: agents.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: scripts.cli.commands
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 08:32:00
+# Updated: 2026-10-10 22:22:44
 # =============================================================================
 
 from __future__ import annotations
+from logger import logger
 """Команды управления и запуска AI-агентов (agents)."""
 
 import argparse
@@ -46,32 +47,32 @@ def run_agents_command(args: argparse.Namespace) -> int:
     if sub == 'list':
         manifest_agents = list_available_agents()
         if manifest_agents:
-            print('\n=== ДЕКЛАРАТИВНЫЕ АГЕНТЫ (.agents/) ===')
+            logger.console('\n=== ДЕКЛАРАТИВНЫЕ АГЕНТЫ (.agents/) ===')
             for a in manifest_agents:
                 a_id = a.get('id', '')
                 name = a.get('name', a_id)
                 desc = a.get('description', '')
                 model = a.get('model', 'gemini')
                 tools_cnt = len(a.get('tools', []))
-                print(f"  • {a_id}: {name}")
-                print(f"    Модель: {model} | Инструментов: {tools_cnt} | Описание: {desc}")
-                print()
+                logger.console(f"  • {a_id}: {name}")
+                logger.console(f"    Модель: {model} | Инструментов: {tools_cnt} | Описание: {desc}")
+                logger.console()
 
-        print('=== ЗАРЕГИСТРИРОВАННЫЕ КЛАССЫ (AGENT_REGISTRY) ===')
+        logger.console('=== ЗАРЕГИСТРИРОВАННЫЕ КЛАССЫ (AGENT_REGISTRY) ===')
         for agent_name, agent_cls in sorted(AGENT_REGISTRY.items()):
             doc = (agent_cls.__doc__ or '').strip().split('\n')[0]
-            print(f'  • {agent_name}: {doc}')
-        print('==================================================\n')
+            logger.console(f'  • {agent_name}: {doc}')
+        logger.console('==================================================\n')
         return 0
 
     if sub == 'run':
         name = getattr(args, 'name', '')
         query = getattr(args, 'query', '')
         if not name:
-            print('Error: не указано имя агента (--name)')
+            logger.console('Error: не указано имя агента (--name)')
             return 1
 
-        print(f"[+] Поиск и инициализация агента '{name}'...")
+        logger.console(f"[+] Поиск и инициализация агента '{name}'...")
         try:
             agent_instance = load_agent_from_manifest(name)
         except Exception as e:
@@ -84,32 +85,32 @@ def run_agents_command(args: argparse.Namespace) -> int:
             if target_cls:
                 agent_instance = target_cls()
             else:
-                print(f"[ERROR] Не удалось загрузить агента '{name}': {e}")
+                logger.console(f"[ERROR] Не удалось загрузить агента '{name}': {e}")
                 return 1
 
-        print(f"[+] Запуск агента '{type(agent_instance).__name__}' с задачей: '{query}'...")
+        logger.console(f"[+] Запуск агента '{type(agent_instance).__name__}' с задачей: '{query}'...")
         try:
             if hasattr(agent_instance, 'search'):
                 if asyncio.iscoroutinefunction(agent_instance.search):
                     result = asyncio.run(agent_instance.search(query))
                 else:
                     result = agent_instance.search(query)
-                print(f"\n[РЕЗУЛЬТАТ]:\n{json.dumps(result, ensure_ascii=False, indent=2) if isinstance(result, dict) else result}\n")
+                logger.console(f"\n[РЕЗУЛЬТАТ]:\n{json.dumps(result, ensure_ascii=False, indent=2) if isinstance(result, dict) else result}\n")
                 return 0
             elif hasattr(agent_instance, 'run'):
                 result = agent_instance.run(query)
-                print(f"\n[РЕЗУЛЬТАТ]:\n{result}\n")
+                logger.console(f"\n[РЕЗУЛЬТАТ]:\n{result}\n")
                 return 0
             elif hasattr(agent_instance, 'execute'):
                 result = agent_instance.execute(query)
-                print(f"\n[РЕЗУЛЬТАТ]:\n{result}\n")
+                logger.console(f"\n[РЕЗУЛЬТАТ]:\n{result}\n")
                 return 0
             else:
-                print(f"[OK] Агент '{type(agent_instance).__name__}' успешно инициализирован.")
+                logger.console(f"[OK] Агент '{type(agent_instance).__name__}' успешно инициализирован.")
                 return 0
         except Exception as e:
-            print(f"[ERROR] Ошибка выполнения задачи агентом: {e}")
+            logger.console(f"[ERROR] Ошибка выполнения задачи агентом: {e}")
             return 1
 
-    print(f'Error: неизвестная подкоманда agents: {sub}')
+    logger.console(f'Error: неизвестная подкоманда agents: {sub}')
     return 1

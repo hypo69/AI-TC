@@ -1,4 +1,4 @@
-# 🚀 Google Drive Sync для AI-Breadboard
+# 🚀 Google Drive Sync для AI-Windows-Admin
 
 **Автоматическая синхронизация всех данных на Google Drive**
 

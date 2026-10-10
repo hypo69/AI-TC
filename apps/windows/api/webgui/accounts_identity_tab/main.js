@@ -8,11 +8,11 @@
  *   и каталогом операций.
  *
  * File: main.js
- * Project: ai-breadboard
+ * Project: ai-windows-admin
  * Package: windows/api/webgui/accounts_identity_tab
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-08 01:51:00
+ * Updated: 2026-10-10 17:35:00
  * =============================================================================
  */
 

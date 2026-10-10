@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Scripts Docs - Validate Structure
+# Process Name: AI-Windows-Admin Scripts Docs - Validate Structure
 # =============================================================================
 # Description:
 #   Скрипт для валидации структуры документации.
@@ -14,11 +14,11 @@
 #     service = DocumentationValidator()
 #
 # File: validate_structure.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: scripts.docs
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:27:07
+# Updated: 2026-10-10 22:22:30
 # =============================================================================
 
 """Скрипт для валидации структуры документации.
@@ -32,6 +32,7 @@ Exit codes:
   0 - ошибок нет
   1 - найдены ошибки"""
 
+from logger import logger
 import sys
 import os
 import re
@@ -170,8 +171,8 @@ class DocsValidator:
         Returns:
             True если ошибок нет, False если найдены ошибки
         """
-        print(f'📋 Валидация структуры документации в {self.docs_root}/')
-        print('-' * 60)
+        logger.console(f'📋 Валидация структуры документации в {self.docs_root}/')
+        logger.console('-' * 60)
         self._check_root_files()
         self._check_directories()
         self._check_subdirectory_files()
@@ -181,43 +182,43 @@ class DocsValidator:
 
     def _check_root_files(self) -> None:
         """Проверить наличие обязательных файлов в корне."""
-        print('🔍 Проверка обязательных файлов...')
+        logger.console('🔍 Проверка обязательных файлов...')
         for file_path, description in self.REQUIRED_ROOT_FILES.items():
             full_path = Path(file_path)
             if not full_path.exists():
                 self.errors.append(f'❌ Обязательный файл отсутствует: {file_path} ({description})')
             else:
-                print(f'  ✓ {file_path}')
+                logger.console(f'  ✓ {file_path}')
 
     def _check_directories(self) -> None:
         """Проверить наличие обязательных директорий."""
-        print('🔍 Проверка обязательных директорий...')
+        logger.console('🔍 Проверка обязательных директорий...')
         for dir_path, description in self.REQUIRED_DIRECTORIES.items():
             full_path = Path(dir_path)
             if not full_path.is_dir():
                 self.errors.append(f'❌ Обязательная директория отсутствует: {dir_path} ({description})')
             else:
-                print(f'  ✓ {dir_path}/')
+                logger.console(f'  ✓ {dir_path}/')
 
     def _check_subdirectory_files(self) -> None:
         """Проверить обязательные файлы в поддиректориях."""
-        print('🔍 Проверка файлов в поддиректориях...')
+        logger.console('🔍 Проверка файлов в поддиректориях...')
         for subdir, files in self.REQUIRED_SUBDIRS.items():
             subdir_path = Path(subdir)
             if not subdir_path.is_dir():
                 self.errors.append(f'❌ Директория отсутствует: {subdir}/')
                 continue
-            print(f'  📁 {subdir}/')
+            logger.console(f'  📁 {subdir}/')
             for filename in files:
                 file_path = subdir_path / filename
                 if not file_path.exists():
                     self.errors.append(f'❌ Обязательный файл отсутствует: {subdir}/{filename}')
                 else:
-                    print(f'    ✓ {filename}')
+                    logger.console(f'    ✓ {filename}')
 
     def _check_markdown_files(self) -> None:
         """Проверить Markdown-файлы на корректность."""
-        print('🔍 Проверка Markdown-файлов...')
+        logger.console('🔍 Проверка Markdown-файлов...')
         md_files = list(self.docs_root.rglob('*.md'))
         if not md_files:
             self.warnings.append('⚠️  Markdown-файлы не найдены')
@@ -248,7 +249,7 @@ class DocsValidator:
             if re.match('^#+\\s*$', line):
                 self.errors.append(f'❌ Файл {relative_path}, строка {i}: пустой заголовок')
         self._check_heading_hierarchy(lines, relative_path)
-        print(f'  ✓ {relative_path}')
+        logger.console(f'  ✓ {relative_path}')
 
     def _check_heading_hierarchy(self, lines: List[str], file_path: str) -> None:
         """Проверить правильность иерархии заголовков.
@@ -276,22 +277,22 @@ class DocsValidator:
 
     def _print_report(self) -> None:
         """Вывести отчёт о валидации."""
-        print('-' * 60)
-        print('📊 ОТЧЁТ ВАЛИДАЦИИ')
-        print('-' * 60)
+        logger.console('-' * 60)
+        logger.console('📊 ОТЧЁТ ВАЛИДАЦИИ')
+        logger.console('-' * 60)
         if self.errors:
-            print(f'\n❌ ОШИБКИ ({len(self.errors)}):')
+            logger.console(f'\n❌ ОШИБКИ ({len(self.errors)}):')
             for error in self.errors:
-                print(f'  {error}')
+                logger.console(f'  {error}')
         else:
-            print('\n✅ Ошибок не найдено!')
+            logger.console('\n✅ Ошибок не найдено!')
         if self.warnings:
-            print(f'\n⚠️  ПРЕДУПРЕЖДЕНИЯ ({len(self.warnings)}):')
+            logger.console(f'\n⚠️  ПРЕДУПРЕЖДЕНИЯ ({len(self.warnings)}):')
             for warning in self.warnings:
-                print(f'  {warning}')
-        print('-' * 60)
-        print(f'Всего: ошибок: {len(self.errors)}, предупреждений: {len(self.warnings)}')
-        print('-' * 60)
+                logger.console(f'  {warning}')
+        logger.console('-' * 60)
+        logger.console(f'Всего: ошибок: {len(self.errors)}, предупреждений: {len(self.warnings)}')
+        logger.console('-' * 60)
 
 def main() -> int:
     """Главная функция.

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Logger - Conftest
+# Process Name: AI-Windows-Admin Logger - Conftest
 # =============================================================================
 # Description:
 #   pytest configuration for logger module testing.
@@ -12,11 +12,11 @@
 #     res = project_root()
 #
 # File: conftest.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: logger
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:29:02
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 """pytest configuration for logger module testing.
@@ -83,4 +83,3 @@ def pytest_collection_modifyitems(config, items):
         if 'test_' in item.name:
             if not any((marker.name == 'unit' for marker in item.iter_markers())):
                 item.add_marker(pytest.mark.unit)
-pytest_plugins = ['pytest_asyncio']

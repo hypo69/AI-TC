@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Modules System_Control_Center - Tui
+# Process Name: AI-Windows-Admin Apps Windows Modules System_Control_Center - Tui
 # =============================================================================
 # Description:
 #   Терминальный интерфейс (TUI) для System Control Center.
@@ -10,11 +10,11 @@
 #     import apps.windows.sdk.modules.system_control_center.tui as tui
 #
 # File: tui.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.system_control_center
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:28:28
+# Updated: 2026-10-10 22:22:30
 # =============================================================================
 
 from __future__ import annotations
@@ -42,10 +42,10 @@ except ImportError:
 async def run_control_dashboard(interval: float=2.0) -> None:
     """Запуск интерактивного дашборда центра управления в терминале."""
     if not RICH_AVAILABLE:
-        print('[System Control Center] Running console loop...')
+        logger.console('[System Control Center] Running console loop...')
         while True:
             mem = psutil.virtual_memory()
-            print(f'[{platform.node()}] CPU: {psutil.cpu_percent()}% | RAM: {mem.percent}%')
+            logger.console(f'[{platform.node()}] CPU: {psutil.cpu_percent()}% | RAM: {mem.percent}%')
             await asyncio.sleep(interval)
     console = Console()
     with Live(console=console, refresh_per_second=1) as live:

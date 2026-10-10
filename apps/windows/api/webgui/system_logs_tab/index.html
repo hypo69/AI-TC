@@ -13,11 +13,11 @@ Usage Examples:
       <iframe src="/windows/api/webgui/system_logs_tab/index.html" class="w-100 h-100 border-0"></iframe>
 
 File: index.html
-Project: ai-breadboard
+Project: ai-windows-admin
 Package: windows/api/webgui/system_logs_tab
 Author: hypo69
 Copyright: © 2026 hypo69
-Updated: 2026-10-10 12:55:00
+Updated: 2026-10-10 17:50:00
 =============================================================================
 -->
 <style>
@@ -179,6 +179,104 @@ Updated: 2026-10-10 12:55:00
     margin-top: 0.35rem;
     display: flex;
     justify-content: space-between;
+  }
+
+  /* GitHub Timeline & Activity Heatmap Styles */
+  .gh-timeline-container {
+    background: #0d1117;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 1rem;
+    color: #c9d1d9;
+  }
+  .gh-stat-card {
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    padding: 0.5rem 0.75rem;
+  }
+  .gh-pulse-chart {
+    height: 190px;
+    display: flex;
+    align-items: flex-end;
+    gap: 4px;
+    padding: 0.5rem 0.25rem 1.5rem 0.25rem;
+    position: relative;
+    border-bottom: 1px solid #30363d;
+    overflow-x: auto;
+  }
+  .gh-pulse-col {
+    flex: 1;
+    min-width: 24px;
+    max-width: 50px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: center;
+    position: relative;
+    cursor: pointer;
+    transition: transform 0.12s ease;
+  }
+  .gh-pulse-col:hover {
+    transform: scaleY(1.04);
+  }
+  .gh-pulse-col.active .gh-bar-track {
+    box-shadow: 0 0 0 2px #58a6ff, 0 0 10px rgba(88, 166, 255, 0.4);
+  }
+  .gh-bar-track {
+    width: 100%;
+    border-radius: 4px 4px 0 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column-reverse;
+    background: rgba(255, 255, 255, 0.05);
+    transition: height 0.3s ease;
+  }
+  .gh-seg-crit { background: #8e1515; }
+  .gh-seg-err { background: #da3633; }
+  .gh-seg-warn { background: #d29922; }
+  .gh-seg-info { background: #238636; }
+  .gh-col-count {
+    font-size: 0.65rem;
+    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+    color: #8b949e;
+    margin-bottom: 2px;
+  }
+  .gh-col-label {
+    position: absolute;
+    bottom: -22px;
+    font-size: 0.65rem;
+    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+    color: #8b949e;
+    white-space: nowrap;
+  }
+  .gh-heatmap-grid {
+    display: grid;
+    grid-template-columns: repeat(24, 1fr);
+    gap: 3px;
+    padding: 0.5rem 0;
+  }
+  .gh-heat-cell {
+    aspect-ratio: 1;
+    border-radius: 2px;
+    background: #161b22;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    border: 1px solid rgba(255, 255, 255, 0.04);
+  }
+  .gh-heat-cell:hover {
+    transform: scale(1.25);
+    z-index: 10;
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+  }
+  .gh-heat-cell.lvl-0 { background: #161b22; }
+  .gh-heat-cell.lvl-1 { background: #0e4429; }
+  .gh-heat-cell.lvl-2 { background: #006d32; }
+  .gh-heat-cell.lvl-3 { background: #26a641; }
+  .gh-heat-cell.lvl-4 { background: #39d353; }
+  .gh-heat-cell.has-err {
+    border: 1px solid #da3633 !important;
   }
 </style>
 <div class="slc-container">
@@ -392,7 +490,7 @@ Updated: 2026-10-10 12:55:00
 </div>
 <!-- Timeline Histogram View Container (Hidden by default) -->
 <div class="p-3 d-none" id="slc-timeline-container" style="max-height: 580px; overflow-y: auto;">
-<div id="slc-timeline-list"></div>
+  <div id="slc-timeline-content"></div>
 </div>
 <!-- Raw Record Container (Hidden by default) -->
 <div class="p-3 d-none" id="slc-raw-container" style="max-height: 580px; overflow-y: auto;">

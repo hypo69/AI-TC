@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Telemetry Sqlite - Maintenance
+# Process Name: AI-Windows-Admin Apps Windows Telemetry Sqlite - Maintenance
 # =============================================================================
 # Description:
 #   Обслуживание, очистка, агрегация и контроль размера базы данных SQLite.
@@ -13,11 +13,11 @@
 #     stats = maint.get_storage_stats()
 #
 # File: maintenance.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.telemetry.sqlite
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-08 11:55:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

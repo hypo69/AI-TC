@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard UTILS - Dict Module
+# Process Name: AI-Windows-Admin UTILS - Dict Module
 # =============================================================================
 # Description:
 #   Converter for converting between dict and SimpleNamespace objects.
@@ -13,11 +13,11 @@
 #     print(res)
 #
 # File: dict.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: src.utils.convertors
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:13:56
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 """Converter for converting between dict and SimpleNamespace objects.
@@ -38,7 +38,10 @@ from pathlib import Path
 from xml.dom.minidom import getDOMImplementation
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
-from src.utils.xls import save_xls_file
+try:
+    from src.utils.xls import save_xls_file
+except ImportError:
+    save_xls_file = None
 
 def replace_key_in_dict(data, old_key, new_key) -> dict:
     """

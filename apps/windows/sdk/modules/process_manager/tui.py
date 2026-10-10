@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Modules Process_Manager - Tui
+# Process Name: AI-Windows-Admin Apps Windows Modules Process_Manager - Tui
 # =============================================================================
 # Description:
 #   # Description:
@@ -12,14 +12,15 @@
 #     service = ProcessManagerTUI()
 #
 # File: tui.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.process_manager
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:28:28
+# Updated: 2026-10-10 22:22:44
 # =============================================================================
 
 from __future__ import annotations
+from logger import logger
 """# Description:"""
 
 from rich.console import Console
@@ -66,9 +67,9 @@ class ProcessManagerTUI:
                 str(p.username or '-')
             )
 
-        self.console.print(Panel('[bold white]AI-Breadboard: Windows Process & Memory Manager[/bold white]', style='blue'))
-        self.console.print(panel)
-        self.console.print(table)
+        self.console.logger.console(Panel('[bold white]AI-Windows-Admin: Windows Process & Memory Manager[/bold white]', style='blue'))
+        self.console.logger.console(panel)
+        self.console.logger.console(table)
 
 
 __all__ = ['ProcessManagerTUI']

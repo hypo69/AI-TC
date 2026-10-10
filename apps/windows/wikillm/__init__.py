@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Wikillm -   Init  
+# Process Name: AI-Windows-Admin Apps Windows Wikillm -   Init  
 # =============================================================================
 # Description:
 #   Инициализатор пакета WikiLLM (Progressive Knowledge Acquisition + Retrieval)
@@ -9,37 +9,42 @@
 #
 #
 # File: __init__.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.wikillm
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:28:28
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
-"""Инициализатор пакета WikiLLM (Progressive Knowledge Acquisition + Retrieval)"""
+"""Инициализатор пакета WikiLLM (Progressive Knowledge Acquisition + Retrieval).
 
-from .code_indexer import CodeKnowledgeIndexer
-from .config import WikiLLMConfig, load_config
-from .engine import WikiLLMEngine
-from .extractor import ArtifactExtractor
-from .models import (
+Реэкспортирует основные компоненты из корневого пакета src.ai.wikillm.
+"""
+
+from src.ai.wikillm import (
+    WikiLLMEngine,
+    WikiStorage,
+    WikiLLMConfig,
+    load_config,
+    ArtifactExtractor,
+    CanonicalKeyNormalizer,
+    CodeKnowledgeIndexer,
+    TelemetryWikiBridge,
+    router,
+    init_router,
     ArtifactInput,
     ArtifactType,
-    Claim,
-    CodeKnowledge,
-    DiagnosticKnowledge,
-    Evidence,
     KnowledgeEntity,
     KnowledgeSource,
     LookupLevel,
-    ObservationRecord,
-    ResolutionAction,
     ResolutionResult,
+    ResolutionAction,
+    Claim,
+    Evidence,
+    ObservationRecord,
+    DiagnosticKnowledge,
+    CodeKnowledge,
 )
-from .normalizer import CanonicalKeyNormalizer
-from .router import init_router, router
-from .storage import WikiStorage
-from .telemetry_bridge import TelemetryWikiBridge
 
 __all__ = [
     "WikiLLMEngine",
@@ -65,3 +70,4 @@ __all__ = [
     "DiagnosticKnowledge",
     "CodeKnowledge",
 ]
+

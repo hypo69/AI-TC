@@ -224,7 +224,7 @@ pytest apps/<app_name>/tests/ -v
 #   >>> connections = monitor.get_tcp_connections()
 #
 # File: network_monitor.py
-# Project: AI Breadboard
+# Project: AI Windows Admin
 # Module: apps.network_terminal
 # Class: NetworkMonitor
 # Author: hypo69
@@ -499,13 +499,7 @@ pytest apps/network_terminal/tests/ --cov=apps/network_terminal --cov-report=ter
 
 ---
 
-## 🚫 Исключённые тесты (Excluded Test Suites)
-
-- **`TestTradingDeskEngineApp`**: тесты торгового движка (`tests/test_apps_trading.py`) отключены от автоматического прогона по требованию пользователя. Исключены в `pytest.ini` (`-k "not TestTradingDeskEngineApp"`) и помечены `@pytest.mark.skip`.
-
----
-
-**Последнее обновление:** 2026-10-06
+**Последнее обновление:** 2026-10-10
 
 **Ссылки:**
 - [`standards/DOCUMENTATION.md`](../standards/DOCUMENTATION.md) — Стандарты документирования

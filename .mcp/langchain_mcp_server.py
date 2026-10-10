@@ -6,7 +6,7 @@ from mcp.server.fastmcp import FastMCP
 from logger import logger
 from src.ai.langchain_agent import MediaSearchAgent
 from src.ai.langchain_tools import web_search, rag_search, python_eval, file_read
-mcp = FastMCP('LangChain-Breadboard-Agent')
+mcp = FastMCP('LangChain-AI Windows Admin-Agent')
 _CONFIG_PATH = Path(__file__).resolve().parent.parent / 'config.json'
 
 @mcp.tool()
@@ -64,5 +64,5 @@ def agent_python_eval(code: str) -> str:
         logger.error(f'[langchain_mcp_server] Error agent_python_eval: {e}')
         return f'Error: {e}'
 if __name__ == '__main__':
-    logger.info('[langchain_mcp_server] Запуск LangChain Breadboard FastMCP сервера...')
+    logger.info('[langchain_mcp_server] Запуск LangChain AI Windows Admin FastMCP сервера...')
     mcp.run()

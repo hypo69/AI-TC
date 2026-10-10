@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard AI - Models Module
+# Process Name: AI-Windows-Admin AI - Models Module
 # =============================================================================
 # Description:
 #   Модуль основной системы (`models`).
@@ -10,11 +10,11 @@
 #     import src.ai.gemini.models as models
 #
 # File: models.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: src.ai.gemini
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:13:56
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 """Модуль основной системы (`models`)."""

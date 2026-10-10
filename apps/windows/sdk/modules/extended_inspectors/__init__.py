@@ -1,16 +1,16 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Modules Extended Inspectors Init
+# Process Name: AI-Windows-Admin Apps Windows Modules Extended Inspectors Init
 # =============================================================================
 # Description:
 #   Инициализация пакета расширенных инспекторов Windows (SRUM, WSL2/Hyper-V, Sandbox).
 #
 # File: __init__.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.extended_inspectors
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 05:04:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

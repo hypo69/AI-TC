@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Modules Defender Core - Models
+# Process Name: AI-Windows-Admin Apps Windows Modules Defender Core - Models
 # =============================================================================
 # Description:
 #   Pydantic-модели данных для Microsoft Defender Antivirus & Security Center.
@@ -12,11 +12,11 @@
 #     service = ProtectionState()
 #
 # File: models.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.defender.core
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-06 12:15:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

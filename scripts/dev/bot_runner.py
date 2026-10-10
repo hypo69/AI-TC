@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Scripts Dev - Bot Runner
+# Process Name: AI-Windows-Admin Scripts Dev - Bot Runner
 # =============================================================================
 # Description:
 #   Telegram bot runner script.
@@ -12,11 +12,11 @@
 #     import scripts.dev.bot_runner as bot_runner
 #
 # File: bot_runner.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: scripts.dev
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:27:07
+# Updated: 2026-10-10 22:28:45
 # =============================================================================
 
 from __future__ import annotations
@@ -39,7 +39,7 @@ from header import __root__
 load_dotenv(__root__ / '.env')
 from src.utils.jjson import j_loads_ns
 from logger import logger
-from src.config import server_cfg, ai_cfg, tts_cfg, logging_cfg
+from src.config import server_cfg, ai_cfg, tts_cfg
 
 async def _run_bot() -> None:
     """Run Telegram bot with full plugin and AI model suite.

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Ai - Root Cause Analyzer
+# Process Name: AI-Windows-Admin Apps Windows Ai - Root Cause Analyzer
 # =============================================================================
 # Description:
 #   AI-анализатор первопричин системных проблем Windows.
@@ -12,11 +12,11 @@
 #     service = WindowsAIRootCauseAnalyzer()
 #
 # File: root_cause_analyzer.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.ai
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:28:28
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

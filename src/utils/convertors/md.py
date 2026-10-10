@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard UTILS - Md Module
+# Process Name: AI-Windows-Admin UTILS - Md Module
 # =============================================================================
 # Description:
 #   Markdown to dictionary conversion module.
@@ -13,11 +13,11 @@
 #     print(res)
 #
 # File: md.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: src.utils.convertors
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:13:56
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 """Markdown to dictionary conversion module.

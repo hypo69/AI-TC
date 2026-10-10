@@ -3,6 +3,7 @@
 
 Предоставляет кроссплатформенные функции для работы с config.json и путями.
 """
+from logger import logger
 import json
 import os
 import sys
@@ -18,8 +19,8 @@ def get_project_root() -> Path:
     current = Path(__file__).parent.parent
     if (current / 'config.json').exists() or (current / 'main.py').exists():
         return current
-    if 'AIBREADBOARD_DIR' in os.environ:
-        return Path(os.environ['AIBREADBOARD_DIR'])
+    if 'AIWINDOWSADMIN_DIR' in os.environ:
+        return Path(os.environ['AIWINDOWSADMIN_DIR'])
     return Path.cwd()
 
 def load_config() -> Dict[str, Any]:
@@ -36,7 +37,7 @@ def load_config() -> Dict[str, Any]:
         with open(config_path, 'r', encoding='utf-8') as f:
             return json.load(f)
     except Exception as e:
-        print(f'[WARNING] Error чтения config.json: {e}')
+        logger.console(f'[WARNING] Error чтения config.json: {e}')
         return {}
 
 def get_config_value(key_path: str, default: Any=None) -> Any:
@@ -127,11 +128,11 @@ def get_data_dir() -> Path:
     """
     if sys.platform == 'win32':
         localappdata = os.environ.get('LOCALAPPDATA', str(Path.home() / 'AppData' / 'Local'))
-        return Path(localappdata) / 'AI-Breadboard'
+        return Path(localappdata) / 'AI-Windows-Admin'
     elif sys.platform == 'darwin':
-        return Path.home() / 'Library' / 'Application Support' / 'AI-Breadboard'
+        return Path.home() / 'Library' / 'Application Support' / 'AI-Windows-Admin'
     else:
-        return Path.home() / '.local' / 'share' / 'AI-Breadboard'
+        return Path.home() / '.local' / 'share' / 'AI-Windows-Admin'
 
 def is_port_open(host: str='127.0.0.1', port: int=8000, timeout: float=1.0) -> bool:
     """

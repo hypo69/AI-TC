@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Core Tools - Dynamic Factory
+# Process Name: AI-Windows-Admin Apps Windows Core Tools - Dynamic Factory
 # =============================================================================
 # Description:
 #   Фабрика динамических инструментов и мета-инструмент create_custom_tool.
@@ -12,11 +12,11 @@
 #     service = DynamicSynthesizedTool()
 #
 # File: dynamic_factory.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.core.tools
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:28:28
+# Updated: 2026-10-10 20:38:00
 # =============================================================================
 
 from __future__ import annotations
@@ -107,27 +107,25 @@ class DynamicToolFactory:
         return tool
 
     def save_as_skill(self, tool: DynamicSynthesizedTool) -> Dict[str, Any]:
-        """Сохраняет динамический инструмент как постоянный навык в .skills/ и .agents/skills/."""
+        """Сохраняет динамический инструмент как постоянный навык в .agents/skills/."""
         safe_name = tool.name
-        target_dirs = [__root__ / '.skills' / safe_name, __root__ / '.agents' / 'skills' / safe_name]
-        already_existed = any(((t_dir / 'SKILL.md').exists() for t_dir in target_dirs))
+        target_dir = __root__ / '.agents' / 'skills' / safe_name
+        already_existed = (target_dir / 'SKILL.md').exists()
         skill_md_content = f'---\nname: {safe_name}\ndescription: Automated assistant skill for: {tool.description}\n---\n\n# {tool.title}\n\n## 🎯 Назначение (Purpose)\n{tool.description}\n\n## 🚀 Триггеры и применение (When to Use & Triggers)\nИспользуется при запросах пользователя о конфигурации хоста, экспресс-диагностике и аудите в интерфейсе Test Computer (/tc).\n\n## ⚙️ Протокол выполнения (Execution Protocol)\n{tool.instructions}\n'
         created_path = ''
-        for t_dir in target_dirs:
-            try:
-                t_dir.mkdir(parents=True, exist_ok=True)
-                skill_file = t_dir / 'SKILL.md'
-                skill_file.write_text(skill_md_content, encoding='utf-8')
-                if tool.probe_script and (not tool.probe_script.startswith('apps.windows')):
-                    scripts_dir = t_dir / 'scripts'
-                    scripts_dir.mkdir(parents=True, exist_ok=True)
-                    (scripts_dir / 'probe.ps1').write_text(tool.probe_script, encoding='utf-8')
-                if not created_path:
-                    created_path = str(skill_file.relative_to(__root__))
-            except Exception as e:
-                logger.warning(f'[DynamicToolFactory] Не удалось записать навык в {t_dir}: {e}')
+        try:
+            target_dir.mkdir(parents=True, exist_ok=True)
+            skill_file = target_dir / 'SKILL.md'
+            skill_file.write_text(skill_md_content, encoding='utf-8')
+            if tool.probe_script and (not tool.probe_script.startswith('apps.windows')):
+                scripts_dir = target_dir / 'scripts'
+                scripts_dir.mkdir(parents=True, exist_ok=True)
+                (scripts_dir / 'probe.ps1').write_text(tool.probe_script, encoding='utf-8')
+            created_path = str(skill_file.relative_to(__root__))
+        except Exception as e:
+            logger.warning(f'[DynamicToolFactory] Не удалось записать навык в {target_dir}: {e}')
         if not created_path:
-            created_path = f'.skills/{safe_name}/SKILL.md'
+            created_path = f'.agents/skills/{safe_name}/SKILL.md'
         return {'name': safe_name, 'title': tool.title, 'path': created_path, 'description_ru': tool.description, 'is_new': not already_existed}
 
 class CreateCustomToolMetaTool(BaseTool):

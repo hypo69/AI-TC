@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard UTILS - Ns Module
+# Process Name: AI-Windows-Admin UTILS - Ns Module
 # =============================================================================
 # Description:
 #   Convert SimpleNamespace objects to various formats: dict, JSON, CSV, XML, XLS.
@@ -10,11 +10,11 @@
 #     import src.utils.convertors.ns as ns
 #
 # File: ns.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: src.utils.convertors
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 10:52:30
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 """Convert SimpleNamespace objects to various formats: dict, JSON, CSV, XML, XLS."""
@@ -26,7 +26,10 @@ from pathlib import Path
 from typing import List, Dict
 from src.utils.convertors import xml2dict
 from src.utils.csv import save_csv_file
-from src.utils.xls import save_xls_file
+try:
+    from src.utils.xls import save_xls_file
+except ImportError:
+    save_xls_file = None
 from logger import logger
 
 from types import SimpleNamespace

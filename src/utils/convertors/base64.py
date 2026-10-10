@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard UTILS - Base64 Module
+# Process Name: AI-Windows-Admin UTILS - Base64 Module
 # =============================================================================
 # Description:
 #   Base64 encoded content to temporary file conversion utilities.
@@ -13,11 +13,11 @@
 #     print(res)
 #
 # File: base64.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: src.utils.convertors
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:13:56
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 """Base64 encoded content to temporary file conversion utilities.

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard - UI Capture Tool
+# Process Name: AI-Windows-Admin - UI Capture Tool
 # =============================================================================
 # Description:
 #   Автоматический обход веб-интерфейса и сохранение скриншотов в PNG.
@@ -13,14 +13,15 @@
 #   py manage_tools.py ui capture http://127.0.0.1:8001/tc --wait 10000 --debug
 #
 # File: tools/capture_ui.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: tools
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-08 13:00:00
+# Updated: 2026-10-10 22:22:44
 # =============================================================================
 
 from __future__ import annotations
+from logger import logger
 
 import argparse
 import asyncio
@@ -50,7 +51,7 @@ def build_parser() -> argparse.ArgumentParser:
     :returns: Настроенный парсер аргументов.
     """
     parser = argparse.ArgumentParser(
-        description='Автоматический обход веб-интерфейса AI Breadboard и сохранение состояний в PNG.'
+        description='Автоматический обход веб-интерфейса AI Windows Admin и сохранение состояний в PNG.'
     )
 
     parser.add_argument(
@@ -98,7 +99,7 @@ def debug(
     :param enabled: Признак активного DEBUG-режима.
     """
     if enabled:
-        print(f'[DEBUG] {message}')
+        logger.console(f'[DEBUG] {message}')
 
 
 def sanitize_filename(
@@ -220,7 +221,7 @@ async def collect_navigation(
     try:
         drawer_btn = page.locator('#apps-drawer-toggle-btn, .left-drawer-tab-trigger').first
         if await drawer_btn.count() > 0:
-            debug('Открытие боковой панели навигации AI Breadboard...', debug_enabled)
+            debug('Открытие боковой панели навигации AI Windows Admin...', debug_enabled)
             await drawer_btn.click(timeout=2000)
             await page.wait_for_timeout(800)
     except Exception as exc:
@@ -439,7 +440,7 @@ async def capture_interface(
                 timeout=15000,
             )
         except Exception as exc:
-            print(f'Ошибка открытия страницы {url}: {exc}')
+            logger.console(f'Ошибка открытия страницы {url}: {exc}')
             await browser.close()
             return 1
 
@@ -449,14 +450,14 @@ async def capture_interface(
         initial_path = output_dir / f'{initial_name}.png'
 
         await save_screenshot(page, initial_path, full_page, debug_enabled)
-        print(f'[000] Сохранен начальный скриншот: {initial_path}')
+        logger.console(f'[000] Сохранен начальный скриншот: {initial_path}')
 
         navigation = await collect_navigation(page, debug_enabled)
-        print(f'Обнаружено вкладок для обхода: {len(navigation)}')
+        logger.console(f'Обнаружено вкладок для обхода: {len(navigation)}')
 
         for number, item in enumerate(navigation, start=1):
             label = item.get('text') or item.get('tab') or f'item_{number}'
-            print(f'[{number:03d}] Обработка вкладки: {label}')
+            logger.console(f'[{number:03d}] Обработка вкладки: {label}')
 
             try:
                 debug(f'Возврат к исходному URL: {url}', debug_enabled)
@@ -470,7 +471,7 @@ async def capture_interface(
                 success = await navigate_to_item(page, item, wait_ms, debug_enabled)
 
                 if not success:
-                    print('      -> ОШИБКА перехода на вкладку')
+                    logger.console('      -> ОШИБКА перехода на вкладку')
                     manifest['screenshots'].append({
                         'number': number,
                         'label': label,
@@ -486,7 +487,7 @@ async def capture_interface(
                 output_path = output_dir / f'{screenshot_name}.png'
 
                 await save_screenshot(page, output_path, full_page, debug_enabled)
-                print(f'      -> Успешно сохранено: {output_path}')
+                logger.console(f'      -> Успешно сохранено: {output_path}')
 
                 manifest['screenshots'].append({
                     'number': number,
@@ -501,7 +502,7 @@ async def capture_interface(
                 })
 
             except Exception as exc:
-                print(f'      -> ОШИБКА выполнения: {exc}')
+                logger.console(f'      -> ОШИБКА выполнения: {exc}')
                 manifest['screenshots'].append({
                     'number': number,
                     'label': label,
@@ -520,10 +521,10 @@ async def capture_interface(
 
         await browser.close()
 
-    print()
-    print('Захват интерфейса завершен.')
-    print(f'Скриншоты: {output_dir.resolve()}')
-    print(f'Манифест:  {manifest_path.resolve()}')
+    logger.console()
+    logger.console('Захват интерфейса завершен.')
+    logger.console(f'Скриншоты: {output_dir.resolve()}')
+    logger.console(f'Манифест:  {manifest_path.resolve()}')
 
     return 0
 

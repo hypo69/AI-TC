@@ -1,6 +1,6 @@
 <#
 =============================================================================
-Process Name: AI-Breadboard Automation - Install TelemetryExe
+Process Name: AI-Windows-Admin Automation - Install TelemetryExe
 =============================================================================
 Description:
   Сборка исполняемого файла AITelemetry.exe (Windows Service), развертывание
@@ -27,11 +27,11 @@ Usage Examples:
     .\Install-TelemetryExe.ps1 -Uninstall
 
 File: Install-TelemetryExe.ps1
-Project: ai-breadboard
+Project: ai-windows-admin
 Package: apps/windows/telemetry/launchers
 Author: hypo69
 Copyright: © 2026 hypo69
-Updated: 2026-10-06 07:58:00
+Updated: 2026-10-10 17:35:00
 =============================================================================
 .SYNOPSIS
     Компиляция и установка фоновой службы AITelemetry как нативного Windows Service.
@@ -61,8 +61,8 @@ param (
     [string]$DataDir = "$env:ProgramData\AITelemetry",
 
     [string]$ServiceName = 'AITelemetry',
-    [string]$ServiceDisplayName = 'AI-Breadboard Telemetry Service',
-    [string]$ServiceDescription = 'AI-Breadboard Background Telemetry and System Metrics Collector Service',
+    [string]$ServiceDisplayName = 'AI-Windows-Admin Telemetry Service',
+    [string]$ServiceDescription = 'AI-Windows-Admin Background Telemetry and System Metrics Collector Service',
 
     [string]$PythonPath,
 

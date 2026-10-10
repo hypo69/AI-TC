@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Modules Defender - Router
+# Process Name: AI-Windows-Admin Apps Windows Modules Defender - Router
 # =============================================================================
 # Description:
 #   FastAPI REST API роутер для Microsoft Defender & Security Center.
@@ -12,11 +12,11 @@
 #     res = init_router()
 #
 # File: router.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.defender
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-08 04:11:30
+# Updated: 2026-10-10 22:28:45
 # =============================================================================
 
 from __future__ import annotations
@@ -25,7 +25,7 @@ from __future__ import annotations
 import asyncio
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
-from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, status
+from fastapi import APIRouter, HTTPException, Query, status
 from logger import logger
 from apps.windows.telemetry.sqlite import TelemetryStorage
 from apps.windows.sdk.modules.defender.core.ai_diagnostician import AIDiagnostician

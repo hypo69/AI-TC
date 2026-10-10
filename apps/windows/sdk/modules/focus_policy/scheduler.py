@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Modules Focus_Policy - Scheduler
+# Process Name: AI-Windows-Admin Apps Windows Modules Focus_Policy - Scheduler
 # =============================================================================
 # Description:
 #   Регистрация задач старта/остановки фокус-сессий в Windows Task Scheduler (schtasks).
@@ -12,11 +12,11 @@
 #     FocusTaskRegistrar().register(profile)
 #
 # File: scheduler.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.focus_policy
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-06 22:05:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

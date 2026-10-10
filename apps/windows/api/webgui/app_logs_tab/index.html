@@ -4,8 +4,8 @@ Process Name: Windows Web Interface - App Logs Intelligence Tab
 =============================================================================
 Description:
   Клиентский веб-интерфейс комплексного анализа, аудита, поиска и потокового
-  мониторинга внутренних журналов программы AI-Breadboard строго из
-  каталога %APPDATA%\AI-Breadboard\logs (log.json, info.log, errors.log, fastapi.log и др.).
+  мониторинга внутренних журналов программы AI-Windows-Admin строго из
+  каталога %APPDATA%\AI-Windows-Admin\logs (log.json, info.log, errors.log, fastapi.log и др.).
   Включает глубокую интеграцию с AIModalDialog, динамический Timeline график,
   кластеризацию инцидентов, экспорт (CSV/JSON/Markdown) и живой терминал.
   Полная поддержка темной, светлой (NightView), кирпичной и терминальной тем через CSS-переменные.
@@ -19,11 +19,11 @@ Usage Examples:
     <div id="tab-app-logs" class="tab-pane fade"></div>
 
 File: index.html
-Project: ai-breadboard
+Project: ai-windows-admin
 Package: windows/api/webgui/app_logs_tab
 Author: hypo69
 Copyright: © 2026 hypo69
-Updated: 2026-10-10 12:42:00
+Updated: 2026-10-10 19:37:00
 =============================================================================
 -->
 <style>
@@ -150,6 +150,9 @@ Updated: 2026-10-10 12:42:00
     background: var(--surface-2, #eee9e0);
     border: 1px solid var(--border-color, #cfc6b8);
     color: var(--text-color, #18181b);
+    display: inline-flex;
+    align-items: center;
+    user-select: none;
   }
   .apl-file-badge:hover, .apl-file-badge.active {
     background-color: var(--nav-active, #1d4ed8) !important;
@@ -158,6 +161,30 @@ Updated: 2026-10-10 12:42:00
   }
   .apl-file-badge.has-error {
     border-color: #ef4444 !important;
+  }
+  .apl-badge-clear-btn {
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 0.15s ease, transform 0.15s ease, background-color 0.15s ease;
+    padding: 1px 4px;
+    margin-left: 4px;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #ef4444 !important;
+  }
+  .apl-badge-clear-btn:hover {
+    opacity: 1;
+    transform: scale(1.15);
+    background-color: rgba(239, 68, 68, 0.2) !important;
+  }
+  .apl-file-badge.active .apl-badge-clear-btn {
+    color: #fecaca !important;
+  }
+  .apl-file-badge.active .apl-badge-clear-btn:hover {
+    color: #fff !important;
+    background-color: rgba(239, 68, 68, 0.5) !important;
   }
   .apl-quick-preset-btn {
     border-radius: 20px;
@@ -206,7 +233,7 @@ Updated: 2026-10-10 12:42:00
     <div class="d-flex align-items-center gap-2 flex-wrap">
       <div class="d-flex align-items-center gap-1.5 me-1">
         <span class="fs-5">📑</span>
-        <span class="fw-bold text-body small">Внутренние логи программы (%APPDATA%\AI-Breadboard\logs)</span>
+        <span class="fw-bold text-body small">Внутренние логи программы (%APPDATA%\AI-Windows-Admin\logs)</span>
       </div>
 
       <!-- Quick Metrics Pills -->
@@ -245,6 +272,10 @@ Updated: 2026-10-10 12:42:00
         <i class="bi bi-robot"></i> <span>AI Диагностика</span>
       </button>
 
+      <button class="btn btn-sm btn-outline-danger rounded-pill px-2.5 py-1 small d-flex align-items-center gap-1" id="btn-apl-clear-all" style="font-size: 0.78rem;" title="Очистить все файлы логов программы">
+        <i class="bi bi-trash3-fill"></i> <span>Очистить все логи</span>
+      </button>
+
       <div class="dropdown">
         <button class="btn btn-sm btn-outline-secondary dropdown-toggle rounded-pill px-2.5 py-1 small d-flex align-items-center gap-1" data-bs-toggle="dropdown" style="font-size: 0.78rem;" type="button">
           <i class="bi bi-download"></i> <span>Экспорт</span>
@@ -256,19 +287,25 @@ Updated: 2026-10-10 12:42:00
           <li><hr class="dropdown-divider"/></li>
           <li><a class="dropdown-item" href="#" id="btn-apl-download-raw"><i class="bi bi-file-arrow-down me-2 text-primary"></i>Скачать сырой файл</a></li>
           <li><hr class="dropdown-divider"/></li>
-          <li><a class="dropdown-item text-danger" href="#" id="btn-apl-clear"><i class="bi bi-trash3 me-2"></i>Очистить лог-файл</a></li>
+          <li><a class="dropdown-item text-danger" href="#" id="btn-apl-clear"><i class="bi bi-trash3 me-2"></i>Очистить активный лог-файл</a></li>
+          <li><a class="dropdown-item text-danger fw-bold" href="#" id="btn-apl-menu-clear-all"><i class="bi bi-trash3-fill me-2"></i>Очистить ВСЕ логи программы</a></li>
         </ul>
       </div>
     </div>
   </div>
 
-  <!-- Available Log Files Selector Bar with Error Badges -->
+  <!-- Available Log Files Selector Bar with Error Badges & Clear Buttons -->
   <div class="apl-panel mb-2 p-2">
-    <div class="d-flex align-items-center gap-2 flex-wrap" id="apl-files-bar">
-      <span class="text-muted small fw-semibold"><i class="bi bi-folder2-open me-1 text-info"></i>Файлы логов:</span>
-      <div class="d-flex align-items-center gap-1.5 flex-wrap" id="apl-files-badges-container">
-        <div class="spinner-border spinner-border-sm text-info" role="status"></div>
+    <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap" id="apl-files-bar">
+      <div class="d-flex align-items-center gap-2 flex-wrap">
+        <span class="text-muted small fw-semibold"><i class="bi bi-folder2-open me-1 text-info"></i>Файлы логов:</span>
+        <div class="d-flex align-items-center gap-1.5 flex-wrap" id="apl-files-badges-container">
+          <div class="spinner-border spinner-border-sm text-info" role="status"></div>
+        </div>
       </div>
+      <button class="btn btn-outline-danger btn-sm rounded-pill py-0.5 px-2 ms-auto small d-flex align-items-center gap-1" id="btn-apl-clear-all-inline" style="font-size: 0.74rem;" title="Очистить все файлы логов">
+        <i class="bi bi-trash3"></i> <span>Очистить все логи</span>
+      </button>
     </div>
   </div>
 
@@ -320,7 +357,7 @@ Updated: 2026-10-10 12:42:00
       </ul>
       <!-- Active File Path Indicator -->
       <div class="small text-muted font-monospace text-truncate d-none d-md-block" id="apl-full-path-label" style="max-width: 400px;">
-        %APPDATA%\AI-Breadboard\logs
+        %APPDATA%\AI-Windows-Admin\logs
       </div>
     </div>
 
@@ -495,9 +532,14 @@ Updated: 2026-10-10 12:42:00
     <div class="d-none p-1" id="apl-view-raw">
       <div class="d-flex justify-content-between align-items-center mb-1 px-1">
         <span class="small text-muted"><i class="bi bi-file-code me-1 text-info"></i>Просмотр файла целиком:</span>
-        <button class="btn btn-xs btn-outline-info py-0 px-2 small" id="btn-apl-copy-raw">
-          <i class="bi bi-clipboard me-1"></i>Копировать всё
-        </button>
+        <div class="d-flex align-items-center gap-1">
+          <button class="btn btn-xs btn-outline-info py-0 px-2 small" id="btn-apl-copy-raw">
+            <i class="bi bi-clipboard me-1"></i>Копировать всё
+          </button>
+          <button class="btn btn-xs btn-outline-danger py-0 px-2 small" id="btn-apl-clear-raw" title="Очистить данный файл лога">
+            <i class="bi bi-trash3 me-1"></i>Очистить файл
+          </button>
+        </div>
       </div>
       <pre class="apl-term" id="apl-raw-content" style="max-height: 560px;">Загрузка сырого содержимого файла...</pre>
     </div>

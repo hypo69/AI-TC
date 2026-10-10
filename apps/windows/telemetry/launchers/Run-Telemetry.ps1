@@ -1,9 +1,9 @@
 ﻿<#
 =============================================================================
-Process Name: AI-Breadboard Automation - Run Telemetry
+Process Name: AI-Windows-Admin Automation - Run Telemetry
 =============================================================================
 Description:
-  Лончер для запуска и управления службой системной телеметрии AI-Breadboard
+  Лончер для запуска и управления службой системной телеметрии AI-Windows-Admin
 
 Usage Examples:
   PowerShell Execution:
@@ -12,14 +12,14 @@ Usage Examples:
     .\Run-Telemetry.ps1 -Background   # Запуск в фоновом режиме (демон)
 
 File: Run-Telemetry.ps1
-Project: ai-breadboard
+Project: ai-windows-admin
 Package: apps/windows/telemetry/launchers
 Author: hypo69
 Copyright: © 2026 hypo69
-Updated: 2026-10-06 01:26:00
+Updated: 2026-10-10 17:35:00
 =============================================================================
 .SYNOPSIS
-    Лончер для запуска и управления службой системной телеметрии AI-Breadboard
+    Лончер для запуска и управления службой системной телеметрии AI-Windows-Admin
 .DESCRIPTION
     По умолчанию запускает main.py сбора телеметрии Windows в текущей консоли.
     Поддерживает фоновый режим (-Background), однократный опрос (-Once) и интерактивное TUI меню (-TUI).
@@ -107,8 +107,8 @@ $OutputEncoding = [System.Text.Encoding]::UTF8
 
 # Определение директории проекта
 $scriptDir = $PSScriptRoot
-if ([string]::IsNullOrEmpty($scriptDir) -and $env:AIBREADBOARD_DIR -and (Test-Path $env:AIBREADBOARD_DIR)) {
-    $scriptDir = Join-Path $env:AIBREADBOARD_DIR "apps\windows\telemetry"
+if ([string]::IsNullOrEmpty($scriptDir) -and $env:AIWINDOWSADMIN_DIR -and (Test-Path $env:AIWINDOWSADMIN_DIR)) {
+    $scriptDir = Join-Path $env:AIWINDOWSADMIN_DIR "apps\windows\telemetry"
 }
 if ([string]::IsNullOrEmpty($scriptDir) -and $MyInvocation.MyCommand.Path) {
     $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -140,7 +140,7 @@ $appDataDir = $env:APPDATA
 if (-not $appDataDir) {
     $appDataDir = Join-Path $env:USERPROFILE "AppData\Roaming"
 }
-$logDir = Join-Path $appDataDir "AI-Breadboard\apps\windows\telemetry\logs"
+$logDir = Join-Path $appDataDir "AI-Windows-Admin\apps\windows\telemetry\logs"
 $dbFile = Join-Path $logDir "telemetry.db"
 $jsonLogFile = Join-Path $logDir "ai_sensors_polls.json"
 $serviceLogFile = Join-Path $logDir "telemetry_service.log"
@@ -402,7 +402,7 @@ function Invoke-TelemetryTUI {
 
             Write-Host ""
             Write-Host "╔══════════════════════════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
-            Write-Host "║       📊 AI BREADBOARD — СЛУЖБА ТЕЛЕМЕТРИИ (TUI CONTROL CENTER)              ║" -ForegroundColor Cyan
+            Write-Host "║       📊 AI AI_WINDOWS_ADMIN — СЛУЖБА ТЕЛЕМЕТРИИ (TUI CONTROL CENTER)              ║" -ForegroundColor Cyan
             Write-Host "╚══════════════════════════════════════════════════════════════════════════════╝" -ForegroundColor Cyan
             Write-Host ""
             Write-Host " Статус службы:  $statusStr" -ForegroundColor $statusColor
@@ -611,7 +611,7 @@ if ($Action -eq 'status') {
 
     # Проверка планировщика
     try {
-        $schedTask = Get-ScheduledTask -TaskName 'AI-Breadboard-Telemetry' -ErrorAction SilentlyContinue
+        $schedTask = Get-ScheduledTask -TaskName 'AI-Windows-Admin-Telemetry' -ErrorAction SilentlyContinue
         if ($schedTask) {
             Write-Host ""
             Write-Host "📅 Task Scheduler: Задание зарегистрировано [Статус: $($schedTask.State), WakeToRun: $($schedTask.Settings.WakeToRun)]" -ForegroundColor DarkCyan

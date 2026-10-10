@@ -10,11 +10,11 @@
  *     <script src="/windows/api/webgui/admin/lazy-init-patch.js?v=20261001_v1" type="module"></script>
  *
  * File: lazy-init-patch.js
- * Project: ai-breadboard
+ * Project: ai-windows-admin
  * Package: windows/api/webgui/admin
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-08 12:35:00
+ * Updated: 2026-10-10 19:41:00
  * =============================================================================
  */
 
@@ -104,7 +104,6 @@ window.addEventListener('load', async () => {
     { tabName: 'help', htmlUrl: `/html/help/index.html`, jsUrl: `/html/help/main.js` },
     
     // Микроприложения (с привязкой к ID приложения в конфиге профиля)
-    { tabName: 'trading', appId: 'trading_terminal', htmlUrl: `/html/trading_tab/index.html`, jsUrl: `/html/trading_tab/main.js` },
     { tabName: 'network', appId: 'network_terminal', htmlUrl: `/html/network_tab/index.html`, jsUrl: `/html/network_tab/main.js` },
     { tabName: 'system-inspector', appId: 'system_inspector', htmlUrl: `/html/system_inspector_tab/index.html`, jsUrl: `/html/system_inspector_tab/main.js` },
     { tabName: 'about-system', appId: 'about_system', htmlUrl: `/html/about_system_tab/index.html?v=20261008_v2`, jsUrl: `/html/about_system_tab/main.js?v=20261008_v2` },
@@ -113,7 +112,7 @@ window.addEventListener('load', async () => {
     { tabName: 'user-assistant', appId: 'user_assistant', htmlUrl: `/html/user_assistant_tab/index.html`, jsUrl: `/html/user_assistant_tab/main.js` },
     { tabName: 'gcloud', appId: 'gcloud_monitor', htmlUrl: `/html/gcloud_tab/index.html`, jsUrl: `/html/gcloud_tab/main.js` },
     { tabName: 'website-monitor', appId: 'website_monitor', htmlUrl: `/html/website_monitor_tab/index.html`, jsUrl: `/html/website_monitor_tab/main.js` },
-    { tabName: 'system-control', appId: 'system_control_center', htmlUrl: `/html/system_control_tab/index.html?v=20261008_v1`, jsUrl: `/html/system_control_tab/main.js?v=20261008_v1` },
+    { tabName: 'system-control', appId: 'system_control_center', htmlUrl: `/html/system_control_tab/index.html?v=20261010_v2`, jsUrl: `/html/system_control_tab/main.js?v=20261010_v2` },
     { tabName: 'system-logs', appId: 'system_log_viewer', htmlUrl: `/html/system_logs_tab/index.html`, jsUrl: `/html/system_logs_tab/main.js` },
     { tabName: 'software-audit', appId: 'software_audit', htmlUrl: `/html/software_audit_tab/index.html`, jsUrl: `/html/software_audit_tab/main.js` },
     { tabName: 'registry-viewer', appId: 'registry_viewer', htmlUrl: `/html/registry_viewer_tab/index.html`, jsUrl: `/html/registry_viewer_tab/main.js` },

@@ -1,11 +1,12 @@
 <#
 =============================================================================
-Process Name: AI-Breadboard Automation - Tc
+Process Name: AI-Windows-Admin Automation - Tc
 =============================================================================
 Description:
   Точка входа и лончер внутреннего сервера Windows System API (Terminal Controller / TC)
-  с поддержкой BCP 47 локалей/регионов (?region=ru-RU, ?language-region=ru-RU)
-  и переключения телеметрии реального времени (TC mode) на лету.
+  с поддержкой BCP 47 локалей/регионов (?region=ru-RU, ?language-region=ru-RU),
+  переключения телеметрии реального времени (TC mode) на лету и изоляцией
+  браузерного профиля/кеша в каталоге %ProgramData%\AI-Windows-Admin\.
 
   Зачем нужен этот скрипт:
     1. Запуск низкоуровневого API: поднимает FastAPI сервер модуля apps/windows/api (порт 8001).
@@ -15,13 +16,15 @@ Description:
        с авто-возвратом в стандартный режим через 5 минут.
     4. Локализация и BCP 47: поддержка передачи региона/языка в параметрах командной строки
        и маршрутизация в веб-интерфейс.
+    5. Изоляция кеша браузера: перенос disk-cache и user-data в %ProgramData%\AI-Windows-Admin\
+       для централизованного хранения RAG-индексов и снимков логов.
 
 File: tc.ps1
-Project: ai-breadboard
+Project: ai-windows-admin
 Package: root
 Author: hypo69
 Copyright: © 2026 hypo69
-Updated: 2026-10-10 12:02:00
+Updated: 2026-10-10 17:35:00
 =============================================================================
 
 .SYNOPSIS
@@ -29,8 +32,8 @@ Updated: 2026-10-10 12:02:00
 
 .DESCRIPTION
     Проверяет доступность порта 8001 (или переопределенного), завершает старые процессы
-    при необходимости, активирует режим реального времени телеметрии и запускает сервер.
-    Позволяет сразу передать региональные и языковые параметры интерфейса (BCP 47).
+    при необходимости, активирует режим реального времени телеметрии, подготавливает
+    каталоги кеша в %ProgramData%\AI-Windows-Admin\ и запускает сервер.
 
 .PARAMETER HostAddress
     Сетевой адрес для прослушивания запросов (по умолчанию: 127.0.0.1).
@@ -50,17 +53,23 @@ Updated: 2026-10-10 12:02:00
 .PARAMETER DisableRealtimeTelemetry
     Принудительно оставить стандартный режим телеметрии (сброс каждые 30с, лимит 100МБ).
 
+.PARAMETER OpenBrowser
+    Автоматически открыть веб-интерфейс в браузере с выделенным каталогом кеша в %ProgramData%\AI-Windows-Admin\.
+
+.PARAMETER NoBrowser
+    Не открывать браузер автоматически при старте.
+
 .EXAMPLE
     .\tc.ps1
     Запуск Windows API сервера с телеметрией реального времени.
 
 .EXAMPLE
-    .\tc.ps1 -Region "ru-ru"
-    Запуск с автоматическим формированием ссылки с локалью BCP 47 (ru-RU).
+    .\tc.ps1 -OpenBrowser
+    Запуск с автоматическим открытием веб-интерфейса и кешем в %ProgramData%\AI-Windows-Admin\.
 
 .EXAMPLE
-    .\tc.ps1 -DisableRealtimeTelemetry
-    Запуск в стандартном режиме сбора телеметрии.
+    .\tc.ps1 -Region "ru-ru"
+    Запуск с автоматическим формированием ссылки с локалью BCP 47 (ru-RU).
 #>
 
 [CmdletBinding()]
@@ -75,7 +84,12 @@ param (
 
     [switch]$RealtimeTelemetry = $true,
 
-    [switch]$DisableRealtimeTelemetry
+    [switch]$DisableRealtimeTelemetry,
+
+    [Alias('Browser', 'Web')]
+    [switch]$OpenBrowser,
+
+    [switch]$NoBrowser
 )
 
 $ErrorActionPreference = 'Continue'
@@ -86,14 +100,38 @@ $OutputEncoding = [System.Text.Encoding]::UTF8
 $scriptDir = $PSScriptRoot
 if ([string]::IsNullOrEmpty($scriptDir)) { $scriptDir = (Get-Location).Path }
 
-$windowsConfig = Join-Path $scriptDir "apps\windows\config.json"
-if (Test-Path $windowsConfig) {
-    $env:AIBREADBOARD_CONFIG = $windowsConfig
-    $env:CONFIG_FILE = $windowsConfig
-    Write-Host "  [⚙️ Config Profile]: apps\windows\config.json" -ForegroundColor DarkCyan
+$rootConfig = Join-Path $scriptDir "config.json"
+if (Test-Path $rootConfig) {
+    $env:AIWINDOWSADMIN_CONFIG = $rootConfig
+    $env:CONFIG_FILE = $rootConfig
+    Write-Host "  [⚙️ Config Profile]: config.json" -ForegroundColor DarkCyan
 }
 
-$pythonExe = if ($env:PYTHON_HOME) { Join-Path $env:PYTHON_HOME 'python.exe' } else { 'python' }
+$programDataDir = if ($env:ProgramData) { $env:ProgramData } else { "C:\ProgramData" }
+$adminDataDir = Join-Path $programDataDir "AI-Windows-Admin"
+$browserCacheDir = Join-Path $adminDataDir "browser_cache"
+$browserProfileDir = Join-Path $adminDataDir "browser_profile"
+
+if (-not (Test-Path $browserCacheDir)) {
+    try {
+        New-Item -ItemType Directory -Force -Path $browserCacheDir | Out-Null
+    } catch {
+        Write-Host "  [WARN] Не удалось создать каталог кеша: $_" -ForegroundColor Yellow
+    }
+}
+if (-not (Test-Path $browserProfileDir)) {
+    try {
+        New-Item -ItemType Directory -Force -Path $browserProfileDir | Out-Null
+    } catch {
+        Write-Host "  [WARN] Не удалось создать каталог профиля: $_" -ForegroundColor Yellow
+    }
+}
+
+Write-Host "  [🗂️ ProgramData Storage]: $adminDataDir" -ForegroundColor DarkCyan
+Write-Host "  [💾 Browser Disk Cache]:  $browserCacheDir" -ForegroundColor DarkCyan
+
+$venvPy = Join-Path $scriptDir "venv\Scripts\python.exe"
+$pythonExe = if (Test-Path $venvPy) { $venvPy } elseif ($env:PYTHON_HOME) { Join-Path $env:PYTHON_HOME 'python.exe' } else { 'python' }
 
 $host_ = if ($HostAddress) { $HostAddress } else { '127.0.0.1' }
 $port_ = if ($Port)        { $Port }        else { '8001' }
@@ -147,6 +185,39 @@ foreach ($pid_ in $occupied) {
     }
 }
 
-Write-Host "  [Windows Internal API] TC UI: http://${host_}:${port_}/tc${regionQuery}" -ForegroundColor Cyan
+$targetUrl = "http://${host_}:${port_}/tc${regionQuery}#tab-system-control"
+Write-Host "  [Windows Internal API] TC UI: $targetUrl" -ForegroundColor Cyan
+
+# Автоматическое открытие браузера при запросе с изолированным кешем в ProgramData
+if ($OpenBrowser -and -not $NoBrowser) {
+    Start-Job -ScriptBlock {
+        param($url, $cacheDir, $profileDir)
+        Start-Sleep -Seconds 2
+        
+        $edgePaths = @(
+            "$env:ProgramFiles (x86)\Microsoft\Edge\Application\msedge.exe",
+            "$env:ProgramFiles\Microsoft\Edge\Application\msedge.exe",
+            "$env:LocalAppData\Microsoft\Edge\Application\msedge.exe"
+        )
+        $edgeExe = $edgePaths | Where-Object { Test-Path $_ } | Select-Object -First 1
+
+        $chromePaths = @(
+            "$env:ProgramFiles\Google\Chrome\Application\chrome.exe",
+            "$env:ProgramFiles (x86)\Google\Chrome\Application\chrome.exe",
+            "$env:LocalAppData\Google\Chrome\Application\chrome.exe"
+        )
+        $chromeExe = $chromePaths | Where-Object { Test-Path $_ } | Select-Object -First 1
+
+        try {
+            if ($edgeExe) {
+                Start-Process $edgeExe -ArgumentList "--disk-cache-dir=`"$cacheDir`" --user-data-dir=`"$profileDir`" `"$url`""
+            } elseif ($chromeExe) {
+                Start-Process $chromeExe -ArgumentList "--disk-cache-dir=`"$cacheDir`" --user-data-dir=`"$profileDir`" `"$url`""
+            } else {
+                Start-Process $url
+            }
+        } catch {}
+    } -ArgumentList $targetUrl, $browserCacheDir, $browserProfileDir | Out-Null
+}
 
 & $pythonExe -m apps.windows.api --host $host_ --port $port_

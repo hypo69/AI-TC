@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Modules Boot_Recovery - Tui
+# Process Name: AI-Windows-Admin Apps Windows Modules Boot_Recovery - Tui
 # =============================================================================
 # Description:
 #   # Description:
@@ -12,14 +12,15 @@
 #     service = BootRecoveryTUI()
 #
 # File: tui.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.boot_recovery
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:28:28
+# Updated: 2026-10-10 22:22:44
 # =============================================================================
 
 from __future__ import annotations
+from logger import logger
 """# Description:"""
 
 from rich.console import Console
@@ -67,9 +68,9 @@ class BootRecoveryTUI:
             style='cyan'
         )
 
-        self.console.print(Panel('[bold white]AI-Breadboard: Windows Boot & Recovery Center[/bold white]', style='blue'))
-        self.console.print(summary_panel)
-        self.console.print(table)
+        self.console.logger.console(Panel('[bold white]AI-Windows-Admin: Windows Boot & Recovery Center[/bold white]', style='blue'))
+        self.console.logger.console(summary_panel)
+        self.console.logger.console(table)
 
 
 __all__ = ['BootRecoveryTUI']

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard UTILS - File Module
+# Process Name: AI-Windows-Admin UTILS - File Module
 # =============================================================================
 # Description:
 #   File system operations and text file utilities.
@@ -15,11 +15,11 @@
 #     print(res)
 #
 # File: file.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: src.utils
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:13:56
+# Updated: 2026-10-10 22:22:30
 # =============================================================================
 
 """File system operations and text file utilities.
@@ -177,7 +177,7 @@ def recursively_read_text_files(root_dir: str | Path, patterns: str | list[str],
     if not root_path.is_dir():
         logger.debug(f"The root directory '{root_path}' does not exist or is not a directory.")
         return []
-    print(f'Searching in directory: {root_path}')
+    logger.console(f'Searching in directory: {root_path}')
     if isinstance(patterns, str):
         patterns = [patterns]
     for root, dirs, files in os.walk(root_path):

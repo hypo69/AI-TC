@@ -12,11 +12,11 @@
  *     <script src="/windows/api/webgui/processes_load_inspector_tab/main.js?v=20261008_v1" type="module"></script>
  *
  * File: main.js
- * Project: ai-breadboard
+ * Project: ai-windows-admin
  * Package: windows/api/webgui/processes_load_inspector_tab
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-08 13:58:00
+ * Updated: 2026-10-10 17:35:00
  * =============================================================================
  */
 

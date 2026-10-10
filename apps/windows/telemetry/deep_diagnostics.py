@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Telemetry - Deep Diagnostics
+# Process Name: AI-Windows-Admin Apps Windows Telemetry - Deep Diagnostics
 # =============================================================================
 # Description:
 #   Модуль глубокой аппаратной и системной диагностики, поведенческой форензики и анализа утечек.
@@ -13,11 +13,11 @@
 #   service = DeepDiagnosticsEngine()
 #
 # File: deep_diagnostics.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.telemetry
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-08 04:11:30
+# Updated: 2026-10-10 20:33:00
 # =============================================================================
 
 """Модуль глубокой аппаратной и системной диагностики, поведенческой форензики и анализа утечек.
@@ -317,12 +317,22 @@ class DeepDiagnosticsEngine:
                 logger.debug(f'Ошибка проверки доступа к {cap_name}: {ex}')
         return (cam_list, mic_list)
 
-    def _get_userassist_apps(self, limit: int = 15) -> List[Dict[str, Any]]:
+    def _get_userassist_apps(self, limit: int = 25) -> List[Dict[str, Any]]:
         """Извлечь историю запусков и фокусное время из ключей UserAssist реестра (ROT13)."""
         apps: List[Dict[str, Any]] = []
         if not WINREG_AVAILABLE:
             return apps
         ua_path = r'Software\Microsoft\Windows\CurrentVersion\Explorer\UserAssist'
+        known_folders = {
+            '{1AC14E77-02E7-4E5D-B744-2EB1AE5198B7}': r'C:\Windows\System32',
+            '{6D809377-6AF0-444B-8957-A3773F02200E}': r'C:\Program Files',
+            '{7C5A40EF-A0FB-4BFC-874A-C0F2E0B9FA8E}': r'C:\Program Files (x86)',
+            '{D65231B0-B2F1-4857-A4CE-A8E7C6EA7D27}': r'C:\Windows\SysWOW64',
+            '{F38BF404-1D43-42F2-9305-67DE0B28FC23}': r'C:\Windows',
+            '{0139D44E-6AFE-49F2-8690-3DAFCAE6FFB8}': r'C:\ProgramData\Microsoft\Windows\Start Menu\Programs',
+            '{A77F5D77-2E2B-44C3-A6A2-ABA601054A51}': r'Programs',
+            '{DF7266AC-9274-4867-8D55-3BD661DE872D}': r'Programs',
+        }
         try:
             with winreg.OpenKey(winreg.HKEY_CURRENT_USER, ua_path, 0, winreg.KEY_READ) as ua_key:
                 num_guids, _, _ = winreg.QueryInfoKey(ua_key)
@@ -336,7 +346,14 @@ class DeepDiagnosticsEngine:
                                 try:
                                     val_name, val_data, val_type = winreg.EnumValue(count_key, v_idx)
                                     decoded_name = codecs.decode(val_name, 'rot_13')
-                                    if decoded_name.startswith('{') or not decoded_name.strip():
+                                    if not decoded_name or not decoded_name.strip():
+                                        continue
+                                    # Раскрытие Known Folders GUID в путях
+                                    resolved_name = decoded_name
+                                    for k_guid, k_path in known_folders.items():
+                                        if k_guid in resolved_name:
+                                            resolved_name = resolved_name.replace(k_guid, k_path)
+                                    if resolved_name.startswith('{') and '\\' not in resolved_name:
                                         continue
                                     run_count = 0
                                     focus_seconds = 0
@@ -344,11 +361,14 @@ class DeepDiagnosticsEngine:
                                         run_count = struct.unpack_from('<I', val_data, 4)[0]
                                         focus_ms = struct.unpack_from('<I', val_data, 12)[0]
                                         focus_seconds = round(focus_ms / 1000.0)
+                                    elif val_type == winreg.REG_BINARY and len(val_data) >= 16:
+                                        run_count = struct.unpack_from('<I', val_data, 4)[0]
                                     if run_count > 0:
-                                        app_display = Path(decoded_name).name if '\\' in decoded_name or '/' in decoded_name else decoded_name
+                                        clean_path = resolved_name.replace('/', '\\')
+                                        app_display = Path(clean_path).name if '\\' in clean_path else clean_path
                                         apps.append({
                                             'name': app_display,
-                                            'path': decoded_name,
+                                            'path': clean_path,
                                             'run_count': run_count,
                                             'focus_seconds': focus_seconds,
                                             'focus_formatted': f'{focus_seconds // 60} мин {focus_seconds % 60} с',

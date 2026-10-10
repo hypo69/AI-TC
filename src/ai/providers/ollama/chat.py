@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard AI - Chat Module
+# Process Name: AI-Windows-Admin AI - Chat Module
 # =============================================================================
 # Description:
 #   Базовый class для чат-интерфейса с Ollama моделями.
@@ -14,11 +14,11 @@
 #     print(result)
 #
 # File: chat.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: src.ai.providers.ollama
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 06:33:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 """Базовый class для чат-интерфейса с Ollama моделями."""

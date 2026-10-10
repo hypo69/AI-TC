@@ -5,14 +5,14 @@ from logger import logger
 def main():
     api_key = os.getenv('GEMINI_API_KEY')
     if not api_key:
-        print('❌ Error: Переменная окружения GEMINI_API_KEY не установлена.')
+        logger.console('❌ Error: Переменная окружения GEMINI_API_KEY не установлена.')
         return
-    print('🔄 Запуск переиндексации кодовой базы и документации...')
+    logger.console('🔄 Запуск переиндексации кодовой базы и документации...')
     try:
         build_dev_rag(api_key)
-        print('✅ Индекс разработчика successfully перестроен.')
+        logger.console('✅ Индекс разработчика successfully перестроен.')
     except Exception as e:
-        print(f'❌ Error при переиндексации: {e}')
+        logger.console(f'❌ Error при переиндексации: {e}')
         logger.error(f'Error rebuild_dev_rag: {e}', exc_info=True)
 if __name__ == '__main__':
     main()

@@ -10,14 +10,14 @@ Usage Examples:
   Web Route:
     /html/system_control_tab/index.html
 
-File: index.html
-Project: ai-breadboard
-Package: windows/api/webgui/system_control_tab
-Author: hypo69
-Copyright: © 2026 hypo69
-Updated: 2026-10-10 10:37:00
-=============================================================================
--->
+ * File: index.html
+ * Project: ai-windows-admin
+ * Package: windows/api/webgui/system_control_tab
+ * Author: hypo69
+ * Copyright: © 2026 hypo69
+ * Updated: 2026-10-10 19:16:00
+ * =============================================================================
+ */
 <!-- Windows System Logs & Activity Center Web Tab -->
 <style>
   .scc-container {
@@ -310,6 +310,9 @@ Updated: 2026-10-10 10:37:00
 <button class="btn btn-outline-warning rounded-pill px-2.5 py-1 small d-flex align-items-center gap-1" id="btn-scc-open-power-lifecycle" style="font-size: 0.78rem;" title="Открыть панель жизненного цикла питания и аптайма">
 <i class="bi bi-lightning-charge"></i> <span data-i18n="systemControl.modePowerLifecycle">⚡ Power Lifecycle</span>
 </button>
+<button class="btn btn-outline-warning rounded-pill px-2.5 py-1 small d-flex align-items-center gap-1" id="btn-scc-open-defender-logs" style="font-size: 0.78rem;" title="Открыть встроенную панель журналов Defender">
+<i class="bi bi-shield-lock"></i> <span data-i18n="systemControl.modeDefenderLogs">🛡️ Defender Events</span>
+</button>
 <button class="btn btn-outline-info rounded-pill px-2.5 py-1 small d-flex align-items-center gap-1" id="btn-slc-scan" style="font-size: 0.78rem;">
 <i class="bi bi-radar"></i> <span data-i18n="systemControl.btnScan">Сканировать</span>
 </button>
@@ -366,6 +369,9 @@ Updated: 2026-10-10 10:37:00
 <li class="nav-item">
 <button class="nav-link slc-subtab-btn py-0.5 px-2.5 small fw-semibold text-warning" data-i18n="systemControl.modePowerLifecycle" data-mode="power-lifecycle" id="subtab-btn-power-lifecycle">⚡ Жизненный цикл питания (Power Lifecycle)</button>
 </li>
+<li class="nav-item">
+<button class="nav-link slc-subtab-btn py-0.5 px-2.5 small fw-semibold text-warning" data-i18n="systemControl.modeDefenderLogs" data-mode="defender-logs" id="subtab-btn-defender-logs">🛡️ Журналы Defender (Defender Events)</button>
+</li>
 </ul>
 <!-- Action AI Button -->
 <div class="d-flex align-items-center gap-2">
@@ -397,6 +403,7 @@ Updated: 2026-10-10 10:37:00
 <option data-i18n="systemControl.hours6" value="6">За последние 6 часов</option>
 <option data-i18n="systemControl.hours24" selected="" value="24">За последние 24 часа</option>
 <option data-i18n="systemControl.hours168" value="168">За последние 7 дней</option>
+<option data-i18n="systemControl.hours720" value="720">За последний месяц (30 дней)</option>
 <option data-i18n="systemControl.hoursAll" value="0">За все доступное время</option>
 </select>
 </div>
@@ -472,31 +479,87 @@ Updated: 2026-10-10 10:37:00
 <div class="p-3 d-none" id="slc-audit-container" style="max-height: 560px; overflow-y: auto;">
 <div id="slc-audit-content"></div>
 </div>
-<!-- Dynamic Log RAG Search Container -->
-<div class="p-3 d-none" id="slc-rag-container" style="max-height: 560px; overflow-y: auto;">
-<div class="slc-card mb-3 shadow-sm">
-<div class="slc-card-header p-2.5 d-flex justify-content-between align-items-center">
-<span class="fw-bold text-primary"><i class="bi bi-search me-2"></i><span data-i18n="systemControl.ragTitle">Семантический RAG-поиск по логам</span></span>
-<button class="btn btn-sm btn-outline-info rounded-pill px-3" id="btn-slc-rag-rebuild">
-<i class="bi bi-arrow-repeat me-1"></i> <span data-i18n="systemControl.btnRagRebuild">Перестроить RAG-индекс</span>
-</button>
-</div>
-<div class="p-3">
-<div class="input-group mb-2">
-<span class="input-group-text"><i class="bi bi-chat-left-dots text-primary"></i></span>
-<input class="form-control" data-i18n-placeholder="systemControl.ragInputPlaceholder" id="slc-rag-input" placeholder="Введите запрос (например: 'ошибки службы DCOM', 'сбои сети', 'Disk warning')..." type="text"/>
-<button class="btn btn-info px-4 fw-bold text-dark" data-i18n="systemControl.btnRagSearch" id="btn-slc-rag-search">Найти</button>
-</div>
-<div class="small text-muted" data-i18n="systemControl.ragHint">
-                  Поиск использует динамический индекс кластеров и аномалий.
-                </div>
-</div>
-</div>
-<div id="slc-rag-results">
-<div class="slc-card p-4 text-center text-muted" data-i18n="systemControl.ragEmptyPrompt">
-                Введите запрос для поиска по динамическому RAG-индексу логов или нажмите «Перестроить RAG-индекс».
-              </div>
-</div>
+<!-- Dynamic Log RAG Search Container (In-Memory RAM Engine) -->
+<div class="p-3 d-none" id="slc-rag-container" style="max-height: 580px; overflow-y: auto;">
+  <div class="slc-card mb-3 shadow-sm">
+    <div class="slc-card-header p-2.5 d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <div class="d-flex align-items-center gap-2">
+        <span class="fw-bold text-primary"><i class="bi bi-brain me-1.5"></i><span data-i18n="systemControl.ragTitle">Семантический RAG-поиск по логам (In-Memory RAM)</span></span>
+        <span class="badge bg-success-subtle text-success border border-success-subtle font-monospace" style="font-size: 0.72rem;">RAM Only (Без БД)</span>
+      </div>
+      <div class="d-flex align-items-center gap-2 flex-wrap">
+        <div class="input-group input-group-sm" style="width: auto;">
+          <span class="input-group-text py-1 px-2 small bg-body-tertiary" style="font-size: 0.78rem;"><i class="bi bi-calendar-range me-1"></i><span data-i18n="systemControl.periodLabel">Период:</span></span>
+          <select class="form-select form-select-sm py-1" id="slc-rag-period-select" style="min-width: 140px; font-size: 0.78rem;">
+            <option data-i18n="systemControl.period24" selected="" value="24">Сутки (24 ч)</option>
+            <option data-i18n="systemControl.period168" value="168">Неделя (7 дн)</option>
+            <option data-i18n="systemControl.period720" value="720">Месяц (30 дн)</option>
+            <option data-i18n="systemControl.periodAll" value="0">Все время</option>
+          </select>
+        </div>
+        <button class="btn btn-sm btn-outline-info rounded-pill px-3" id="btn-slc-rag-rebuild">
+          <i class="bi bi-arrow-repeat me-1"></i> <span data-i18n="systemControl.btnRagRebuild">Перестроить RAG-индекс</span>
+        </button>
+      </div>
+    </div>
+    <div class="p-3">
+      <!-- Status & Stats Bar -->
+      <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2.5 p-2 rounded border" style="background: var(--surface-2); border-color: var(--border-color) !important; font-size: 0.78rem;">
+        <div class="d-flex align-items-center gap-3 flex-wrap">
+          <div><span class="text-muted">Статус индекса:</span> <strong id="slc-rag-status-badge" class="text-success">Готов к поиску</strong></div>
+          <div><span class="text-muted">Проиндексировано событий:</span> <strong id="slc-rag-indexed-count" class="text-info font-monospace">--</strong></div>
+          <div><span class="text-muted">Активных каналов:</span> <strong id="slc-rag-channels-count" class="text-warning font-monospace">--</strong></div>
+          <div><span class="text-muted">Период:</span> <strong class="text-primary" id="slc-rag-period-badge" data-i18n="systemControl.periodBadge24">Сутки (24 часа)</strong></div>
+          <div><span class="badge bg-secondary-subtle text-secondary font-monospace" id="slc-rag-cache-indicator"><i class="bi bi-hdd-fill me-1"></i><span data-i18n="systemControl.ragCacheActive">Кеш браузера: Активен</span></span></div>
+        </div>
+        <div class="text-muted small" id="slc-rag-last-built">Обновлено: --</div>
+      </div>
+
+      <!-- Search Inputs Grid -->
+      <div class="row g-2 mb-2">
+        <div class="col-md-8 col-12">
+          <div class="input-group">
+            <span class="input-group-text"><i class="bi bi-search text-primary"></i></span>
+            <input class="form-control" data-i18n-placeholder="systemControl.ragInputPlaceholder" id="slc-rag-input" placeholder="Семантический запрос (например: сбои питания, ошибки DCOM, отвал сети, BSOD, Disk warning)..." type="text"/>
+            <button class="btn btn-info px-4 fw-bold text-dark" data-i18n="systemControl.btnRagSearch" id="btn-slc-rag-search">Найти</button>
+          </div>
+        </div>
+        <div class="col-md-4 col-12 d-flex align-items-center gap-2">
+          <select class="form-select flex-grow-1" id="slc-rag-channel-select">
+            <option value="all">🌐 Все журналы системы (По всей ОС)</option>
+            <option value="System">System (Системный)</option>
+            <option value="Application">Application (Приложения)</option>
+            <option value="Security">Security (Безопасность)</option>
+            <option value="Setup">Setup (Установка)</option>
+            <option value="Microsoft-Windows-Kernel-Power/Operational">Kernel-Power (Питание)</option>
+            <option value="Microsoft-Windows-Windows Defender/Operational">Windows Defender</option>
+            <option value="Microsoft-Windows-TaskScheduler/Operational">Task Scheduler</option>
+            <option value="Microsoft-Windows-PowerShell/Operational">PowerShell</option>
+          </select>
+          <div class="form-check form-switch mb-0 d-inline-flex align-items-center flex-shrink-0" style="font-size: 0.78rem;" title="Группировать повторяющиеся однотипные ошибки">
+            <input class="form-check-input me-1" id="slc-rag-aggregate-switch" role="switch" type="checkbox" checked style="cursor: pointer;"/>
+            <label class="form-check-label text-muted small user-select-none" for="slc-rag-aggregate-switch" data-i18n="systemControl.ragAggregate">Агрегация</label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Concept Suggestion Chips -->
+      <div class="d-flex align-items-center gap-1.5 flex-wrap pt-1" style="font-size: 0.75rem;">
+        <span class="text-muted me-1"><i class="bi bi-lightbulb text-warning"></i> Темы:</span>
+        <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill py-0 px-2 slc-rag-tag" data-query="критические ошибки и сбои">🚨 Критические сбои</button>
+        <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill py-0 px-2 slc-rag-tag" data-query="сбои питания Kernel-Power 41 перезагрузка">⚡ Питание (Kernel-Power 41)</button>
+        <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill py-0 px-2 slc-rag-tag" data-query="ошибки DCOM 10016 права доступа">🔐 DCOM / Права (10016)</button>
+        <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill py-0 px-2 slc-rag-tag" data-query="сбои сети сетевой адаптер DNS disconnect">🌐 Сеть и адаптеры</button>
+        <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill py-0 px-2 slc-rag-tag" data-query="ошибки диска NTFS SMART storage">💾 Дисковая система</button>
+        <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill py-0 px-2 slc-rag-tag" data-query="остановка службы Service Control Manager">⚙️ Службы (SCM)</button>
+      </div>
+    </div>
+  </div>
+  <div id="slc-rag-results">
+    <div class="slc-card p-4 text-center text-muted" data-i18n="systemControl.ragEmptyPrompt">
+      Введите запрос для поиска по In-Memory RAG-индексу всех журналов за последние сутки или нажмите «Перестроить RAG-индекс».
+    </div>
+  </div>
 </div>
 <!-- Incidents View Container -->
 <div class="p-3 d-none" id="slc-incidents-container" style="max-height: 560px; overflow-y: auto;">
@@ -865,6 +928,150 @@ Updated: 2026-10-10 10:37:00
 </div>
 </div>
 </div>
+<!-- Defender Event Logs & Security Center Container Panel -->
+<div class="p-3 d-none" id="slc-defender-logs-container">
+  <!-- Верхняя панель метрик Defender -->
+  <div class="row g-2 mb-3">
+    <!-- Карточка 1: Статус защиты Defender -->
+    <div class="col-12 col-sm-6 col-xl-3">
+      <div class="slc-card h-100 shadow-sm p-3 position-relative">
+        <div class="d-flex justify-content-between align-items-start">
+          <div class="text-muted small text-uppercase fw-semibold" data-i18n="systemControl.defStatStatus">Статус защиты Defender 🛡️</div>
+          <span class="badge bg-success font-monospace" id="def-status-badge">ACTIVE</span>
+        </div>
+        <div class="fs-5 fw-bold mt-1 text-info font-monospace text-truncate" id="def-status-text">Включена (Real-Time)</div>
+        <div class="small text-muted mt-1 text-truncate" id="def-cloud-status" style="font-size: 0.75rem;">Cloud: Включена</div>
+        <div class="mt-2 text-end">
+          <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle" style="font-size: 0.7rem;">Real-time Protection</span>
+        </div>
+      </div>
+    </div>
+    <!-- Карточка 2: Обнаруженные угрозы -->
+    <div class="col-12 col-sm-6 col-xl-3">
+      <div class="slc-card h-100 shadow-sm p-3">
+        <div class="d-flex justify-content-between align-items-start">
+          <div class="text-muted small text-uppercase fw-semibold" data-i18n="systemControl.defStatThreats">Обнаруженные угрозы 🚨</div>
+          <span class="badge bg-success font-monospace" id="def-threats-badge">0 Угроз</span>
+        </div>
+        <div class="fs-4 fw-bold mt-1 text-warning font-monospace" id="def-threats-count">0</div>
+        <div class="small text-muted mt-1 text-truncate" id="def-threats-desc" style="font-size: 0.75rem;">Event 1006 / 1116</div>
+        <div class="mt-2">
+          <button class="btn btn-xs btn-outline-warning w-100 py-1" id="def-audit-btn" style="font-size: 0.78rem;">
+            <i class="bi bi-shield-check me-1"></i><span data-i18n="systemControl.defBtnAudit">Аудит статуса</span>
+          </button>
+        </div>
+      </div>
+    </div>
+    <!-- Карточка 3: CFA / ASR Блокировки -->
+    <div class="col-12 col-sm-6 col-xl-3">
+      <div class="slc-card h-100 shadow-sm p-3">
+        <div class="d-flex justify-content-between align-items-start">
+          <div class="text-muted small text-uppercase fw-semibold" data-i18n="systemControl.defStatProtection">CFA / ASR Блокировки ⚡</div>
+          <span class="badge bg-info-subtle text-info border border-info-subtle font-monospace" id="def-cfa-badge">CFA</span>
+        </div>
+        <div class="fs-4 fw-bold mt-1 text-info font-monospace" id="def-blocks-count">0</div>
+        <div class="small text-muted mt-1 text-truncate" id="def-blocks-desc" style="font-size: 0.75rem;">ASR 1125 / CFA 1123 / Net 1121</div>
+        <div class="mt-2 text-end">
+          <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle" style="font-size: 0.7rem;">Ransomware & Exploit Guard</span>
+        </div>
+      </div>
+    </div>
+    <!-- Карточка 4: Базы сигнатур и движок -->
+    <div class="col-12 col-sm-6 col-xl-3">
+      <div class="slc-card h-100 shadow-sm p-3">
+        <div class="d-flex justify-content-between align-items-start">
+          <div class="text-muted small text-uppercase fw-semibold" data-i18n="systemControl.defStatSignatures">Базы сигнатур и движок 📦</div>
+          <span class="badge bg-primary font-monospace" id="def-sig-badge">vLatest</span>
+        </div>
+        <div class="fs-6 fw-bold mt-1 text-success font-monospace text-truncate" id="def-sig-version">--</div>
+        <div class="small text-muted mt-1 text-truncate" id="def-engine-version" style="font-size: 0.75rem;">Engine: --</div>
+        <div class="mt-2 d-flex gap-1">
+          <button class="btn btn-xs btn-outline-info flex-grow-1 py-1" id="def-quick-scan-btn" style="font-size: 0.75rem;" title="Запустить быстрое сканирование Defender">
+            <i class="bi bi-play-circle me-1"></i><span data-i18n="systemControl.defBtnScan">Быстрое скан</span>
+          </button>
+          <button class="btn btn-xs btn-outline-primary flex-grow-1 py-1" id="def-update-sig-btn" style="font-size: 0.75rem;" title="Обновить антивирусные базы">
+            <i class="bi bi-cloud-arrow-down me-1"></i><span data-i18n="systemControl.defBtnUpdateSig">Обновить базы</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Панель управления и фильтрации Defender -->
+  <div class="slc-panel mb-3 p-2" data-panel-id="panel-system-control-defender-filter" id="panel-system-control-defender-filter">
+    <div class="row g-2 align-items-center">
+      <div class="col-12 col-md-4">
+        <div class="input-group input-group-sm">
+          <span class="input-group-text"><i class="bi bi-search"></i></span>
+          <input class="form-control form-control-sm" data-i18n-placeholder="systemControl.defSearchPlaceholder" id="def-events-search" placeholder="Поиск по угрозам, процессам, путям..." type="text"/>
+        </div>
+      </div>
+      <div class="col-12 col-md-4 col-sm-6">
+        <div class="input-group input-group-sm">
+          <span class="input-group-text"><i class="bi bi-shield"></i></span>
+          <select class="form-select form-select-sm" id="def-category-select">
+            <option value="" data-i18n="systemControl.defCategoryAll">Все категории Defender</option>
+            <option value="threats" data-i18n="systemControl.defCategoryThreats">🚨 Обнаружение угроз (1006, 1116)</option>
+            <option value="cfa" data-i18n="systemControl.defCategoryCfa">🛡️ Controlled Folder Access (1123, 1124)</option>
+            <option value="asr" data-i18n="systemControl.defCategoryAsr">⚡ Attack Surface Reduction (1125, 1126)</option>
+            <option value="network" data-i18n="systemControl.defCategoryNetwork">🌐 Network Protection (1121, 1122)</option>
+            <option value="scans" data-i18n="systemControl.defCategoryScans">🔍 Сканирование (1000, 1001, 1002, 1005)</option>
+            <option value="signatures" data-i18n="systemControl.defCategorySignatures">📦 Обновления баз и движка (2000, 2001, 2003)</option>
+            <option value="protection" data-i18n="systemControl.defCategoryProtection">⚙️ Защита в реальном времени (5000, 5001, 5007)</option>
+          </select>
+        </div>
+      </div>
+      <div class="col-6 col-md-2">
+        <select class="form-select form-select-sm" id="def-level-select">
+          <option value="">Все уровни</option>
+          <option value="Warning">Warning / Опасность</option>
+          <option value="Error">Error / Сбой</option>
+          <option value="Critical">Critical / Критический</option>
+          <option value="Information">Information / Инфо</option>
+        </select>
+      </div>
+      <div class="col-6 col-md-2 text-end d-flex justify-content-end align-items-center gap-2">
+        <button class="btn btn-sm btn-outline-info rounded-pill px-2.5 py-1" id="def-refresh-btn" style="font-size: 0.78rem;">
+          <i class="bi bi-arrow-clockwise me-1"></i><span data-i18n="systemControl.btnRefresh">Обновить</span>
+        </button>
+        <span class="small text-muted font-monospace text-nowrap" id="def-events-counter">0 событий</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Таблица событий Defender -->
+  <div class="slc-card shadow-sm">
+    <div class="slc-card-header d-flex align-items-center justify-content-between py-2 px-3">
+      <span class="fw-semibold"><i class="bi bi-shield-shaded text-primary me-2"></i><span>Журнал событий Microsoft Defender (Operational Log)</span></span>
+      <span class="badge bg-secondary font-monospace" id="def-table-badge">0 событий</span>
+    </div>
+    <div class="table-responsive" id="def-events-table-container" style="min-height: 140px; max-height: 520px; overflow-y: auto;">
+      <table class="slc-table" id="def-events-table" style="font-size: 0.85rem;">
+        <thead class="sticky-top">
+          <tr>
+            <th data-i18n="systemControl.colTime" style="width: 160px;">Время</th>
+            <th data-i18n="systemControl.colLevel" style="width: 90px;">Уровень</th>
+            <th data-i18n="systemControl.colId" style="width: 75px;">Event ID</th>
+            <th data-i18n="systemControl.defColCategory" style="width: 190px;">Категория</th>
+            <th data-i18n="systemControl.colMessage">Описание события Defender</th>
+            <th class="text-center" data-i18n="systemControl.defColAction" style="width: 80px;">Детали</th>
+          </tr>
+        </thead>
+        <tbody id="def-events-tbody">
+          <tr>
+            <td class="text-center py-4 text-muted" colspan="6" data-i18n="systemControl.defLoading">
+              <div class="spinner-border spinner-border-sm text-info me-2" role="status"></div>
+              Загрузка событий Windows Defender...
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="slc-table-resizer" id="def-events-table-resizer" title="Потяните для изменения высоты таблицы (двойной клик — сброс)">
+      <div class="slc-table-resizer-grip"></div>
+    </div>
+  </div>
+</div>
 </div>
 </div>
 </div>
@@ -948,4 +1155,25 @@ Updated: 2026-10-10 10:37:00
 </div>
 </div>
 </div>
+<!-- Модальное окно деталей события Defender -->
+<div aria-hidden="true" aria-labelledby="defEventDetailModalLabel" class="modal fade" id="defEventDetailModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content shadow" style="background: var(--surface-1); color: var(--text-color); border: 1px solid var(--border-color);">
+      <div class="modal-header border-bottom" style="border-color: var(--border-color) !important;">
+        <h5 class="modal-title d-flex align-items-center gap-2" id="defEventDetailModalLabel">
+          <i class="bi bi-shield-check text-info"></i>
+          <span id="def-modal-title">Детали события Windows Defender</span>
+        </h5>
+        <button aria-label="Close" class="btn-close" data-bs-dismiss="modal" type="button"></button>
+      </div>
+      <div class="modal-body p-3" id="def-modal-body">
+        <!-- Populated by main.js -->
+      </div>
+      <div class="modal-footer border-top" style="border-color: var(--border-color) !important;">
+        <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal" type="button" data-i18n="systemControl.modalBtnClose">Закрыть</button>
+      </div>
+    </div>
+  </div>
 </div>
+</div>
+

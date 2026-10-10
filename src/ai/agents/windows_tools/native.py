@@ -1,16 +1,16 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard AI Agents - Windows Native FFI Tools Module
+# Process Name: AI-Windows-Admin AI Agents - Windows Native FFI Tools Module
 # =============================================================================
 # Description:
 #   Нативные инструменты прямого взаимодействия с Win32 C API (apps.windows.sdk.native).
 #
 # File: native.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: src.ai.agents.windows_tools
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-08 12:30:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard AI -   Init   Module
+# Process Name: AI-Windows-Admin AI -   Init   Module
 # =============================================================================
 # Description:
 #   Модуль основной системы (`__init__`).
@@ -9,11 +9,11 @@
 #
 #
 # File: __init__.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: src.ai
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-08 08:41:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations
@@ -30,5 +30,37 @@ from .providers.base import BaseChatProvider
 from .gemini import GoogleGenerativeAI
 from .agents import MediaSearchAgent, MCPClientManager
 from .orchestration import get_available_models, actualize_all_models, add_unsupported_model, load_unsupported_models, UnifiedChatModel
-from .voice import generate_voiceover_chunks
-__all__ = ['BaseChatProvider', 'GoogleGenerativeAI', 'GeminiCliChatBase', 'GeminiCliProvider', 'GeminiCliResponse', 'AgyChatBase', 'OllamaChatBase', 'OllamaClient', 'FoundryChatBase', 'FoundryClient', 'FoundrySimpleChat', 'get_foundry_chat', 'set_foundry_chat', 'ONNXChatBase', 'HFChatBase', 'OpenAICompatChat', 'UnifiedChatModel', 'get_available_models', 'actualize_all_models', 'add_unsupported_model', 'load_unsupported_models', 'MediaSearchAgent', 'MCPClientManager', 'generate_voiceover_chunks']
+from .rag import UnifiedKnowledgeHub, TextRAG, PixelRAG, LogRAG
+from .wikillm import WikiLLMEngine, WikiStorage
+
+__all__ = [
+    'BaseChatProvider',
+    'GoogleGenerativeAI',
+    'GeminiCliChatBase',
+    'GeminiCliProvider',
+    'GeminiCliResponse',
+    'AgyChatBase',
+    'OllamaChatBase',
+    'OllamaClient',
+    'FoundryChatBase',
+    'FoundryClient',
+    'FoundrySimpleChat',
+    'get_foundry_chat',
+    'set_foundry_chat',
+    'ONNXChatBase',
+    'HFChatBase',
+    'OpenAICompatChat',
+    'UnifiedChatModel',
+    'get_available_models',
+    'actualize_all_models',
+    'add_unsupported_model',
+    'load_unsupported_models',
+    'MediaSearchAgent',
+    'MCPClientManager',
+    'UnifiedKnowledgeHub',
+    'TextRAG',
+    'PixelRAG',
+    'LogRAG',
+    'WikiLLMEngine',
+    'WikiStorage',
+]

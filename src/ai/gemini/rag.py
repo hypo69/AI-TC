@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard AI - Rag Module
+# Process Name: AI-Windows-Admin AI - Rag Module
 # =============================================================================
 # Description:
 #   RAG index using Gemini Embedding API and FAISS.
@@ -14,11 +14,11 @@
 #     print(result)
 #
 # File: rag.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: src.ai.gemini
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 06:33:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 """RAG index using Gemini Embedding API and FAISS.

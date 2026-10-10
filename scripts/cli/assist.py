@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Scripts Cli - Assist
+# Process Name: AI-Windows-Admin Scripts Cli - Assist
 # =============================================================================
 # Description:
-#   Cross-platform CLI assistant for AI Breadboard project management.
+#   Cross-platform CLI assistant for AI Windows Admin project management.
 #
 # Usage Examples:
 #   CLI:
@@ -14,14 +14,14 @@
 #     service = AssistCLI()
 #
 # File: assist.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: scripts.cli
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-08 09:09:30
+# Updated: 2026-10-10 22:28:45
 # =============================================================================
 
-"""Cross-platform CLI assistant for AI Breadboard project management.
+"""Cross-platform CLI assistant for AI Windows Admin project management.
 
 CLI assistant providing cross-platform project management utilities,
 originally ported from PowerShell assist.ps1 for Windows, Linux, macOS.
@@ -46,7 +46,7 @@ from typing import Optional, Dict, List, Tuple
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 from scripts.cli.paths import init_paths, get_paths
 from scripts.cli.config import get_config_manager
-from scripts.cli.utils import find_available_port, is_port_open, get_process_on_port, kill_process, ensure_in_path, run_command, which
+from scripts.cli.utils import get_process_on_port, kill_process, ensure_in_path, run_command, which
 C_RESET = '\x1b[0m'
 C_BOLD = '\x1b[1m'
 C_CYAN = '\x1b[96m'
@@ -57,7 +57,7 @@ C_GRAY = '\x1b[90m'
 C_MAGENTA = '\x1b[95m'
 
 class AssistCLI:
-    """Главный CLI class для управления AI-Breadboard"""
+    """Главный CLI class для управления AI-Windows-Admin"""
 
     def __init__(self):
         self.paths = init_paths()
@@ -97,20 +97,20 @@ class AssistCLI:
         script_map = {'run': 'launchers/run.py', 'all': 'launchers/run.py', 'unicorn': 'launchers/run_unicorn.py', 'uvicorn': 'launchers/run_unicorn.py', 'light': 'launchers/run_light_server.py', 'foundry': 'launchers/run_foundry.py'}
         script_name = script_map.get(service)
         if not script_name:
-            print(f"{C_RED}❌ Неизвестный сервис: '{service}'{C_RESET}")
-            print(f'{C_GRAY}Доступные сервисы: run, unicorn, light, foundry, all{C_RESET}')
+            logger.console(f"{C_RED}❌ Неизвестный сервис: '{service}'{C_RESET}")
+            logger.console(f'{C_GRAY}Доступные сервисы: run, unicorn, light, foundry, all{C_RESET}')
             return 1
         script_path = self.paths.project_root / script_name
         if not script_path.exists():
-            print(f'{C_RED}❌ Скрипт не найден: {script_path}{C_RESET}')
+            logger.console(f'{C_RED}❌ Скрипт не найден: {script_path}{C_RESET}')
             return 1
-        print(f'{C_CYAN}🚀 Запуск: {script_name}...{C_RESET}')
+        logger.console(f'{C_CYAN}🚀 Запуск: {script_name}...{C_RESET}')
         try:
             python_exe = str(self.paths.venv_python) if self.paths.venv_python.exists() else sys.executable
             result = subprocess.run([python_exe, str(script_path)], cwd=str(self.paths.project_root), check=False)
             return result.returncode
         except Exception as e:
-            print(f'{C_RED}❌ Error запуска: {e}{C_RESET}')
+            logger.console(f'{C_RED}❌ Error запуска: {e}{C_RESET}')
             return 1
 
     def cmd_stop(self, service: str='all') -> int:
@@ -124,24 +124,24 @@ class AssistCLI:
             proc_info = get_process_on_port(port)
             if proc_info:
                 pid, proc_name = proc_info
-                print(f'{C_YELLOW}⏹ Остановка сервера на порту {port} (PID: {pid}, {proc_name})...{C_RESET}')
+                logger.console(f'{C_YELLOW}⏹ Остановка сервера на порту {port} (PID: {pid}, {proc_name})...{C_RESET}')
                 if kill_process(pid, force=True):
-                    print(f'  {C_GREEN}✔ Процесс завершен{C_RESET}')
+                    logger.console(f'  {C_GREEN}✔ Процесс завершен{C_RESET}')
                     stopped_any = True
                 else:
-                    print(f'  {C_RED}✖ Не удалось завершить процесс{C_RESET}')
+                    logger.console(f'  {C_RED}✖ Не удалось завершить процесс{C_RESET}')
             else:
-                print(f'{C_GRAY}Порт {port} свободен (сервер не запущен){C_RESET}')
+                logger.console(f'{C_GRAY}Порт {port} свободен (сервер не запущен){C_RESET}')
         if service in ('foundry', 'all'):
-            print(f'{C_YELLOW}⏹ Остановка Foundry...{C_RESET}')
+            logger.console(f'{C_YELLOW}⏹ Остановка Foundry...{C_RESET}')
             stopped_any = True
         if not stopped_any:
-            print(f'{C_GREEN}Все сервисы уже остановлены.{C_RESET}')
+            logger.console(f'{C_GREEN}Все сервисы уже остановлены.{C_RESET}')
         return 0
 
     def cmd_restart(self) -> int:
         """Перезапустить сервисы"""
-        print(f'{C_CYAN}🔄 Перезапуск сервисов...{C_RESET}')
+        logger.console(f'{C_CYAN}🔄 Перезапуск сервисов...{C_RESET}')
         self.cmd_stop()
         return self.cmd_start()
 
@@ -155,79 +155,79 @@ class AssistCLI:
         reload_on = bool(server_cfg.get('reload', True))
         proto = 'https' if use_ssl else 'http'
         local_url = f'{proto}://localhost:{port}/'
-        print(f'\n{C_BOLD}{C_CYAN}╔═══════════════════════════════════════════════════════════════╗{C_RESET}')
-        print(f'{C_BOLD}{C_CYAN}║             СТАТУС AI ASSISTANT СИСТЕМЫ                       ║{C_RESET}')
-        print(f'{C_BOLD}{C_CYAN}╚═══════════════════════════════════════════════════════════════╝{C_RESET}\n')
+        logger.console(f'\n{C_BOLD}{C_CYAN}╔═══════════════════════════════════════════════════════════════╗{C_RESET}')
+        logger.console(f'{C_BOLD}{C_CYAN}║             СТАТУС AI ASSISTANT СИСТЕМЫ                       ║{C_RESET}')
+        logger.console(f'{C_BOLD}{C_CYAN}╚═══════════════════════════════════════════════════════════════╝{C_RESET}\n')
         proc_info = get_process_on_port(port)
         if proc_info:
             pid, proc_name = proc_info
-            print(f'  {C_BOLD}FastAPI Сервер:{C_RESET}     {C_GREEN}● РАБОТАЕТ{C_RESET}')
-            print(f'  {C_BOLD}URL:{C_RESET}                {C_CYAN}{local_url}{C_RESET}')
-            print(f'  {C_BOLD}PID процесса:{C_RESET}       {pid} ({proc_name})')
+            logger.console(f'  {C_BOLD}FastAPI Сервер:{C_RESET}     {C_GREEN}● РАБОТАЕТ{C_RESET}')
+            logger.console(f'  {C_BOLD}URL:{C_RESET}                {C_CYAN}{local_url}{C_RESET}')
+            logger.console(f'  {C_BOLD}PID процесса:{C_RESET}       {pid} ({proc_name})')
         else:
-            print(f'  {C_BOLD}FastAPI Сервер:{C_RESET}     {C_RED}○ ОСТАНОВЛЕН{C_RESET}')
-            print(f'  {C_BOLD}Ожидаемый порт:{C_RESET}     {port}')
-        print(f"  {C_BOLD}Режим / SSL:{C_RESET}        {mode} | SSL: {('ВКЛ' if use_ssl else 'ВЫКЛ')} | Autoreload: {('ВКЛ' if reload_on else 'ВЫКЛ')}")
+            logger.console(f'  {C_BOLD}FastAPI Сервер:{C_RESET}     {C_RED}○ ОСТАНОВЛЕН{C_RESET}')
+            logger.console(f'  {C_BOLD}Ожидаемый порт:{C_RESET}     {port}')
+        logger.console(f"  {C_BOLD}Режим / SSL:{C_RESET}        {mode} | SSL: {('ВКЛ' if use_ssl else 'ВЫКЛ')} | Autoreload: {('ВКЛ' if reload_on else 'ВЫКЛ')}")
         ai_cfg = config.get('ai', {})
         use_foundry = bool(ai_cfg.get('use_foundry', False))
         foundry_url = str(ai_cfg.get('foundry_base_url', 'http://localhost:54837'))
         if use_foundry:
-            print(f'  {C_BOLD}AI Foundry:{C_RESET}         {C_YELLOW}○ ВКЛЮЧЕН В CONFIG (внешний сервис){C_RESET}')
-            print(f'  {C_BOLD}URL:{C_RESET}                {foundry_url}')
+            logger.console(f'  {C_BOLD}AI Foundry:{C_RESET}         {C_YELLOW}○ ВКЛЮЧЕН В CONFIG (внешний сервис){C_RESET}')
+            logger.console(f'  {C_BOLD}URL:{C_RESET}                {foundry_url}')
         else:
-            print(f'  {C_BOLD}AI Foundry:{C_RESET}         {C_GRAY}○ ОТКЛЮЧЕН В CONFIG{C_RESET}')
+            logger.console(f'  {C_BOLD}AI Foundry:{C_RESET}         {C_GRAY}○ ОТКЛЮЧЕН В CONFIG{C_RESET}')
         gemini_keys = os.getenv('GEMINI_API_KEY_NAMES', '')
         key_count = len([k for k in gemini_keys.split(',') if k.strip()])
-        print(f'  {C_BOLD}Gemini API Keys:{C_RESET}    {C_GREEN}{key_count} в пуле ротации{C_RESET}')
-        print()
+        logger.console(f'  {C_BOLD}Gemini API Keys:{C_RESET}    {C_GREEN}{key_count} в пуле ротации{C_RESET}')
+        logger.console()
         return 0
 
     def cmd_providers(self) -> int:
         """Показать list провайдеров"""
         config = self.config_mgr.load_config()
         ai_cfg = config.get('ai', {})
-        print(f'\n{C_BOLD}{C_CYAN}╔═══════════════════════════════════════════════════════════════════════════════════════╗{C_RESET}')
-        print(f'{C_BOLD}{C_CYAN}║                     РЕЕСТР ПРОВАЙДЕРОВ И МОДЕЛЕЙ ИИ                                   ║{C_RESET}')
-        print(f'{C_BOLD}{C_CYAN}╚═══════════════════════════════════════════════════════════════════════════════════════╝{C_RESET}\n')
+        logger.console(f'\n{C_BOLD}{C_CYAN}╔═══════════════════════════════════════════════════════════════════════════════════════╗{C_RESET}')
+        logger.console(f'{C_BOLD}{C_CYAN}║                     РЕЕСТР ПРОВАЙДЕРОВ И МОДЕЛЕЙ ИИ                                   ║{C_RESET}')
+        logger.console(f'{C_BOLD}{C_CYAN}╚═══════════════════════════════════════════════════════════════════════════════════════╝{C_RESET}\n')
         gemini_keys = os.getenv('GEMINI_API_KEY_NAMES', '')
         keys = [k.strip() for k in gemini_keys.split(',') if k.strip()]
         has_gemini = len(keys) > 0
-        print(f'{C_BOLD}{C_GREEN}1. Google Gemini API (Cloud API){C_RESET}')
-        print(f"   Status:          {('✅ Активен' if has_gemini else '❌ Нет ключей')}")
-        print(f"   Пул ключей:      {len(keys)} шт. ({(', '.join(keys) if keys else 'пусто')})")
-        print(f'   Дефолтная модель: gemini-3.1-flash / gemini-3.1-flash-lite')
-        print()
+        logger.console(f'{C_BOLD}{C_GREEN}1. Google Gemini API (Cloud API){C_RESET}')
+        logger.console(f"   Status:          {('✅ Активен' if has_gemini else '❌ Нет ключей')}")
+        logger.console(f"   Пул ключей:      {len(keys)} шт. ({(', '.join(keys) if keys else 'пусто')})")
+        logger.console(f'   Дефолтная модель: gemini-3.1-flash / gemini-3.1-flash-lite')
+        logger.console()
         use_gemini_cli = bool(ai_cfg.get('use_gemini_cli', True))
         gemini_cli_model = str(ai_cfg.get('gemini_cli_model_id', 'gemini-3.1-flash-lite'))
-        print(f'{C_BOLD}{C_GREEN}2. Gemini CLI (Терминальный агент){C_RESET}')
-        print(f"   Status:          {('✅ Включен' if use_gemini_cli else '○ Отключен')}")
-        print(f'   Модель:          {gemini_cli_model}')
-        print()
+        logger.console(f'{C_BOLD}{C_GREEN}2. Gemini CLI (Терминальный агент){C_RESET}')
+        logger.console(f"   Status:          {('✅ Включен' if use_gemini_cli else '○ Отключен')}")
+        logger.console(f'   Модель:          {gemini_cli_model}')
+        logger.console()
         use_foundry = bool(ai_cfg.get('use_foundry', False))
         foundry_model = str(ai_cfg.get('foundry_model_id', 'qwen2.5-1.5b'))
         foundry_url = str(ai_cfg.get('foundry_base_url', 'http://localhost:54837'))
-        print(f'{C_BOLD}{C_GREEN}3. Microsoft AI Foundry (Локальная LLM){C_RESET}')
-        print(f"   Status:          {('✅ Включен' if use_foundry else '○ Отключен')}")
-        print(f'   Модель:          {foundry_model}')
-        print(f'   Endpoint:        {foundry_url}')
-        print()
+        logger.console(f'{C_BOLD}{C_GREEN}3. Microsoft AI Foundry (Локальная LLM){C_RESET}')
+        logger.console(f"   Status:          {('✅ Включен' if use_foundry else '○ Отключен')}")
+        logger.console(f'   Модель:          {foundry_model}')
+        logger.console(f'   Endpoint:        {foundry_url}')
+        logger.console()
         use_ollama = bool(ai_cfg.get('use_ollama', False))
         ollama_model = str(ai_cfg.get('ollama_model_id', 'llama3.1'))
         ollama_url = str(ai_cfg.get('ollama_base_url', 'http://localhost:11434'))
-        print(f'{C_BOLD}{C_GREEN}4. Ollama Local{C_RESET}')
-        print(f"   Status:          {('✅ Включен' if use_ollama else '○ Отключен')}")
-        print(f'   Модель:          {ollama_model}')
-        print(f'   Endpoint:        {ollama_url}')
-        print()
+        logger.console(f'{C_BOLD}{C_GREEN}4. Ollama Local{C_RESET}')
+        logger.console(f"   Status:          {('✅ Включен' if use_ollama else '○ Отключен')}")
+        logger.console(f'   Модель:          {ollama_model}')
+        logger.console(f'   Endpoint:        {ollama_url}')
+        logger.console()
         openai_cfg = config.get('openai_compat', {}).get('providers', {})
         if openai_cfg:
-            print(f'{C_BOLD}{C_GREEN}5. OpenAI-Compatible Провайдеры{C_RESET}')
+            logger.console(f'{C_BOLD}{C_GREEN}5. OpenAI-Compatible Провайдеры{C_RESET}')
             for p_name, p_info in openai_cfg.items():
                 base = p_info.get('base_url', '')
                 models = ', '.join(p_info.get('models', [])) or 'авто'
-                print(f'   • {C_BOLD}{p_name}{C_RESET}: {base}')
-                print(f'     Модели: {models}')
-            print()
+                logger.console(f'   • {C_BOLD}{p_name}{C_RESET}: {base}')
+                logger.console(f'     Модели: {models}')
+            logger.console()
         return 0
 
     def cmd_logs(self, lines: int=40, name: str='fastapi') -> int:
@@ -240,7 +240,7 @@ class AssistCLI:
         if not logs_dir.exists() and (self.paths.project_root / 'logs').exists():
             logs_dir = self.paths.project_root / 'logs'
         if not logs_dir.exists():
-            print(f'{C_YELLOW}Каталог logs/ пока пуст: {logs_dir}{C_RESET}')
+            logger.console(f'{C_YELLOW}Каталог logs/ пока пуст: {logs_dir}{C_RESET}')
             return 0
         target_file = None
         if name == 'fastapi':
@@ -255,28 +255,28 @@ class AssistCLI:
                     target_file = logs_dir / cand
                     break
         if not target_file or not target_file.exists():
-            print(f'{C_YELLOW}Лог-файл не найден в {logs_dir}{C_RESET}')
+            logger.console(f'{C_YELLOW}Лог-файл не найден в {logs_dir}{C_RESET}')
             return 0
-        print(f'\n{C_CYAN}📄 Последние {lines} строк: {target_file.name}{C_RESET}\n' + '-' * 70)
+        logger.console(f'\n{C_CYAN}📄 Последние {lines} строк: {target_file.name}{C_RESET}\n' + '-' * 70)
         try:
             with open(target_file, 'r', encoding='utf-8', errors='replace') as f:
                 all_lines = f.readlines()
                 for line in all_lines[-int(lines):]:
-                    print(line.rstrip())
+                    logger.console(line.rstrip())
         except Exception as e:
-            print(f'{C_RED}Error чтения логов: {e}{C_RESET}')
-        print('-' * 70 + '\n')
+            logger.console(f'{C_RED}Error чтения логов: {e}{C_RESET}')
+        logger.console('-' * 70 + '\n')
         return 0
 
     def cmd_config(self, subcommand: str='show', key: str='', value: str='') -> int:
         """Работа с config.json"""
         config = self.config_mgr.load_config()
         if subcommand == 'show':
-            print(json.dumps(config, indent=2, ensure_ascii=False))
+            logger.console(json.dumps(config, indent=2, ensure_ascii=False))
             return 0
         if subcommand == 'get':
             if not key:
-                print(f'{C_RED}Укажите ключ (например: server.port){C_RESET}')
+                logger.console(f'{C_RED}Укажите ключ (например: server.port){C_RESET}')
                 return 1
             parts = key.split('.')
             val = config
@@ -286,11 +286,11 @@ class AssistCLI:
                 else:
                     val = None
                     break
-            print(f'{key} = {json.dumps(val, ensure_ascii=False)}')
+            logger.console(f'{key} = {json.dumps(val, ensure_ascii=False)}')
             return 0
         if subcommand == 'set':
             if not key or value == '':
-                print(f'{C_RED}Использование: assist config set <key> <value>{C_RESET}')
+                logger.console(f'{C_RED}Использование: assist config set <key> <value>{C_RESET}')
                 return 1
             parsed_val = value
             if value.lower() in ('true', '1', 'yes'):
@@ -307,23 +307,23 @@ class AssistCLI:
                 curr = curr[p]
             curr[parts[-1]] = parsed_val
             if self.config_mgr.save_config(config):
-                print(f'{C_GREEN}✔ Обновлено: {key} = {parsed_val}{C_RESET}')
+                logger.console(f'{C_GREEN}✔ Обновлено: {key} = {parsed_val}{C_RESET}')
                 return 0
             else:
-                print(f'{C_RED}✗ Error сохранения конфигурации{C_RESET}')
+                logger.console(f'{C_RED}✗ Error сохранения конфигурации{C_RESET}')
                 return 1
         return 0
 
     def cmd_test(self) -> int:
         """Запустить тесты"""
-        print(f'{C_CYAN}🧪 Запуск тестов pytest...{C_RESET}')
+        logger.console(f'{C_CYAN}🧪 Запуск тестов pytest...{C_RESET}')
         venv_python = str(self.paths.venv_python)
         result = subprocess.run([venv_python, '-m', 'pytest', 'tests/'], cwd=str(self.paths.project_root), check=False)
         return result.returncode
 
 def main():
     """Главная function"""
-    parser = argparse.ArgumentParser(description='CLI ассистент для управления AI-Breadboard', formatter_class=argparse.RawDescriptionHelpFormatter, epilog='\nExamples:\n  assist start                  # Запустить основной сервер\n  assist start unicorn          # Запустить FastAPI через uvicorn\n  assist stop                   # Остановить все сервисы\n  assist status                 # Показать status\n  assist providers              # List провайдеров ИИ\n  assist logs 50                # Последние 50 строк логов\n  assist config get server.port # Получить значение\n  assist config set server.port 8080  # Установить значение\n  assist test                   # Запустить тесты\n        ')
+    parser = argparse.ArgumentParser(description='CLI ассистент для управления AI-Windows-Admin', formatter_class=argparse.RawDescriptionHelpFormatter, epilog='\nExamples:\n  assist start                  # Запустить основной сервер\n  assist start unicorn          # Запустить FastAPI через uvicorn\n  assist stop                   # Остановить все сервисы\n  assist status                 # Показать status\n  assist providers              # List провайдеров ИИ\n  assist logs 50                # Последние 50 строк логов\n  assist config get server.port # Получить значение\n  assist config set server.port 8080  # Установить значение\n  assist test                   # Запустить тесты\n        ')
     subparsers = parser.add_subparsers(dest='command', help='Команда')
     start_parser = subparsers.add_parser('start', help='Запустить сервис')
     start_parser.add_argument('service', nargs='?', default='run', help='Сервис (run, unicorn, light, foundry)')

@@ -1,3 +1,4 @@
+from logger import logger
 import argparse
 import sys
 from pathlib import Path
@@ -24,7 +25,7 @@ def create_skill(name: str, description: str='', description_en: str='', descrip
     """
     skill_dir = SKILLS_ROOT / name
     if skill_dir.exists():
-        print(f'⚠️ Skill directory already exists: {skill_dir}')
+        logger.console(f'⚠️ Skill directory already exists: {skill_dir}')
         return skill_dir
     skill_dir.mkdir(parents=True, exist_ok=True)
     (skill_dir / 'scripts').mkdir(exist_ok=True)
@@ -57,12 +58,12 @@ def create_skill(name: str, description: str='', description_en: str='', descrip
     readme_content = f"# {name.replace('-', ' ').title()}\n\n## Overview\n{en_desc}\n\n## Localization (i18n)\n- **English**: {en_desc}\n- **Russian**: {ru_desc}\n\n## Location\n`skills/{name}/`\n"
     (skill_dir / 'SKILL.md').write_text(skill_md_content, encoding='utf-8')
     (skill_dir / 'README.md').write_text(readme_content, encoding='utf-8')
-    print(f"✅ Successfully created skill '{name}' at:\n   {skill_dir}")
+    logger.console(f"✅ Successfully created skill '{name}' at:\n   {skill_dir}")
     return skill_dir
 
 def main() -> int:
     """CLI entry point for skill initialization."""
-    parser = argparse.ArgumentParser(description='Create a new AI Breadboard agent skill with multilingual support.')
+    parser = argparse.ArgumentParser(description='Create a new AI Windows Admin agent skill with multilingual support.')
     parser.add_argument('name', help='Name of the skill in kebab-case (e.g. data-analyzer)')
     parser.add_argument('--description', '-d', default='', help='General description of the skill')
     parser.add_argument('--description-en', '-en', default='', help='English description (canonical)')

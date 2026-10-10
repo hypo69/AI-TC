@@ -1,5 +1,6 @@
 """CLI-утилита отправки электронной почты через SMTP."""
 from __future__ import annotations
+from logger import logger
 import argparse
 import json
 import sys
@@ -45,7 +46,7 @@ def main() -> int:
         file_path = Path(args.body_file).resolve()
         if not file_path.is_file():
             err_res = {'status': 'error', 'message': f'Файл с текстом письма не найден: {file_path}'}
-            print(json.dumps(err_res, ensure_ascii=False, indent=2) if args.json else f"❌ {err_res['message']}")
+            logger.console(json.dumps(err_res, ensure_ascii=False, indent=2) if args.json else f"❌ {err_res['message']}")
             return 1
         body_text = file_path.read_text(encoding='utf-8')
     body_html = args.html
@@ -53,7 +54,7 @@ def main() -> int:
         html_path = Path(args.html_file).resolve()
         if not html_path.is_file():
             err_res = {'status': 'error', 'message': f'Файл HTML не найден: {html_path}'}
-            print(json.dumps(err_res, ensure_ascii=False, indent=2) if args.json else f"❌ {err_res['message']}")
+            logger.console(json.dumps(err_res, ensure_ascii=False, indent=2) if args.json else f"❌ {err_res['message']}")
             return 1
         body_html = html_path.read_text(encoding='utf-8')
     try:
@@ -63,18 +64,18 @@ def main() -> int:
     except Exception as exc:
         result = {'status': 'error', 'message': f'Ошибка отправки: {exc}', 'error_type': type(exc).__name__}
     if args.json:
-        print(json.dumps(result, ensure_ascii=False, indent=2))
+        logger.console(json.dumps(result, ensure_ascii=False, indent=2))
     elif result.get('status') == 'success':
-        print('✅ Письмо успешно отправлено!')
-        print(f"   Кому: {', '.join(result.get('to', []))}")
-        print(f"   Тема: {result.get('subject')}")
-        print(f"   Message-ID: {result.get('message_id')}")
+        logger.console('✅ Письмо успешно отправлено!')
+        logger.console(f"   Кому: {', '.join(result.get('to', []))}")
+        logger.console(f"   Тема: {result.get('subject')}")
+        logger.console(f"   Message-ID: {result.get('message_id')}")
         if result.get('attachments'):
-            print(f"   Вложения: {', '.join(result.get('attachments', []))}")
+            logger.console(f"   Вложения: {', '.join(result.get('attachments', []))}")
     else:
-        print(f"❌ Ошибка отправки письма: {result.get('message')}")
+        logger.console(f"❌ Ошибка отправки письма: {result.get('message')}")
         if 'error_type' in result:
-            print(f"   Тип ошибки: {result.get('error_type')}")
+            logger.console(f"   Тип ошибки: {result.get('error_type')}")
     return 0 if result.get('status') == 'success' else 1
 if __name__ == '__main__':
     sys.exit(main())

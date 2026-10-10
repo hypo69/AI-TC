@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Modules Sysadmin - Tui
+# Process Name: AI-Windows-Admin Apps Windows Modules Sysadmin - Tui
 # =============================================================================
 # Description:
 #   Interactive TUI dashboard for Windows System Administrator.
@@ -10,14 +10,15 @@
 #     import apps.windows.sdk.modules.sysadmin.tui as tui
 #
 # File: tui.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.sysadmin
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:28:28
+# Updated: 2026-10-10 22:22:44
 # =============================================================================
 
 from __future__ import annotations
+from logger import logger
 """Interactive TUI dashboard for Windows System Administrator."""
 
 import asyncio
@@ -107,6 +108,6 @@ async def run_sysadmin_dashboard(interval: float=2.0) -> None:
                 layout['right'].update(right_layout)
                 await asyncio.sleep(interval)
     except Exception as e:
-        console.print(f'[red]Error:[/red] {str(e)}')
+        console.logger.console(f'[red]Error:[/red] {str(e)}')
         raise
 __all__ = ['run_sysadmin_dashboard', 'SystemAdminState', 'UserSession', 'SecurityEvent']

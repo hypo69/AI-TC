@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows SDK Modules Explorer - Settings Manager
+# Process Name: AI-Windows-Admin Apps Windows SDK Modules Explorer - Settings Manager
 # =============================================================================
 # Description:
 #   Менеджер настроек Проводника Windows (Folder Options / File Explorer Options).
@@ -16,11 +16,11 @@
 #     manager.set_setting('show_hidden_files', True)
 #
 # File: settings.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.explorer_manager
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 06:15:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

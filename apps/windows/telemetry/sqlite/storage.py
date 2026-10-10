@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Telemetry Sqlite - Storage
+# Process Name: AI-Windows-Admin Apps Windows Telemetry Sqlite - Storage
 # =============================================================================
 # Description:
 #   Главный фасад TelemetryStorage базы данных SQLite телеметрии.
@@ -13,11 +13,11 @@
 #     snapshots = storage.get_snapshots(limit=10)
 #
 # File: storage.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.telemetry.sqlite
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 05:41:00
+# Updated: 2026-10-10 20:33:00
 # =============================================================================
 
 from __future__ import annotations
@@ -92,7 +92,7 @@ class TelemetryStorage:
             if (ai_tel_dir / 'telemetry.db').is_file() or ai_tel_dir.is_dir():
                 target_dir = ai_tel_dir
             else:
-                target_dir = base_dir / 'AI-Breadboard' / 'apps' / 'windows' / 'telemetry' / 'logs'
+                target_dir = base_dir / 'AI-Windows-Admin' / 'apps' / 'windows' / 'telemetry' / 'logs'
 
             if not self.read_only:
                 target_dir.mkdir(parents=True, exist_ok=True)
@@ -497,15 +497,6 @@ class TelemetryStorage:
 
     def get_app_param_changes(self, app: Optional[str] = None, limit: int = 100) -> List[Dict[str, Any]]:
         return self._reader.get_app_param_changes(app=app, limit=limit)
-
-    def export_app_polls_to_csv(self, app: Optional[str] = None, output_path: Optional[Union[str, Path]] = None, limit: int = 50000) -> Path:
-        return self._reader.export_app_polls_to_csv(app=app, output_path=output_path, limit=limit)
-
-    def export_app_events_to_csv(self, app: Optional[str] = None, output_path: Optional[Union[str, Path]] = None, limit: int = 50000) -> Path:
-        return self._reader.export_app_events_to_csv(app=app, output_path=output_path, limit=limit)
-
-    def export_app_param_changes_to_csv(self, app: Optional[str] = None, output_path: Optional[Union[str, Path]] = None, limit: int = 50000) -> Path:
-        return self._reader.export_app_param_changes_to_csv(app=app, output_path=output_path, limit=limit)
 
     def get_custom_records(self, source_file: Optional[str] = None, limit: int = 100) -> List[Dict[str, Any]]:
         return self._reader.get_custom_records(source_file=source_file, limit=limit)
@@ -944,6 +935,9 @@ class TelemetryStorage:
 
     def get_latest_forensics_snapshot(self) -> Optional[Dict[str, Any]]:
         return self._reader.get_latest_forensics_snapshot()
+
+    def get_forensics_history(self, limit: int = 50, hours: float = 24.0) -> List[Dict[str, Any]]:
+        return self._reader.get_forensics_history(limit=limit, hours=hours)
 
     # 6. Process Leaks
     def save_process_leak_snapshot(self, snapshot_id: str, total_processes: Any, suspicious_count: int = 0, leak_items: Optional[List[Any]] = None) -> int:

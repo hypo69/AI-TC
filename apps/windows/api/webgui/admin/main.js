@@ -10,11 +10,11 @@
  *     <script src="/windows/api/webgui/admin/main.js?v=20261001_v1" type="module"></script>
  *
  * File: main.js
- * Project: ai-breadboard
+ * Project: ai-windows-admin
  * Package: windows/api/webgui/admin
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-08 13:35:00
+ * Updated: 2026-10-10 19:41:00
  * =============================================================================
  */
 
@@ -355,9 +355,6 @@ function onTabSwitched(targetId) {
   } else if (cleanId === 'tab-logs' && typeof window.initLogsTab === 'function') {
     console.log('[AdminInterface] Switching to logs tab...');
     window.initLogsTab();
-  } else if (cleanId === 'tab-trading' && typeof window.initTradingTab === 'function') {
-    console.log('[AdminInterface] Switching to trading tab...');
-    window.initTradingTab();
   } else if (cleanId === 'tab-network' && typeof window.initNetworkTab === 'function') {
     console.log('[AdminInterface] Switching to network tab...');
     window.initNetworkTab();
@@ -616,7 +613,6 @@ async function initInterface() {
   // Определение и фильтрация вкладок микроприложений (/apps)
   const appTabDefs = [
     { id: 'about_system', tab: 'about-system', html: '/html/about_system_tab/index.html?v=20261008_v2', js: '/html/about_system_tab/main.js?v=20261008_v2' },
-    { id: 'trading_terminal', tab: 'trading', html: '/html/trading_tab/index.html', js: '/html/trading_tab/main.js' },
     { id: 'network_terminal', tab: 'network', html: '/html/network_tab/index.html', js: '/html/network_tab/main.js' },
     { id: 'system_inspector', tab: 'hardware-load-inspector', html: '/html/system_inspector_tab/index.html?v=20261008_v16', js: '/html/system_inspector_tab/main.js?v=20261008_v16' },
     { id: 'processes_load_inspector', tab: 'processes-load-inspector', html: '/html/processes_load_inspector_tab/index.html?v=20261008_v1', js: '/html/processes_load_inspector_tab/main.js?v=20261008_v1' },
@@ -820,7 +816,7 @@ async function loadTabContent(tabName, url, jsOverrideSrc) {
 function initHelpContent() {
   window.HELP_CONTENT = window.HELP_CONTENT || {};
   const defaults = {
-    'overview': `<h4>🚀 Обзор проекта</h4><p>ai-breadboard — интегрированная среда для работы с AI, RAG и системным управлением.</p>`,
+    'overview': `<h4>🚀 Обзор проекта</h4><p>ai-windows-admin — интегрированная среда для работы с AI, RAG и системным управлением.</p>`,
     'google_oauth': `<h4>🔑 Google OAuth и аккаунты</h4><p>Интеграция с Gmail, Drive, Sheets и Docs через OAuth 2.0 и Service Accounts.</p>`,
     'ai_models': `<h4>🤖 ИИ Провайдеры и Модели</h4><p>Облачные (Gemini, OpenAI, Groq) и локальные (Ollama, Foundry, DirectML) модели.</p>`,
     'gdrive_sync': `<h4>☁️ Google Drive Sync</h4><p>Автоматическая синхронизация баз данных и файлов с Google Drive.</p>`,

@@ -1,4 +1,4 @@
-# Плагины AI Breadboard
+# Плагины AI Windows Admin
 
 Список доступных плагинов:
 

@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Root - Conftest
+# Process Name: AI-Windows-Admin Root - Conftest
 # =============================================================================
 # Description:
-#   Test configuration for ai-breadboard.
+#   Test configuration for ai-windows-admin.
 #
 # Usage Examples:
 #   Python API:
@@ -12,14 +12,14 @@
 #     res = test_data_dir()
 #
 # File: conftest.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: root
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:20:26
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
-"""Test configuration for ai-breadboard.
+"""Test configuration for ai-windows-admin.
 Provides fixtures and settings for all tests."""
 
 import asyncio

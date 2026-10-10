@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Modules Storage_Manager - Tui
+# Process Name: AI-Windows-Admin Apps Windows Modules Storage_Manager - Tui
 # =============================================================================
 # Description:
 #   # Description:
@@ -12,14 +12,15 @@
 #     service = StorageManagerTUI()
 #
 # File: tui.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.storage_manager
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:28:28
+# Updated: 2026-10-10 22:22:44
 # =============================================================================
 
 from __future__ import annotations
+from logger import logger
 """# Description:"""
 
 from typing import Optional
@@ -83,9 +84,9 @@ class StorageManagerTUI:
                 f"[{use_color}]{v.percent_used}%[/{use_color}]",
             )
 
-        self.console.print(Panel('[bold white]AI-Breadboard: Storage & Raw Block Cloner[/bold white]', style='blue'))
-        self.console.print(disk_table)
-        self.console.print(vol_table)
+        self.console.logger.console(Panel('[bold white]AI-Windows-Admin: Storage & Raw Block Cloner[/bold white]', style='blue'))
+        self.console.logger.console(disk_table)
+        self.console.logger.console(vol_table)
 
     def render_disk_info(self, disk_id: int) -> None:
         """Отображение подробной информации о диске, геометрии и разделах."""
@@ -124,13 +125,13 @@ class StorageManagerTUI:
                 "[green]Да[/green]" if p.is_bootable else "[dim]Нет[/dim]",
             )
 
-        self.console.print(Panel(f"[bold cyan]Инспекция накопителя #{disk_id}[/bold cyan]"))
-        self.console.print(geom_table)
-        self.console.print(parts_table)
+        self.console.logger.console(Panel(f"[bold cyan]Инспекция накопителя #{disk_id}[/bold cyan]"))
+        self.console.logger.console(geom_table)
+        self.console.logger.console(parts_table)
 
     def render_hex_dump(self, res: SectorReadResponse) -> None:
         """Отображение дампа прочитанных секторов."""
-        self.console.print(Panel(
+        self.console.logger.console(Panel(
             f"[bold yellow]Дамп сектора: PhysicalDrive{res.disk_id} | LBA {res.start_lba} ({res.bytes_read} байт)[/bold yellow]\n\n"
             f"[bold white]HEX:[/bold white]\n{res.hex_dump}\n\n"
             f"[bold white]ASCII:[/bold white]\n{res.ascii_preview}"
@@ -139,7 +140,7 @@ class StorageManagerTUI:
     def render_task_status(self, task: StorageTaskStatus) -> None:
         """Отображение статуса фоновой задачи."""
         status_color = 'green' if task.status == 'completed' else ('red' if task.status == 'failed' else 'yellow')
-        self.console.print(Panel(
+        self.console.logger.console(Panel(
             f"[bold cyan]Задача #{task.task_id} ({task.task_type})[/bold cyan]\n"
             f"Источник: [bold]{task.source}[/bold] -> Назначение: [bold]{task.destination}[/bold]\n"
             f"Статус: [{status_color}]{task.status.upper()}[/{status_color}] (Dry-Run: {task.dry_run})\n"

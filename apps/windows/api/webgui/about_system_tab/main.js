@@ -10,11 +10,11 @@
  *     <script src="/windows/api/webgui/about_system_tab/main.js?v=20261001_v1" type="module"></script>
  *
  * File: main.js
- * Project: ai-breadboard
+ * Project: ai-windows-admin
  * Package: windows/api/webgui/about_system_tab
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-08 12:38:00
+ * Updated: 2026-10-10 17:35:00
  * =============================================================================
  */
 
@@ -36,7 +36,7 @@
 // Package: src.api.webgui.about_system_tab
 // Author: hypo69
 // Copyright: © 2026 hypo69
-// Updated: 2026-10-08 12:35:00
+// Updated: 2026-10-10 17:35:00
 // =============================================================================
 
 (function () {

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Modules Backup_Manager Tests - Test User Folders Manager
+# Process Name: AI-Windows-Admin Apps Windows Modules Backup_Manager Tests - Test User Folders Manager
 # =============================================================================
 # Description:
 #   Модульные тесты для модуля UserFoldersManager и роутера.
@@ -12,11 +12,11 @@
 #     res = temp_folders()
 #
 # File: test_user_folders_manager.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.backup_manager.tests
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:28:28
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 """Модульные тесты для модуля UserFoldersManager и роутера."""

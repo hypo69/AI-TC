@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Modules Network -   Init  
+# Process Name: AI-Windows-Admin Apps Windows Modules Network -   Init  
 # =============================================================================
 # Description:
 #   Network Analyzer Terminal standalone application.
@@ -9,11 +9,11 @@
 #
 #
 # File: __init__.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.network
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-04 04:55:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 """Network Analyzer Terminal standalone application."""

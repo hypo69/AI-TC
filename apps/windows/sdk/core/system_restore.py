@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Core - System Restore
+# Process Name: AI-Windows-Admin Apps Windows Core - System Restore
 # =============================================================================
 # Description:
 #   Модуль создания и управления точками восстановления Windows.
@@ -12,11 +12,11 @@
 #     service = WindowsSystemRestoreManager()
 #
 # File: system_restore.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.core
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:28:28
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations
@@ -169,7 +169,7 @@ class WindowsSystemRestoreManager:
         """
         clean_desc = description.replace('"', "'").strip()
         if not clean_desc:
-            clean_desc = f"AI-Breadboard Parameter Change {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+            clean_desc = f"AI-Windows-Admin Parameter Change {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
         storage_info = self.get_shadow_storage_info()
         eviction_warning = storage_info.get('at_risk_of_eviction', False)
         if eviction_warning:
@@ -258,7 +258,7 @@ class WindowsSystemRestoreManager:
             subprocess.run(['powershell', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', reg_cmd], capture_output=True, text=True, timeout=self.timeout_seconds)
         except Exception as ex:
             logger.debug(f'Не удалось обновить реестр частоты точек восстановления: {ex}')
-        task_name = 'AI-Breadboard-SystemRestore'
+        task_name = 'AI-Windows-Admin-SystemRestore'
         if trigger == 'disabled':
             del_cmd = f"Unregister-ScheduledTask -TaskName '{task_name}' -Confirm:$false -ErrorAction SilentlyContinue"
             try:

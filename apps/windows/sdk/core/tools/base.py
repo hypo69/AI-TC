@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Core Tools - Base
+# Process Name: AI-Windows-Admin Apps Windows Core Tools - Base
 # =============================================================================
 # Description:
 #   Базовые интерфейсы и модели данных для умных системных инструментов.
@@ -12,11 +12,11 @@
 #     service = ToolExecutionResult()
 #
 # File: base.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.core.tools
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:28:28
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Telemetry Win32_Ffi - Advapi32
+# Process Name: AI-Windows-Admin Apps Windows Telemetry Win32_Ffi - Advapi32
 # =============================================================================
 # Description:
 #   advapi32.dll wrapper for registry, services, and security functions.
@@ -12,11 +12,11 @@
 #     service = SYSTEMTIME()
 #
 # File: advapi32.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.telemetry.win32_ffi
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:28:28
+# Updated: 2026-10-10 22:28:45
 # =============================================================================
 
 """advapi32.dll wrapper for registry, services, and security functions."""
@@ -25,7 +25,6 @@ import ctypes
 import ctypes.wintypes as wintypes
 from typing import List, Optional, Dict, Any
 from dataclasses import dataclass
-from enum import IntFlag
 HKEY_CLASSES_ROOT = 2147483648
 HKEY_CURRENT_USER = 2147483649
 HKEY_LOCAL_MACHINE = 2147483650
@@ -203,4 +202,4 @@ __all__ = [
     "SYSTEMTIME",
     "SERVICE_STATUS",
     "ENUM_SERVICE_STATUS",
-]
+]

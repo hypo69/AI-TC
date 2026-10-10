@@ -13,11 +13,11 @@
  *     import { executeUserAction, isUserAdmin } from '/windows/api/webgui/js/userSettings.js';
  *
  * File: userSettings.js
- * Project: ai-breadboard
+ * Project: ai-windows-admin
  * Package: windows/api/webgui/js
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-01 13:04:40
+ * Updated: 2026-10-10 17:35:00
  * =============================================================================
  */
 

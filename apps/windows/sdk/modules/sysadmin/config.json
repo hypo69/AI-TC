@@ -19,16 +19,16 @@
       "*"
     ]
   },
-  "watch_directory": "C:\\Users\\onela\\AppData\\Local\\AI-Breadboard",
+  "watch_directory": "C:\\Users\\onela\\AppData\\Local\\AI-Windows-Admin",
   "watch_directories": [
-    "C:\\Users\\onela\\AppData\\Local\\AI-Breadboard",
+    "C:\\Users\\onela\\AppData\\Local\\AI-Windows-Admin",
     "C:\\Program Files",
     "C:\\"
   ],
   "exclusions": {
     "enabled": true,
     "paths": [
-      "AppData\\Roaming\\AI-Breadboard\\apps\\windows\\telemetry\\logs",
+      "AppData\\Roaming\\AI-Windows-Admin\\apps\\windows\\telemetry\\logs",
       "AppData\\Local\\Temp",
       "$Recycle.Bin",
       "System Volume Information",

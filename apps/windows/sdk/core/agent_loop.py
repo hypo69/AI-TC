@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Core - Agent Loop
+# Process Name: AI-Windows-Admin Apps Windows Core - Agent Loop
 # =============================================================================
 # Description:
 #   Автономный агентский цикл с поддержкой нативного Function Calling и саморасширения.
@@ -12,11 +12,11 @@
 #     service = WindowsAgentLoop()
 #
 # File: agent_loop.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.core
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:28:28
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations
@@ -108,7 +108,7 @@ class WindowsAgentLoop:
         for t in tools_list:
             tools_desc.append(f'- **{t.name}** ({t.title}): {t.description}')
         tools_str = '\n'.join(tools_desc)
-        return f'Ты — интеллектуальный системный агент платформы AI Breadboard для ОС Windows.\nТвоя задача — исследовать систему, собирать достоверные факты и формировать профессиональные отчеты.\n\n### 🛠️ ДОСТУПНЫЕ ИНСТРУМЕНТЫ:\n{tools_str}\n\n### ⚙️ ПРАВИЛА ВЫПОЛНЕНИЯ:\n1. Если для решения задачи подходит встроенный инструмент (например, windows_collector), используй его.\n2. Если требуется специализированный или отсутствующий опрос (например, история мышей, принтеры, USB, мониторы, сетевые папки SMB, специфические ключи реестра), ИСПОЛЬЗУЙ инструмент `create_custom_tool` — сформируй точный, безопасный read-only скрипт PowerShell с конвертацией вывода в JSON (`| ConvertTo-Json`).\n3. При формировании ответа опирайся СТРОГО на собранные данные.\n4. Если предлагаешь пользователю действие/исправление (отключение службы, очистка диска, включение аудита auditpol), добавь блок действия:\n```action\n{{\n  "action_id": "уникальный_id",\n  "action_type": "custom_command",\n  "title": "Название действия",\n  "description": "Что произойдет",\n  "target": "объект",\n  "risk": "caution",\n  "execution_command": "powershell_или_cmd_команда"\n}}\n```\n\nДля вызова инструмента верни JSON:\n```tool_call\n{{"tool_name": "имя_инструмента", "arguments": {{ ... }}}}\n```\nЕсли сбор данных завершен, сформируй красивый финальный ответ в Markdown на русском языке.'
+        return f'Ты — интеллектуальный системный агент платформы AI Windows Admin для ОС Windows.\nТвоя задача — исследовать систему, собирать достоверные факты и формировать профессиональные отчеты.\n\n### 🛠️ ДОСТУПНЫЕ ИНСТРУМЕНТЫ:\n{tools_str}\n\n### ⚙️ ПРАВИЛА ВЫПОЛНЕНИЯ:\n1. Если для решения задачи подходит встроенный инструмент (например, windows_collector), используй его.\n2. Если требуется специализированный или отсутствующий опрос (например, история мышей, принтеры, USB, мониторы, сетевые папки SMB, специфические ключи реестра), ИСПОЛЬЗУЙ инструмент `create_custom_tool` — сформируй точный, безопасный read-only скрипт PowerShell с конвертацией вывода в JSON (`| ConvertTo-Json`).\n3. При формировании ответа опирайся СТРОГО на собранные данные.\n4. Если предлагаешь пользователю действие/исправление (отключение службы, очистка диска, включение аудита auditpol), добавь блок действия:\n```action\n{{\n  "action_id": "уникальный_id",\n  "action_type": "custom_command",\n  "title": "Название действия",\n  "description": "Что произойдет",\n  "target": "объект",\n  "risk": "caution",\n  "execution_command": "powershell_или_cmd_команда"\n}}\n```\n\nДля вызова инструмента верни JSON:\n```tool_call\n{{"tool_name": "имя_инструмента", "arguments": {{ ... }}}}\n```\nЕсли сбор данных завершен, сформируй красивый финальный ответ в Markdown на русском языке.'
 
     async def plan_and_select_tool(self, query: str, session_history: Optional[List[Dict[str, str]]]=None) -> Optional[Tuple[str, Dict[str, Any]]]:
         """Определяет, какой инструмент требуется вызвать для запроса пользователя."""

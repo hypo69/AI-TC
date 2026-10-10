@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Scripts Dev - Update Docs
+# Process Name: AI-Windows-Admin Scripts Dev - Update Docs
 # =============================================================================
 # Description:
 #   Documentation validation for modified Python files.
@@ -14,11 +14,11 @@
 #     res = get_modified_python_files()
 #
 # File: update_docs.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: scripts.dev
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:27:07
+# Updated: 2026-10-10 22:22:30
 # =============================================================================
 
 """Documentation validation for modified Python files.
@@ -26,6 +26,7 @@
 Checks for presence of docstrings in modified Python files and validates
 that proper documentation standards are met."""
 
+from logger import logger
 import os
 import sys
 import subprocess
@@ -64,24 +65,24 @@ def validate_docblocks(files: List[Path]) -> bool:
     for f in files:
         content = f.read_text(encoding='utf-8')
         if '"""' not in content and "'''" not in content:
-            print(f'⚠️  File {f.name} modified but contains no docstring!')
+            logger.console(f'⚠️  File {f.name} modified but contains no docstring!')
             all_valid = False
     return all_valid
 
 def main() -> int:
     """Main function."""
-    print('🔎 Starting documentation and comments validity check...')
+    logger.console('🔎 Starting documentation and comments validity check...')
     modified = get_modified_python_files()
     if not modified:
-        print('✅ No modified Python files found in git. Additional validation not required.')
+        logger.console('✅ No modified Python files found in git. Additional validation not required.')
         return 0
-    print(f'Modified files found: {len(modified)}')
+    logger.console(f'Modified files found: {len(modified)}')
     valid = validate_docblocks(modified)
     if valid:
-        print('✅ All modified files contain docstrings.')
+        logger.console('✅ All modified files contain docstrings.')
         return 0
     else:
-        print('❌ Recommended to add or update comments/documentation.')
+        logger.console('❌ Recommended to add or update comments/documentation.')
         return 1
 if __name__ == '__main__':
     sys.exit(main())

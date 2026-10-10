@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard AI - Errors Module
+# Process Name: AI-Windows-Admin AI - Errors Module
 # =============================================================================
 # Description:
 #   Mixin class for centralized error handling in GoogleGenerativeAI.
@@ -12,11 +12,11 @@
 #     service = GoogleGenerativeAIErrorMixin()
 #
 # File: errors.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: src.ai.gemini
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 06:33:00
+# Updated: 2026-10-10 22:28:45
 # =============================================================================
 
 """Mixin class for centralized error handling in GoogleGenerativeAI."""
@@ -29,7 +29,7 @@ from typing import Any, Optional
 import requests
 from logger import logger
 from src.ai.orchestration.model_error_hub import record_model_error
-from src.ai.orchestration.model_pool_state import mark_model_exhausted, switch_model
+from src.ai.orchestration.model_pool_state import mark_model_exhausted
 from .core import add_unsupported_model
 
 
@@ -179,10 +179,6 @@ class GoogleGenerativeAIErrorMixin:
             max_attempts=max_attempts,
         )
         logger.error(f'Gemini Model Error (Attempt {attempt + 1}/{max_attempts}):\n{err_json}')
-        from src.config import is_debug_mode
-        if is_debug_mode():
-            logger.critical(f'[DEBUG MODE] Ошибка ответа модели Gemini ({active_model}) на попытке {attempt + 1}/{max_attempts}. Немедленная остановка выполнения.')
-            raise ex
         if '401' in ex_str or 'API_KEY_INVALID' in ex_str or 'PERMISSION_DENIED' in ex_str:
             logger.warning(f'GoogleGenerativeAI: Authorization error (API key invalid/expired). Rotating key...', exc_info=False)
             record_model_error(provider='gemini', model_name=active_model, error=ex_str, status_code=401, attempt=attempt, max_attempts=max_attempts, action_taken='rotate_key')

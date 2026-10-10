@@ -1,6 +1,6 @@
 <#
 =============================================================================
-Process Name: AI-Breadboard Automation - Probe
+Process Name: AI-Windows-Admin Automation - Probe
 =============================================================================
 Description:
   PowerShell-сценарий автоматизации и системного обслуживания (probe).
@@ -10,11 +10,11 @@ Usage Examples:
     .\probe.ps1
 
 File: probe.ps1
-Project: ai-breadboard
+Project: ai-windows-admin
 Package: .skills/mouse-history-inspector/scripts
 Author: hypo69
 Copyright: © 2026 hypo69
-Updated: 2026-10-02 21:57:05
+Updated: 2026-10-10 17:35:00
 =============================================================================
 #>
 

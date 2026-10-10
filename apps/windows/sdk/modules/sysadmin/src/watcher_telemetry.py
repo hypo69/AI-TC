@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Modules Sysadmin Src - Watcher Telemetry
+# Process Name: AI-Windows-Admin Apps Windows Modules Sysadmin Src - Watcher Telemetry
 # =============================================================================
 # Description:
 #   Движок сбора телеметрии, расчета темпа файловых операций и показателей накопителей.
@@ -12,11 +12,11 @@
 #     service = WatcherTelemetrySnapshot()
 #
 # File: watcher_telemetry.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.sysadmin.src
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-04 06:25:00
+# Updated: 2026-10-10 19:30:35
 # =============================================================================
 
 from __future__ import annotations
@@ -32,7 +32,6 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 import psutil
 from logger import logger
-from apps.common.csv_logger import write_csv_row
 
 @dataclass
 class WatcherTelemetrySnapshot:
@@ -245,24 +244,30 @@ class FileWatcherTelemetryEngine:
         iso_now = datetime.now(timezone.utc).isoformat()
         primary_watch_dir = dirs_list[0] if dirs_list else ''
         snap = WatcherTelemetrySnapshot(timestamp=iso_now, watch_dirs=dirs_list, watch_dir=primary_watch_dir, drive_letters=hw.get('drive_letters', []), drive_letter=hw.get('drive_letter', 'C:'), drive_model=hw.get('drive_model', 'Physical Storage'), drives_info=hw.get('drives_info', []), total_events_count=total_history_events or rates['window_events_count'], events_rate_per_sec=rates['total_rate'], created_rate_per_sec=rates['created_rate'], modified_rate_per_sec=rates['modified_rate'], deleted_rate_per_sec=rates['deleted_rate'], renamed_rate_per_sec=rates['renamed_rate'], burst_deletions_alert=burst_deletions, high_activity_alert=high_activity, status_label=status_label, disk_read_kbs=hw['read_kbs'], disk_write_kbs=hw['write_kbs'], disk_read_iops=hw['read_iops'], disk_write_iops=hw['write_iops'], drive_temperature_c=hw['temperature_c'], security_audit_matched_count=sec_matches, details={'watch_dirs_count': len(dirs_list), 'window_seconds': self.window_seconds, 'window_events_count': rates['window_events_count']})
-        self.log_snapshot_to_csv(snap)
+        self._record_telemetry_snapshot(snap)
         return snap
 
-    def log_snapshot_to_csv(self, snap: WatcherTelemetrySnapshot) -> None:
-        """Записать показатели снимка телеметрии в CSV-файл.
+    def _record_telemetry_snapshot(self, snap: WatcherTelemetrySnapshot) -> None:
+        """Сохранить показатели снимка телеметрии в TelemetryStorage (буфер памяти с последующим сбросом в SQLite).
 
         Args:
-            snap (WatcherTelemetrySnapshot): Снимок телеметрии для записи.
+            snap (WatcherTelemetrySnapshot): Снимок телеметрии для сохранения.
         """
-        headers = ['timestamp', 'watch_dirs', 'drive_letter', 'drive_model', 'events_rate_per_sec', 'created_rate_per_sec', 'modified_rate_per_sec', 'deleted_rate_per_sec', 'burst_alert', 'disk_read_kbs', 'disk_write_kbs', 'drive_temp_c', 'sec_audit_matches', 'status']
-        dirs_str = ';'.join(snap.watch_dirs) if snap.watch_dirs else snap.watch_dir
-        row = [snap.timestamp, dirs_str, snap.drive_letter, snap.drive_model, snap.events_rate_per_sec, snap.created_rate_per_sec, snap.modified_rate_per_sec, snap.deleted_rate_per_sec, 'ALERT' if snap.burst_deletions_alert else 'OK', snap.disk_read_kbs, snap.disk_write_kbs, snap.drive_temperature_c if snap.drive_temperature_c is not None else '', snap.security_audit_matched_count, snap.status_label]
         try:
-            write_csv_row('file_watcher_telemetry_polls.csv', headers, row)
-            if snap.burst_deletions_alert or snap.high_activity_alert:
-                write_csv_row('file_watcher_anomalies.csv', headers, row)
+            from apps.windows.telemetry.sqlite import TelemetryStorage
+            storage = TelemetryStorage.get_instance()
+            storage.save_app_poll(
+                app='windows_sysadmin',
+                poll_type='file_watcher',
+                metric_name='events_rate_per_sec',
+                value=snap.events_rate_per_sec,
+                unit='events/s',
+                status='ALERT' if (snap.burst_deletions_alert or snap.high_activity_alert) else 'OK',
+                details=snap.to_dict(),
+                timestamp=snap.timestamp,
+            )
         except Exception as e:
-            logger.debug(f'Ошибка записи лога телеметрии файлового вотчера: {e}')
+            logger.debug(f'Ошибка буферизации телеметрии файлового вотчера в TelemetryStorage: {e}')
 _global_telemetry_engine: Optional[FileWatcherTelemetryEngine] = None
 
 def get_watcher_telemetry_engine() -> FileWatcherTelemetryEngine:

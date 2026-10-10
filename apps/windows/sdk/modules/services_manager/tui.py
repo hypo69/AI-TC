@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Modules Services_Manager - Tui
+# Process Name: AI-Windows-Admin Apps Windows Modules Services_Manager - Tui
 # =============================================================================
 # Description:
 #   # Description:
@@ -12,14 +12,15 @@
 #     service = ServicesManagerTUI()
 #
 # File: tui.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.services_manager
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:28:28
+# Updated: 2026-10-10 22:22:44
 # =============================================================================
 
 from __future__ import annotations
+from logger import logger
 """# Description:"""
 
 from rich.console import Console
@@ -65,9 +66,9 @@ class ServicesManagerTUI:
                 str(s.pid) if s.pid else '-'
             )
 
-        self.console.print(Panel('[bold white]AI-Breadboard: Windows Services Control Center[/bold white]', style='blue'))
-        self.console.print(panel)
-        self.console.print(table)
+        self.console.logger.console(Panel('[bold white]AI-Windows-Admin: Windows Services Control Center[/bold white]', style='blue'))
+        self.console.logger.console(panel)
+        self.console.logger.console(table)
 
 
 __all__ = ['ServicesManagerTUI']

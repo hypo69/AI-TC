@@ -2,6 +2,7 @@
 Скрипт для анализа зависимостей между скриптами в проекте.
 Помогает определить, какие скрипты используются другими и какие можно безопасно удалить.
 """
+from logger import logger
 import os
 import re
 import sys
@@ -37,7 +38,7 @@ def analyze_file_imports(file_path):
             subprocess_calls = re.findall('cmd\\s*=\\s*\\[sys\\.executable,\\s*["\\\']([a-zA-Z_][a-zA-Z0-9_]*\\.py)["\\\']', content)
             imports.extend(subprocess_calls)
     except Exception as e:
-        print(f'Error при анализе {file_path}: {e}')
+        logger.console(f'Error при анализе {file_path}: {e}')
     return imports
 
 def analyze_ps1_files():
@@ -58,7 +59,7 @@ def analyze_ps1_files():
             if called_scripts:
                 ps1_dependencies[ps1_file.name] = list(called_scripts)
         except Exception as e:
-            print(f'Error при анализе {ps1_file}: {e}')
+            logger.console(f'Error при анализе {ps1_file}: {e}')
     return ps1_dependencies
 
 def build_dependency_graph():
@@ -119,36 +120,36 @@ def analyze_script_usage():
 
 def print_dependency_report(analysis):
     """Напечатать отчет о зависимостях."""
-    print('=' * 80)
-    print('АНАЛИЗ ЗАВИСИМОСТЕЙ СКРИПТОВ ПРОЕКТА')
-    print('=' * 80)
-    print('\n1. СКРИПТЫ, ИСПОЛЬЗУЕМЫЕ В manage_tools.py:')
-    print('-' * 40)
+    logger.console('=' * 80)
+    logger.console('АНАЛИЗ ЗАВИСИМОСТЕЙ СКРИПТОВ ПРОЕКТА')
+    logger.console('=' * 80)
+    logger.console('\n1. СКРИПТЫ, ИСПОЛЬЗУЕМЫЕ В manage_tools.py:')
+    logger.console('-' * 40)
     if analysis['manage_tools_deps']:
         for dep in sorted(analysis['manage_tools_deps']):
-            print(f'  • {dep}')
+            logger.console(f'  • {dep}')
     else:
-        print('  Нет зависимостей')
-    print('\n2. САМЫЕ ИСПОЛЬЗУЕМЫЕ СКРИПТЫ:')
-    print('-' * 40)
+        logger.console('  Нет зависимостей')
+    logger.console('\n2. САМЫЕ ИСПОЛЬЗУЕМЫЕ СКРИПТЫ:')
+    logger.console('-' * 40)
     sorted_usage = sorted(analysis['usage_count'].items(), key=lambda x: x[1], reverse=True)
     for script, count in sorted_usage[:10]:
-        print(f'  • {script}: используется {count} скриптом(ами)')
-    print('\n3. СКРИПТЫ, КОТОРЫЕ НИКТО НЕ ИСПОЛЬЗУЕТ:')
-    print('-' * 40)
+        logger.console(f'  • {script}: используется {count} скриптом(ами)')
+    logger.console('\n3. СКРИПТЫ, КОТОРЫЕ НИКТО НЕ ИСПОЛЬЗУЕТ:')
+    logger.console('-' * 40)
     unused = analysis['scripts_by_usage']['unused']
     if unused:
         for script, _ in sorted(unused):
-            print(f'  • {script}')
+            logger.console(f'  • {script}')
     else:
-        print('  Все скрипты используются')
-    print('\n4. ГРАФ ЗАВИСИМОСТЕЙ (основные связи):')
-    print('-' * 40)
+        logger.console('  Все скрипты используются')
+    logger.console('\n4. ГРАФ ЗАВИСИМОСТЕЙ (основные связи):')
+    logger.console('-' * 40)
     for script, deps in analysis['dependencies'].items():
         if deps:
-            print(f"  {script} -> {', '.join(deps)}")
-    print('\n5. РЕКОМЕНДАЦИИ ПО УДАЛЕНИЮ:')
-    print('-' * 40)
+            logger.console(f"  {script} -> {', '.join(deps)}")
+    logger.console('\n5. РЕКОМЕНДАЦИИ ПО УДАЛЕНИЮ:')
+    logger.console('-' * 40)
     candidates = []
     for script, _ in analysis['scripts_by_usage']['unused']:
         if script not in ['main.py', 'bot_runner.py', 'run_media_organizer.py', 'manage_tools.py']:
@@ -160,14 +161,14 @@ def print_dependency_report(analysis):
                 candidates.append((script, f'Мало используется ({count} зависимость), маленький размер'))
     if candidates:
         for script, reason in sorted(candidates):
-            print(f'  • {script}: {reason}')
+            logger.console(f'  • {script}: {reason}')
     else:
-        print('  Нет явных кандидатов на удаление')
-    print('\n' + '=' * 80)
+        logger.console('  Нет явных кандидатов на удаление')
+    logger.console('\n' + '=' * 80)
 
 def main():
     """Основная function."""
-    print('Анализ зависимостей скриптов...')
+    logger.console('Анализ зависимостей скриптов...')
     analysis = analyze_script_usage()
     print_dependency_report(analysis)
     report_file = PROJECT_ROOT / 'scripts_dependency_report.md'
@@ -196,6 +197,6 @@ def main():
                 f.write(f'- `{script}` - не используется другими скриптами\n')
         else:
             f.write('Нет явных кандидатов на удаление\n')
-    print(f'\nОтчет сохранен в {report_file}')
+    logger.console(f'\nОтчет сохранен в {report_file}')
 if __name__ == '__main__':
     main()

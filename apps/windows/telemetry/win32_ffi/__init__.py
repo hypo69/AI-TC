@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Telemetry Win32_Ffi -   Init  
+# Process Name: AI-Windows-Admin Apps Windows Telemetry Win32_Ffi -   Init  
 # =============================================================================
 # Description:
 #   Модуль низкоуровневых биндингов Win32 FFI / ctypes.
@@ -9,11 +9,11 @@
 #
 #
 # File: __init__.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.telemetry.win32_ffi
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:28:28
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 """Модуль низкоуровневых биндингов Win32 FFI / ctypes."""

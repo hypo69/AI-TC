@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Modules Taskbar - Manager
+# Process Name: AI-Windows-Admin Apps Windows Modules Taskbar - Manager
 # =============================================================================
 # Description:
 #   Главный контроллер панели задач Windows (TaskbarController) с автоматической
@@ -15,11 +15,11 @@
 #     controller.rollback_last()
 #
 # File: manager.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.taskbar.core
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-06 17:58:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

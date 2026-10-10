@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard UTILS - Com Worker Module
+# Process Name: AI-Windows-Admin UTILS - Com Worker Module
 # =============================================================================
 # Description:
 #   Dedicated executor for COM/WMI operations.
@@ -12,11 +12,11 @@
 #     service = ComWorker()
 #
 # File: com_worker.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: src.utils
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:13:56
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

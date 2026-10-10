@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Gemini - Unsupported Models Rule Engine
+# Process Name: AI-Windows-Admin Gemini - Unsupported Models Rule Engine
 # =============================================================================
 # Description:
 #   Движок правил и условий исключения неподдерживаемых моделей Gemini
@@ -14,11 +14,11 @@
 #     print(unsupported)  # True (по условию <2)
 #
 # File: rules.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: src.ai.gemini
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 10:46:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 """Движок правил и условий исключения неподдерживаемых моделей Gemini."""

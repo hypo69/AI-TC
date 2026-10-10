@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard UTILS - Xml2Dict Module
+# Process Name: AI-Windows-Admin UTILS - Xml2Dict Module
 # =============================================================================
 # Description:
 #   XML to dictionary conversion utilities.
@@ -10,11 +10,11 @@
 #     import src.utils.convertors.xml2dict as xml2dict
 #
 # File: xml2dict.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: src.utils.convertors
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:13:56
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 """XML to dictionary conversion utilities."""

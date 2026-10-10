@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Wikillm - Models
+# Process Name: AI-Windows-Admin Apps Windows Wikillm - Models
 # =============================================================================
 # Description:
 #   Модели данных, перечисления и Pydantic-схемы для Progressive Knowledge Base WikiLLM.
@@ -12,11 +12,11 @@
 #     service = ArtifactType()
 #
 # File: models.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.wikillm
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 07:54:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

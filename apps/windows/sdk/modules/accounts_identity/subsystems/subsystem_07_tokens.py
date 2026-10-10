@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows - Subsystem 07 Access Tokens
+# Process Name: AI-Windows-Admin Apps Windows - Subsystem 07 Access Tokens
 # =============================================================================
 # Description:
 #   Подсистема 07: Маркеры доступа (Access Tokens), инспекция контекста
@@ -14,11 +14,11 @@
 #     token_info = subsys.explain_pid(1234)
 #
 # File: subsystem_07_tokens.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.accounts_identity.subsystems
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-08 00:50:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 """Подсистема анализа маркеров доступа процессов (Process Security Context)."""

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard AI - Model Error Hub Module
+# Process Name: AI-Windows-Admin AI - Model Error Hub Module
 # =============================================================================
 # Description:
 #   Централизованный модуль классификации, агрегации и оповещения об ошибках моделей.
@@ -12,11 +12,11 @@
 #     service = ModelErrorCategory()
 #
 # File: model_error_hub.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: src.ai.orchestration
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:13:56
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

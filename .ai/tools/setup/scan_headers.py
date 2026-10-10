@@ -1,3 +1,4 @@
+from logger import logger
 import os
 import re
 from pathlib import Path
@@ -55,7 +56,7 @@ def check_header(filepath: Path) -> Dict[str, Any]:
 def main():
     root = Path(__file__).resolve().parents[3]
     py_files = [p for p in root.rglob('*.py') if not any((part.startswith('.') or part in {'venv', '__pycache__', 'dist'} for part in p.parts))]
-    print(f'Scanning {len(py_files)} Python files for standard headers...')
+    logger.console(f'Scanning {len(py_files)} Python files for standard headers...')
     valid_count = 0
     incomplete_count = 0
     missing_count = 0
@@ -67,6 +68,6 @@ def main():
             incomplete_count += 1
         else:
             missing_count += 1
-    print(f'Results: Valid={valid_count}, Incomplete={incomplete_count}, Missing={missing_count}')
+    logger.console(f'Results: Valid={valid_count}, Incomplete={incomplete_count}, Missing={missing_count}')
 if __name__ == '__main__':
     main()

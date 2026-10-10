@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Modules Sysadmin - Router
+# Process Name: AI-Windows-Admin Apps Windows Modules Sysadmin - Router
 # =============================================================================
 # Description:
 #   FastAPI router integration for Windows System Administrator & Multi-Directory Watcher.
@@ -12,11 +12,11 @@
 #     service = AuditPolicyRequest()
 #
 # File: router.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.sysadmin
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 12:48:00
+# Updated: 2026-10-10 22:28:45
 # =============================================================================
 
 from __future__ import annotations
@@ -30,10 +30,9 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 import psutil
-from fastapi import APIRouter, Body, HTTPException, Query
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
-from apps.common.csv_logger import AppCsvLogger
+from apps.common.telemetry_logger import AppTelemetryLogger
 from logger import logger
 from apps.windows.api.auth import require_admin_user
 from .src.directory_watcher import DirectoryWatcher, get_directory_watcher
@@ -42,7 +41,7 @@ from .src.state import SecurityEvent, SystemAdminState
 router = APIRouter()
 sysadmin_router = APIRouter(prefix='/api/sysadmin', tags=['sysadmin'])
 file_audit_router = APIRouter(prefix='/api/v1/system/file-audit', tags=['file-audit'])
-_csv_logger = AppCsvLogger('windows_sysadmin')
+_telemetry_logger = AppTelemetryLogger('windows_sysadmin')
 state = SystemAdminState()
 file_auditor = WindowsFileAuditor()
 
@@ -146,7 +145,7 @@ async def get_status(request: None=None) -> dict:
     disabled_users = sum((1 for a in state.accounts if not a.enabled))
     admin_users = sum((1 for a in state.accounts if a.is_admin))
     res = {'hostname': state.hostname, 'domain': state.domain, 'ad_connected': state.ad_connected, 'ad_status': state.ad_status, 'user_count': len(state.users), 'total_accounts': total_accounts, 'active_users': active_users, 'hidden_users': hidden_users, 'disabled_users': disabled_users, 'admin_users': admin_users, 'event_count': len(state.events), 'file_audit': {'is_configured': policy_status.is_configured, 'success_enabled': policy_status.success_enabled, 'failure_enabled': policy_status.failure_enabled, 'raw_output': policy_status.raw_output}}
-    _csv_logger.log_poll(poll_type='sysadmin_status', metric_name='user_count', value=len(state.users), unit='count', status='OK', details={'ad_connected': state.ad_connected, 'ad_status': state.ad_status}, filename='windows_sysadmin_status_polls.csv')
+    _telemetry_logger.log_poll(poll_type='sysadmin_status', metric_name='user_count', value=len(state.users), unit='count', status='OK', details={'ad_connected': state.ad_connected, 'ad_status': state.ad_status})
     return res
 
 @sysadmin_router.get('/users')
@@ -284,7 +283,7 @@ async def get_file_audit_policy() -> dict:
 async def set_file_audit_policy(body: AuditPolicyRequest) -> dict:
     """Включить или отключить аудит File System в Windows Security."""
     result = await asyncio.to_thread(file_auditor.set_audit_policy, enable_success=body.enable_success, enable_failure=body.enable_failure)
-    _csv_logger.log_param_change(param_name='auditpol.filesystem_policy', old_value='unknown', new_value={'success': body.enable_success, 'failure': body.enable_failure}, status='SUCCESS' if result.get('success') else 'FAILED', user='admin', filename='windows_sysadmin_events.csv')
+    _telemetry_logger.log_param_change(param_name='auditpol.filesystem_policy', old_value='unknown', new_value={'success': body.enable_success, 'failure': body.enable_failure}, status='SUCCESS' if result.get('success') else 'FAILED', user='admin')
     if not result.get('success'):
         raise HTTPException(status_code=400, detail=result.get('error') or result.get('stderr') or 'Failed to set auditpol policy')
     return result
@@ -299,7 +298,7 @@ async def get_folder_sacl(path: str=Query(..., description='Путь к целе
 async def configure_folder_sacl(body: SaclConfigRequest) -> dict:
     """Настроить правило аудита удаления (Delete/SACL) для папки."""
     result = await asyncio.to_thread(file_auditor.configure_folder_sacl, folder_path=body.path, principal=body.principal, enable=body.enable)
-    _csv_logger.log_event(event_type='configure_folder_sacl', status='SUCCESS' if result.get('Success') else 'FAILED', details={'path': body.path, 'principal': body.principal, 'enable': body.enable}, filename='windows_sysadmin_events.csv')
+    _telemetry_logger.log_event(event_type='configure_folder_sacl', status='SUCCESS' if result.get('Success') else 'FAILED', details={'path': body.path, 'principal': body.principal, 'enable': body.enable})
     if not result.get('Success'):
         raise HTTPException(status_code=400, detail=result.get('Error') or 'Failed to configure folder SACL')
     return result

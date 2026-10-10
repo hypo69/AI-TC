@@ -185,7 +185,7 @@
 ## 📁 File Organization
 
 ```
-c:\Users\onela\AppData\Local\AI-Breadboard\
+c:\Users\onela\AppData\Local\AI-Windows-Admin\
 ├── src/rag/pixel/
 │   ├── renderer.py ✅
 │   ├── embedder.py ✅
@@ -244,7 +244,7 @@ c:\Users\onela\AppData\Local\AI-Breadboard\
 
 ### To Verify Installation:
 ```bash
-cd c:\Users\onela\AppData\Local\AI-Breadboard
+cd c:\Users\onela\AppData\Local\AI-Windows-Admin
 
 # Run tests
 python -m pytest tests/ -v --cov=src/rag

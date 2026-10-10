@@ -1,10 +1,10 @@
-# AI Breadboard — Документация (Русский)
+# AI Windows Admin — Документация (Русский)
 
 Полная русскоязычная документация проекта. Все разделы собраны здесь.
 
 ## 📖 О документации
 
-Эта папка содержит полную русскоязычную документацию проекта AI-Breadboard, которая включает руководства, архитектуру, примеры кода и справочники. Документация опубликована на [Read the Docs](https://ai-breadboard.readthedocs.io/ru/latest) и автоматически обновляется при каждом пуше в репозиторий.
+Эта папка содержит полную русскоязычную документацию проекта AI-Windows-Admin, которая включает руководства, архитектуру, примеры кода и справочники. Документация опубликована на [Read the Docs](https://ai-windows-admin.readthedocs.io/ru/latest) и автоматически обновляется при каждом пуше в репозиторий.
 
 ### Структура документации
 
@@ -63,7 +63,7 @@ docs/
 
 ## 📚 Учебная книга (8 глав)
 
-Практическое руководство по работе со стендом AI Breadboard:
+Практическое руководство по работе со стендом AI Windows Admin:
 
 | Глава | Тема |
 |-------|------|
@@ -113,7 +113,7 @@ docs/
 
 | Документ | Описание |
 |----------|----------|
-| [Обзор MCP](mcp/index.md) | Интеграция протокола Model Context Protocol в AI Breadboard |
+| [Обзор MCP](mcp/index.md) | Интеграция протокола Model Context Protocol в AI Windows Admin |
 | [Каталог MCP серверов](mcp/catalog.md) | Список серверов поиска, FastAPI, LangChain, браузера |
 | [Руководство по интеграции](mcp/guide.md) | Подключение к Claude Desktop, Cursor и Antigravity |
 
@@ -154,8 +154,8 @@ docs/
 
 ## 🔗 Связанные ресурсы
 
-- **GitHub:** https://github.com/hypo69/AI-Breadboard
-- **Issues:** https://github.com/hypo69/AI-Breadboard/issues
+- **GitHub:** https://github.com/hypo69/AI-Windows-Admin
+- **Issues:** https://github.com/hypo69/AI-Windows-Admin/issues
 - **Автор:** hypo69@yandex.com
 
 ---
@@ -172,8 +172,8 @@ docs/
 
 1. **Клонируйте репозиторий:**
    ```bash
-   git clone https://github.com/hypo69/AI-Breadboard.git
-   cd AI-Breadboard
+   git clone https://github.com/hypo69/AI-Windows-Admin.git
+   cd AI-Windows-Admin
    ```
 
 2. **Установите зависимости:**
@@ -222,7 +222,7 @@ mkdocs serve --dev-addr 127.0.0.1:9000
 
 ### Автоматическая публикация
 
-Документация автоматически обновляется на [Read the Docs](https://ai-breadboard.readthedocs.io) при каждом пуше в главную ветку репозитория.
+Документация автоматически обновляется на [Read the Docs](https://ai-windows-admin.readthedocs.io) при каждом пуше в главную ветку репозитория.
 
 **Процесс:**
 1. Вы делаете коммит и пушите изменения в `main`
@@ -235,7 +235,7 @@ mkdocs serve --dev-addr 127.0.0.1:9000
 
 ### Проверка статуса публикации
 
-1. Перейдите на страницу проекта: https://readthedocs.org/projects/ai-breadboard/
+1. Перейдите на страницу проекта: https://readthedocs.org/projects/ai-windows-admin/
 2. Откройте вкладку **Builds**
 3. Найдите последнюю сборку
 4. Проверьте её статус (успешно ✓ или ошибка ✗)
@@ -244,7 +244,7 @@ mkdocs serve --dev-addr 127.0.0.1:9000
 
 Если нужно пересобрать документацию вручную:
 
-1. Перейдите на страницу проекта: https://readthedocs.org/projects/ai-breadboard/
+1. Перейдите на страницу проекта: https://readthedocs.org/projects/ai-windows-admin/
 2. Откройте вкладку **Builds**
 3. Нажмите кнопку **Build Version**
 4. Выберите версию (например, `latest` или конкретный тег)
@@ -256,9 +256,9 @@ mkdocs serve --dev-addr 127.0.0.1:9000
 
 | Язык | URL |
 |------|-----|
-| Последняя версия (en) | https://ai-breadboard.readthedocs.io/en/latest |
-| Последняя версия (ru) | https://ai-breadboard.readthedocs.io/ru/latest |
-| Конкретная версия | https://ai-breadboard.readthedocs.io/ru/v1.0.0 |
+| Последняя версия (en) | https://ai-windows-admin.readthedocs.io/en/latest |
+| Последняя версия (ru) | https://ai-windows-admin.readthedocs.io/ru/latest |
+| Конкретная версия | https://ai-windows-admin.readthedocs.io/ru/v1.0.0 |
 
 ### Конфигурация Read the Docs
 
@@ -362,6 +362,6 @@ python:
 
 Если у вас есть вопросы по документации:
 
-- **Откройте Issue:** https://github.com/hypo69/AI-Breadboard/issues
+- **Откройте Issue:** https://github.com/hypo69/AI-Windows-Admin/issues
 - **Email:** hypo69@yandex.com
-- **GitHub Discussions:** https://github.com/hypo69/AI-Breadboard/discussions
+- **GitHub Discussions:** https://github.com/hypo69/AI-Windows-Admin/discussions

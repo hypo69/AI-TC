@@ -13,11 +13,11 @@
  *     import { switchTab, setupNavTabs, loadTabContent } from '/windows/api/webgui/apps/modules/tab-manager.js';
  *
  * File: tab-manager.js
- * Project: ai-breadboard
+ * Project: ai-windows-admin
  * Package: windows/api/webgui/apps/modules
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-01 13:04:40
+ * Updated: 2026-10-10 17:35:00
  * =============================================================================
  */
 

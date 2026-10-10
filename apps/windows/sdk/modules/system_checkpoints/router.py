@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Modules System_Checkpoints - Router
+# Process Name: AI-Windows-Admin Apps Windows Modules System_Checkpoints - Router
 # =============================================================================
 # Description:
 #   FastAPI маршрутизатор для управления контрольными точками и средами восстановления Windows.
@@ -12,11 +12,11 @@
 #     service = NativeRestorePointCreateRequest()
 #
 # File: router.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.system_checkpoints
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 12:48:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

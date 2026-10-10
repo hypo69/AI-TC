@@ -1,22 +1,22 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Log_Intelligence Src -   Init  
+# Process Name: AI-Windows-Admin Apps Windows Log_Intelligence Src -   Init  
 # =============================================================================
 # Description:
-#   Модуль реализации компонентов подсистемы Windows AI-Breadboard (__init__).
+#   Модуль реализации компонентов подсистемы Windows AI-Windows-Admin (__init__).
 #
 # Usage Examples:
 #
 #
 # File: __init__.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.log_intelligence.src
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:28:28
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
-"""Модуль реализации компонентов подсистемы Windows AI-Breadboard (__init__)."""
+"""Модуль реализации компонентов подсистемы Windows AI-Windows-Admin (__init__)."""
 
 from .models import DataProfileReport, IngestionDecision, IngestionStrategy, LogEntry, LogSeverity, TimeBurst
 from .data_researcher import LogDataResearcher

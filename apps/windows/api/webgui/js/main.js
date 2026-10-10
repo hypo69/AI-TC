@@ -1,4 +1,4 @@
-/**
+﻿/**
  * =============================================================================
  * Process Name: Windows Js - Main Script
  * =============================================================================
@@ -13,11 +13,11 @@
  *     import { switchMainTab } from '/windows/api/webgui/js/main.js';
  *
  * File: main.js
- * Project: ai-breadboard
+ * Project: ai-windows-admin
  * Package: windows/api/webgui/js
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-08 10:25:00
+ * Updated: 2026-10-10 17:35:00
  * =============================================================================
  */
 
@@ -68,6 +68,7 @@ const TABS = {
   'throttling':               ['/html/throttling_tab/index.html',               '/html/throttling_tab/main.js'],
   'peripherals':              ['/html/peripherals_tab/index.html',              '/html/peripherals_tab/main.js'],
   'software-transparency':    ['/html/software_transparency_tab/index.html',    '/html/software_transparency_tab/main.js'],
+  'software-scanner':         ['/html/software_scanner_tab/index.html',         '/html/software_scanner_tab/main.js'],
 
   // Накопители и Диски
   'storage-manager':          ['/html/storage_manager_tab/index.html',          '/html/storage_manager_tab/main.js'],

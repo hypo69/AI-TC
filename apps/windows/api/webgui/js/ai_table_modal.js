@@ -10,11 +10,11 @@
  *     <script src="/html/js/ai_table_modal.js?v=20261008_v5"></script>
  *
  * File: ai_table_modal.js
- * Project: ai-breadboard
+ * Project: ai-windows-admin
  * Package: apps.windows.api.webgui.js
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-08 12:25:00
+ * Updated: 2026-10-10 17:35:00
  * =============================================================================
  */
 

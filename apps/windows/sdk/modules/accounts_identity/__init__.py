@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows - Accounts & Identity Package
+# Process Name: AI-Windows-Admin Apps Windows - Accounts & Identity Package
 # =============================================================================
 # Description:
 #   Пакет управления субъектами безопасности, пользователями, группами,
@@ -11,14 +11,14 @@
 #     from apps.windows.sdk.modules.accounts_identity import get_accounts_identity_service, identity_router
 #
 # File: __init__.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.accounts_identity
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-08 00:51:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
-"""Пакет Accounts & Identity Windows для AI-Breadboard."""
+"""Пакет Accounts & Identity Windows для AI-Windows-Admin."""
 
 from apps.windows.sdk.modules.accounts_identity.models import (
     RiskLevel,

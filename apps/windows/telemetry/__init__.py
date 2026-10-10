@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Telemetry - Package Root
+# Process Name: AI-Windows-Admin Apps Windows Telemetry - Package Root
 # =============================================================================
 # Description:
 #   Слой 3: Сбор, хранение, каталогизация и аналитика телеметрии Windows.
@@ -10,15 +10,15 @@
 #     from apps.windows.telemetry import SystemCollector, DiagnosticEngine
 #
 # File: __init__.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.telemetry
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-08 12:20:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations
-"""Единый слой телеметрии Windows (Слой 3) платформы AI-Breadboard."""
+"""Единый слой телеметрии Windows (Слой 3) платформы AI-Windows-Admin."""
 
 # Импорт перечислений из слоя apps.windows.contracts
 from apps.windows.contracts import (
@@ -96,10 +96,10 @@ from apps.windows.telemetry.sqlite import (
     TelemetryWriter,
     sensors_aggregate,
 )
-from apps.windows.telemetry.storage.ring_buffer import TelemetryRingBuffer
-from apps.windows.telemetry.storage.init_db import (
-    init_telemetry_db,
+from apps.windows.telemetry.ring_buffer import TelemetryRingBuffer
+from apps.windows.telemetry.init_db import (
     init_telemetry_database,
+    init_telemetry_database as init_telemetry_db,
     get_default_telemetry_db_path,
 )
 

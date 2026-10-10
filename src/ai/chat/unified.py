@@ -14,11 +14,11 @@
 #     print(response.text)
 #
 # File: unified.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: src.ai.chat
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:13:56
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 """Единый диспетчер маршрутизации запросов к ИИ-провайдерам (Ollama, Gemini, OpenAI, Foundry, ONNX)."""

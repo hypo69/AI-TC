@@ -10,15 +10,15 @@
  *     <script src="/windows/api/webgui/messenger/sw.js?v=20261001_v1" type="module"></script>
  *
  * File: sw.js
- * Project: ai-breadboard
+ * Project: ai-windows-admin
  * Package: windows/api/webgui/messenger
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-01 13:04:40
+ * Updated: 2026-10-10 17:35:00
  * =============================================================================
  */
 
-const CACHE_NAME = 'ai-breadboard-messenger-v1';
+const CACHE_NAME = 'ai-windows-admin-messenger-v1';
 const ASSETS = [
   './',
   './index.html',

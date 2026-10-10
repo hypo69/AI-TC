@@ -1,6 +1,6 @@
 # Архитектура интеграции Google Workspace (Gmail, Drive, Sheets, Docs)
 
-Документация по архитектуре интеграции сервисов Google Workspace в стек AI-агентов, оркестрацию моделей и веб-интерфейс платформы AI Breadboard.
+Документация по архитектуре интеграции сервисов Google Workspace в стек AI-агентов, оркестрацию моделей и веб-интерфейс платформы AI Windows Admin.
 
 ---
 
@@ -94,7 +94,7 @@
     ]
   }
   ```
-- **Системный промпт**: `WORKSPACE_AGENT_SYSTEM_PROMPT` в [`src/ai/agents/prompts.py`](file:///c:/Users/onela/AppData/Local/AI-Breadboard/src/ai/agents/prompts.py).
+- **Системный промпт**: `WORKSPACE_AGENT_SYSTEM_PROMPT` в [`src/ai/agents/prompts.py`](file:///c:/Users/onela/AppData/Local/AI-Windows-Admin/src/ai/agents/prompts.py).
 
 ---
 

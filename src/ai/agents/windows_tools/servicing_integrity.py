@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard AI Agents - Windows Servicing Integrity Tools Module
+# Process Name: AI-Windows-Admin AI Agents - Windows Servicing Integrity Tools Module
 # =============================================================================
 # Description:
 #   Инструменты аудита и обслуживания целостности системного образа Windows (SFC, DISM, DISM Features)
@@ -15,11 +15,11 @@
 #     res = await windows_servicing_integrity_audit(action="report")
 #
 # File: servicing_integrity.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: src.ai.agents.windows_tools
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-08 22:15:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

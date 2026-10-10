@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Modules Task_Scheduler - Router
+# Process Name: AI-Windows-Admin Apps Windows Modules Task_Scheduler - Router
 # =============================================================================
 # Description:
 #   FastAPI маршрутизатор для управления планировщиком задач Windows (Task Scheduler).
@@ -12,11 +12,11 @@
 #     router = init_router()
 #
 # File: router.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.task_scheduler
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-06 12:35:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

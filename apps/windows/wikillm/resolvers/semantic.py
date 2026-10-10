@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Wikillm Resolvers - Semantic
+# Process Name: AI-Windows-Admin Apps Windows Wikillm Resolvers - Semantic
 # =============================================================================
 # Description:
 #   Резолвер семантического и полнотекстового поиска (FTS5). Выполняет поиск по смыслу,
@@ -12,11 +12,11 @@
 #     service = SemanticResolver()
 #
 # File: semantic.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.wikillm.resolvers
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:28:28
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

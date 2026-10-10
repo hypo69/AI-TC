@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Contracts - AI & Knowledge Models
+# Process Name: AI-Windows-Admin Apps Windows Contracts - AI & Knowledge Models
 # =============================================================================
 # Description:
 #   Zero-dependency DTO-контракты для контура ИИ, WikiLLM и интеллектуальной диагностики.
@@ -10,11 +10,11 @@
 #     from apps.windows.contracts.ai import KnowledgeEntity, ResolutionResult
 #
 # File: ai.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.contracts
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-08 09:35:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

@@ -111,9 +111,9 @@ curl -X POST http://127.0.0.1:8000/api/v1/scenarios/save-skill \
 
 ## 📁 Исходные файлы
 
-* **Роутер бэкенда:** [`src/api/router_scenarios.py`](file:///c:/Users/onela/AppData/Local/AI-Breadboard/src/api/router_scenarios.py)
-* **Движок динамических инструментов:** [`apps/windows/core/dynamic_tool_engine.py`](file:///c:/Users/onela/AppData/Local/AI-Breadboard/apps/windows/core/dynamic_tool_engine.py)
-* **Шаблон интерфейса:** [`src/api/webgui/scenarios_tab/index.html`](file:///c:/Users/onela/AppData/Local/AI-Breadboard/src/api/webgui/scenarios_tab/index.html)
-* **Модуль логики:** [`src/api/webgui/scenarios_tab/main.js`](file:///c:/Users/onela/AppData/Local/AI-Breadboard/src/api/webgui/scenarios_tab/main.js)
-* **Модульные тесты:** [`tests/test_scenarios_router.py`](file:///c:/Users/onela/AppData/Local/AI-Breadboard/tests/test_scenarios_router.py) и [`tests/test_dynamic_tool_engine.py`](file:///c:/Users/onela/AppData/Local/AI-Breadboard/tests/test_dynamic_tool_engine.py)
+* **Роутер бэкенда:** [`src/api/router_scenarios.py`](file:///c:/Users/onela/AppData/Local/AI-Windows-Admin/src/api/router_scenarios.py)
+* **Движок динамических инструментов:** [`apps/windows/core/dynamic_tool_engine.py`](file:///c:/Users/onela/AppData/Local/AI-Windows-Admin/apps/windows/core/dynamic_tool_engine.py)
+* **Шаблон интерфейса:** [`src/api/webgui/scenarios_tab/index.html`](file:///c:/Users/onela/AppData/Local/AI-Windows-Admin/src/api/webgui/scenarios_tab/index.html)
+* **Модуль логики:** [`src/api/webgui/scenarios_tab/main.js`](file:///c:/Users/onela/AppData/Local/AI-Windows-Admin/src/api/webgui/scenarios_tab/main.js)
+* **Модульные тесты:** [`tests/test_scenarios_router.py`](file:///c:/Users/onela/AppData/Local/AI-Windows-Admin/tests/test_scenarios_router.py) и [`tests/test_dynamic_tool_engine.py`](file:///c:/Users/onela/AppData/Local/AI-Windows-Admin/tests/test_dynamic_tool_engine.py)
 

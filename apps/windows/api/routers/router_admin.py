@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Api Routers - Router Admin
+# Process Name: AI-Windows-Admin Apps Windows Api Routers - Router Admin
 # =============================================================================
 # Description:
 #   Provides administrative FastAPI endpoints for managing system prompts,
@@ -14,11 +14,11 @@
 #     service = SystemInstructionUpdate()
 #
 # File: router_admin.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.api.routers
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 12:41:00
+# Updated: 2026-10-10 19:41:00
 # =============================================================================
 
 from __future__ import annotations
@@ -531,16 +531,6 @@ APPS_REGISTRY: List[Dict[str, Any]] = [
         "icon": "💬",
     },
     {
-        "id": "trading_terminal",
-        "key": "trading_terminal",
-        "tab": "tab-trading",
-        "folder": "trading_terminal",
-        "aliases": ["trading_terminal", "trading", "tab-trading"],
-        "name": "Exchange Trading Terminal",
-        "ru_name": "Торговый терминал",
-        "icon": "📈",
-    },
-    {
         "id": "network_terminal",
         "key": "network_terminal",
         "tab": "tab-network",
@@ -651,12 +641,12 @@ APPS_REGISTRY: List[Dict[str, Any]] = [
         "icon": "🌐",
     },
     {
-        "id": "ai_breadboard_admin",
-        "key": "ai_breadboard_admin",
+        "id": "ai_windows_admin_admin",
+        "key": "ai_windows_admin_admin",
         "tab": "tab-admin",
-        "folder": "ai_breadboard_admin",
-        "aliases": ["ai_breadboard_admin", "admin", "admin_panel", "tab-admin"],
-        "name": "AI Breadboard Admin",
+        "folder": "ai_windows_admin_admin",
+        "aliases": ["ai_windows_admin_admin", "admin", "admin_panel", "tab-admin"],
+        "name": "AI Windows Admin Admin",
         "ru_name": "Панель администратора",
         "icon": "⚙️",
     },
@@ -756,10 +746,10 @@ APPS_REGISTRY: List[Dict[str, Any]] = [
 def get_apps_status(profile: Optional[str] = None) -> Dict[str, Any]:
     """Retrieve enabled/disabled status for all /apps applications based on active configuration file."""
     import os
-    cfg_env = os.getenv("AIBREADBOARD_CONFIG") or os.getenv("CONFIG_FILE")
+    cfg_env = os.getenv("AIWINDOWSADMIN_CONFIG") or os.getenv("CONFIG_FILE")
     active_path: Optional[Path] = None
     if profile in ("tc", "test-computer", "test_computer", "apps_tc"):
-        for candidate in [__root__ / "start_scenarios_config" / "tc.json", __root__ / "config" / "tc.json", __root__ / "config_tc.json", __root__ / "tc.json"]:
+        for candidate in [__root__ / "config" / "tc.json", __root__ / "config_tc.json", __root__ / "tc.json"]:
             if candidate.exists():
                 active_path = candidate
                 break
@@ -768,12 +758,12 @@ def get_apps_status(profile: Optional[str] = None) -> Dict[str, Any]:
         active_path = p if p.is_absolute() else (__root__ / cfg_env)
 
     if not active_path or not active_path.exists():
-        for candidate in [__root__ / "start_scenarios_config" / "tc.json", __root__ / "config" / "tc.json", __root__ / "config_tc.json", __root__ / "tc.json"]:
+        for candidate in [__root__ / "config" / "tc.json", __root__ / "config_tc.json", __root__ / "tc.json"]:
             if candidate.exists() and not (__root__ / "config.json").exists() and not (__root__ / "config" / "dashboard.json").exists():
                 active_path = candidate
                 break
         if not active_path or not active_path.exists():
-            active_path = (__root__ / "start_scenarios_config" / "dashboard.json") if (__root__ / "start_scenarios_config" / "dashboard.json").exists() else ((__root__ / "config" / "dashboard.json") if (__root__ / "config" / "dashboard.json").exists() else (__root__ / "config.json"))
+            active_path = (__root__ / "config" / "dashboard.json") if (__root__ / "config" / "dashboard.json").exists() else (__root__ / "config.json")
 
     apps_cfg: Any = {}
     config_filename = active_path.name if active_path else "config.json"
@@ -1527,7 +1517,7 @@ async def generate_skill_ai(data: SkillAiGenerateRequest, request: Request) -> D
         api_key_names = [n.strip() for n in os.getenv('GEMINI_API_KEY_NAMES', '').split(',') if n.strip()]
         if api_key_names:
             system_prompt = (
-                "You are an expert AI skill architect for AI Breadboard and Gemini CLI. "
+                "You are an expert AI skill architect for AI Windows Admin and Gemini CLI. "
                 "Given the user request, generate a structured JSON object for an agent skill.\n"
                 "JSON format required:\n"
                 "{\n"
@@ -1614,16 +1604,17 @@ Agent skill providing automated capability for: {user_prompt}.
 - `assets/`: Static fixtures, data, and examples.
 
 ## Usage
-Triggered dynamically by AI agents in AI Breadboard and Gemini CLI.
+Triggered dynamically by AI agents in AI Windows Admin and Gemini CLI.
 """
 
     helper_script = f"""# -*- coding: utf-8 -*-
 \"\"\"Helper automation script for {name_clean}.\"\"\"
 
 import sys
+from logger import logger
 
 def main():
-    print("Executing {name_clean} helper utility...")
+    logger.console("Executing {name_clean} helper utility...")
     return 0
 
 if __name__ == "__main__":
@@ -2145,7 +2136,7 @@ class WindowsGroupActionRequest(BaseModel):
 async def get_windows_users(request: Request) -> Dict[str, Any]:
     """Получение списка локальных пользователей Windows."""
     require_admin_user(request)
-    from apps.ai_breadboard_admin.src import WindowsUserManager
+    from apps.ai_windows_admin_admin.src import WindowsUserManager
     manager = WindowsUserManager()
     users = manager.get_windows_users()
     return {'status': 'ok', 'users': users, 'count': len(users)}
@@ -2155,7 +2146,7 @@ async def get_windows_users(request: Request) -> Dict[str, Any]:
 async def get_windows_groups(request: Request) -> Dict[str, Any]:
     """Получение списка локальных групп Windows."""
     require_admin_user(request)
-    from apps.ai_breadboard_admin.src import WindowsUserManager
+    from apps.ai_windows_admin_admin.src import WindowsUserManager
     manager = WindowsUserManager()
     groups = manager.get_windows_groups()
     return {'status': 'ok', 'groups': groups, 'count': len(groups)}
@@ -2165,7 +2156,7 @@ async def get_windows_groups(request: Request) -> Dict[str, Any]:
 async def get_group_members(group_name: str, request: Request) -> Dict[str, Any]:
     """Получение членов группы Windows."""
     require_admin_user(request)
-    from apps.ai_breadboard_admin.src import WindowsUserManager
+    from apps.ai_windows_admin_admin.src import WindowsUserManager
     manager = WindowsUserManager()
     members = manager.get_group_members(group_name)
     return {'status': 'ok', 'group': group_name, 'members': members, 'count': len(members)}
@@ -2175,7 +2166,7 @@ async def get_group_members(group_name: str, request: Request) -> Dict[str, Any]
 async def create_windows_user(data: WindowsUserCreateRequest, request: Request) -> Dict[str, Any]:
     """Создание нового локального пользователя Windows."""
     require_admin_user(request)
-    from apps.ai_breadboard_admin.src import WindowsUserManager
+    from apps.ai_windows_admin_admin.src import WindowsUserManager
     manager = WindowsUserManager()
     result = manager.create_windows_user(
         username=data.username,
@@ -2190,7 +2181,7 @@ async def create_windows_user(data: WindowsUserCreateRequest, request: Request) 
 async def delete_windows_user(data: WindowsUserActionRequest, request: Request) -> Dict[str, Any]:
     """Удаление локального пользователя Windows."""
     require_admin_user(request)
-    from apps.ai_breadboard_admin.src import WindowsUserManager
+    from apps.ai_windows_admin_admin.src import WindowsUserManager
     manager = WindowsUserManager()
     result = manager.delete_windows_user(data.username)
     return result
@@ -2200,7 +2191,7 @@ async def delete_windows_user(data: WindowsUserActionRequest, request: Request) 
 async def enable_windows_user(data: WindowsUserActionRequest, request: Request) -> Dict[str, Any]:
     """Включение пользователя Windows."""
     require_admin_user(request)
-    from apps.ai_breadboard_admin.src import WindowsUserManager
+    from apps.ai_windows_admin_admin.src import WindowsUserManager
     manager = WindowsUserManager()
     result = manager.enable_windows_user(data.username)
     return result
@@ -2210,7 +2201,7 @@ async def enable_windows_user(data: WindowsUserActionRequest, request: Request) 
 async def disable_windows_user(data: WindowsUserActionRequest, request: Request) -> Dict[str, Any]:
     """Отключение пользователя Windows."""
     require_admin_user(request)
-    from apps.ai_breadboard_admin.src import WindowsUserManager
+    from apps.ai_windows_admin_admin.src import WindowsUserManager
     manager = WindowsUserManager()
     result = manager.disable_windows_user(data.username)
     return result
@@ -2220,7 +2211,7 @@ async def disable_windows_user(data: WindowsUserActionRequest, request: Request)
 async def reset_windows_user_password(data: WindowsUserPasswordRequest, request: Request) -> Dict[str, Any]:
     """Сброс пароля пользователя Windows."""
     require_admin_user(request)
-    from apps.ai_breadboard_admin.src import WindowsUserManager
+    from apps.ai_windows_admin_admin.src import WindowsUserManager
     manager = WindowsUserManager()
     result = manager.reset_windows_user_password(data.username, data.new_password)
     return result
@@ -2230,7 +2221,7 @@ async def reset_windows_user_password(data: WindowsUserPasswordRequest, request:
 async def add_user_to_group(data: WindowsGroupActionRequest, request: Request) -> Dict[str, Any]:
     """Добавление пользователя в группу Windows."""
     require_admin_user(request)
-    from apps.ai_breadboard_admin.src import WindowsUserManager
+    from apps.ai_windows_admin_admin.src import WindowsUserManager
     manager = WindowsUserManager()
     result = manager.add_user_to_group(data.username, data.group_name)
     return result
@@ -2240,7 +2231,7 @@ async def add_user_to_group(data: WindowsGroupActionRequest, request: Request) -
 async def remove_user_from_group(data: WindowsGroupActionRequest, request: Request) -> Dict[str, Any]:
     """Удаление пользователя из группы Windows."""
     require_admin_user(request)
-    from apps.ai_breadboard_admin.src import WindowsUserManager
+    from apps.ai_windows_admin_admin.src import WindowsUserManager
     manager = WindowsUserManager()
     result = manager.remove_user_from_group(data.username, data.group_name)
     return result

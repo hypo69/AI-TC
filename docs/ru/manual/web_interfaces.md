@@ -1,8 +1,8 @@
-# 🖥️ Веб-интерфейсы AI-Breadboard
+# 🖥️ Веб-интерфейсы AI-Windows-Admin
 
 ## 📋 Обзор и приоритетная иерархия
 
-Платформа **AI-Breadboard** предоставляет структурированный набор веб-интерфейсов, разделенных по ролям, уровню доступа и критичности функционала.
+Платформа **AI-Windows-Admin** предоставляет структурированный набор веб-интерфейсов, разделенных по ролям, уровню доступа и критичности функционала.
 
 Интерфейсы организованы в строгом порядке важности:
 1. **🛠️ Панель Администратора (`/admin`)** — главное ядро настройки ИИ-провайдеров, векторных баз знаний (RAG), безопасности, навыков и управления пользователями.
@@ -44,7 +44,7 @@ flowchart TD
 
     %% 4. [2] Test Computer
     Админ --> TC
-    subgraph TC["🖥️ 2. Test Computer ( /tc — apps/windows & start_scenarios_config/tc.json )"]
+    subgraph TC["🖥️ 2. Test Computer ( /tc — apps/windows & config.json )"]
         direction TB
         W1["⚙️ System Control Center, Инспектор & Sysadmin (apps/windows)"]
         W2["🗂️ Registry Viewer (Реестр) & Startup Auditor"]
@@ -74,7 +74,6 @@ flowchart TD
         AC2["☁️ Google Cloud Monitor (GCloud)"]
         AC3["🌐 Network Terminal (Сетевые интерфейсы)"]
         AB1["📊 Website Monitor (GA4 & GSC Аналитика)"]
-        AB2["💹 Trading Terminal (Финансовые рынки)"]
         AB3["🔍 Wikipedia Research (Сбор данных & RAG)"]
     end
 
@@ -127,7 +126,7 @@ flowchart TD
 ### 4. Каталог приложений (`/apps`)
 Изолированные микросервисы и сервисные панели:
 * **Облако и сеть**: мониторинг туннелей Cloudflare (`Cloudflared Monitor`), Google Cloud (`GCloud Monitor`) и сетевой терминал.
-* **Бизнес и аналитика**: торговый терминал (`Trading Terminal`), аналитика сайтов GA4/GSC (`Website Monitor`), модуль сбора данных `Wikipedia Research`.
+* **Бизнес и аналитика**: аналитика сайтов GA4/GSC (`Website Monitor`), модуль сбора данных `Wikipedia Research`.
 
 ### 5. Пульт дистанционного управления и Медиа
 * **Пульт управления ДУ (`/rc`)**: сенсорный веб-пульт (D-Pad, перемотка, громкость, голосовые команды и управление воспроизведением медиа) для работы со смартфона или планшета.

@@ -1,6 +1,6 @@
-# AI-Breadboard Documentation
+# AI-Windows-Admin Documentation
 
-AI-Breadboard is a local-first AI assistant server with multi-LLM routing, RAG, TTS, Skills, Agents, and a web interface.
+AI-Windows-Admin is a local-first AI assistant server with multi-LLM routing, RAG, TTS, Skills, Agents, and a web interface.
 
 ## Quick Links
 

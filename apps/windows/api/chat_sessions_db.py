@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows API - Chat Sessions DB
+# Process Name: AI-Windows-Admin Apps Windows API - Chat Sessions DB
 # =============================================================================
 # Description:
 #   SQLite хранилище сессий чата для Windows API.
@@ -10,11 +10,11 @@
 #     from apps.windows.api.chat_sessions_db import get_db_connection, list_sessions
 #
 # File: chat_sessions_db.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.api
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 12:41:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations
@@ -30,7 +30,7 @@ import os
 from logger import logger
 
 appdata_root = Path(os.getenv('APPDATA', str(Path.home() / 'AppData' / 'Roaming')))
-DB_PATH: Path = appdata_root / 'AI-Breadboard' / 'chat_sessions' / 'chat_sessions.db'
+DB_PATH: Path = appdata_root / 'AI-Windows-Admin' / 'chat_sessions' / 'chat_sessions.db'
 
 
 def get_db_connection() -> sqlite3.Connection:

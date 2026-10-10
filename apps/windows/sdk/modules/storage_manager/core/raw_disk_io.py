@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Modules Storage_Manager Core - Raw Disk Io
+# Process Name: AI-Windows-Admin Apps Windows Modules Storage_Manager Core - Raw Disk Io
 # =============================================================================
 # Description:
 #   Прямой Win32 / IOCTL ввод-вывод для физических накопителей и томов Windows.
@@ -16,11 +16,11 @@
 #     vols = raw_io.get_logical_volumes()
 #
 # File: raw_disk_io.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.storage_manager.core
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-06 01:33:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

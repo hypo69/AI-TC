@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Core - Models
+# Process Name: AI-Windows-Admin Apps Windows Core - Models
 # =============================================================================
 # Description:
 #   Модели данных аудита, диагностики и безопасного выполнения (Фасад contracts).
@@ -10,11 +10,11 @@
 #     from apps.windows.sdk.core.models import RiskLevel, AuditFinding, FullAuditReport
 #
 # File: models.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.core
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-08 09:37:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

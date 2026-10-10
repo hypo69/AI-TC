@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Wikillm - Config
+# Process Name: AI-Windows-Admin Apps Windows Wikillm - Config
 # =============================================================================
 # Description:
 #   Загрузка и валидация конфигурационных параметров для подсистемы WikiLLM.
@@ -12,11 +12,11 @@
 #     service = WikiLLMConfig()
 #
 # File: config.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.wikillm
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:28:28
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

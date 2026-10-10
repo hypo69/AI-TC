@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Telemetry - Internet Speed
+# Process Name: AI-Windows-Admin Apps Windows Telemetry - Internet Speed
 # =============================================================================
 # Description:
 #   Сенсор телеметрии скорости интернета и задержки сети на базе FAST.com (Netflix CDN).
@@ -15,11 +15,11 @@
 #     print(metrics['download_mbps'], metrics['bufferbloat_ms'])
 #
 # File: internet_speed.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.telemetry
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-04 07:35:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

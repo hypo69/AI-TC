@@ -6,11 +6,11 @@ Description:
   Документация универсального компонента всплывающего окна ИИ-анализатора (ai_modal_dialog).
 
 File: README.md
-Project: ai-breadboard
+Project: ai-windows-admin
 Package: apps.windows.api.webgui.ai_modal_dialog
 Author: hypo69
 Copyright: © 2026 hypo69
-Updated: 2026-10-08 12:25:00
+Updated: 2026-10-10 17:35:00
 =============================================================================
 -->
 

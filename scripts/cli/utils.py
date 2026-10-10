@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Scripts Cli - Utils
+# Process Name: AI-Windows-Admin Scripts Cli - Utils
 # =============================================================================
 # Description:
 #   Cross-platform utility functions for system operations.
@@ -12,11 +12,11 @@
 #     res = find_available_port()
 #
 # File: utils.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: scripts.cli
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 11:47:00
+# Updated: 2026-10-10 22:22:30
 # =============================================================================
 
 """Cross-platform utility functions for system operations."""
@@ -168,7 +168,7 @@ def kill_process(pid: int, force: bool=False) -> bool:
             os.kill(pid, signal_type)
             return True
     except Exception as e:
-        print(f'Error killing process {pid}: {e}')
+        logger.console(f'Error killing process {pid}: {e}')
         return False
 
 def run_command(cmd: List[str], cwd: Optional[Path]=None, env: Optional[dict]=None, check: bool=False, shell: bool=False) -> subprocess.CompletedProcess:
@@ -205,6 +205,13 @@ def which(command: str) -> Optional[Path]:
             return Path(path_str)
     except Exception:
         pass
-    '# TODO: вернуть корректное значение'
     logger.error('Функция which вернула пустой результат')
     return None
+
+def ensure_in_path(path: Path) -> bool:
+    """Ensure path is present in system PATH environment variable."""
+    path_str = str(path)
+    current_path = os.environ.get('PATH', '')
+    if path_str not in current_path.split(os.pathsep):
+        os.environ['PATH'] = f"{path_str}{os.pathsep}{current_path}"
+    return True

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Scripts Maintenance - Analyze Logs
+# Process Name: AI-Windows-Admin Scripts Maintenance - Analyze Logs
 # =============================================================================
 # Description:
 #   Manual log analysis script.
@@ -12,11 +12,11 @@
 #     import scripts.maintenance.analyze_logs as analyze_logs
 #
 # File: analyze_logs.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: scripts.maintenance
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:27:07
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 """Manual log analysis script.

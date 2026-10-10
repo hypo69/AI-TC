@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Scripts Cli - Paths
+# Process Name: AI-Windows-Admin Scripts Cli - Paths
 # =============================================================================
 # Description:
 #   Cross-platform path management system.
@@ -12,11 +12,11 @@
 #     service = CrossPlatformPaths()
 #
 # File: paths.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: scripts.cli
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:27:07
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 """Cross-platform path management system.
@@ -42,7 +42,7 @@ class CrossPlatformPaths:
     - Linux/macOS: ~/.local/share, ~/.config, ~/.cache
     """
 
-    def __init__(self, app_name: str='AI-Breadboard', app_author: str='hypo69'):
+    def __init__(self, app_name: str='AI-Windows-Admin', app_author: str='hypo69'):
         """Initialize cross-platform paths.
         
         Args:
@@ -66,7 +66,7 @@ class CrossPlatformPaths:
             if (current / 'main.py').exists() or (current / 'config.json').exists():
                 return current
             current = current.parent
-        return Path(os.environ.get('AIBREADBOARD_DIR', os.getcwd()))
+        return Path(os.environ.get('AIWINDOWSADMIN_DIR', os.getcwd()))
 
     @property
     def project_root(self) -> Path:
@@ -77,9 +77,9 @@ class CrossPlatformPaths:
     def data_dir(self) -> Path:
         """Application data directory.
         
-        Windows: %LOCALAPPDATA%\\AI-Breadboard
-        Linux: ~/.local/share/AI-Breadboard
-        macOS: ~/Library/Application Support/AI-Breadboard
+        Windows: %LOCALAPPDATA%\\AI-Windows-Admin
+        Linux: ~/.local/share/AI-Windows-Admin
+        macOS: ~/Library/Application Support/AI-Windows-Admin
         """
         if HAS_PLATFORMDIRS:
             return Path(platformdirs.user_data_dir(self.app_name, self.app_author))
@@ -95,9 +95,9 @@ class CrossPlatformPaths:
     def config_dir(self) -> Path:
         """Configuration directory.
         
-        Windows: %LOCALAPPDATA%\\AI-Breadboard\\config
-        Linux: ~/.config/AI-Breadboard
-        macOS: ~/Library/Preferences/AI-Breadboard
+        Windows: %LOCALAPPDATA%\\AI-Windows-Admin\\config
+        Linux: ~/.config/AI-Windows-Admin
+        macOS: ~/Library/Preferences/AI-Windows-Admin
         """
         if HAS_PLATFORMDIRS:
             return Path(platformdirs.user_config_dir(self.app_name, self.app_author))
@@ -112,9 +112,9 @@ class CrossPlatformPaths:
     def cache_dir(self) -> Path:
         """Cache directory.
         
-        Windows: %LOCALAPPDATA%\\AI-Breadboard\\Cache
-        Linux: ~/.cache/AI-Breadboard
-        macOS: ~/Library/Caches/AI-Breadboard
+        Windows: %LOCALAPPDATA%\\AI-Windows-Admin\\Cache
+        Linux: ~/.cache/AI-Windows-Admin
+        macOS: ~/Library/Caches/AI-Windows-Admin
         """
         if HAS_PLATFORMDIRS:
             return Path(platformdirs.user_cache_dir(self.app_name, self.app_author))
@@ -213,7 +213,7 @@ class CrossPlatformPaths:
         Returns:
             Dictionary of environment variables.
         """
-        return {'AIBREADBOARD_DIR': str(self.project_root), 'ASSIST_DIR': str(self.project_root), 'PYTHONUTF8': '1', 'PYTHONPATH': f"{self.project_root}{os.pathsep}{os.environ.get('PYTHONPATH', '')}"}
+        return {'AIWINDOWSADMIN_DIR': str(self.project_root), 'ASSIST_DIR': str(self.project_root), 'PYTHONUTF8': '1', 'PYTHONPATH': f"{self.project_root}{os.pathsep}{os.environ.get('PYTHONPATH', '')}"}
 
     def setup_env(self) -> None:
         """Set environment variables."""

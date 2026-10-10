@@ -1,8 +1,8 @@
 # Конфигурация подсистемы телеметрии Windows (`config.json`)
 
-Файл `config.json` (по умолчанию располагающийся в `%ProgramData%/AI-Breadboard/apps/windows/telemetry/config.json` для всей системы) является центральным конфигурационным файлом для системы сбора, буферизации, аудита и мониторинга телеметрии Windows в проекте AI-Breadboard.
+Файл `config.json` (по умолчанию располагающийся в `%ProgramData%/AI-Windows-Admin/apps/windows/telemetry/config.json` для всей системы) является центральным конфигурационным файлом для системы сбора, буферизации, аудита и мониторинга телеметрии Windows в проекте AI-Windows-Admin.
 
-Управление загрузкой, валидацией и модификацией параметров осуществляется модулем [`telemetry_config.py`](file:///c:/Users/onela/AppData/Local/AI-Breadboard/apps/windows/telemetry/telemetry_config.py) (класс `TelemetryConfigManager`).
+Управление загрузкой, валидацией и модификацией параметров осуществляется модулем [`telemetry_config.py`](file:///c:/Users/onela/AppData/Local/AI-Windows-Admin/apps/windows/telemetry/telemetry_config.py) (класс `TelemetryConfigManager`).
 
 ---
 
@@ -25,8 +25,8 @@
 
 | Параметр | Тип | Значение по умолчанию | Описание |
 |---|---|---|---|
-| `storage.data_path` | `string` | `"%ProgramData%/AI-Breadboard/apps/windows/telemetry/logs"` | Путь к каталогу хранения файлов и логов общесистемной телеметрии. |
-| `storage.db_path` | `string` | `"%ProgramData%/AI-Breadboard/apps/windows/telemetry/logs/telemetry.db"` | Путь к основной базе данных SQLite телеметрии. |
+| `storage.data_path` | `string` | `"%ProgramData%/AI-Windows-Admin/apps/windows/telemetry/logs"` | Путь к каталогу хранения файлов и логов общесистемной телеметрии. |
+| `storage.db_path` | `string` | `"%ProgramData%/AI-Windows-Admin/apps/windows/telemetry/logs/telemetry.db"` | Путь к основной базе данных SQLite телеметрии. |
 | `mode` | `string` | `"hybrid"` | Общий режим работы: `"minimal"`, `"hybrid"`, `"full"`. |
 | `buffer_mode` | `string` | `"memory"` | Режим накопления данных: `"memory"`, `"file"`, `"direct"`. |
 | `buffer_size` | `integer` | `50` | Максимальное количество записей в буфере перед автоматическим сбросом в БД. |
@@ -48,7 +48,7 @@
 
 > [!TIP]
 > **Динамическая регулировка "на лету"**:
-> Все сервисы телеметрии ([`service.py`](file:///c:/Users/onela/AppData/Local/AI-Breadboard/apps/windows/telemetry/service.py), [`main.py`](file:///c:/Users/onela/AppData/Local/AI-Breadboard/apps/windows/telemetry/main.py), [`TelemetryConfigManager`](file:///c:/Users/onela/AppData/Local/AI-Breadboard/apps/windows/telemetry/telemetry_config.py)) отслеживают время изменения `config.json`. При сохранении файла новые интервалы и настройки подхватываются автоматически **без перезапуска сервиса**.
+> Все сервисы телеметрии ([`service.py`](file:///c:/Users/onela/AppData/Local/AI-Windows-Admin/apps/windows/telemetry/service.py), [`main.py`](file:///c:/Users/onela/AppData/Local/AI-Windows-Admin/apps/windows/telemetry/main.py), [`TelemetryConfigManager`](file:///c:/Users/onela/AppData/Local/AI-Windows-Admin/apps/windows/telemetry/telemetry_config.py)) отслеживают время изменения `config.json`. При сохранении файла новые интервалы и настройки подхватываются автоматически **без перезапуска сервиса**.
 > 
 > Поддерживаются как числовые значения в секундах (`5`, `6.0`), так и строковые интервалы (`"5 seconds"`, `"10s"`, `"1 minute"`, `"2 мин"`, `"1 hour"`, `"6 hours"`).
 
@@ -107,7 +107,6 @@
 | `website_monitor` | `5 minutes` | Мониторинг доступности внешних сайтов и API. |
 | `gcloud_monitor` | `5 minutes` | Метрики облачной инфраструктуры Google Cloud. |
 | `cloudflared_monitor` | `30 seconds` | Статус туннелей Cloudflare. |
-| `trading_terminal` | `10 seconds` | Состояние торговых соединений и котировок. |
 | `user_assistant` | `5 minutes` | Журнал работы ассистента. |
 | `helpdesk` | `1 minute` | Очередь тикетов и обращений. |
 

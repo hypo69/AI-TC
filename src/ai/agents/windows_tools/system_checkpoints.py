@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard AI Agents - Windows System Checkpoints Tools Module
+# Process Name: AI-Windows-Admin AI Agents - Windows System Checkpoints Tools Module
 # =============================================================================
 # Description:
 #   Инструменты управления единым координатором контрольных точек восстановления
@@ -15,11 +15,11 @@
 #     res = await windows_checkpoints_audit(action="health")
 #
 # File: system_checkpoints.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: src.ai.agents.windows_tools
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-08 22:31:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

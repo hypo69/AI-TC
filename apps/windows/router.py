@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows - Router
+# Process Name: AI-Windows-Admin Apps Windows - Router
 # =============================================================================
 # Description:
 #   # Description:
@@ -12,11 +12,11 @@
 #     service = InvestigateRequest()
 #
 # File: router.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-08 02:15:00
+# Updated: 2026-10-10 19:54:00
 # =============================================================================
 
 """Роутер диагностики, управления окнами, персонализации, идентификации и безопасности Windows."""
@@ -38,11 +38,15 @@ from apps.windows.sdk.core.safe_executor import SafeExecutor
 from apps.windows.sdk.modules.window_control_plane.router import router as window_mgmt_router
 from apps.windows.sdk.modules.personalization.router import router as personalization_router
 from apps.windows.sdk.modules.accounts_identity.router import router as accounts_identity_router
+from apps.windows.sdk.core.tool_chains.router import router as toolchains_router
+from apps.windows.sdk.software_scanner.router import router as software_scanner_router
 
 router = APIRouter(prefix='/api/windows', tags=['windows-diagnostics'])
 router.include_router(window_mgmt_router, prefix='/window-management', tags=['Window Management'])
 router.include_router(personalization_router, prefix='/personalization', tags=['Personalization'])
 router.include_router(accounts_identity_router, tags=['Accounts & Identity'])
+router.include_router(toolchains_router, tags=['Tool Chains'])
+router.include_router(software_scanner_router, tags=['Software Scanner'])
 
 _diagnostician = WindowsAIDiagnostician()
 _investigator = WindowsAIRootCauseAnalyzer()
@@ -544,9 +548,11 @@ def init_router(app: Optional[Any]=None, state: Optional[Any]=None) -> APIRouter
     from apps.windows.sdk.core.software_transparency import init_software_transparency_router
     from apps.windows.api.router_capabilities import init_router as init_capabilities_router
     from apps.windows.wikillm.router import init_router as init_wikillm_router
+    from src.ai.rag.router import init_router as init_rag_router
     from apps.windows.sdk.modules.programms_history_deep_researh.router import router as prog_history_router
     router.include_router(init_capabilities_router())
     router.include_router(init_wikillm_router())
+    router.include_router(init_rag_router())
     router.include_router(prog_history_router)
     try:
         from apps.windows.sdk.modules.storage_manager.router import init_router as init_storage_router

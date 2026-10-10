@@ -2,7 +2,7 @@
 
 ## 📋 Обзор
 
-В AI-Breadboard все сенсоры, аппаратные проберы и модули приложений записывают структурированную телеметрию в формате **CSV** через единый централизованный логгер [`AppCsvLogger`](../../apps/common/csv_logger.py).
+В AI-Windows-Admin все сенсоры, аппаратные проберы и модули приложений записывают структурированную телеметрию в формате **CSV** через единый централизованный логгер [`AppCsvLogger`](../../apps/common/csv_logger.py).
 
 Логирование в CSV обеспечивает:
 1. **Табличную совместимость:** Удобный импорт в Excel, Pandas, Grafana, PowerBI и BI-аналитику без промежуточного парсинга.
@@ -16,8 +16,8 @@
 
 Все CSV-файлы сохраняются в системный каталог пользователя:
 
-* **Windows:** `%APPDATA%\AI-Breadboard\apps\windows\telemetry\logs\` (например, `C:\Users\<User>\AppData\Roaming\AI-Breadboard\apps\windows\telemetry\logs\`)
-* **Фолбэк:** `%LOCALAPPDATA%\AI-Breadboard\apps\windows\telemetry\logs\` или `~/.config/AI-Breadboard/apps/windows/telemetry/logs/`
+* **Windows:** `%APPDATA%\AI-Windows-Admin\apps\windows\telemetry\logs\` (например, `C:\Users\<User>\AppData\Roaming\AI-Windows-Admin\apps\windows\telemetry\logs\`)
+* **Фолбэк:** `%LOCALAPPDATA%\AI-Windows-Admin\apps\windows\telemetry\logs\` или `~/.config/AI-Windows-Admin/apps/windows/telemetry/logs/`
 
 ---
 
@@ -87,7 +87,7 @@ timestamp,app,param_name,old_value,new_value,status,user,details
 
 В таблице ниже приведен полный перечень файлов, формируемых сенсорами и аппаратными провайдерами:
 
-| Категория | Имя CSV-файла | Источник / Модуль | Что именно записывается в файл (`%APPDATA%/AI-Breadboard/apps/windows/telemetry/logs/`) |
+| Категория | Имя CSV-файла | Источник / Модуль | Что именно записывается в файл (`%APPDATA%/AI-Windows-Admin/apps/windows/telemetry/logs/`) |
 | :--- | :--- | :--- | :--- |
 | 🌡️ **LHM** | `lhm_sensor_polls.csv` | [`apps/librehardwaremonitor`](../../apps/librehardwaremonitor) | Температуры CPU/GPU, частоты, мощности, напряжения шин (3.3V/5V/12V), обороты кулеров RPM |
 | 🌡️ **LHM** | `lhm_status_polls.csv` | [`apps/librehardwaremonitor`](../../apps/librehardwaremonitor) | Доступность Web API (порт 8085) и WMI-пространства `root\LibreHardwareMonitor` |
@@ -110,8 +110,8 @@ timestamp,app,param_name,old_value,new_value,status,user,details
 | 🛠️ **Inspector** | `system_inspector_polls.csv` | [`apps/system_inspector`](../../apps/system_inspector) | Регулярные снимки процессов, открытых портов и дескрипторов |
 | ⚙️ **Control Center** | `system_control_status_polls.csv` | [`apps/system_control_center`](../../apps/system_control_center) | Состояние системных служб Windows и профилей производительности |
 | ⚙️ **Control Center** | `system_control_restore_points.csv`| [`apps/system_control_center`](../../apps/system_control_center) | Создание и статус системных точек восстановления |
-| 👤 **Admin Panel** | `admin_status_polls.csv` | [`apps/ai_breadboard_admin`](../../apps/ai_breadboard_admin) | Состояние фоновых демонов, воркеров и API-роутеров |
-| 👤 **Admin Panel** | `admin_config_param_changes.csv` | [`apps/ai_breadboard_admin`](../../apps/ai_breadboard_admin) | Журнал изменения системных параметров администратором |
+| 👤 **Admin Panel** | `admin_status_polls.csv` | [`apps/ai_windows_admin_admin`](../../apps/ai_windows_admin_admin) | Состояние фоновых демонов, воркеров и API-роутеров |
+| 👤 **Admin Panel** | `admin_config_param_changes.csv` | [`apps/ai_windows_admin_admin`](../../apps/ai_windows_admin_admin) | Журнал изменения системных параметров администратором |
 
 ---
 

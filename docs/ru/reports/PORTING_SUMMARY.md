@@ -1,8 +1,8 @@
-# Портирование AI Breadboard на Linux/macOS — Итоговый отчет
+# Портирование AI Windows Admin на Linux/macOS — Итоговый отчет
 
 ## Обзор проекта
 
-**Задача:** Портировать все PowerShell скрипты AI Breadboard на кроссплатформенное решение (Python/Bash) для поддержки Windows, Linux и macOS с минимальной переработкой кода.
+**Задача:** Портировать все PowerShell скрипты AI Windows Admin на кроссплатформенное решение (Python/Bash) для поддержки Windows, Linux и macOS с минимальной переработкой кода.
 
 **Status:** ✅ **ЗАВЕРШЕНО** (8 из 9 задач выполнено, финальное тестирование и документация — задача #9)
 
@@ -61,9 +61,9 @@ scripts/cli/
 from scripts.cli.paths import get_paths
 
 paths = get_paths()
-# Windows: C:\Users\user\AppData\Local\AI-Breadboard
-# Linux: /home/user/.local/share/AI-Breadboard
-# macOS: /Users/user/Library/Application Support/AI-Breadboard
+# Windows: C:\Users\user\AppData\Local\AI-Windows-Admin
+# Linux: /home/user/.local/share/AI-Windows-Admin
+# macOS: /Users/user/Library/Application Support/AI-Windows-Admin
 ```
 
 ### ✅ Moduleная архитектура
@@ -177,8 +177,8 @@ MCP Серверы:
 
 ```bash
 # 1. Клонировать репо на Linux
-git clone https://github.com/hypo69/AI-Breadboard.git
-cd AI-Breadboard
+git clone https://github.com/hypo69/AI-Windows-Admin.git
+cd AI-Windows-Admin
 
 # 2. Установить (пути автоматически адаптируются)
 bash install.sh
@@ -191,8 +191,8 @@ bash install.sh
 
 ```bash
 # 1. Скопировать config.json и .env со старой машины
-scp user@old-machine:/path/to/config.json ~/AI-Breadboard/
-scp user@old-machine:/path/to/.env ~/AI-Breadboard/
+scp user@old-machine:/path/to/config.json ~/AI-Windows-Admin/
+scp user@old-machine:/path/to/.env ~/AI-Windows-Admin/
 
 # 2. Все работает! Пути автоматически адаптированы
 ./assist status

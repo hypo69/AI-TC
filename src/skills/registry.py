@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard SKILLS - Registry Module
+# Process Name: AI-Windows-Admin SKILLS - Registry Module
 # =============================================================================
 # Description:
 #   Loads, normalizes, and registers skills for various AI agents.
@@ -14,11 +14,11 @@
 #     print(result)
 #
 # File: registry.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: src.skills
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:13:56
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

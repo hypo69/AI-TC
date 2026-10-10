@@ -1,6 +1,6 @@
 # Установка
 
-## Инструкции по установке AI-Breadboard
+## Инструкции по установке AI-Windows-Admin
 
 ### Системные требования
 
@@ -14,15 +14,15 @@
 
 #### Windows (PowerShell):
 ```powershell
-git clone https://github.com/hypo69/AI-Breadboard.git
-cd AI-Breadboard
+git clone https://github.com/hypo69/AI-Windows-Admin.git
+cd AI-Windows-Admin
 .\install.ps1
 ```
 
 #### Linux / macOS (Bash):
 ```bash
-git clone https://github.com/hypo69/AI-Breadboard.git
-cd AI-Breadboard
+git clone https://github.com/hypo69/AI-Windows-Admin.git
+cd AI-Windows-Admin
 bash install.sh
 ```
 
@@ -36,8 +36,8 @@ bash install.sh
 ### Ручная установка из репозитория
 
 ```powershell
-git clone https://github.com/hypo69/AI-Breadboard.git
-cd AI-Breadboard
+git clone https://github.com/hypo69/AI-Windows-Admin.git
+cd AI-Windows-Admin
 python -m venv venv
 .\venv\Scripts\Activate.ps1    # Для Linux/macOS: source venv/bin/activate
 pip install --upgrade pip

@@ -1,6 +1,6 @@
 <#
 =============================================================================
-Process Name: AI-Breadboard Automation - Replace Imports
+Process Name: AI-Windows-Admin Automation - Replace Imports
 =============================================================================
 Description:
   PowerShell-сценарий автоматизации и системного обслуживания (replace_imports).
@@ -10,15 +10,15 @@ Usage Examples:
     .\replace_imports.ps1
 
 File: replace_imports.ps1
-Project: ai-breadboard
+Project: ai-windows-admin
 Package: apps/windows
 Author: hypo69
 Copyright: © 2026 hypo69
-Updated: 2026-10-02 21:57:05
+Updated: 2026-10-10 17:35:00
 =============================================================================
 #>
 
-Get-ChildItem -Path 'C:/Users/onela/AppData/Local/AI-Breadboard/apps/windows' -Recurse -Filter *.py |
+Get-ChildItem -Path 'C:/Users/onela/AppData/Local/AI-Windows-Admin/apps/windows' -Recurse -Filter *.py |
     ForEach-Object {
         $path = $_.FullName
         $content = Get-Content $path -Raw

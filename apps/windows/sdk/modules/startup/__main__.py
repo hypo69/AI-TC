@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Modules Startup -   Main  
+# Process Name: AI-Windows-Admin Apps Windows Modules Startup -   Main  
 # =============================================================================
 # Description:
 #   Точка входа CLI и standalone-сервера Windows Startup Auditor.
@@ -14,11 +14,11 @@
 #     res = run_cli()
 #
 # File: __main__.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.startup
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:28:28
+# Updated: 2026-10-10 22:22:30
 # =============================================================================
 
 from __future__ import annotations
@@ -62,13 +62,13 @@ def run_cli() -> None:
             manager.export_to_csv(report, target)
         else:
             manager.export_to_json(report, target)
-        print(f'Отчет успешно сохранен в: {target}')
+        logger.console(f'Отчет успешно сохранен в: {target}')
         return
     if args.json:
-        print(manager.export_to_json(report))
+        logger.console(manager.export_to_json(report))
         return
     if args.csv:
-        print(manager.export_to_csv(report))
+        logger.console(manager.export_to_csv(report))
         return
     tui = StartupAuditorTUI(auditor=auditor)
     tui.render_dashboard()

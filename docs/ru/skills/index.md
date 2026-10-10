@@ -1,4 +1,4 @@
-# Навыки моделей (Skills) в AI Breadboard
+# Навыки моделей (Skills) в AI Windows Admin
 
 > **Раздел:** Навыки моделей и агентов  
 > **Язык:** Русский  
@@ -28,7 +28,7 @@
 
 ## 💡 Решение: Прогрессивное раскрытие (Progressive Disclosure)
 
-В платформе **AI Breadboard** система навыков реализует принцип **Progressive Disclosure**:
+В платформе **AI Windows Admin** система навыков реализует принцип **Progressive Disclosure**:
 
 ```mermaid
 graph TD

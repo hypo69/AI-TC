@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Modules Registry - Tui
+# Process Name: AI-Windows-Admin Apps Windows Modules Registry - Tui
 # =============================================================================
 # Description:
 #   Консольный TUI интерфейс Windows Registry Viewer.
@@ -12,14 +12,15 @@
 #     service = RegistryViewerTUI()
 #
 # File: tui.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.registry
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:28:28
+# Updated: 2026-10-10 22:22:44
 # =============================================================================
 
 from __future__ import annotations
+from logger import logger
 """Консольный TUI интерфейс Windows Registry Viewer."""
 
 from typing import List, Optional
@@ -49,13 +50,13 @@ class RegistryViewerTUI:
         table.add_column('Путь к разделу', style='dim white')
         for bm in items:
             table.add_row(bm.id, f'{bm.icon} {bm.title}', bm.hive, bm.path)
-        self.console.print(table)
-        self.console.print('[dim]Используйте: [bold cyan]python -m apps.windows.registry --bookmark <id>[/bold cyan] для быстрого перехода.[/dim]\n')
+        self.console.logger.console(table)
+        self.console.logger.console('[dim]Используйте: [bold cyan]python -m apps.windows.registry --bookmark <id>[/bold cyan] для быстрого перехода.[/dim]\n')
 
     def render_key_details(self, details: RegistryKeyDetailsDTO) -> None:
         """Отобразить детальную информацию о ключе, подразделы и параметры."""
         info_panel = Panel(f"[bold green]Ветка:[/bold green] {details.hive}\n[bold green]Путь:[/bold green] {details.path or '(Корневой раздел)'}\n[bold green]Полный путь:[/bold green] [bold cyan]{details.full_path}[/bold cyan]\n[bold green]Подразделов:[/bold green] {details.subkeys_count}  |  [bold green]Параметров:[/bold green] {details.values_count}", title='📂 Просмотр раздела реестра Windows', border_style='bright_blue')
-        self.console.print(info_panel)
+        self.console.logger.console(info_panel)
         if details.values:
             val_table = Table(title=f'📋 Параметры раздела ({len(details.values)})', box=box.SIMPLE_HEAVY, header_style='bold cyan')
             val_table.add_column('Имя параметра', style='bold white', width=32)
@@ -71,9 +72,9 @@ class RegistryViewerTUI:
                 elif 'BINARY' in val.type_name:
                     type_style = 'yellow'
                 val_table.add_row(val.name, f'[{type_style}]{val.type_name}[/{type_style}]', str(val.data), f'{val.size_bytes} B')
-            self.console.print(val_table)
+            self.console.logger.console(val_table)
         else:
-            self.console.print('[yellow]Параметры отсутствуют в данном ключе.[/yellow]')
+            self.console.logger.console('[yellow]Параметры отсутствуют в данном ключе.[/yellow]')
         if details.subkeys:
             tree = Tree(f'📁 [bold blue]Подразделы ({len(details.subkeys)})[/bold blue]')
             display_limit = 40
@@ -81,13 +82,13 @@ class RegistryViewerTUI:
                 tree.add(f'[dim]📁[/dim] {sk}')
             if len(details.subkeys) > display_limit:
                 tree.add(f'[italic dim]... и еще {len(details.subkeys) - display_limit} подразделов[/italic dim]')
-            self.console.print(tree)
-            self.console.print()
+            self.console.logger.console(tree)
+            self.console.logger.console()
 
     def render_search_results(self, response: SearchResponseDTO) -> None:
         """Отобразить результаты поиска по реестру."""
         if not response.results:
-            self.console.print(f"[yellow]По запросу '{response.query}' ничего не найдено в ветке {response.hive}\\{response.path}.[/yellow]")
+            self.console.logger.console(f"[yellow]По запросу '{response.query}' ничего не найдено в ветке {response.hive}\\{response.path}.[/yellow]")
             return
         table = Table(title=f"🔍 Результаты поиска по запросу '{response.query}' (Найдено: {response.total_found})", box=box.ROUNDED, header_style='bold green')
         table.add_column('Тип совпадения', style='cyan', width=16)
@@ -97,4 +98,4 @@ class RegistryViewerTUI:
         for item in response.results:
             match_type_label = {'key_name': '📁 Подраздел', 'value_name': '📝 Имя параметра', 'value_data': '💾 Значение'}.get(item.match_type, item.match_type)
             table.add_row(match_type_label, f'{item.hive}\\{item.key_path}', item.value_name or item.matched_text, str(item.value_data) if item.value_data is not None else '-')
-        self.console.print(table)
+        self.console.logger.console(table)

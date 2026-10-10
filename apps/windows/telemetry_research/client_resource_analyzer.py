@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Telemetry_Research - Client Resource Analyzer
+# Process Name: AI-Windows-Admin Apps Windows Telemetry_Research - Client Resource Analyzer
 # =============================================================================
 # Description:
 #   Анализ ресурсов программ, запущенных клиентом (память, процессор, диск),
@@ -14,11 +14,11 @@
 #     summary = await analyzer.analyze_client_resources()
 #
 # File: client_resource_analyzer.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.telemetry_research
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-04 07:47:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

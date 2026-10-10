@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows - Subsystem 10 Audit Events
+# Process Name: AI-Windows-Admin Apps Windows - Subsystem 10 Audit Events
 # =============================================================================
 # Description:
 #   Подсистема 10: Аудит событий безопасности Windows (Security Event Log:
@@ -15,11 +15,11 @@
 #     events = subsys.get_recent_identity_events(limit=20)
 #
 # File: subsystem_10_audit.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.accounts_identity.subsystems
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-08 01:57:30
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 """Подсистема чтения и корреляции журнала событий безопасности Windows (Security Events)."""

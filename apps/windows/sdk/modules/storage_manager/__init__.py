@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Modules Storage_Manager - Init
+# Process Name: AI-Windows-Admin Apps Windows Modules Storage_Manager - Init
 # =============================================================================
 # Description:
 #   Менеджер накопителей Windows (Storage Manager) и бенчмарк DiskSpd.
@@ -10,11 +10,11 @@
 #     from apps.windows.sdk.modules.storage_manager import StorageBenchmarkService, StorageManager
 #
 # File: __init__.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.storage_manager
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-04 08:16:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 """Менеджер накопителей Windows (Storage Manager) и бенчмарк DiskSpd."""

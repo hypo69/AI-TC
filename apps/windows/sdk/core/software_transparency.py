@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Core - Software Transparency
+# Process Name: AI-Windows-Admin Apps Windows Core - Software Transparency
 # =============================================================================
 # Description:
 #   Модуль инспекции прозрачности ПО, анализа конфигураций, мест хранения и сетевых доменов.
@@ -12,11 +12,11 @@
 #     service = StorageCategory()
 #
 # File: software_transparency.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.core
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-06 17:45:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Telemetry Win32_Ffi - Error Decoder
+# Process Name: AI-Windows-Admin Apps Windows Telemetry Win32_Ffi - Error Decoder
 # =============================================================================
 # Description:
 #   Модуль нативного декодирования системных кодов возврата Win32, HRESULT,
@@ -12,11 +12,11 @@
 #     service = WindowsErrorDecoder()
 #
 # File: error_decoder.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.telemetry.win32_ffi
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:28:28
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

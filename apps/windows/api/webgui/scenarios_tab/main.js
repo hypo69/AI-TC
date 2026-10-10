@@ -10,11 +10,11 @@
  *     <script src="/windows/api/webgui/scenarios_tab/main.js?v=20261001_v1" type="module"></script>
  *
  * File: main.js
- * Project: ai-breadboard
+ * Project: ai-windows-admin
  * Package: windows/api/webgui/scenarios_tab
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-06 10:38:00
+ * Updated: 2026-10-10 17:35:00
  * =============================================================================
  */
 

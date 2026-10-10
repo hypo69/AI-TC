@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Modules System_Checkpoints - Tui
+# Process Name: AI-Windows-Admin Apps Windows Modules System_Checkpoints - Tui
 # =============================================================================
 # Description:
 #   Rich TUI консольный интерфейс для управления контрольными точками и образами Windows.
@@ -14,14 +14,15 @@
 #     res = render_dashboard()
 #
 # File: tui.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.system_checkpoints
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:28:28
+# Updated: 2026-10-10 22:22:44
 # =============================================================================
 
 from __future__ import annotations
+from logger import logger
 """Rich TUI консольный интерфейс для управления контрольными точками и образами Windows."""
 
 import sys
@@ -42,7 +43,7 @@ def render_dashboard(coordinator: CheckpointCoordinator, console: Console) -> No
     freshness = coordinator.get_freshness_report()
 
     console.clear()
-    console.print(
+    console.logger.console(
         Panel(
             "[bold cyan]🛡️ Windows System Checkpoints & Recovery Manager[/bold cyan]\n"
             "[dim]Управление образами восстановления WIM, средой WinRE и точками восстановления VSS[/dim]",
@@ -78,7 +79,7 @@ def render_dashboard(coordinator: CheckpointCoordinator, console: Console) -> No
     img_details = f"Последний: {latest_img.get('image_path') if latest_img else 'Не найден'}"
     mech_table.add_row("3. System Image (WIM/DISM)", img_status, img_details)
 
-    console.print(mech_table)
+    console.logger.console(mech_table)
 
     # Панель актуальности (Freshness & System Drift)
     fresh_style = "green" if freshness.freshness_level.value == "HIGH" else ("yellow" if freshness.freshness_level.value == "MEDIUM" else "red")
@@ -90,7 +91,7 @@ def render_dashboard(coordinator: CheckpointCoordinator, console: Console) -> No
         f"[bold]Актуальность:[/bold] [{fresh_style}]{freshness.freshness_label_ru}[/{fresh_style}]\n"
         f"[bold]Рекомендация:[/bold] {freshness.recommendation}"
     )
-    console.print(
+    console.logger.console(
         Panel(
             drift_text,
             title=f"📊 Анализ актуальности образов (Health Score: {health.get('health_score')}/100)",
@@ -106,20 +107,20 @@ def run_interactive_tui() -> None:
 
     while True:
         render_dashboard(coordinator, console)
-        console.print("\n[bold yellow]Меню действий:[/bold yellow]")
-        console.print("  [bold cyan]1[/bold cyan] - 🟢 Создать базовый эталонный образ (Baseline)")
-        console.print("  [bold cyan]2[/bold cyan] - 🔴 Зафиксировать периодическую контрольную точку")
-        console.print("  [bold cyan]3[/bold cyan] - 🟡 Создать точку перед обновлением (Pre-Update)")
-        console.print("  [bold cyan]4[/bold cyan] - 🟠 Создать точку перед экспериментом (Pre-Experiment)")
-        console.print("  [bold cyan]5[/bold cyan] - 📋 Просмотреть каталог сохраненных точек")
-        console.print("  [bold cyan]6[/bold cyan] - 🔍 Инвентаризация WIM-образов на дисках")
-        console.print("  [bold cyan]7[/bold cyan] - ⚙️ Управление средой WinRE")
-        console.print("  [bold cyan]0[/bold cyan] - Выход")
+        console.logger.console("\n[bold yellow]Меню действий:[/bold yellow]")
+        console.logger.console("  [bold cyan]1[/bold cyan] - 🟢 Создать базовый эталонный образ (Baseline)")
+        console.logger.console("  [bold cyan]2[/bold cyan] - 🔴 Зафиксировать периодическую контрольную точку")
+        console.logger.console("  [bold cyan]3[/bold cyan] - 🟡 Создать точку перед обновлением (Pre-Update)")
+        console.logger.console("  [bold cyan]4[/bold cyan] - 🟠 Создать точку перед экспериментом (Pre-Experiment)")
+        console.logger.console("  [bold cyan]5[/bold cyan] - 📋 Просмотреть каталог сохраненных точек")
+        console.logger.console("  [bold cyan]6[/bold cyan] - 🔍 Инвентаризация WIM-образов на дисках")
+        console.logger.console("  [bold cyan]7[/bold cyan] - ⚙️ Управление средой WinRE")
+        console.logger.console("  [bold cyan]0[/bold cyan] - Выход")
 
         choice = Prompt.ask("\nВыберите действие", default="0")
 
         if choice == "0":
-            console.print("[dim]Выход из менеджера контрольных точек.[/dim]")
+            console.logger.console("[dim]Выход из менеджера контрольных точек.[/dim]")
             break
         elif choice == "1":
             title = Prompt.ask("Заголовок базового образа", default="Чистая настроенная Windows")
@@ -132,7 +133,7 @@ def run_interactive_tui() -> None:
                 create_wim_image=False,  # WIM через DISM требует длительного времени, по умолчанию SafeOps
             )
             res = coordinator.create_checkpoint(req)
-            console.print(f"[bold green]{res.get('message')}[/bold green]")
+            console.logger.console(f"[bold green]{res.get('message')}[/bold green]")
             Prompt.ask("\nНажмите Enter для продолжения...")
         elif choice in ["2", "3", "4"]:
             c_type = CheckpointType.PERIODIC
@@ -149,7 +150,7 @@ def run_interactive_tui() -> None:
                 create_wim_image=False,
             )
             res = coordinator.create_checkpoint(req)
-            console.print(f"[bold green]{res.get('message')}[/bold green]")
+            console.logger.console(f"[bold green]{res.get('message')}[/bold green]")
             Prompt.ask("\nНажмите Enter для продолжения...")
         elif choice == "5":
             records = coordinator.load_catalog()
@@ -161,7 +162,7 @@ def run_interactive_tui() -> None:
 
             for r in records:
                 c_table.add_row(r.checkpoint_id, r.created_at, r.checkpoint_type.value, r.title)
-            console.print(c_table)
+            console.logger.console(c_table)
             Prompt.ask("\nНажмите Enter для продолжения...")
         elif choice == "6":
             images = coordinator.image_manager.scan_recovery_images()
@@ -173,11 +174,11 @@ def run_interactive_tui() -> None:
 
             for img in images:
                 i_table.add_row(img.image_path, str(img.file_size_gb), img.created_at, str(img.index_count))
-            console.print(i_table)
+            console.logger.console(i_table)
             Prompt.ask("\nНажмите Enter для продолжения...")
         elif choice == "7":
             status = coordinator.winre_manager.get_status()
-            console.print(Panel(str(status.to_dict()), title="WinRE Status"))
+            console.logger.console(Panel(str(status.to_dict()), title="WinRE Status"))
             Prompt.ask("\nНажмите Enter для продолжения...")
 
 

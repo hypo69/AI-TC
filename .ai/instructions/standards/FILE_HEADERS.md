@@ -36,11 +36,11 @@
 #     obj.execute(...)
 #
 # File: <имя_файла>.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: <полный_путь_к_пакету>
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-05 23:55:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 ```
 
@@ -60,7 +60,7 @@
 ```python
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Telemetry Sqlite - Buffer
+# Process Name: AI-Windows-Admin Apps Windows Telemetry Sqlite - Buffer
 # =============================================================================
 # Description:
 #   Управление буферизацией и пакетной записью (batching) потока телеметрии в SQLite.
@@ -106,11 +106,11 @@
 #     buf.enqueue({"timestamp": "...", "cpu_percent": 12.5})
 #
 # File: buffer.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.telemetry.sqlite
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-05 23:55:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 ```
 

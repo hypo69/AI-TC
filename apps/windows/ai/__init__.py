@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows AI - Package Root
+# Process Name: AI-Windows-Admin Apps Windows AI - Package Root
 # =============================================================================
 # Description:
 #   Слой 6: Контур ИИ, RAG, WikiLLM и интеллектуальная диагностика Windows.
@@ -10,11 +10,11 @@
 #     from apps.windows.ai import WindowsAIDiagnostician, WindowsAIRootCauseAnalyzer
 #
 # File: __init__.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.ai
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-08 09:38:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

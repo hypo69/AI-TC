@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard AI Agents - Windows Event Logs Tools Module
+# Process Name: AI-Windows-Admin AI Agents - Windows Event Logs Tools Module
 # =============================================================================
 # Description:
 #   Инструменты прямого взаимодействия с подсистемой Windows Event Log & Log Intelligence
@@ -16,11 +16,11 @@
 #     res = await windows_event_log_query(action="recent_errors")
 #
 # File: event_logs.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: src.ai.agents.windows_tools
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-08 22:54:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

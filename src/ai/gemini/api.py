@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard AI - Api Module
+# Process Name: AI-Windows-Admin AI - Api Module
 # =============================================================================
 # Description:
-#   Модуль реализации компонента `GoogleGenerativeAI` системы AI-Breadboard.
+#   Модуль реализации компонента `GoogleGenerativeAI` системы AI-Windows-Admin.
 #
 # Usage Examples:
 #   Python API:
@@ -12,14 +12,14 @@
 #     service = GoogleGenerativeAI()
 #
 # File: api.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: src.ai.gemini
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 06:33:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
-"""Модуль реализации компонента `GoogleGenerativeAI` системы AI-Breadboard."""
+"""Модуль реализации компонента `GoogleGenerativeAI` системы AI-Windows-Admin."""
 
 import asyncio
 import json

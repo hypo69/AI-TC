@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Telemetry - CLI Controller
+# Process Name: AI-Windows-Admin Apps Windows Telemetry - CLI Controller
 # =============================================================================
 # Description:
 #   Консольный контроллер AITelemetryCtl для мониторинга, управления службой
@@ -16,14 +16,15 @@
 #     AITelemetryCtl.exe database
 #
 # File: ctl.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.telemetry
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-08 02:15:00
+# Updated: 2026-10-10 22:22:44
 # =============================================================================
 
 from __future__ import annotations
+from logger import logger
 """Консольная утилита управления и диагностики службы AITelemetry."""
 
 import argparse
@@ -81,39 +82,39 @@ def get_service_status_scm(service_name: str = 'AITelemetry') -> Dict[str, Any]:
 
 def cmd_status() -> int:
     """Выводит подробный статус службы и базы данных."""
-    print("=" * 60)
-    print("       AITelemetry - Статус службы и мониторинга")
-    print("=" * 60)
+    logger.console("=" * 60)
+    logger.console("       AITelemetry - Статус службы и мониторинга")
+    logger.console("=" * 60)
 
     scm_status = get_service_status_scm('AITelemetry')
     state = scm_status.get('state', 'UNKNOWN')
     state_icon = "🟢" if state == 'RUNNING' else ("🔴" if state == 'STOPPED' else "⚪")
-    print(f"Служба Windows (SCM):   {state_icon} {state}")
-    print(f"Установлена в системе: {'Да' if scm_status.get('installed') else 'Нет'}")
+    logger.console(f"Служба Windows (SCM):   {state_icon} {state}")
+    logger.console(f"Установлена в системе: {'Да' if scm_status.get('installed') else 'Нет'}")
 
     try:
         from apps.windows.telemetry.telemetry_config import TelemetryConfigManager
         cfg_mgr = TelemetryConfigManager()
         cfg_path = cfg_mgr.config_path
-        print(f"Файл конфигурации:     {cfg_path} (существует: {cfg_path.exists()})")
-        print(f"Режим работы:          {cfg_mgr.get_mode()}")
-        print(f"Интервал замеров:      {cfg_mgr.get_interval_seconds()} сек")
+        logger.console(f"Файл конфигурации:     {cfg_path} (существует: {cfg_path.exists()})")
+        logger.console(f"Режим работы:          {cfg_mgr.get_mode()}")
+        logger.console(f"Интервал замеров:      {cfg_mgr.get_interval_seconds()} сек")
     except Exception as ex:
-        print(f"Конфигурация:          Ошибка чтения ({ex})")
+        logger.console(f"Конфигурация:          Ошибка чтения ({ex})")
 
     try:
         from apps.windows.telemetry.sqlite import TelemetryStorage
         storage = TelemetryStorage.get_instance(read_only=True)
         db_path = storage.db_path
-        print(f"База данных SQLite:    {db_path} (размер: {db_path.stat().st_size / 1024 / 1024:.2f} МБ)")
+        logger.console(f"База данных SQLite:    {db_path} (размер: {db_path.stat().st_size / 1024 / 1024:.2f} МБ)")
         stats = storage.get_storage_stats()
-        print(f"Всего снимков (polls): {stats.get('snapshots_count', 0)}")
-        print(f"Метрик процессов:      {stats.get('process_metrics_count', 0)}")
-        print(f"Событий (events):      {stats.get('events_count', 0)}")
+        logger.console(f"Всего снимков (polls): {stats.get('snapshots_count', 0)}")
+        logger.console(f"Метрик процессов:      {stats.get('process_metrics_count', 0)}")
+        logger.console(f"Событий (events):      {stats.get('events_count', 0)}")
     except Exception as ex:
-        print(f"База данных:           Недоступна ({ex})")
+        logger.console(f"База данных:           Недоступна ({ex})")
 
-    print("=" * 60)
+    logger.console("=" * 60)
     return 0
 
 
@@ -127,15 +128,15 @@ def cmd_control(action: str) -> int:
         int: Код возврата команды.
     """
     if action == 'start':
-        print("Запуск службы AITelemetry...")
+        logger.console("Запуск службы AITelemetry...")
         res = subprocess.run(['net.exe', 'start', 'AITelemetry'])
         return res.returncode
     elif action == 'stop':
-        print("Остановка службы AITelemetry...")
+        logger.console("Остановка службы AITelemetry...")
         res = subprocess.run(['net.exe', 'stop', 'AITelemetry'])
         return res.returncode
     elif action == 'restart':
-        print("Перезапуск службы AITelemetry...")
+        logger.console("Перезапуск службы AITelemetry...")
         subprocess.run(['net.exe', 'stop', 'AITelemetry'])
         res = subprocess.run(['net.exe', 'start', 'AITelemetry'])
         return res.returncode
@@ -148,27 +149,27 @@ def cmd_database() -> int:
         from apps.windows.telemetry.sqlite import TelemetryStorage
         storage = TelemetryStorage.get_instance(read_only=True)
         stats = storage.get_storage_stats()
-        print(json.dumps(stats, indent=2, ensure_ascii=False))
+        logger.console(json.dumps(stats, indent=2, ensure_ascii=False))
         return 0
     except Exception as ex:
-        print(f"Ошибка чтения базы данных: {ex}")
+        logger.console(f"Ошибка чтения базы данных: {ex}")
         return 1
 
 
 def cmd_diagnose() -> int:
     """Выполняет экспресс-диагностику системных метрик."""
-    print("Выполнение глубокой диагностики системы...")
+    logger.console("Выполнение глубокой диагностики системы...")
     try:
         from apps.windows.telemetry.collector import SystemCollector
         collector = SystemCollector()
         snapshot = collector.collect_snapshot(top_processes_limit=10)
-        print(f"CPU: {snapshot.cpu.usage_percent:.1f}%")
-        print(f"Память: {snapshot.memory.percent_used:.1f}% (Свободно: {snapshot.memory.available_mb / 1024:.2f} ГБ)")
-        print(f"Количество процессов: {len(snapshot.processes)}")
-        print("Диагностика успешно выполнена.")
+        logger.console(f"CPU: {snapshot.cpu.usage_percent:.1f}%")
+        logger.console(f"Память: {snapshot.memory.percent_used:.1f}% (Свободно: {snapshot.memory.available_mb / 1024:.2f} ГБ)")
+        logger.console(f"Количество процессов: {len(snapshot.processes)}")
+        logger.console("Диагностика успешно выполнена.")
         return 0
     except Exception as ex:
-        print(f"Ошибка при диагностике: {ex}")
+        logger.console(f"Ошибка при диагностике: {ex}")
         return 1
 
 
@@ -180,17 +181,17 @@ def cmd_security(args: argparse.Namespace) -> int:
 
     if action == 'status':
         status = collector.check_access_and_audit()
-        print("=" * 60)
-        print("       AITelemetry - Windows Security Event Subsystem")
-        print("=" * 60)
+        logger.console("=" * 60)
+        logger.console("       AITelemetry - Windows Security Event Subsystem")
+        logger.console("=" * 60)
         acc_str = "🟢 Доступен" if status.accessible else f"🔴 Недоступен ({status.error})"
-        print(f"Журнал Security:       {acc_str}")
-        print(f"Всего событий в журнале ОС: {status.record_count:,}")
-        print(f"Событий в telemetry.db:     {status.total_ingested_events:,}")
-        print(f"Последний EventRecordID:    {status.last_record_id:,}")
+        logger.console(f"Журнал Security:       {acc_str}")
+        logger.console(f"Всего событий в журнале ОС: {status.record_count:,}")
+        logger.console(f"Событий в telemetry.db:     {status.total_ingested_events:,}")
+        logger.console(f"Последний EventRecordID:    {status.last_record_id:,}")
         cmd_audit_str = "🟢 Включен" if status.command_line_audit_enabled else "⚪ Отключен (ProcessCreationIncludeCmdLine_Enabled)"
-        print(f"Аудит командной строки 4688: {cmd_audit_str}")
-        print("=" * 60)
+        logger.console(f"Аудит командной строки 4688: {cmd_audit_str}")
+        logger.console("=" * 60)
         return 0
 
     elif action == 'tail':
@@ -198,67 +199,67 @@ def cmd_security(args: argparse.Namespace) -> int:
         eid = getattr(args, 'event_id', None)
         search = getattr(args, 'search', '') or ''
         events = collector.get_live_tail(limit=limit, event_id=eid, search=search)
-        print(f"\n[+] Последние {len(events)} событий Security (Live Tail):")
+        logger.console(f"\n[+] Последние {len(events)} событий Security (Live Tail):")
         for ev in reversed(events):
-            print(f"  [{ev.timestamp}] Event {ev.event_id:<4} | {ev.message}")
+            logger.console(f"  [{ev.timestamp}] Event {ev.event_id:<4} | {ev.message}")
         return 0
 
     elif action == 'search':
         eid = int(args.target) if str(args.target).isdigit() else None
         limit = getattr(args, 'limit', 50) or 50
         events = collector.storage.get_security_events(event_id=eid, limit=limit)
-        print(f"\n[+] Найдено {len(events)} событий для Event ID {eid}:")
+        logger.console(f"\n[+] Найдено {len(events)} событий для Event ID {eid}:")
         for ev in events:
-            print(f"  [{ev.get('timestamp')}] ID {ev.get('event_id')} | {ev.get('message')}")
+            logger.console(f"  [{ev.get('timestamp')}] ID {ev.get('event_id')} | {ev.get('message')}")
         return 0
 
     elif action == 'user':
         username = args.target
         limit = getattr(args, 'limit', 50) or 50
         events = collector.storage.get_security_events(user=username, limit=limit)
-        print(f"\n[+] События безопасности для пользователя '{username}' ({len(events)} записей):")
+        logger.console(f"\n[+] События безопасности для пользователя '{username}' ({len(events)} записей):")
         for ev in events:
-            print(f"  [{ev.get('timestamp')}] Event {ev.get('event_id')} | {ev.get('message')}")
+            logger.console(f"  [{ev.get('timestamp')}] Event {ev.get('event_id')} | {ev.get('message')}")
         return 0
 
     elif action == 'process':
         pname = args.target
         limit = getattr(args, 'limit', 50) or 50
         events = collector.storage.get_security_process_creations(process_name=pname, limit=limit)
-        print(f"\n[+] Запуски процесса '{pname}' ({len(events)} записей):")
+        logger.console(f"\n[+] Запуски процесса '{pname}' ({len(events)} записей):")
         for ev in events:
-            print(f"  [{ev.get('timestamp')}] PID: {ev.get('process_id')} | User: {ev.get('subject_user')} | {ev.get('command_line') or ev.get('process_name')}")
+            logger.console(f"  [{ev.get('timestamp')}] PID: {ev.get('process_id')} | User: {ev.get('subject_user')} | {ev.get('command_line') or ev.get('process_name')}")
         return 0
 
     elif action == 'failed-logons':
         hours = getattr(args, 'hours', 24) or 24
         events = collector.storage.get_security_failed_logons(hours=hours)
-        print(f"\n[+] Неудачные попытки входа за последние {hours} ч ({len(events)} записей):")
+        logger.console(f"\n[+] Неудачные попытки входа за последние {hours} ч ({len(events)} записей):")
         for ev in events:
-            print(f"  [{ev.get('timestamp')}] User: {ev.get('target_user')} | IP: {ev.get('source_ip')} | {ev.get('message')}")
+            logger.console(f"  [{ev.get('timestamp')}] User: {ev.get('target_user')} | IP: {ev.get('source_ip')} | {ev.get('message')}")
         return 0
 
     elif action == 'collect':
         batch_size = getattr(args, 'batch', 500) or 500
         max_records = getattr(args, 'max', 5000) or 5000
         save_raw = getattr(args, 'raw', False)
-        print(f"Запуск инкрементального сбора Security... (batch={batch_size}, max={max_records})")
+        logger.console(f"Запуск инкрементального сбора Security... (batch={batch_size}, max={max_records})")
         report = collector.collect_incremental(batch_size=batch_size, max_records=max_records, save_raw=save_raw)
-        print(f"[+] Сбор завершен. Сохранено {report.total_events_ingested} событий. Последний RecordID: {report.last_record_id}")
+        logger.console(f"[+] Сбор завершен. Сохранено {report.total_events_ingested} событий. Последний RecordID: {report.last_record_id}")
         if report.events_by_id:
-            print("    Распределение по типам событий:")
+            logger.console("    Распределение по типам событий:")
             for eid, count in sorted(report.events_by_id.items(), key=lambda x: x[1], reverse=True)[:8]:
-                print(f"      Event {eid:<4}: {count} событий")
+                logger.console(f"      Event {eid:<4}: {count} событий")
         return 0
 
     elif action == 'correlate':
         pid = getattr(args, 'pid', None)
         user = getattr(args, 'user', None)
         corrs = collector.correlate_security_with_telemetry(pid=pid, user=user)
-        print(f"\n[+] Корреляция событий безопасности с телеметрией ({len(corrs)} цепочек):")
+        logger.console(f"\n[+] Корреляция событий безопасности с телеметрией ({len(corrs)} цепочек):")
         for c in corrs[:20]:
             notes_str = "; ".join(c.notes) if c.notes else "нормальная активность"
-            print(f"  * [{c.timestamp}] {c.event_type} | {c.user} -> {c.process_name} (PID {c.pid}) | {notes_str}")
+            logger.console(f"  * [{c.timestamp}] {c.event_type} | {c.user} -> {c.process_name} (PID {c.pid}) | {notes_str}")
         return 0
 
     return 0
@@ -272,64 +273,64 @@ def cmd_logs(args: argparse.Namespace) -> int:
 
     if action == 'domains':
         summary = engine.get_domains_summary()
-        print("\n" + "=" * 65)
-        print("     7 ДОМЕНОВ ТЕЛЕМЕТРИИ WINDOWS EVENT LOGS")
-        print("=" * 65)
-        print(f"Всего провайдеров в каталоге: {summary.get('total_registered_providers')}")
-        print(f"Служба Sysmon:                {'🟢 Активна' if summary.get('sysmon_installed') else '⚪ Не обнаружена'}\n")
+        logger.console("\n" + "=" * 65)
+        logger.console("     7 ДОМЕНОВ ТЕЛЕМЕТРИИ WINDOWS EVENT LOGS")
+        logger.console("=" * 65)
+        logger.console(f"Всего провайдеров в каталоге: {summary.get('total_registered_providers')}")
+        logger.console(f"Служба Sysmon:                {'🟢 Активна' if summary.get('sysmon_installed') else '⚪ Не обнаружена'}\n")
         for dom in summary.get('domains', []):
-            print(f"  * {dom.get('title')} [{dom.get('status')}]")
-            print(f"    Каналов: {dom.get('channels_count')} | Записей: {dom.get('total_records'):,} | ID: {dom.get('key_events')}")
-            print(f"    {dom.get('description')}\n")
+            logger.console(f"  * {dom.get('title')} [{dom.get('status')}]")
+            logger.console(f"    Каналов: {dom.get('channels_count')} | Записей: {dom.get('total_records'):,} | ID: {dom.get('key_events')}")
+            logger.console(f"    {dom.get('description')}\n")
         return 0
 
     elif action == 'catalog':
         catalog = engine.get_full_catalog()
-        print("\n" + "=" * 65)
-        print(f"   КАТАЛОГ ПРОВАЙДЕРОВ WINDOWS EVENT LOG ({len(catalog)} источников)")
-        print("=" * 65)
+        logger.console("\n" + "=" * 65)
+        logger.console(f"   КАТАЛОГ ПРОВАЙДЕРОВ WINDOWS EVENT LOG ({len(catalog)} источников)")
+        logger.console("=" * 65)
         for entry in catalog:
-            print(f"  [{entry.domain.value}] {entry.provider} -> {entry.channel}")
-            print(f"    Объем: {entry.volume_rating:<7} | Записей: {entry.record_count:<8,} | ID: {list(entry.key_events.keys())}")
-            print(f"    {entry.description}\n")
+            logger.console(f"  [{entry.domain.value}] {entry.provider} -> {entry.channel}")
+            logger.console(f"    Объем: {entry.volume_rating:<7} | Записей: {entry.record_count:<8,} | ID: {list(entry.key_events.keys())}")
+            logger.console(f"    {entry.description}\n")
         return 0
 
     elif action == 'provenance':
         proc = getattr(args, 'process', None)
         pid = getattr(args, 'pid', None)
         graph = engine.reconstruct_process_provenance(process_name=proc, pid=pid)
-        print("\n" + "=" * 65)
-        print("   ДЕРЕВО ПРОИСХОЖДЕНИЯ ПРОЦЕССОВ (PROCESS PROVENANCE)")
-        print("=" * 65)
-        print(f"Узлов: {graph.get('total_nodes')}, Связей: {graph.get('total_links')}\n")
+        logger.console("\n" + "=" * 65)
+        logger.console("   ДЕРЕВО ПРОИСХОЖДЕНИЯ ПРОЦЕССОВ (PROCESS PROVENANCE)")
+        logger.console("=" * 65)
+        logger.console(f"Узлов: {graph.get('total_nodes')}, Связей: {graph.get('total_links')}\n")
         for node in graph.get('nodes', []):
-            print(f"  * [{node.get('type')}] {node.get('name')} (PID {node.get('pid')}) | User: {node.get('user')}")
+            logger.console(f"  * [{node.get('type')}] {node.get('name')} (PID {node.get('pid')}) | User: {node.get('user')}")
             if node.get('command_line'):
-                print(f"      CMD: {node.get('command_line')}")
+                logger.console(f"      CMD: {node.get('command_line')}")
         for link in graph.get('links', []):
-            print(f"    -> {link.get('source')} ===[{link.get('relationship')}]===> {link.get('target')}")
+            logger.console(f"    -> {link.get('source')} ===[{link.get('relationship')}]===> {link.get('target')}")
         return 0
 
     elif action == 'lifecycle':
         hours = getattr(args, 'hours', 72) or 72
         timeline = engine.reconstruct_power_lifecycle(hours=hours)
-        print("\n" + "=" * 65)
-        print(f"   ЖИЗНЕННЫЙ ЦИКЛ ПИТАНИЯ ОС ЗА ПОСЛЕДНИЕ {hours} Ч ({len(timeline)} событий)")
-        print("=" * 65)
+        logger.console("\n" + "=" * 65)
+        logger.console(f"   ЖИЗНЕННЫЙ ЦИКЛ ПИТАНИЯ ОС ЗА ПОСЛЕДНИЕ {hours} Ч ({len(timeline)} событий)")
+        logger.console("=" * 65)
         for item in timeline:
-            print(f"  {item.get('icon')} [{item.get('timestamp')}] {item.get('phase'):<18} | Event {item.get('event_id')} ({item.get('provider')}) | {item.get('message')}")
+            logger.console(f"  {item.get('icon')} [{item.get('timestamp')}] {item.get('phase'):<18} | Event {item.get('event_id')} ({item.get('provider')}) | {item.get('message')}")
         return 0
 
     elif action == 'sysmon':
         status = engine.check_sysmon_status()
-        print("\n" + "=" * 65)
-        print("   СТАТУС И ВОЗМОЖНОСТИ SYSMON OBSERVABILITY LAYER")
-        print("=" * 65)
-        print(f"Установлен:   {'🟢 Да' if status.get('installed') else '⚪ Нет'}")
-        print(f"Канал логов:  {status.get('channel_name')}")
-        print(f"Записей:      {status.get('record_count'):,}")
-        print(f"Возможности:  {', '.join(status.get('capabilities', [])) or 'N/A'}")
-        print(f"Рекомендации: {status.get('recommended_config')}")
+        logger.console("\n" + "=" * 65)
+        logger.console("   СТАТУС И ВОЗМОЖНОСТИ SYSMON OBSERVABILITY LAYER")
+        logger.console("=" * 65)
+        logger.console(f"Установлен:   {'🟢 Да' if status.get('installed') else '⚪ Нет'}")
+        logger.console(f"Канал логов:  {status.get('channel_name')}")
+        logger.console(f"Записей:      {status.get('record_count'):,}")
+        logger.console(f"Возможности:  {', '.join(status.get('capabilities', [])) or 'N/A'}")
+        logger.console(f"Рекомендации: {status.get('recommended_config')}")
         return 0
 
     return 0

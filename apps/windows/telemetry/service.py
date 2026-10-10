@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Telemetry - Service
+# Process Name: AI-Windows-Admin Apps Windows Telemetry - Service
 # =============================================================================
 # Description:
 #   Фоновый сервис посекундного сбора системных метрик с сохранением в SQLite.
@@ -12,11 +12,11 @@
 #     instance = TelemetryLoggerService.get_instance()
 #
 # File: service.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.telemetry
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 05:40:00
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 from __future__ import annotations

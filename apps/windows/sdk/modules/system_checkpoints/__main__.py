@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Breadboard Apps Windows Modules System_Checkpoints -   Main  
+# Process Name: AI-Windows-Admin Apps Windows Modules System_Checkpoints -   Main  
 # =============================================================================
 # Description:
 #   Точка входа для запуска Windows System Checkpoints & Recovery Manager.
@@ -12,11 +12,11 @@
 #     import apps.windows.sdk.modules.system_checkpoints.__main__ as __main__
 #
 # File: __main__.py
-# Project: ai-breadboard
+# Project: ai-windows-admin
 # Package: apps.windows.sdk.modules.system_checkpoints
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-01 13:28:28
+# Updated: 2026-10-10 17:35:00
 # =============================================================================
 
 """Точка входа для запуска Windows System Checkpoints & Recovery Manager."""

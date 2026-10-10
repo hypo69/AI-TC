@@ -13,11 +13,11 @@
  *     import { STORES, BrowserCacheManager, browserCache } from '/windows/api/webgui/js/browser-cache.js';
  *
  * File: browser-cache.js
- * Project: ai-breadboard
+ * Project: ai-windows-admin
  * Package: windows/api/webgui/js
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-01 13:04:40
+ * Updated: 2026-10-10 17:35:00
  * =============================================================================
  */
 
@@ -40,7 +40,7 @@
  * на наличие предупреждений о недоступности IndexedDB.
  */
 
-const DB_NAME = 'AI_Breadboard_DB';
+const DB_NAME = 'AI_Windows_Admin_DB';
 const DB_VERSION = 1;
 
 // Стандартные хранилища объектов IndexedDB

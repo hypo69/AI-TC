@@ -1,3 +1,4 @@
+from logger import logger
 import os
 import zipfile
 import argparse
@@ -10,7 +11,7 @@ def package_skill(skill_dir, output_dir):
         output_path.mkdir(parents=True)
     skill_name = skill_path.name
     skill_file = output_path / f'{skill_name}.skill'
-    print(f'Упаковка навыка из {skill_path} в {skill_file}...')
+    logger.console(f'Упаковка навыка из {skill_path} в {skill_file}...')
     with zipfile.ZipFile(skill_file, 'w', zipfile.ZIP_DEFLATED) as zipf:
         for root, dirs, files in os.walk(skill_path):
             dirs[:] = [d for d in dirs if d not in ['dist', '.git', '__pycache__']]
@@ -18,7 +19,7 @@ def package_skill(skill_dir, output_dir):
                 file_path = Path(root) / file
                 arcname = file_path.relative_to(skill_path)
                 zipf.write(file_path, arcname)
-    print(f'Навык successfully упакован: {skill_file}')
+    logger.console(f'Навык successfully упакован: {skill_file}')
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Упаковщик навыков Gemini CLI')
     parser.add_argument('skill_dir', help='Путь к директории навыка')
