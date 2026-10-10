@@ -1,0 +1,109 @@
+# -*- coding: utf-8 -*-
+# =============================================================================
+# Process Name: AI-Breadboard Apps Windows Log_Intelligence Tests - Test Intelligence Pipeline
+# =============================================================================
+# Description:
+#   Проверка работы Data Researcher: подсчет Redundancy Ratio, Health Score и детекция всплесков.
+#
+# Usage Examples:
+#   Python API:
+#     from apps.windows.log_intelligence.tests.test_intelligence_pipeline import test_data_researcher_profiling
+#
+#     res = test_data_researcher_profiling()
+#
+# File: test_intelligence_pipeline.py
+# Project: ai-breadboard
+# Package: apps.windows.log_intelligence.tests
+# Author: hypo69
+# Copyright: © 2026 hypo69
+# Updated: 2026-10-08 05:04:00
+# =============================================================================
+
+"""Проверка работы Data Researcher: подсчет Redundancy Ratio, Health Score и детекция всплесков."""
+
+from pathlib import Path
+import pytest
+from apps.windows.log_intelligence.src.models import DataProfileReport, IngestionDecision, IngestionStrategy, LogEntry, LogSeverity
+from apps.windows.log_intelligence.src.data_researcher import LogDataResearcher
+from apps.windows.log_intelligence.src.decision_gate import DecisionGate
+from apps.windows.log_intelligence.src.adaptive_rag import AdaptiveLogRAG, get_default_storage_dir
+from apps.windows.log_intelligence.src.pipeline import LogIntelligencePipeline
+
+def test_data_researcher_profiling() -> None:
+    """Проверка работы Data Researcher: подсчет Redundancy Ratio, Health Score и детекция всплесков."""
+    researcher = LogDataResearcher()
+    entries = [LogEntry(timestamp='2026-09-16 15:00:01', level='Information', provider='Service', event_id=7036, message='Service started'), LogEntry(timestamp='2026-09-16 15:00:02', level='Information', provider='Service', event_id=7036, message='Service started'), LogEntry(timestamp='2026-09-16 15:00:03', level='Information', provider='Service', event_id=7036, message='Service started'), LogEntry(timestamp='2026-09-16 15:05:00', level='Error', provider='Kernel-Power', event_id=41, message='Reboot without shutdown'), LogEntry(timestamp='2026-09-16 15:05:01', level='Warning', provider='rt640x64', event_id=1, message='Network disconnected')]
+    profile = researcher.profile_data(entries, channel='System')
+    assert profile.total_events == 5
+    assert profile.unique_templates_count < 5
+    assert profile.redundancy_ratio_pct > 0.0
+    assert profile.error_count == 1
+    assert profile.warning_count == 1
+    assert profile.health_score < 100.0
+
+def test_decision_gate_strategies() -> None:
+    """Проверка выбора стратегий в Decision Gate."""
+    gate = DecisionGate()
+    err_profile = DataProfileReport(channel='System', total_events=100, unique_templates_count=20, redundancy_ratio_pct=80.0, health_score=65.0, error_count=2)
+    dec1 = gate.evaluate(err_profile)
+    assert dec1.strategy == IngestionStrategy.INCIDENT_FOCUSED
+    healthy_profile = DataProfileReport(channel='System', total_events=100, unique_templates_count=15, redundancy_ratio_pct=85.0, health_score=100.0, error_count=0, warning_count=0)
+    dec2 = gate.evaluate(healthy_profile)
+    assert dec2.strategy == IngestionStrategy.SNAPSHOT_ONLY
+    noisy_profile = DataProfileReport(channel='System', total_events=500, unique_templates_count=5, redundancy_ratio_pct=99.0, health_score=98.0, dominant_noise_provider='Kernel-PnP')
+    dec3 = gate.evaluate(noisy_profile)
+    assert dec3.strategy == IngestionStrategy.NOISE_MASKED
+
+def test_adaptive_rag_pipeline(tmp_path: Path) -> None:
+    """Проверка полного цикла LogIntelligencePipeline с сохранением и поиском."""
+    pipeline = LogIntelligencePipeline(storage_dir=tmp_path / 'rag_storage')
+    entries = [LogEntry(timestamp='2026-09-16 16:30:00', level='Warning', provider='rt640x64', event_id=1, message='Realtek network adapter disconnected'), LogEntry(timestamp='2026-09-16 16:30:05', level='Error', provider='BITS', event_id=16393, message='BITS gateway communication failure 0x80040500')]
+    res = pipeline.process_events(entries, channel='System')
+    assert res['profile']['total_events'] == 2
+    assert res['decision']['chunks_generated'] > 0
+    search_res = pipeline.search_rag('почему отключился сетевой адаптер?')
+    assert len(search_res) > 0
+    assert 'Realtek' in search_res[0]['text'] or 'network' in search_res[0]['text'].lower() or 'сбо' in search_res[0]['text'].lower()
+
+def test_adaptive_rag_wikillm_storage(tmp_path: Path) -> None:
+    """Проверка сохранения сущностей телеметрии в SQLite FTS5 хранилище WikiStorage."""
+    rag = AdaptiveLogRAG(storage_dir=tmp_path / 'rag_wiki')
+    gate = DecisionGate()
+    researcher = LogDataResearcher()
+    entries = [
+        LogEntry(timestamp='2026-09-16 17:00:00', level='Error', provider='DistributedCOM', event_id=10016, message='The application-specific permission settings do not grant Local Activation permission for the COM Server application'),
+        LogEntry(timestamp='2026-09-16 17:00:05', level='Critical', provider='Kernel-Power', event_id=41, message='The system has rebooted without cleanly shutting down first'),
+    ]
+    profile = researcher.profile_data(entries, channel='System')
+    decision = gate.evaluate(profile)
+    chunks_count = rag.ingest(profile, decision)
+    assert chunks_count > 0
+
+    # Проверка поиска через SQLite FTS5 в WikiStorage
+    fts_results = rag.wiki_storage.search_fts('DistributedCOM')
+    assert len(fts_results) > 0
+    canonical_keys = [e.canonical_key for e in fts_results]
+    assert any('DistributedCOM' in k for k in canonical_keys)
+
+    # Проверка общего поиска
+    search_results = rag.search('DistributedCOM permission')
+    assert len(search_results) > 0
+
+def test_wevtapi_channel_enumeration() -> None:
+    """Проверка нативного перечисления каналов через WevtAPI."""
+    from apps.windows.telemetry.win32_ffi.wevtapi import WevtAPI
+    api = WevtAPI()
+    channels = api.enumerate_channels()
+    assert len(channels) >= 10
+    names = [c.channel_name.lower() for c in channels]
+    assert 'system' in names
+    assert 'application' in names
+
+def test_log_discovery_engine_sources() -> None:
+    """Проверка обнаружения всех источников логов в системе через LogDiscoveryEngine."""
+    from apps.windows.sdk.core.audits.log_discovery_engine import LogDiscoveryEngine
+    engine = LogDiscoveryEngine()
+    sources = engine.discover_all_sources()
+    assert len(sources) > 50
+    categories = {s.category for s in sources}
+    assert 'Windows Event Log' in categories

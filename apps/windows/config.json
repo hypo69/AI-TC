@@ -1,0 +1,96 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "app": {
+        "name": "AI Breadboard Windows (TC)",
+        "description": "Конфигурационный профиль подсистемы Windows System API и хаба приложений TC (tc.ps1)"
+    },
+    "server": {
+        "host": "127.0.0.1",
+        "port": 8001,
+        "protocol": "http",
+        "title": "AI-Breadboard Windows Internal API",
+        "description": "Сервис TC/Windows: телеметрия, дашборды, диагностика.",
+        "workers": 1,
+        "reload": false,
+        "use_ssl": false,
+        "mode": "DEV",
+        "debug": true
+    },
+    "ai_providers_and_models_configuration": {
+        "enable_narrator": false,
+        "preload_silero": false,
+        "realtime_streaming": true,
+        "default_provider": "gemini",
+        "default_model": "gemini-3.1-flash-lite",
+        "providers": {
+            "gemini": {
+                "enabled": true,
+                "api_key_names": "*",
+                "default_model": "gemini-3.1-flash-lite",
+                "unsupported_models": [
+                    "gemini-1.0-pro",
+                    "gemini-1.0-ultra",
+                    "gemini-1.5-flash",
+                    "gemini-1.5-pro",
+                    "gemini-2.0-flash",
+                    "gemini-2.5-flash",
+                    "gemini-2.5-flash-preview-tts",
+                    "gemini-3.1-flash",
+                    "gemini-old"
+                ],
+                "model": "gemini-3.1-flash-lite"
+            },
+            "gemini_cli": {
+                "enabled": true,
+                "default_model": "gemini-3.1-flash-lite",
+                "unsupported_models": []
+            },
+            "agy": {
+                "enabled": true,
+                "default_model": "agy-gemini-3.6-flash",
+                "effort": "medium",
+                "unsupported_models": [
+                    "gemini-2.0-flash"
+                ]
+            },
+            "foundry": {
+                "enabled": false,
+                "base_url": "http://localhost:49618",
+                "default_model": "qwen2.5-1.5b",
+                "unsupported_models": [
+                    "antigravity-preview-05-2026",
+                    "test-foundry-model-1"
+                ]
+            },
+            "ollama": {
+                "enabled": false,
+                "base_url": "http://localhost:11434",
+                "default_model": "llama3.1",
+                "unsupported_models": [
+                    "llama3.1"
+                ]
+            },
+            "hf": {
+                "enabled": false,
+                "default_model": "",
+                "unsupported_models": []
+            },
+            "onnx": {
+                "enabled": false,
+                "default_model": "",
+                "unsupported_models": []
+            },
+            "openai": {
+                "enabled": false,
+                "model": "",
+                "unsupported_models": []
+            }
+        }
+    },
+    "ai": {
+        "provider": "gemini",
+        "gemini": {
+            "model": "gemini-3.1-flash-lite"
+        }
+    }
+}

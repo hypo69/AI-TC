@@ -1,0 +1,1419 @@
+# -*- coding: utf-8 -*-
+# =============================================================================
+# Process Name: AI-Breadboard Apps Windows Telemetry - Models
+# =============================================================================
+# Description:
+#   Data models for system metrics, hardware specs, sensors, and telemetry.
+#
+# Usage Examples:
+#   Python API:
+#     from apps.windows.telemetry.models import TelemetryProvider
+#
+#     service = TelemetryProvider()
+#
+# File: models.py
+# Project: ai-breadboard
+# Package: apps.windows.telemetry
+# Author: hypo69
+# Copyright: © 2026 hypo69
+# Updated: 2026-10-08 12:38:00
+# =============================================================================
+
+from __future__ import annotations
+"""Data models for system metrics, hardware specs, sensors, and telemetry."""
+
+from abc import ABC, abstractmethod
+from datetime import datetime, timezone
+from enum import Enum
+from typing import Any, Dict, List, Optional, Union
+from pydantic import BaseModel, ConfigDict, Field
+from apps.windows.sdk.modules.startup.core.models import StartupArchiveEntry, StartupChangeItem
+
+
+
+class CpuInventoryInfo(BaseModel):
+    """Паспорт физического процессора (CPU Inventory)."""
+    processor_id: int = 0
+    name: str = ''
+    vendor: str = ''
+    architecture: str = 'x86_64'
+    physical_cores: int = 1
+    logical_cores: int = 1
+    base_frequency_mhz: float = 0.0
+    max_frequency_mhz: float = 0.0
+    l2_cache_kb: Optional[int] = None
+    l3_cache_kb: Optional[int] = None
+    socket: str = ''
+    features: List[str] = Field(default_factory=list)
+
+
+class CpuTelemetrySample(BaseModel):
+    """Срез телеметрии нагрузки и температур процессора."""
+    timestamp: str = ''
+    created_at: float = 0.0
+    processor_id: int = 0
+    total_percent: float = 0.0
+    user_percent: float = 0.0
+    kernel_percent: float = 0.0
+    frequency_mhz: float = 0.0
+    temperature_c: Optional[float] = None
+    package_power_w: Optional[float] = None
+    core_utilization: List[float] = Field(default_factory=list)
+    core_temperatures: List[float] = Field(default_factory=list)
+
+
+class RamModuleInventoryInfo(BaseModel):
+    """Паспорт физического модуля (планки) оперативной памяти (SPD)."""
+    slot_id: int = 0
+    bank_label: str = 'DIMM'
+    device_locator: str = ''
+    serial_number: str = ''
+    part_number: str = ''
+    manufacturer: str = ''
+    capacity_bytes: int = 0
+    capacity_gb: float = 0.0
+    speed_mhz: int = 0
+    memory_type: str = 'DDR4'
+    form_factor: str = 'DIMM'
+    configured_voltage: Optional[float] = None
+
+
+class RamTelemetrySample(BaseModel):
+    """Срез телеметрии использования физической и виртуальной памяти."""
+    timestamp: str = ''
+    created_at: float = 0.0
+    total_bytes: int = 0
+    total_gb: float = 0.0
+    used_bytes: int = 0
+    used_gb: float = 0.0
+    available_bytes: int = 0
+    available_gb: float = 0.0
+    percent_used: float = 0.0
+    swap_total_gb: float = 0.0
+    swap_used_gb: float = 0.0
+    swap_percent: float = 0.0
+    pool_paged_mb: Optional[float] = None
+    pool_nonpaged_mb: Optional[float] = None
+
+
+class GpuInventoryInfo(BaseModel):
+    """Паспорт графического ускорителя (GPU Inventory)."""
+    gpu_id: int = 0
+    pci_device_id: str = ''
+    name: str = ''
+    vendor: str = ''
+    driver_version: str = ''
+    driver_date: str = ''
+    vram_bytes: int = 0
+    vram_gb: float = 0.0
+    pci_bus_id: str = ''
+    bios_version: str = ''
+    cuda_cores: Optional[int] = None
+    cuda_supported: bool = False
+    rocm_supported: bool = False
+    oneapi_supported: bool = False
+    directml_supported: bool = True
+    vulkan_supported: bool = True
+    opencl_supported: bool = True
+    compute_apis: List[str] = Field(default_factory=list, description='Поддерживаемые вычислительные API')
+
+
+class GpuTelemetrySample(BaseModel):
+    """Срез телеметрии нагрузки, памяти и температур GPU."""
+    timestamp: str = ''
+    created_at: float = 0.0
+    gpu_id: int = 0
+    name: str = ''
+    load_percent: Optional[float] = None
+    memory_used_mb: Optional[float] = None
+    memory_total_mb: Optional[float] = None
+    memory_percent: Optional[float] = None
+    temperature_gpu_c: Optional[float] = None
+    temperature_memory_c: Optional[float] = None
+    fan_speed_pct: Optional[float] = None
+    power_draw_w: Optional[float] = None
+    clock_graphics_mhz: Optional[float] = None
+    clock_memory_mhz: Optional[float] = None
+
+
+class NetworkAdapterInventoryInfo(BaseModel):
+    """Паспорт сетевого адаптера / интерфейса (Network Adapter Inventory)."""
+    adapter_id: int = 0
+    adapter_guid: str = ''
+    name: str = ''
+    interface_name: str = ''
+    mac_address: str = ''
+    adapter_type: str = 'Ethernet'
+    is_physical: bool = True
+    is_wireless: bool = False
+    max_speed_mbps: int = 0
+    driver_name: str = ''
+    driver_version: str = ''
+
+
+class NetworkAdapterSample(BaseModel):
+    """Срез показателей сетевой активности и ошибок адаптера."""
+    timestamp: str = ''
+    created_at: float = 0.0
+    adapter_name: str = ''
+    bytes_recv_sec: float = 0.0
+    bytes_sent_sec: float = 0.0
+    packets_recv_sec: float = 0.0
+    packets_sent_sec: float = 0.0
+    errors_in_sec: float = 0.0
+    errors_out_sec: float = 0.0
+    link_speed_mbps: int = 0
+    is_connected: bool = True
+
+class TelemetryProvider(ABC):
+    """Абстрактный базовый класс для всех компонентов системы, предоставляющих телеметрию."""
+
+    @abstractmethod
+    def get_sensors(self) -> List[HardwareSensor]:
+        """Возвращает список сенсоров, предоставляемых данным компонентом."""
+        pass
+
+class CpuMetrics(BaseModel):
+    """CPU usage and architecture metrics."""
+    model: str = Field(default='', description='CPU model name')
+    architecture: str = Field(default='x86_64', description='CPU architecture')
+    physical_cores: int = Field(default=1, description='Physical core count')
+    logical_cores: int = Field(default=1, description='Logical core count (threads)')
+    total_percent: float = Field(default=0.0, description='Overall CPU usage percentage')
+    per_core_percent: List[float] = Field(default_factory=list, description='Usage percentage per logical core')
+    frequency_mhz: float = Field(default=0.0, description='Current CPU frequency in MHz')
+    temperature_celsius: Optional[float] = Field(default=None, description='Package temperature in Celsius')
+
+class MemoryMetrics(BaseModel):
+    """RAM and Swap memory metrics."""
+    total_gb: float = Field(default=0.0, description='Total physical RAM in GB')
+    available_gb: float = Field(default=0.0, description='Available RAM in GB')
+    used_gb: float = Field(default=0.0, description='Used RAM in GB')
+    percent: float = Field(default=0.0, description='Memory utilization percentage')
+    swap_total_gb: float = Field(default=0.0, description='Total swap space in GB')
+    swap_used_gb: float = Field(default=0.0, description='Used swap space in GB')
+    swap_percent: float = Field(default=0.0, description='Swap utilization percentage')
+
+class GpuMetrics(BaseModel):
+    """GPU accelerator telemetry and compute backends."""
+    name: str = Field(default='Unknown GPU', description='GPU device model name')
+    vendor: str = Field(default='', description='GPU vendor name (NVIDIA, AMD, Intel, etc.)')
+    gpu_type: str = Field(default='Discrete', description='Тип GPU (Discrete / Integrated)')
+    load_percent: Optional[float] = Field(default=None, description='GPU core load percentage')
+    memory_total_gb: float = Field(default=0.0, description='Total VRAM in GB')
+    memory_used_gb: float = Field(default=0.0, description='Used VRAM in GB')
+    memory_free_gb: float = Field(default=0.0, description='Free VRAM in GB')
+    dedicated_memory_mb: Optional[float] = Field(default=None, description='Выделенная память VRAM (МБ)')
+    shared_memory_mb: Optional[float] = Field(default=None, description='Общая системная память GPU (МБ)')
+    memory_type: str = Field(default='Dedicated VRAM', description='Тип видеопамяти (Dedicated VRAM / Shared System Memory)')
+    directx_version: str = Field(default='DirectX 12 (FL 12_1)', description='Версия DirectX')
+    temperature_celsius: Optional[float] = Field(default=None, description='GPU core temperature in Celsius')
+    has_cuda: bool = Field(default=False, description='CUDA support availability')
+    has_rocm: bool = Field(default=False, description='AMD ROCm / HIP support availability')
+    has_oneapi: bool = Field(default=False, description='Intel oneAPI support availability')
+    has_directml: bool = Field(default=True, description='DirectML accelerator availability')
+    has_vulkan: bool = Field(default=True, description='Vulkan API availability')
+    has_opencl: bool = Field(default=True, description='OpenCL API availability')
+    compute_apis: List[str] = Field(default_factory=list, description='Supported compute APIs (CUDA, ROCm, DirectML, Vulkan, OpenCL, oneAPI)')
+    ai_backends: List[str] = Field(default_factory=list, description='Supported AI inference backends')
+    engines: Dict[str, float] = Field(default_factory=dict, description='Подсистемы и движки GPU (3D, Decode, Copy, etc.)')
+
+
+class NpuMetrics(BaseModel):
+    """NPU neural accelerator telemetry and AI capabilities."""
+    name: str = Field(default='NPU Accelerator', description='NPU device model name')
+    vendor: str = Field(default='Intel', description='NPU vendor name (Intel, Qualcomm, AMD, etc.)')
+    driver_version: str = Field(default='', description='Driver version')
+    pnp_device_id: str = Field(default='', description='PnP device identifier')
+    status: str = Field(default='OK (Активно)', description='Device status')
+    tops: Optional[float] = Field(default=None, description='AI compute performance in TOPS')
+    has_directml: bool = Field(default=True, description='DirectML NPU support')
+    has_qnn: bool = Field(default=False, description='Qualcomm QNN support')
+    has_openvino: bool = Field(default=False, description='Intel OpenVINO support')
+    ai_backends: List[str] = Field(default_factory=list, description='Supported AI backends')
+
+class DiskPartitionMetrics(BaseModel):
+    """Storage partition metrics."""
+    device: str = Field(default='', description='Partition mount device or drive letter')
+    mountpoint: str = Field(default='', description='Mount point path')
+    fstype: str = Field(default='', description='Filesystem type')
+    total_gb: float = Field(default=0.0, description='Total capacity in GB')
+    used_gb: float = Field(default=0.0, description='Used space in GB')
+    free_gb: float = Field(default=0.0, description='Free space in GB')
+    percent: float = Field(default=0.0, description='Utilization percentage')
+    volume_name: Optional[str] = Field(default=None, description='Метка тома или описание аккаунта')
+    is_virtual: bool = Field(default=False, description='Признак виртуального/облачного тома (Google Drive, OneDrive и др.)')
+    drive_type: str = Field(default='Fixed', description='Тип диска (Fixed, Google Drive, Cloud / Virtual, Removable)')
+
+class DiskIoMetrics(BaseModel):
+    """Disk read and write I/O rates."""
+    read_bytes_per_sec: float = Field(default=0.0, description='Read throughput in bytes/s')
+    write_bytes_per_sec: float = Field(default=0.0, description='Write throughput in bytes/s')
+    read_count_per_sec: float = Field(default=0.0, description='Read operations per second')
+    write_count_per_sec: float = Field(default=0.0, description='Write operations per second')
+
+class NetworkAdapterStatistics(BaseModel):
+    """Накопительная статистика сетевого адаптера (Get-NetAdapterStatistics / MIB_IF_ROW2)."""
+    name: str = Field(default='', description='Имя адаптера/интерфейса')
+    received_bytes: int = Field(default=0, description='Всего получено байт')
+    sent_bytes: int = Field(default=0, description='Всего отправлено байт')
+    received_packets: int = Field(default=0, description='Всего получено пакетов')
+    sent_packets: int = Field(default=0, description='Всего отправлено пакетов')
+    received_discarded: int = Field(default=0, description='Отброшено входящих пакетов')
+    received_errors: int = Field(default=0, description='Ошибок входящих пакетов')
+    outbound_discarded: int = Field(default=0, description='Отброшено исходящих пакетов')
+    outbound_errors: int = Field(default=0, description='Ошибок исходящих пакетов')
+
+class NetworkPerformanceCounter(BaseModel):
+    """Счётчики производительности интерфейса (Windows Performance Counters)."""
+    interface_name: str = Field(default='', description='Имя сетевого интерфейса в Performance Counters')
+    bytes_recv_per_sec: float = Field(default=0.0, description='Скорость получения (байты/сек)')
+    bytes_sent_per_sec: float = Field(default=0.0, description='Скорость отправки (байты/сек)')
+    bytes_total_per_sec: float = Field(default=0.0, description='Суммарная скорость (байты/сек)')
+
+class AppNetworkUsageItem(BaseModel):
+    """Потребление сетевого трафика конкретным приложением/процессом."""
+    process_name: str = Field(default='', description='Имя исполняемого файла процесса (например, chrome.exe)')
+    pid: Optional[int] = Field(default=None, description='Идентификатор процесса (если активен)')
+    rx_bytes: int = Field(default=0, description='Получено байт за период')
+    tx_bytes: int = Field(default=0, description='Отправлено байт за период')
+    total_bytes: int = Field(default=0, description='Всего переданного трафика в байтах')
+    rx_formatted: str = Field(default='0 B', description='Отформатированный объем полученных данных (MB/GB)')
+    tx_formatted: str = Field(default='0 B', description='Отформатированный объем отправленных данных (MB/GB)')
+    share_percent: float = Field(default=0.0, description='Доля трафика от общего объема системы (%)')
+
+class NetworkUsagePeriodReport(BaseModel):
+    """Агрегированный отчет об использовании сети за выбранный интервал времени (10 мин, 1 час, 24 часа)."""
+    period_minutes: int = Field(default=1440, description='Длительность периода в минутах (например, 1440 = 24 часа)')
+    total_rx_bytes: int = Field(default=0, description='Суммарно получено байт за период')
+    total_tx_bytes: int = Field(default=0, description='Суммарно отправлено байт за период')
+    total_rx_formatted: str = Field(default='0 B', description='Человекочитаемый объем входящего трафика')
+    total_tx_formatted: str = Field(default='0 B', description='Человекочитаемый объем исходящего трафика')
+    total_formatted: str = Field(default='0 B', description='Суммарный объем трафика (RX + TX)')
+    adapter_stats: List[NetworkAdapterStatistics] = Field(default_factory=list, description='Статистика по адаптерам')
+    performance_counters: List[NetworkPerformanceCounter] = Field(default_factory=list, description='Текущие Performance Counters')
+    top_apps: List[AppNetworkUsageItem] = Field(default_factory=list, description='Детализация по приложениям за период')
+    summary_text: str = Field(default='', description='Сводный текстовый отчёт для LLM/ai-diagnostics')
+
+class NetworkInterfaceMetrics(BaseModel):
+    """Network adapter telemetry."""
+    name: str = Field(default='', description='Adapter interface name')
+    is_up: bool = Field(default=True, description='Interface link status')
+    speed_mbps: int = Field(default=0, description='Link speed in Mbps')
+    bytes_sent_per_sec: float = Field(default=0.0, description='Upload rate in bytes/s')
+    bytes_recv_per_sec: float = Field(default=0.0, description='Download rate in bytes/s')
+    ip_addresses: List[str] = Field(default_factory=list, description='Assigned IP addresses')
+    statistics: Optional[NetworkAdapterStatistics] = Field(default=None, description='Накопительная статистика адаптера')
+
+class ProcessMetrics(BaseModel):
+    """Метрики процесса с данными об идентичности и происхождении (Process Identity & Provenance)."""
+    pid: int = Field(..., description='Process identifier')
+    name: str = Field(..., description='Process binary name')
+    status: str = Field(default='running', description='Process execution status')
+    cpu_percent: float = Field(default=0.0, description='CPU usage percentage')
+    memory_mb: float = Field(default=0.0, description='Resident memory in Megabytes')
+    memory_percent: float = Field(default=0.0, description='Memory usage percentage')
+    num_threads: int = Field(default=1, description='Number of active threads')
+    num_handles: int = Field(default=0, description='Количество дескрипторов (handles/fds)')
+    username: Optional[str] = Field(default=None, description='Owner username')
+    cmdline: Optional[str] = Field(default=None, description='Command line invocation')
+    read_bytes_sec: float = Field(default=0.0, description='Disk read rate in bytes/sec')
+    write_bytes_sec: float = Field(default=0.0, description='Disk write rate in bytes/sec')
+    # Детализированные счетчики ресурсов (Per-PID Telemetry Engine)
+    user_time_ms: int = Field(default=0, description='User mode CPU time in milliseconds')
+    kernel_time_ms: int = Field(default=0, description='Kernel mode CPU time in milliseconds')
+    working_set_bytes: int = Field(default=0, description='Working set memory in bytes')
+    private_bytes: int = Field(default=0, description='Private memory in bytes')
+    page_faults_count: int = Field(default=0, description='Number of page faults')
+    gpu_vram_bytes: int = Field(default=0, description='GPU VRAM consumption in bytes')
+    gpu_utilization: float = Field(default=0.0, description='GPU engine load percentage')
+    read_bytes_total: int = Field(default=0, description='Cumulative bytes read')
+    write_bytes_total: int = Field(default=0, description='Cumulative bytes written')
+    read_ops_total: int = Field(default=0, description='Cumulative read operations count')
+    write_ops_total: int = Field(default=0, description='Cumulative write operations count')
+    net_bytes_sent_total: int = Field(default=0, description='Cumulative network bytes sent')
+    net_bytes_recv_total: int = Field(default=0, description='Cumulative network bytes received')
+    gdi_objects: int = Field(default=0, description='GDI objects count')
+    user_objects: int = Field(default=0, description='USER objects count')
+    # Поля безопасности и токена
+    integrity_level: Optional[str] = Field(default=None, description='Уровень целостности процесса (Low, Medium, High, System)')
+    elevation: Optional[bool] = Field(default=None, description='Статус повышения привилегий UAC')
+    sid: Optional[str] = Field(default=None, description='Идентификатор безопасности пользователя (User SID)')
+    session_id: Optional[int] = Field(default=None, description='Идентификатор сессии Windows (0=Службы, 1=Интерактивная)')
+    # Поля происхождения и родословной (Process Provenance)
+    ppid: Optional[int] = Field(default=None, description='Идентификатор родительского процесса (Parent PID)')
+    parent_name: Optional[str] = Field(default=None, description='Имя родительского процесса')
+    executable_path: Optional[str] = Field(default=None, description='Полный путь к исполняемому файлу процесса')
+    creation_time: Optional[str] = Field(default=None, description='Время создания процесса (ISO 8601 UTC)')
+    process_guid: Optional[str] = Field(default=None, description='Уникальный GUID экземпляра процесса (PID + CreationTime)')
+    ancestor_chain: Optional[str] = Field(default=None, description='Цепочка предков запуска (напр. explorer -> pwsh -> python)')
+    launch_reason: Optional[str] = Field(default=None, description='Определенный вектор/причина запуска (Служба, Задача, Терминал, Проводник)')
+    # Классификация процессов (Apps, Background processes, Windows processes)
+    category: str = Field(default='background', description='Категория процесса: app, background, windows')
+    is_app: bool = Field(default=False, description='Флаг интерактивного оконного приложения')
+    friendly_name: Optional[str] = Field(default=None, description='Дружелюбное имя приложения (например Google Chrome)')
+    window_title: Optional[str] = Field(default=None, description='Заголовок активного окна процесса')
+    instance_count: int = Field(default=1, description='Количество связанных экземпляров процесса')
+
+
+class ProcessTokenInfo(BaseModel):
+    """Информация о токене процесса для сбора security‑данных."""
+    pid: int = Field(..., description='Идентификатор процесса')
+    name: str = Field(..., description='Имя процесса')
+    elevation: Optional[bool] = Field(default=None, description='Признак повышения привилегий (UAC)')
+    integrity_level: Optional[str] = Field(default=None, description='Уровень целостности процесса')
+    privileges: List[str] = Field(default_factory=list, description='Список привилегий токена')
+    sid: Optional[str] = Field(default=None, description='Идентификатор безопасности (SID)')
+    session_id: Optional[int] = Field(default=None, description='Идентификатор сессии Windows')
+
+
+class ProcessProvenanceInfo(BaseModel):
+    """Детальный паспорт идентичности, происхождения и цепочки вызовов процесса (Process Provenance)."""
+    pid: int = Field(..., description='Идентификатор процесса (PID)')
+    ppid: Optional[int] = Field(default=None, description='Идентификатор родительского процесса (PPID)')
+    name: str = Field(..., description='Имя процесса (например, python.exe)')
+    executable_path: Optional[str] = Field(default=None, description='Полный путь к бинарному исполняемому файлу')
+    command_line: Optional[str] = Field(default=None, description='Полная командная строка запуска с аргументами')
+    user: Optional[str] = Field(default=None, description='Имя учетной записи (DOMAIN\\User)')
+    sid: Optional[str] = Field(default=None, description='Идентификатор безопасности пользователя (SID)')
+    session_id: Optional[int] = Field(default=None, description='Идентификатор сессии Windows (Session 0=Службы, Session 1+=Пользователь)')
+    integrity_level: Optional[str] = Field(default=None, description='Уровень целостности токена (Untrusted, Low, Medium, High, System)')
+    elevation: Optional[bool] = Field(default=None, description='Признак повышенных привилегий администратора (Elevated)')
+    creation_time: Optional[str] = Field(default=None, description='Время создания процесса в формате ISO 8601 UTC')
+    parent_start_time: Optional[str] = Field(default=None, description='Время создания родительского процесса')
+    process_guid: str = Field(default='', description='Уникальный GUID экземпляра процесса (исключает коллизии PID reuse)')
+    parent_guid: Optional[str] = Field(default=None, description='GUID родительского экземпляра процесса')
+    parent_name: Optional[str] = Field(default=None, description='Имя родительского процесса (например, WindowsTerminal.exe)')
+    parent_cmdline: Optional[str] = Field(default=None, description='Командная строка родителя')
+    ancestor_chain: List[str] = Field(default_factory=list, description='Список узлов в цепочке предков (от корня к процессу)')
+    ancestor_chain_str: str = Field(default='', description='Строковое представление цепочки предков (explorer → pwsh → python)')
+    who_runs_it: str = Field(default='', description='Кем исполняется (User / SID / Token / Session)')
+    who_created_it: str = Field(default='', description='Кто создал (Родительский процесс / Дерево предков)')
+    why_was_it_created: str = Field(default='', description='Причина/вектор создания (Служба, Задача, Интерактивно, IDE, CLI, Автозапуск)')
+
+
+class ProcessLifecycleEvent(BaseModel):
+    """Событие жизненного цикла процесса (создание, завершение, форензика)."""
+    event_id: str = Field(default='', description='Уникальный идентификатор события')
+    timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat(), description='Время события UTC')
+    event_type: str = Field(..., description='Тип события: ProcessCreated, ProcessTerminated, Snapshot')
+    pid: int = Field(..., description='Идентификатор процесса')
+    ppid: Optional[int] = Field(default=None, description='Идентификатор родительского процесса')
+    process_guid: str = Field(default='', description='Уникальный GUID процесса')
+    parent_guid: Optional[str] = Field(default=None, description='GUID родительского процесса')
+    name: str = Field(..., description='Имя процесса')
+    executable_path: Optional[str] = Field(default=None, description='Путь к исполняемому файлу')
+    command_line: Optional[str] = Field(default=None, description='Аргументы командной строки')
+    user: Optional[str] = Field(default=None, description='Учетная запись пользователя')
+    sid: Optional[str] = Field(default=None, description='Идентификатор безопасности (SID)')
+    session_id: Optional[int] = Field(default=None, description='Идентификатор сессии')
+    integrity_level: Optional[str] = Field(default=None, description='Уровень целостности токена')
+    elevation: Optional[bool] = Field(default=None, description='Статус повышения привилегий')
+    parent_name: Optional[str] = Field(default=None, description='Имя родительского процесса')
+    parent_cmdline: Optional[str] = Field(default=None, description='Командная строка родителя')
+    ancestor_chain: Optional[str] = Field(default=None, description='Строка цепочки предков')
+    launch_reason: Optional[str] = Field(default=None, description='Определенный вектор запуска')
+    source: str = Field(default='system', description='Источник события: w64, etw, psutil, wevtapi')
+    raw_json: Optional[str] = Field(default=None, description='Сырые данные события в формате JSON')
+
+
+class ProcessProvenanceReport(BaseModel):
+    """Сводный аналитический отчет Process Provenance для AI Diagnostics."""
+    timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat(), description='Время формирования отчета')
+    total_processes: int = Field(default=0, description='Общее число активных процессов')
+    active_provenance: List[ProcessProvenanceInfo] = Field(default_factory=list, description='Список паспортов происхождения процессов')
+    recent_events: List[ProcessLifecycleEvent] = Field(default_factory=list, description='Недавние события создания/завершения процессов')
+    summary: str = Field(default='', description='Аналитическая сводка для LLM/ai-diagnostics')
+class BatteryMetrics(BaseModel):
+    """Battery and power state telemetry."""
+    has_battery: bool = Field(default=False, description='Whether host has battery power')
+    percent: Optional[float] = Field(default=None, description='Battery charge percentage')
+    power_plugged: Optional[bool] = Field(default=None, description='Whether AC power is connected')
+    secs_left: Optional[int] = Field(default=None, description='Seconds of battery remaining')
+    power_profile: str = Field(default='Balanced', description='Active Windows power scheme')
+
+
+
+
+class AppDiskUsageItem(BaseModel):
+    """Потребление дискового I/O конкретным приложением/процессом."""
+    process_name: str = Field(default='', description='Имя исполняемого файла процесса (например, chrome.exe)')
+    pid: Optional[int] = Field(default=None, description='Идентификатор процесса (если активен)')
+    read_bytes: int = Field(default=0, description='Прочитано байт за период')
+    write_bytes: int = Field(default=0, description='Записано байт за период')
+    total_bytes: int = Field(default=0, description='Всего дискового I/O в байтах')
+    read_formatted: str = Field(default='0 B', description='Отформатированный объем прочитанных данных')
+    write_formatted: str = Field(default='0 B', description='Отформатированный объем записанных данных')
+    share_percent: float = Field(default=0.0, description='Доля дискового I/O от общего объема системы (%)')
+
+class DiskUsagePeriodReport(BaseModel):
+    """Агрегированный отчет об использовании дискового I/O и SMART накопителей за период."""
+    period_minutes: int = Field(default=1440, description='Длительность периода в минутах (например, 1440 = 24 часа)')
+    total_read_bytes: int = Field(default=0, description='Суммарно прочитано байт за период')
+    total_write_bytes: int = Field(default=0, description='Суммарно записано байт за период')
+    total_read_formatted: str = Field(default='0 B', description='Человекочитаемый объем прочитанных данных')
+    total_write_formatted: str = Field(default='0 B', description='Человекочитаемый объем записанных данных')
+    total_formatted: str = Field(default='0 B', description='Суммарный объем I/O (Read + Write)')
+    top_writers: List[AppDiskUsageItem] = Field(default_factory=list, description='Топ процессов по объему записи за период')
+    top_readers: List[AppDiskUsageItem] = Field(default_factory=list, description='Топ процессов по объему чтения за период')
+    physical_disks: List[PhysicalDiskHealth] = Field(default_factory=list, description='Состояние и SMART-метрики физических дисков')
+    smart_delta_write_bytes: Optional[int] = Field(default=None, description='Изменение объема записи в SMART за период (байт)')
+    smart_delta_write_formatted: Optional[str] = Field(default=None, description='Отформатированное изменение записи SMART')
+    io_difference_bytes: Optional[int] = Field(default=None, description='Разница между SMART Delta и суммарным I/O процессов (байт)')
+    summary_text: str = Field(default='', description='Сводный текстовый отчёт для LLM/ai-diagnostics')
+
+class PhysicalDiskHealth(BaseModel):
+    """Physical drive SMART and health telemetry."""
+    device_id: str = Field(default='', description='Drive identifier or disk index')
+    model: str = Field(default='Physical Drive', description='Drive model name')
+    serial_number: Optional[str] = Field(default=None, description='Серийный номер накопителя')
+    media_type: str = Field(default='SSD', description='Media type (NVMe, SSD, HDD)')
+    size_gb: float = Field(default=0.0, description='Drive total capacity in GB')
+    health_status: str = Field(default='Healthy', description='Drive health status (Healthy, Warning, Unhealthy)')
+    operational_status: str = Field(default='OK', description='Operational status')
+    temperature_celsius: Optional[float] = Field(default=None, description='Drive temperature if available')
+    interface_type: Optional[str] = Field(default=None, description='Drive interface or bus type (NVMe, SATA, USB, etc.)')
+    lifetime_read_bytes: Optional[int] = Field(default=None, description='Всего прочитано накопителем за время жизни (байт)')
+    lifetime_write_bytes: Optional[int] = Field(default=None, description='Всего записано накопителем за время жизни (байт)')
+    lifetime_read_tb: Optional[float] = Field(default=None, description='Всего прочитано накопителем за время жизни (TB)')
+    lifetime_write_tb: Optional[float] = Field(default=None, description='Всего записано накопителем за время жизни (TB)')
+    power_on_hours: Optional[int] = Field(default=None, description='Время наработки диска в часах')
+    wear_percentage: Optional[float] = Field(default=None, description='Процент износа накопителя (0-100%)')
+
+class RamStickInfo(BaseModel):
+    """Physical RAM stick SPD details."""
+    bank_label: str = Field(default='DIMM', description='Memory slot label')
+    capacity_gb: float = Field(default=0.0, description='Module capacity in GB')
+    speed_mhz: int = Field(default=0, description='Configured clock speed in MHz/MTs')
+    manufacturer: str = Field(default='Generic', description='Memory manufacturer')
+    part_number: str = Field(default='', description='Module part number')
+    memory_type: str = Field(default='DDR4/DDR5', description='Memory technology type')
+
+class NetworkPortMetrics(BaseModel):
+    """Active listening TCP/UDP port item."""
+    port: int = Field(..., description='Listening port number')
+    protocol: str = Field(default='TCP', description='Protocol: TCP / UDP')
+    address: str = Field(default='0.0.0.0', description='Bind IP address')
+    pid: Optional[int] = Field(default=None, description='Owning process PID')
+    process_name: Optional[str] = Field(default=None, description='Owning process executable name')
+
+class ProcessNetworkActivity(BaseModel):
+    """Сетевая активность процесса (интернет-соединения, отправка и прием трафика)."""
+    pid: int = Field(default=0, description='Process ID')
+    name: str = Field(default='', description='Process executable name')
+    user: str = Field(default='', description='Process owner username')
+    local_address: str = Field(default='', description='Local IP:Port')
+    remote_address: str = Field(default='', description='Remote IP:Port')
+    remote_host: Optional[str] = Field(default=None, description='Resolved remote hostname or service name')
+    protocol: str = Field(default='TCP', description='Protocol: TCP / UDP')
+    status: str = Field(default='ESTABLISHED', description='Connection state (ESTABLISHED, LISTEN, etc.)')
+    is_internet: bool = Field(default=True, description='Whether remote address is external Internet vs local loopback')
+    service_type: str = Field(default='Web/HTTPS', description='Recognized protocol service: HTTPS, HTTP, DNS, Cloud Sync, etc.')
+    sent_kb: float = Field(default=0.0, description='Всего отправлено/записано процессом (КБ)')
+    recv_kb: float = Field(default=0.0, description='Всего получено/скачано/прочитано процессом (КБ)')
+    delta_sent_kb: float = Field(default=0.0, description='Объем отправленных данных за последний измеряемый период (КБ)')
+    delta_recv_kb: float = Field(default=0.0, description='Объем скачанных/полученных данных за последний измеряемый период (КБ)')
+    sent_rate_kbs: float = Field(default=0.0, description='Скорость отдачи/отправки данных (КБ/с)')
+    recv_rate_kbs: float = Field(default=0.0, description='Скорость скачивания/приема данных (КБ/с)')
+    sent_summary: str = Field(default='', description='Человекопонятное описание отправляемого (что шлет)')
+    recv_summary: str = Field(default='', description='Человекопонятное описание принимаемого (что принимает)')
+
+class SystemHealthAlerts(BaseModel):
+    """System reliability and event log alerts."""
+    reboot_pending: bool = Field(default=False, description='Whether a system reboot is pending')
+    critical_events_count: int = Field(default=0, description='Critical event logs in last 24h')
+    latest_alert: str = Field(default='Система стабильна', description='Summary of latest health event')
+
+class HardwareSensor(BaseModel):
+    """Hardware sensor reading (AIDA64 style) with provider tracking for deduplication."""
+    model_config = ConfigDict(extra='allow')
+
+    sensor_id: str = Field(..., description='Unique sensor identifier')
+    name: str = Field(..., description='Human readable sensor name')
+    category: str = Field(default='temperature', description='Category: temperature, fan, voltage, power')
+    value: float = Field(..., description='Current numeric sensor reading')
+    unit: str = Field(default='°C', description='Measurement unit')
+    min_value: Optional[float] = Field(default=None, description='Recorded minimum')
+    max_value: Optional[float] = Field(default=None, description='Recorded maximum')
+    provider: Optional[Any] = Field(default=None, description='Provider name or ID for deduplication (SensorProvider enum or int/str)')
+
+class HardwareNode(BaseModel):
+    """AIDA64-like hardware component tree item."""
+    category: str = Field(..., description='Component category (Motherboard, CPU, GPU, Memory, Storage)')
+    name: str = Field(..., description='Device or component name')
+    properties: Dict[str, Any] = Field(default_factory=dict, description='Detailed hardware properties')
+    children: List[HardwareNode] = Field(default_factory=list, description='Sub-components or devices')
+
+class MonitorInfo(BaseModel):
+    """Connected display monitor details."""
+    device: str = Field(default='', description='Display device name (e.g. \\\\.\\DISPLAY1)')
+    name: str = Field(default='Monitor', description='Friendly monitor name or model')
+    adapter: str = Field(default='', description='Display adapter name')
+    width: int = Field(default=1920, description='Display resolution width')
+    height: int = Field(default=1080, description='Display resolution height')
+    frequency_hz: int = Field(default=60, description='Refresh rate in Hz')
+    bits_per_pixel: int = Field(default=32, description='Color bit depth')
+    is_primary: bool = Field(default=False, description='Whether this is the primary display')
+    orientation: str = Field(default='горизонтальная', description='Ориентация дисплея: горизонтальная или вертикальная')
+
+class WindowsUpdateInfo(BaseModel):
+    """Windows Update status and recent hotfixes."""
+    status: str = Field(default='Up to date', description='Overall update status')
+    installed_kb_count: int = Field(default=0, description='Total installed KBs')
+    recent_hotfixes: List[str] = Field(default_factory=list, description='Recent KB identifiers')
+    latest_installed_on: Optional[str] = Field(default=None, description='Date of most recent update')
+
+class OfficeSuiteInfo(BaseModel):
+    """Microsoft Office and productivity suite detection telemetry."""
+    installed: bool = Field(default=False, description='Whether an Office suite is installed')
+    product_name: Optional[str] = Field(default=None, description='Product suite name (e.g. Microsoft 365, Office 2021)')
+    version: Optional[str] = Field(default=None, description='Office suite release version string')
+    publisher: Optional[str] = Field(default=None, description='Software vendor/publisher name')
+    status: str = Field(default='Не установлен', description='Human-readable office status summary')
+
+class CloudStorageInfo(BaseModel):
+    """Cloud drive and synchronization storage telemetry (OneDrive)."""
+    installed: bool = Field(default=False, description='Whether cloud storage drive is detected and active')
+    name: str = Field(default='OneDrive', description='Cloud storage service name')
+    path: Optional[str] = Field(default=None, description='Local synchronized root folder path')
+    total_gb: Optional[float] = Field(default=None, description='Total storage volume capacity in GB')
+    used_gb: Optional[float] = Field(default=None, description='Used space in GB')
+    free_gb: Optional[float] = Field(default=None, description='Free available space in GB')
+    percent_used: Optional[float] = Field(default=None, description='Storage disk utilization percentage')
+    status: str = Field(default='Не настроено', description='Human-readable cloud storage status')
+
+class SystemSnapshot(BaseModel):
+    """Complete system and hardware telemetry snapshot."""
+    timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat(), description='ISO 8601 UTC timestamp of snapshot')
+    hostname: str = Field(default='', description='Machine host name')
+    workgroup: str = Field(default='WORKGROUP', description='Machine workgroup or domain')
+    username: str = Field(default='', description='Current logged in username')
+    os_name: str = Field(default='Windows', description='Operating system name and version')
+    os_build: str = Field(default='', description='Operating system build number')
+    system_language: str = Field(default='', description='System UI language')
+    os_install_language: str = Field(default='', description='Original OS install language')
+    user_locale: str = Field(default='', description='User locale')
+    system_locale: str = Field(default='', description='System locale')
+    timezone: str = Field(default='', description='System timezone')
+    codepage: str = Field(default='', description='Active system code pages')
+    input_languages: List[str] = Field(default_factory=list, description='Installed keyboard input layouts')
+    os_install_date: str = Field(default='', description='Operating system installation date')
+    uptime_seconds: float = Field(default=0.0, description='System uptime in seconds')
+    cpu: CpuMetrics = Field(default_factory=CpuMetrics, description='CPU metrics')
+    memory: MemoryMetrics = Field(default_factory=MemoryMetrics, description='RAM and Swap metrics')
+    ram_sticks: List[RamStickInfo] = Field(default_factory=list, description='Installed physical RAM modules')
+    gpus: List[GpuMetrics] = Field(default_factory=list, description='Detected GPU accelerators')
+    npus: List[NpuMetrics] = Field(default_factory=list, description='Detected NPU neural processors')
+    monitors: List[MonitorInfo] = Field(default_factory=list, description='Connected display monitors')
+    updates: WindowsUpdateInfo = Field(default_factory=WindowsUpdateInfo, description='Windows Update information')
+    office: OfficeSuiteInfo = Field(default_factory=OfficeSuiteInfo, description='Office suite telemetry')
+    onedrive: CloudStorageInfo = Field(default_factory=CloudStorageInfo, description='OneDrive cloud storage telemetry')
+    disks: List[DiskPartitionMetrics] = Field(default_factory=list, description='Disk partitions')
+    physical_disks: List[PhysicalDiskHealth] = Field(default_factory=list, description='Physical storage disks and SMART health')
+    disk_io: DiskIoMetrics = Field(default_factory=DiskIoMetrics, description='Aggregate disk I/O rates')
+    network: List[NetworkInterfaceMetrics] = Field(default_factory=list, description='Network interfaces')
+    listening_ports: List[NetworkPortMetrics] = Field(default_factory=list, description='Active listening ports and sockets')
+    network_activity: List[ProcessNetworkActivity] = Field(default_factory=list, description='Сетевая активность программ (соединения и трафик)')
+    battery: BatteryMetrics = Field(default_factory=BatteryMetrics, description='Battery and power state')
+    alerts: SystemHealthAlerts = Field(default_factory=SystemHealthAlerts, description='System health and reliability alerts')
+    sensors: List[HardwareSensor] = Field(default_factory=list, description='Hardware sensor readings')
+    top_processes: List[ProcessMetrics] = Field(default_factory=list, description='Top active processes')
+    apps_count: int = Field(default=0, description='Количество запущенных оконных приложений (Apps)')
+    background_count: int = Field(default=0, description='Количество фоновых процессов (Background processes)')
+    windows_count: int = Field(default=0, description='Количество системных процессов Windows (Windows processes)')
+    hardware_audit: Dict[str, Any] = Field(default_factory=dict, description='Full hardware audit data (manufacturer, serial, etc.)')
+
+class WindowsFeaturesSnapshot(BaseModel):
+    """Снимок состояния Windows Optional Features при старте телеметрии."""
+    timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat(), description='ISO‑8601 метка времени')
+    features: List[Dict[str, Any]] = Field(default_factory=list, description='Список компонентов Windows Optional Features')
+
+
+class AnomalyItem(BaseModel):
+    """Specific detected anomaly or performance bottleneck."""
+    subsystem: str = Field(..., description='Subsystem (CPU, RAM, GPU, Disk, Network, Process)')
+    severity: str = Field(default='warning', description='Severity level: info, warning, critical')
+    title: str = Field(..., description='Brief anomaly summary')
+    description: str = Field(..., description='Detailed diagnostic description')
+
+class SystemDiagnosticReport(BaseModel):
+    """AI-powered diagnostic audit report."""
+    timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat(), description='Audit timestamp')
+    health_score: int = Field(default=100, description='System health score (0-100)')
+    summary: str = Field(..., description='High-level health and performance summary')
+    anomalies: List[AnomalyItem] = Field(default_factory=list, description='List of detected anomalies')
+    recommendations: List[str] = Field(default_factory=list, description='Actionable optimization suggestions')
+    ai_model_used: str = Field(default='heuristic', description='AI Model identifier or heuristic engine')
+    system_instruction: Optional[str] = Field(default=None, description='System instruction used for AI model')
+    generated_prompt: Optional[str] = Field(default=None, description='Exact prompt sent to AI model')
+    raw_response: Optional[str] = Field(default=None, description='Raw response text from AI provider')
+    error: Optional[str] = Field(default=None, description='Error details if inference failed')
+    stages: List[Dict[str, Any]] = Field(default_factory=list, description='Step-by-step audit stages')
+
+class DriverInfo(BaseModel):
+    """Сведения об установленном драйвере устройства и его актуальности."""
+    name: str = Field(default='', description='Имя драйвера или сервиса')
+    driver_version: str = Field(default='', description='Версия установленного драйвера')
+    driver_date: Optional[str] = Field(default=None, description='Дата релиза драйвера (ISO или YYYY-MM-DD)')
+    provider: str = Field(default='Unknown', description='Поставщик драйвера (NVIDIA, Intel, Microsoft и др.)')
+    inf_name: Optional[str] = Field(default=None, description='Имя INF-файла драйвера (oem*.inf)')
+    is_signed: bool = Field(default=True, description='Наличие цифровой подписи WHQL')
+    is_inbox: bool = Field(default=False, description='Является ли драйвер стандартным (inbox) от Microsoft')
+    age_days: Optional[int] = Field(default=None, description='Возраст драйвера в днях')
+    currency_status: str = Field(default='Актуален', description='Статус актуальности: Актуален, Устарел, Базовый драйвер ОС')
+
+class HardwareDeviceAudit(BaseModel):
+    """Единица аудита аппаратного устройства с драйверами, датами и сенсорами."""
+    device_id: str = Field(..., description='Уникальный идентификатор инстанса устройства (PnP Instance ID)')
+    name: str = Field(..., description='Понятное наименование устройства')
+    device_class: str = Field(default='Device', description='Класс устройства (Display, Processor, Net, DiskDrive и др.)')
+    manufacturer: str = Field(default='Unknown', description='Производитель оборудования')
+    install_date: Optional[str] = Field(default=None, description='Дата первой/текущей установки устройства в системе')
+    status: str = Field(default='OK', description='Рабочий статус устройства (OK, Problem, Error, Disabled)')
+    problem_code: int = Field(default=0, description='Код ошибки PnP (0 если исправно, 10, 43, 28 при сбое)')
+    driver: Optional[DriverInfo] = Field(default=None, description='Сведения об используемом драйвере')
+    sensors: List[HardwareSensor] = Field(default_factory=list, description='Сенсоры, привязанные к данному оборудованию')
+    properties: Dict[str, Any] = Field(default_factory=dict, description='Дополнительные аппаратные параметры')
+
+class HardwareChangeItem(BaseModel):
+    """Зафиксированное изменение в аппаратной конфигурации или драйверах."""
+    change_type: str = Field(..., description='Тип изменения: added, removed, driver_updated, status_changed, hardware_altered')
+    device_id: str = Field(..., description='Идентификатор затронутого устройства')
+    device_name: str = Field(..., description='Наименование устройства')
+    description: str = Field(..., description='Подробное описание изменения на русском языке')
+    previous_value: Optional[Dict[str, Any]] = Field(default=None, description='Предыдущее состояние параметра')
+    current_value: Optional[Dict[str, Any]] = Field(default=None, description='Новое состояние параметра')
+    timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat(), description='Временная метка обнаружения изменения')
+
+class HardwareAuditReport(BaseModel):
+    """Полный отчет аудита аппаратного обеспечения с привязкой сенсоров и драйверов."""
+    timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat(), description='Время проведения аудита (UTC)')
+    devices_count: int = Field(default=0, description='Общее количество обнаруженных устройств')
+    problem_devices_count: int = Field(default=0, description='Количество устройств с ошибками PnP')
+    outdated_drivers_count: int = Field(default=0, description='Количество устройств с устаревшими драйверами')
+    devices: List[HardwareDeviceAudit] = Field(default_factory=list, description='Список проаудированных устройств')
+    summary: str = Field(default='', description='Сводка состояния аппаратной части')
+    changes_since_last_archive: List[HardwareChangeItem] = Field(default_factory=list, description='Изменения, обнаруженные по сравнению с последним сохраненным архивом')
+
+class HardwareArchiveEntry(BaseModel):
+    """Запись в архиве истории оборудования."""
+    archive_id: str = Field(..., description='Уникальный идентификатор архивного снимка')
+    timestamp: str = Field(..., description='Время создания архива')
+    devices_count: int = Field(default=0, description='Количество устройств в архиве')
+    changes_count: int = Field(default=0, description='Количество изменений, зафиксированных в этом архиве')
+    report: HardwareAuditReport = Field(..., description='Полный отчет аудита оборудования')
+
+class ProcessLeakItem(BaseModel):
+    """Метрики скрытой диагностики и утечек отдельного процесса."""
+    pid: int = Field(..., description='Идентификатор процесса')
+    name: str = Field(..., description='Имя процесса')
+    status: str = Field(default='running', description='Статус процесса')
+    handles_count: int = Field(default=0, description='Количество открытых дескрипторов (Handles)')
+    gdi_objects: int = Field(default=0, description='Количество GDI-объектов (шрифты, битмапы, кисти, лимит 10 000)')
+    user_objects: int = Field(default=0, description='Количество USER-объектов (окна, меню, курсоры)')
+    page_faults_total: int = Field(default=0, description='Общее число страничных ошибок (Page Faults)')
+    peak_working_set_mb: float = Field(default=0.0, description='Пиковый рабочий набор памяти в МБ')
+    memory_mb: float = Field(default=0.0, description='Текущая память (RSS) в МБ')
+    threads_count: int = Field(default=1, description='Количество потоков процесса')
+    cpu_percent: float = Field(default=0.0, description='Нагрузка на CPU %')
+    leak_risk_score: str = Field(default='normal', description='Уровень риска утечки: normal, warning, critical')
+    leak_risk_reasons: List[str] = Field(default_factory=list, description='Список признаков аномального поведения')
+
+class ProcessLeakDiagnosticsReport(BaseModel):
+    """Сводный отчет скрытой диагностики процессов, утечек дескрипторов и ресурсов UI."""
+    timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat(), description='Время сбора среза')
+    total_processes: int = Field(default=0, description='Всего проанализировано процессов')
+    suspicious_count: int = Field(default=0, description='Количество процессов с признаками утечки')
+    top_handle_hogs: List[ProcessLeakItem] = Field(default_factory=list, description='Топ процессов по открытым дескрипторам')
+    top_gdi_hogs: List[ProcessLeakItem] = Field(default_factory=list, description='Топ процессов по GDI объектам')
+    top_page_fault_hogs: List[ProcessLeakItem] = Field(default_factory=list, description='Топ процессов по обращениям к файлу подкачки')
+    all_processes: List[ProcessLeakItem] = Field(default_factory=list, description='Полный список проанализированных процессов')
+
+class ForensicsActivityReport(BaseModel):
+    """Поведенческая телеметрия и форензика активности пользователя."""
+    timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat(), description='Время фиксации')
+    foreground_window: Dict[str, Any] = Field(default_factory=dict, description='Активное окно в фокусе (заголовок, процесс, PID, время)')
+    user_idle_seconds: float = Field(default=0.0, description='Время бездействия пользователя (без ввода с клавиатуры/мыши)')
+    camera_active_apps: List[Dict[str, Any]] = Field(default_factory=list, description='Приложения, использующие или недавно вызывавшие камеру')
+    microphone_active_apps: List[Dict[str, Any]] = Field(default_factory=list, description='Приложения, использующие микрофон')
+    userassist_top_apps: List[Dict[str, Any]] = Field(default_factory=list, description='История запусков из реестра UserAssist (счетчик и фокусное время)')
+
+class KernelThrottlingReport(BaseModel):
+    """Качество работы ядра, прерываний и аппаратного троттлинга."""
+    timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat(), description='Время среза')
+    dpc_latency_pct: float = Field(default=0.0, description='Процент времени ЦП в DPC (отложенных вызовах процедур)')
+    interrupt_latency_pct: float = Field(default=0.0, description='Процент времени ЦП в аппаратных прерываниях (ISR)')
+    dpc_status: str = Field(default='optimal', description='Статус латентности прерываний: optimal, elevated, severe')
+    thermal_throttling_detected: bool = Field(default=False, description='Обнаружен термический троттлинг ядер (PROCHOT)')
+    power_limit_throttling_detected: bool = Field(default=False, description='Обнаружено ограничение по питанию (PL1/PL2 Limit)')
+    system_uptime_seconds: float = Field(default=0.0, description='Время непрерывной работы системы (Uptime)')
+    uptime_formatted: str = Field(default='0 дн 0 ч', description='Отформатированное время Uptime')
+    last_bsod_crashes: List[Dict[str, Any]] = Field(default_factory=list, description='Последние зафиксированные падения системы (BugCheck / Minidump)')
+    gpu_pcie_link: Dict[str, Any] = Field(default_factory=dict, description='Режим шины PCIe для видеокарты (Link Speed / Width)')
+
+class StorageBatteryWearReport(BaseModel):
+    """Телеметрия износа накопителей SSD/NVMe и батареи питания."""
+    timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat(), description='Время формирования')
+    disks_wear: List[Dict[str, Any]] = Field(default_factory=list, description='Метрики износа SSD, TBW и здоровье накопителей')
+    battery_wear: Dict[str, Any] = Field(default_factory=dict, description='Глубокая телеметрия износа аккумулятора (Design vs Full Charge)')
+
+class PeripheralsNetworkReport(BaseModel):
+    """Телеметрия сети (Wi-Fi, интерфейсы) и периферийных устройств (USB, Audio)."""
+    timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat(), description='Время сбора')
+    usb_devices: List[Dict[str, Any]] = Field(default_factory=list, description='Подключенные USB-устройства и контроллеры')
+    wifi_telemetry: Dict[str, Any] = Field(default_factory=dict, description='Параметры текущей беспроводной сети Wi-Fi (SSID, BSSID, RSSI, канал)')
+    audio_endpoints: List[Dict[str, Any]] = Field(default_factory=list, description='Аудиоустройства и активные конечные точки')
+
+class SystemCoreMetrics(BaseModel):
+    """Быстрые базовые метрики хоста (CPU, RAM, GPU, Disk I/O, Battery)."""
+    cpu: CpuMetrics
+    memory: MemoryMetrics
+    gpus: List[GpuMetrics] = Field(default_factory=list, description='Метрики графических ускорителей')
+    disk_io: DiskIoMetrics
+    battery: BatteryMetrics
+    uptime_seconds: float = Field(default=0.0, description='Время непрерывной работы в секундах')
+
+class SystemHardwareQuick(BaseModel):
+    """Сводка состояния физических компонентов (диски, слоты памяти, открытые сокеты)."""
+    ram_sticks: List[RamStickInfo] = Field(default_factory=list, description='Конфигурация планок RAM (SPD)')
+    physical_disks: List[PhysicalDiskHealth] = Field(default_factory=list, description='Состояние физических накопителей (SMART)')
+    listening_ports: List[NetworkPortMetrics] = Field(default_factory=list, description='Список активных слушающих сокетов')
+    alerts: SystemHealthAlerts = Field(default_factory=SystemHealthAlerts, description='Системные предупреждения и флаг перезагрузки')
+
+class W64SystemEvent(BaseModel):
+    """Модель отдельного системного события AI W64 Collector."""
+    event_id: str = Field(default='', description='Уникальный идентификатор события')
+    timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat(), description='Время события UTC')
+    event_type: str = Field(..., description='Тип события (process_start, file_modified, registry_change, network_open и др.)')
+    path: Optional[str] = Field(default=None, description='Путь к файлу или ветке реестра')
+    pid: Optional[int] = Field(default=None, description='Идентификатор процесса')
+    name: Optional[str] = Field(default=None, description='Имя процесса/файла/параметра')
+    details: Dict[str, Any] = Field(default_factory=dict, description='Дополнительные атрибуты события')
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Сериализация события в словарь."""
+        res = self.model_dump()
+        if self.details:
+            res.update(self.details)
+        return res
+
+class ETWTraceEvent(BaseModel):
+    """Модель низкоуровневого события ETW (Event Tracing for Windows)."""
+    event_id: str = Field(default='', description='Уникальный идентификатор события')
+    timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat(), description='Время события UTC')
+    event_type: str = Field(..., description='Тип ETW трассировки (etw_process_create, etw_file_io, etw_network и др.)')
+    provider: str = Field(default='Microsoft-Windows-Security-Auditing', description='Провайдер ETW')
+    payload: Dict[str, Any] = Field(default_factory=dict, description='Сырые поля события из ETW / Windows Event Log')
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Сериализация ETW события в словарь."""
+        return self.model_dump()
+
+class W64CollectorStatus(BaseModel):
+    """Статус и статистика работы сборщиков W64/ETW."""
+    running: bool = Field(default=False, description='Флаг активности сборщика')
+    events_count: int = Field(default=0, description='Общее количество зафиксированных событий')
+    last_event_time: Optional[str] = Field(default=None, description='Время последнего зафиксированного события')
+
+
+class SamplingMode(str, Enum):
+    """Режимы сбора телеметрии и адаптивного масштабирования частоты."""
+    NORMAL = 'normal'
+    MONITORING = 'monitoring'
+    BOOT_AGGRESSIVE = 'boot_aggressive'
+    INCIDENT = 'incident'
+    FORENSIC = 'forensic'
+
+
+class SystemMetricRollup(BaseModel):
+    """Сжатый временной срез системных метрик с расширенной статистикой (avg, min, max, p95, total)."""
+    period_start: str = Field(..., description='Начало периода агрегации (ISO timestamp)')
+    period_end: str = Field(..., description='Окончание периода агрегации (ISO timestamp)')
+    duration_seconds: float = Field(default=60.0, description='Длительность интервала в секундах')
+    sample_count: int = Field(default=0, description='Количество объединенных замеров')
+    tier: str = Field(default='1m', description='Уровень сжатия: 1s, 2s, 5s, 10s, 30s, 1m, 5m, 15m, 1h, 6h, 24h')
+
+    # CPU
+    cpu_avg: float = Field(default=0.0, description='Средняя нагрузка CPU %')
+    cpu_min: float = Field(default=0.0, description='Минимальная нагрузка CPU %')
+    cpu_max: float = Field(default=0.0, description='Пиковая нагрузка CPU %')
+    cpu_p95: float = Field(default=0.0, description='95-й перцентиль нагрузки CPU %')
+
+    # RAM
+    ram_avg_gb: float = Field(default=0.0, description='Средний объем занятой RAM в GB')
+    ram_min_gb: float = Field(default=0.0, description='Минимальный объем занятой RAM в GB')
+    ram_max_gb: float = Field(default=0.0, description='Максимальный объем занятой RAM в GB')
+    ram_percent_avg: float = Field(default=0.0, description='Средний процент занятой памяти')
+    ram_percent_max: float = Field(default=0.0, description='Максимальный процент занятой памяти')
+
+    # Disk
+    disk_read_avg_mbs: float = Field(default=0.0, description='Средняя скорость чтения с диска в МБ/с')
+    disk_read_max_mbs: float = Field(default=0.0, description='Пиковая скорость чтения с диска в МБ/с')
+    disk_read_total_mb: float = Field(default=0.0, description='Суммарно прочитано за период в МБ')
+    disk_write_avg_mbs: float = Field(default=0.0, description='Средняя скорость записи на диск в МБ/с')
+    disk_write_max_mbs: float = Field(default=0.0, description='Пиковая скорость записи на диск в МБ/с')
+    disk_write_total_mb: float = Field(default=0.0, description='Суммарно записано за период в МБ')
+
+    # Network
+    network_rx_avg_mbs: float = Field(default=0.0, description='Средняя скорость входящего трафика в МБ/с')
+    network_rx_max_mbs: float = Field(default=0.0, description='Пиковая скорость входящего трафика в МБ/с')
+    network_rx_total_mb: float = Field(default=0.0, description='Суммарно получено входящего трафика в МБ')
+    network_tx_avg_mbs: float = Field(default=0.0, description='Средняя скорость исходящего трафика в МБ/с')
+    network_tx_max_mbs: float = Field(default=0.0, description='Пиковая скорость исходящего трафика в МБ/с')
+    network_tx_total_mb: float = Field(default=0.0, description='Суммарно отправлено исходящего трафика в МБ')
+
+
+class ProcessMetricRollup(BaseModel):
+    """Сжатый временной срез per-process метрик за период наблюдения."""
+    name: str = Field(..., description='Имя исполняемого файла процесса')
+    pid: Optional[int] = Field(default=None, description='PID процесса (если отслеживался конкретный экземпляр)')
+    period_start: str = Field(..., description='Начало периода (ISO timestamp)')
+    period_end: str = Field(..., description='Конец периода (ISO timestamp)')
+    duration_seconds: float = Field(default=60.0, description='Длительность наблюдения')
+    sample_count: int = Field(default=0, description='Число замеров')
+    path: Optional[str] = Field(default=None, description='Путь к исполняемому файлу')
+
+    cpu_avg: float = Field(default=0.0, description='Средний CPU %')
+    cpu_max: float = Field(default=0.0, description='Пиковый CPU %')
+    cpu_p95: float = Field(default=0.0, description='95-й перцентиль CPU %')
+
+    ram_avg_mb: float = Field(default=0.0, description='Средний объем RAM в МБ')
+    ram_max_mb: float = Field(default=0.0, description='Пиковый объем RAM в МБ')
+
+    disk_read_total_mb: float = Field(default=0.0, description='Суммарно прочитано с диска в МБ')
+    disk_write_total_mb: float = Field(default=0.0, description='Суммарно записано на диск в МБ')
+    network_rx_total_mb: float = Field(default=0.0, description='Суммарно получено по сети в МБ')
+    network_tx_total_mb: float = Field(default=0.0, description='Суммарно отправлено по сети в МБ')
+
+
+class TelemetryIncident(BaseModel):
+    """Модель диагностического инцидента аномалии с привязкой контекста и кольцевого буфера."""
+    incident_id: str = Field(..., description='Уникальный идентификатор инцидента (напр. INC-20261001-01)')
+    timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat(), description='Время детекции инцидента')
+    trigger_type: str = Field(..., description='Тип триггера: cpu_spike, disk_burst, network_burst, suspicious_process, dpc_degradation, defender_alert')
+    severity: str = Field(default='warning', description='Критичность: info, warning, critical')
+    title: str = Field(..., description='Краткое название инцидента на русском языке')
+    description: str = Field(default='', description='Подробное описание выявленной аномалии')
+
+    trigger_metrics: Dict[str, Any] = Field(default_factory=dict, description='Значения метрик в момент срабатывания триггера')
+    suspect_processes: List[Dict[str, Any]] = Field(default_factory=list, description='Список подозрительных процессов, связанных с аномалией')
+    related_events: List[Dict[str, Any]] = Field(default_factory=list, description='Дискретные события (запуск процессов, ETW, Defender) за период')
+    metrics_summary: Dict[str, Any] = Field(default_factory=dict, description='Агрегированная сводка метрик до и после инцидента')
+    raw_window: List[Dict[str, Any]] = Field(default_factory=list, description='Срез сырых секундных замеров из кольцевого буфера (pre/post window)')
+
+
+class ShutdownType(str, Enum):
+    """Типы завершения работы и перезагрузки Windows."""
+    PLANNED = 'PLANNED'
+    UNEXPECTED = 'UNEXPECTED'
+    CRASH_BSOD = 'CRASH_BSOD'
+    UPDATE_RESTART = 'UPDATE_RESTART'
+    USER_INITIATED = 'USER_INITIATED'
+    HARDWARE_POWER_BUTTON = 'HARDWARE_POWER_BUTTON'
+    DIRTY_POWER_LOSS = 'DIRTY_POWER_LOSS'
+    HYBRID_SHUTDOWN = 'HYBRID_SHUTDOWN'
+    UNKNOWN = 'UNKNOWN'
+
+
+class RebootCorrelatedEvent(BaseModel):
+    """Событие, связанное с перезагрузкой или завершением работы."""
+    event_id: int = Field(..., description='Event ID (например, 1074, 41, 6008, 1001)')
+    provider: str = Field(..., description='Источник/провайдер события (User32, Kernel-Power, EventLog и др.)')
+    timestamp: str = Field(..., description='Время регистрации события в формате ISO/строка')
+    level: str = Field(default='Information', description='Уровень события (Critical, Error, Warning, Information)')
+    description: str = Field(default='', description='Краткое описание смысла события на русском языке')
+    details: Dict[str, Any] = Field(default_factory=dict, description='Извлеченные структурированные поля события')
+
+
+class RebootSession(BaseModel):
+    """Структурированная запись об одной сессии перезагрузки / выключения Windows."""
+    boot_id: str = Field(..., description='Уникальный идентификатор сессии перезагрузки (напр. boot-20261001-014218)')
+    boot_time: str = Field(..., description='Время запуска системы (OS Startup)')
+    previous_boot_time: Optional[str] = Field(default=None, description='Время предыдущего запуска системы')
+    uptime_seconds: Optional[float] = Field(default=None, description='Время непрерывной работы предыдущей сессии в секундах')
+    uptime_human: Optional[str] = Field(default=None, description='Человекочитаемое время работы (напр. "7h 25m")')
+    shutdown_type: ShutdownType = Field(default=ShutdownType.UNKNOWN, description='Классифицированный тип завершения работы')
+    likely_class: str = Field(default='unknown', description='Короткий машинный класс причины')
+    conclusion: str = Field(default='', description='Итоговое аналитическое заключение на русском языке')
+    initiating_process: Optional[str] = Field(default=None, description='Процесс, инициировавший перезагрузку (из Event 1074)')
+    initiating_user: Optional[str] = Field(default=None, description='Учетная запись, от имени которой инициирован рестарт')
+    shutdown_action: Optional[str] = Field(default=None, description='Действие: restart, power off, shutdown, hybrid')
+    reason_text: Optional[str] = Field(default=None, description='Текстовая причина перезапуска')
+    reason_code: Optional[str] = Field(default=None, description='Шестнадцатеричный код причины (напр. 0x80020010)')
+    bugcheck_code: Optional[str] = Field(default=None, description='Код остановки BSOD (напр. 0x000000D1)')
+    bugcheck_params: List[str] = Field(default_factory=list, description='Параметры BugCheck (p1..p4)')
+    power_button_timestamp: Optional[int] = Field(default=None, description='Метка нажатия кнопки питания из Event 41')
+    windows_update_kb: Optional[str] = Field(default=None, description='Номер установленного обновления Windows (Event 19)')
+    service_installed: Optional[str] = Field(default=None, description='Имя недавно установленной службы (Event 7045)')
+    evidence: List[str] = Field(default_factory=list, description='Список доказательных фактов и событий')
+    events_chain: List[RebootCorrelatedEvent] = Field(default_factory=list, description='Хронологическая цепочка коррелированных событий')
+
+
+class RebootAnalysisReport(BaseModel):
+    """Сводный отчет анализа стабильности и причин перезагрузок системы."""
+    generated_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat(), description='Время формирования отчета')
+    hostname: str = Field(default='', description='Имя компьютера')
+    current_boot_time: str = Field(default='', description='Время текущей загрузки Windows')
+    current_uptime_seconds: float = Field(default=0.0, description='Текущий аптайм в секундах')
+    current_uptime_human: str = Field(default='', description='Текущий аптайм в читаемом формате')
+    total_reboots_analyzed: int = Field(default=0, description='Количество проанализированных перезагрузок')
+    planned_count: int = Field(default=0, description='Количество плановых перезагрузок')
+    unexpected_count: int = Field(default=0, description='Количество неожиданных/аварийных выключений')
+    bsod_count: int = Field(default=0, description='Количество сбоев с синим экраном (BSOD)')
+    update_reboot_count: int = Field(default=0, description='Количество перезагрузок из-за обновлений Windows')
+    stability_score: float = Field(default=100.0, description='Оценка стабильности завершений работы (0..100)')
+    sessions: List[RebootSession] = Field(default_factory=list, description='Список сессий перезагрузок (от новых к старым)')
+    summary_ru: str = Field(default='', description='Общее резюме надежности на русском языке')
+
+
+class DefenderTelemetrySummary(BaseModel):
+    """Сводка телеметрии встроенного защитника Windows Defender."""
+    cfa_enabled: bool = Field(default=False, description='Включена ли защита Controlled Folder Access (от Ransomware)')
+    cfa_mode: str = Field(default='Disabled', description='Режим CFA: Enabled, Disabled, Audit, Warn')
+    cfa_protected_folders_count: int = Field(default=0, description='Количество защищенных папок')
+    asr_rules_count: int = Field(default=0, description='Количество настроенных правил ASR')
+    asr_enabled_count: int = Field(default=0, description='Количество активных правил ASR')
+    exclusions_count: int = Field(default=0, description='Общее количество исключений антивируса')
+    path_exclusions: List[str] = Field(default_factory=list, description='Список путей, исключенных из проверки')
+    process_exclusions: List[str] = Field(default_factory=list, description='Список процессов, исключенных из проверки')
+    active_threats_count: int = Field(default=0, description='Количество активных необработанных угроз')
+    threat_history_count: int = Field(default=0, description='Количество зафиксированных угроз в истории')
+
+
+class StartupTelemetrySummary(BaseModel):
+    """Сводка телеметрии точек автозапуска и персистентности программ."""
+    total_entries: int = Field(default=0, description='Общее количество программ и элементов в автозагрузке')
+    registry_run_count: int = Field(default=0, description='Записи автозапуска в реестре Run/RunOnce')
+    startup_folders_count: int = Field(default=0, description='Ярлыки в папках Startup (пользователь/система)')
+    scheduled_tasks_count: int = Field(default=0, description='Задачи планировщика со стартом при входе')
+    startup_services_count: int = Field(default=0, description='Службы Windows с автозапуском')
+    entries: List[Dict[str, Any]] = Field(default_factory=list, description='Список записей автозапуска с параметрами')
+
+class VssTelemetrySummary(BaseModel):
+    """Сводка состояния теневых копий томов VSS и точек восстановления."""
+    total_snapshots_count: int = Field(default=0, description='Количество существующих теневых копий')
+    protected_volumes: List[str] = Field(default_factory=list, description='Список защищенных томов (буквы дисков)')
+    latest_snapshot_time: Optional[str] = Field(default=None, description='Время создания последней теневой копии')
+    snapshots: List[Dict[str, Any]] = Field(default_factory=list, description='Список снимков VSS')
+
+
+class UserAccountsTelemetrySummary(BaseModel):
+    """Сводка аудита локальных пользователей и привилегий."""
+    total_users_count: int = Field(default=0, description='Общее число локальных учетных записей')
+    admin_users_count: int = Field(default=0, description='Число учетных записей с правами администратора')
+    locked_users_count: int = Field(default=0, description='Число заблокированных учетных записей')
+    admin_usernames: List[str] = Field(default_factory=list, description='Имена локальных администраторов')
+    logged_in_users: List[str] = Field(default_factory=list, description='Активные вошедшие пользователи')
+    users: List[Dict[str, Any]] = Field(default_factory=list, description='Сводный список учетных записей')
+
+
+class ExtendedSystemAuditReport(BaseModel):
+    """Комплексный отчет расширенного аудита безопасности, автозагрузки, VSS и пользователей."""
+    timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat(), description='Время аудита')
+    hostname: str = Field(default='', description='Имя компьютера')
+    defender: DefenderTelemetrySummary = Field(default_factory=DefenderTelemetrySummary, description='Сводка Windows Defender')
+    startup: StartupTelemetrySummary = Field(default_factory=StartupTelemetrySummary, description='Сводка автозагрузки')
+    vss: VssTelemetrySummary = Field(default_factory=VssTelemetrySummary, description='Сводка теневых копий VSS')
+    users: UserAccountsTelemetrySummary = Field(default_factory=UserAccountsTelemetrySummary, description='Сводка локальных пользователей')
+
+
+class SecurityEventItem(BaseModel):
+    """Нормализованная запись журнала безопасности Windows (Security Event Log)."""
+    id: Optional[int] = Field(default=None, description='Идентификатор в базе данных')
+    event_record_id: int = Field(default=0, description='EventRecordID в журнале Windows')
+    event_id: int = Field(..., description='Идентификатор типа события (Event ID, например 4688, 4624)')
+    timestamp: str = Field(default='', description='Время возникновения события (ISO/локальное)')
+    created_at: float = Field(default_factory=lambda: datetime.now(timezone.utc).timestamp(), description='Unix epoch timestamp')
+    computer: str = Field(default='', description='Имя компьютера')
+    channel: str = Field(default='Security', description='Канал журнала')
+    level: str = Field(default='Information', description='Уровень важности')
+
+    # Субъект (кто инициировал действие)
+    subject_user: str = Field(default='', description='Имя пользователя инициатора')
+    subject_domain: str = Field(default='', description='Домен инициатора')
+    subject_sid: str = Field(default='', description='SID инициатора')
+
+    # Целевой субъект (над кем/чем действие)
+    target_user: str = Field(default='', description='Имя целевого пользователя')
+    target_domain: str = Field(default='', description='Домен целевого пользователя')
+    target_sid: str = Field(default='', description='SID целевого пользователя')
+
+    # Процессы и запуск (Event ID 4688, 4689)
+    process_id: int = Field(default=0, description='PID процесса')
+    process_name: str = Field(default='', description='Имя или путь процесса')
+    parent_process_id: int = Field(default=0, description='PID родительского процесса')
+    parent_process_name: str = Field(default='', description='Имя родительского процесса')
+    command_line: str = Field(default='', description='Командная строка запуска')
+
+    # Сессия и сеть (4624, 4625, Kerberos)
+    logon_id: str = Field(default='', description='Идентификатор сеанса входа LogonID')
+    logon_type: Optional[int] = Field(default=None, description='Тип входа (2=Interactive, 3=Network, 10=RDP и т.д.)')
+    elevated_token: Optional[int] = Field(default=None, description='Признак повышенных прав (Elevation)')
+    source_ip: str = Field(default='', description='Исходный IP адрес')
+    source_port: Optional[int] = Field(default=None, description='Исходный сетевой порт')
+
+    # Объекты и статус
+    object_name: str = Field(default='', description='Имя затронутого объекта или службы')
+    status_code: str = Field(default='', description='Код статуса/ошибки (Status/SubStatus)')
+    message: str = Field(default='', description='Человекочитаемое описание события')
+    event_data: Dict[str, Any] = Field(default_factory=dict, description='Словарь всех извлеченных полей события')
+    ingested_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat(), description='Время сохранения в телеметрию')
+
+
+class SecurityEventRaw(BaseModel):
+    """Сырая запись события журнала безопасности для повторного анализа."""
+    id: Optional[int] = Field(default=None, description='Идентификатор в базе')
+    event_record_id: int = Field(default=0, description='EventRecordID в журнале Windows')
+    event_id: int = Field(..., description='Идентификатор типа события')
+    timestamp: str = Field(default='', description='Время события')
+    created_at: float = Field(default_factory=lambda: datetime.now(timezone.utc).timestamp(), description='Unix epoch timestamp')
+    channel: str = Field(default='Security', description='Канал журнала')
+    raw_xml: str = Field(default='', description='Исходный XML события')
+    ingested_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat(), description='Время захвата')
+
+
+class SecurityBookmarkState(BaseModel):
+    """Состояние закладки инкрементального сбора."""
+    channel: str = Field(default='Security', description='Имя канала')
+    last_record_id: int = Field(default=0, description='Последний обработанный EventRecordID')
+    bookmark_xml: Optional[str] = Field(default=None, description='XML закладки WevtAPI')
+    last_timestamp: str = Field(default='', description='Время последнего события')
+    updated_at: float = Field(default_factory=lambda: datetime.now(timezone.utc).timestamp(), description='Время обновления')
+
+
+class SecurityAuditStatus(BaseModel):
+    """Статус аудита безопасности Windows и доступности журнала Security."""
+    accessible: bool = Field(default=False, description='Доступен ли журнал Security текущему процессу')
+    record_count: int = Field(default=0, description='Всего записей в журнале Security')
+    process_creation_audit_enabled: bool = Field(default=False, description='Включен ли аудит создания процессов (Event 4688)')
+    command_line_audit_enabled: bool = Field(default=False, description='Включено ли включение CommandLine в Event 4688')
+    error: Optional[str] = Field(default=None, description='Ошибка доступа при наличии')
+    last_record_id: int = Field(default=0, description='Последний обработанный EventRecordID в телеметрии')
+    total_ingested_events: int = Field(default=0, description='Количество событий в telemetry.db')
+
+
+class SecurityCorrelationItem(BaseModel):
+    """Результат корреляции событий безопасности с метриками телеметрии."""
+    timestamp: str = Field(default='', description='Временная метка')
+    event_type: str = Field(default='', description='Тип события (ProcessCreate, Logon, etc.)')
+    user: str = Field(default='', description='Пользователь')
+    process_name: str = Field(default='', description='Процесс')
+    pid: int = Field(default=0, description='PID')
+    parent_process_name: str = Field(default='', description='Родительский процесс')
+    command_line: str = Field(default='', description='Команда')
+    cpu_percent: Optional[float] = Field(default=None, description='Нагрузка CPU в этот момент')
+    ram_mb: Optional[float] = Field(default=None, description='Использование RAM процессом')
+    disk_spike: bool = Field(default=False, description='Всплеск дисковой активности')
+    network_spike: bool = Field(default=False, description='Всплеск сетевой активности')
+    notes: List[str] = Field(default_factory=list, description='Аналитические заметки')
+
+
+class SecurityCollectorReport(BaseModel):
+    """Сводный отчет работы сборщика событий безопасности."""
+    channel: str = Field(default='Security', description='Канал')
+    total_events_ingested: int = Field(default=0, description='Количество сохраненных событий')
+    last_record_id: int = Field(default=0, description='Последний EventRecordID')
+    bookmark_xml: Optional[str] = Field(default=None, description='XML закладки')
+    events_by_id: Dict[int, int] = Field(default_factory=dict, description='Распределение событий по Event ID')
+    errors: List[str] = Field(default_factory=list, description='Ошибки во время сбора')
+    events: List[SecurityEventItem] = Field(default_factory=list, description='Список собранных событий')
+
+
+class PowerEventRecord(BaseModel):
+    """Модель отдельного события жизненного цикла и питания Windows."""
+    id: Optional[int] = Field(default=None, description='Идентификатор в базе данных')
+    event_id: int = Field(..., description='Event ID (1074, 13, 6006, 6008, 41, 12, 6005, 6009, 1001, 19, 42, 107)')
+    provider: str = Field(default='', description='Имя провайдера (User32, Kernel-General, EventLog, Kernel-Power, etc.)')
+    channel: str = Field(default='System', description='Имя канала')
+    timestamp: str = Field(default='', description='Временная метка ISO/текст')
+    created_at: float = Field(default_factory=lambda: datetime.now(timezone.utc).timestamp(), description='Epoch timestamp')
+    event_type: str = Field(default='event', description='Тип события: boot, shutdown_clean, shutdown_planned, shutdown_unexpected, sleep, wake, bsod, update_install')
+    shutdown_type: Optional[str] = Field(default=None, description='Тип выключения: restart, power off, shutdown, unexpected, etc.')
+    user: Optional[str] = Field(default=None, description='Пользователь / инициатор (User)')
+    domain: Optional[str] = Field(default=None, description='Домен или имя хоста инициатора')
+    process: Optional[str] = Field(default=None, description='Исполняемый процесс (shutdown.exe, explorer.exe, wmiprvse.exe)')
+    process_id: Optional[int] = Field(default=None, description='Идентификатор процесса (PID)')
+    reason: Optional[str] = Field(default=None, description='Причина выключения / перезагрузки')
+    reason_code: Optional[str] = Field(default=None, description='Код причины (например, 0x80020010)')
+    comment: Optional[str] = Field(default=None, description='Пользовательский комментарий к выключению')
+    unexpected: bool = Field(default=False, description='Флаг неожиданного выключения / потери питания')
+    bugcheck_code: Optional[str] = Field(default=None, description='Код BugCheck (BSOD)')
+    bugcheck_params_json: Optional[str] = Field(default=None, description='Параметры BugCheck')
+    boot_id: Optional[str] = Field(default=None, description='Идентификатор загрузочной сессии')
+    details_json: Union[Dict[str, Any], str] = Field(default_factory=dict, description='Дополнительные извлеченные атрибуты')
+    raw_xml: Optional[str] = Field(default=None, description='Исходный XML события')
+
+
+class PowerSessionRecord(BaseModel):
+    """Модель реконструированной сессии работы операционной системы (Power Session)."""
+    id: Optional[int] = Field(default=None, description='Идентификатор в базе данных')
+    session_id: str = Field(..., description='Уникальный идентификатор сессии (например PS-20261006-042606)')
+    boot_time: str = Field(..., description='Время старта/загрузки операционной системы')
+    boot_timestamp: float = Field(default=0.0, description='Epoch timestamp старта')
+    shutdown_time: Optional[str] = Field(default=None, description='Время выключения/перезагрузки (None для активной сессии)')
+    shutdown_timestamp: Optional[float] = Field(default=None, description='Epoch timestamp выключения')
+    uptime_seconds: float = Field(default=0.0, description='Длительность сессии в секундах')
+    uptime_human: str = Field(default='', description='Человекочитаемый аптайм (например: 14ч 35м 31с)')
+    shutdown_type: str = Field(default='Active', description='Тип завершения: Active, Restart, Shutdown, Unexpected, Sleep/Wake')
+    initiator: Optional[str] = Field(default=None, description='Инициатор выключения (DOMAIN\\User или SYSTEM)')
+    process: Optional[str] = Field(default=None, description='Процесс инициатор (shutdown.exe, explorer.exe, etc.)')
+    reason: Optional[str] = Field(default=None, description='Текст причины выключения')
+    reason_code: Optional[str] = Field(default=None, description='Шестнадцатеричный код причины')
+    comment: Optional[str] = Field(default=None, description='Комментарий')
+    clean_shutdown: bool = Field(default=True, description='Штатное корректное выключение')
+    unexpected_shutdown: bool = Field(default=False, description='Внезапное выключение / потеря питания')
+    bugcheck: Optional[str] = Field(default=None, description='Информация о BSOD / BugCheck')
+    boot_event_id: int = Field(default=12, description='Event ID события загрузки (12, 6005, etc.)')
+    shutdown_event_id: Optional[int] = Field(default=None, description='Event ID события выключения (1074, 13, 6006, 41, 6008)')
+    initiator_chain: List[str] = Field(default_factory=list, description='Цепочка корреляции инициатора (User -> WMI -> wmiprvse -> shutdown)')
+    events: List[Dict[str, Any]] = Field(default_factory=list, description='Список связанных событий в этой сессии')
+    created_at: float = Field(default_factory=lambda: datetime.now(timezone.utc).timestamp(), description='Время создания записи')
+
+
+class PowerLifecycleSummary(BaseModel):
+    """Сводные метрики жизненного цикла питания и аптайма."""
+    current_boot_time: str = Field(default='', description='Время текущей загрузки ОС')
+    current_uptime_seconds: float = Field(default=0.0, description='Текущий аптайм в секундах')
+    current_uptime_human: str = Field(default='', description='Текущий аптайм в строковом формате')
+    total_sessions_count: int = Field(default=0, description='Всего зафиксировано сессий')
+    clean_shutdowns_count: int = Field(default=0, description='Штатных выключений/перезагрузок')
+    unexpected_shutdowns_count: int = Field(default=0, description='Внезапных сбоев питания / падений')
+    bsod_count: int = Field(default=0, description='Количество критических BSOD BugCheck')
+    last_shutdown_type: Optional[str] = Field(default=None, description='Тип последнего выключения')
+    last_initiator: Optional[str] = Field(default=None, description='Инициатор последнего выключения')
+    last_reason: Optional[str] = Field(default=None, description='Причина последнего выключения')
+    sessions: List[PowerSessionRecord] = Field(default_factory=list, description='Список последних сессий питания')
+
+
+# =============================================================================
+# Process Intelligence & Deep Dive Data Models (PID Recycling Protection)
+# =============================================================================
+
+class ProcessDefinitionRecord(BaseModel):
+    """Паспорт программы (Process Definition) для Process Intelligence."""
+    definition_id: Optional[int] = Field(default=None, description='Идентификатор описания')
+    name: str = Field(..., description='Имя исполняемого файла программы')
+    executable_path: str = Field(..., description='Полный уникальный путь к исполняемому файлу')
+    sha256: Optional[str] = Field(default=None, description='SHA256 хеш исполняемого файла')
+    company_name: Optional[str] = Field(default=None, description='Разработчик/компания')
+    file_description: Optional[str] = Field(default=None, description='Описание из ресурсов файла')
+    icon_base64: Optional[str] = Field(default=None, description='Base64 иконка процесса')
+    first_seen: str = Field(default='', description='Время первого обнаружения программы')
+    last_seen: str = Field(default='', description='Время последнего запуска программы')
+
+
+class ProcessInstanceRecord(BaseModel):
+    """Единичный уникальный инстанс процесса (Process Instance) с защитой от PID Recycling."""
+    instance_id: Optional[int] = Field(default=None, description='Уникальный первичный ключ инстанса')
+    definition_id: int = Field(..., description='Ссылка на паспорт программы')
+    pid: int = Field(..., description='Process ID операционной системы')
+    parent_instance_id: Optional[int] = Field(default=None, description='Уникальный instance_id родительского процесса')
+    name: str = Field(..., description='Имя процесса')
+    executable_path: str = Field(..., description='Полный путь к исполняемому файлу')
+    command_line: Optional[str] = Field(default=None, description='Полная командная строка запуска')
+    start_time: str = Field(..., description='Время запуска процесса ядра ОС (ISO-8601)')
+    exit_time: Optional[str] = Field(default=None, description='Время завершения процесса')
+    exit_code: Optional[int] = Field(default=None, description='Код завершения процесса')
+    session_id: int = Field(default=1, description='Идентификатор пользовательской сессии Windows')
+    user_name: Optional[str] = Field(default=None, description='Имя пользователя учетной записи')
+    integrity_level: Optional[str] = Field(default=None, description='Уровень целостности (Low, Medium, High, System)')
+    status: str = Field(default='RUNNING', description='Статус инстанса: RUNNING, EXITED, SUSPENDED')
+    cpu_percent: float = Field(default=0.0, description='Текущая/последняя нагрузка CPU %')
+    memory_mb: float = Field(default=0.0, description='Текущая/последняя память Working Set в МБ')
+    uptime_seconds: float = Field(default=0.0, description='Время работы инстанса в секундах')
+    ppid: Optional[int] = Field(default=None, description='PID родителя на момент запуска')
+    icon_base64: Optional[str] = Field(default=None, description='Base64 иконка процесса')
+
+
+class ProcessSampleRecord(BaseModel):
+    """Временной срез телеметрии ресурсов инстанса процесса."""
+    sample_id: Optional[int] = Field(default=None, description='Идентификатор среза')
+    instance_id: int = Field(..., description='Уникальный instance_id процесса')
+    timestamp: str = Field(..., description='ISO-8601 временная метка')
+    created_at: float = Field(..., description='Epoch timestamp среза')
+    cpu_percent: float = Field(default=0.0, description='Суммарный % загрузки CPU')
+    cpu_user_time: float = Field(default=0.0, description='User mode CPU time')
+    cpu_kernel_time: float = Field(default=0.0, description='Kernel mode CPU time')
+    thread_count: int = Field(default=1, description='Количество потоков процесса')
+    working_set_mb: float = Field(default=0.0, description='Физическая память Working Set в МБ')
+    private_bytes_mb: float = Field(default=0.0, description='Выделенная память Private Bytes в МБ')
+    page_faults_sec: float = Field(default=0.0, description='Ошибки страниц (Page Faults / sec)')
+    gpu_load_percent: float = Field(default=0.0, description='Нагрузка GPU в %')
+    gpu_vram_mb: float = Field(default=0.0, description='Использование видеопамяти VRAM в МБ')
+    disk_read_bytes_sec: float = Field(default=0.0, description='Скорость чтения с диска в байт/с')
+    disk_write_bytes_sec: float = Field(default=0.0, description='Скорость записи на диск в байт/с')
+    disk_iops: float = Field(default=0.0, description='Количество операций ввода-вывода (IOPS)')
+    handle_count: int = Field(default=0, description='Количество открытых дескрипторов (Handles)')
+    gdi_objects: int = Field(default=0, description='Количество GDI объектов (кисти, шрифты, битмапы)')
+    user_objects: int = Field(default=0, description='Количество USER объектов (окна, меню)')
+    sockets_count: int = Field(default=0, description='Количество активных сетевых сокетов')
+    sockets_json: Optional[str] = Field(default=None, description='JSON список сетевых подключений')
+
+
+class ProcessFileEventRecord(BaseModel):
+    """Событие файловой операции процесса."""
+    id: Optional[int] = Field(default=None, description='Идентификатор события')
+    instance_id: Optional[int] = Field(default=None, description='Instance ID процесса')
+    timestamp: str = Field(..., description='Время события')
+    action: str = Field(..., description='Действие: CREATE, MODIFY, DELETE, RENAME')
+    target_folder: Optional[str] = Field(default=None, description='Целевая папка')
+    file_path: str = Field(..., description='Полный путь к файлу')
+    bytes_count: int = Field(default=0, description='Объем затронутых данных в байтах')
+    created_at: float = Field(..., description='Epoch timestamp')
+
+
+class ProcessSocketRecord(BaseModel):
+    """Запись о сетевом сокете процесса."""
+    protocol: str = Field(default='TCP', description='Протокол: TCP, UDP')
+    local_address: str = Field(..., description='Локальный IP:порт')
+    remote_address: str = Field(..., description='Удаленный IP:порт')
+    status: str = Field(default='ESTABLISHED', description='Статус сокета: ESTABLISHED, LISTEN, CLOSE_WAIT, etc.')
+    sent_kbs: float = Field(default=0.0, description='Скорость отправки (КБ/с)')
+    recv_kbs: float = Field(default=0.0, description='Скорость приема (КБ/с)')
+    dns_name: Optional[str] = Field(default=None, description='DNS имя удаленного сервера')
+    country: Optional[str] = Field(default=None, description='Страна назначения')
+
+
+class ProcessLineageNode(BaseModel):
+    """Узел интерактивного графа происхождения процесса (Process Lineage)."""
+    instance_id: int = Field(..., description='Уникальный instance_id')
+    pid: int = Field(..., description='PID процесса')
+    name: str = Field(..., description='Имя процесса')
+    status: str = Field(default='RUNNING', description='Статус инстанса')
+    start_time: str = Field(..., description='Время старта')
+    executable_path: str = Field(..., description='Путь к исполняемому файлу')
+    is_current: bool = Field(default=False, description='Флаг текущего выбранного процесса')
+    parent: Optional[Dict[str, Any]] = Field(default=None, description='Информация о родительском инстансе')
+    children: List[Dict[str, Any]] = Field(default_factory=list, description='Дочерние инстансы')
+
+
+class ProcessSafeOpsRequest(BaseModel):
+    """Запрос на безопасное администрирование инстанса процесса."""
+    action: str = Field(..., description='Действие: kill, suspend, resume, dump, priority')
+    priority_class: Optional[str] = Field(default=None, description='Приоритет: Idle, BelowNormal, Normal, AboveNormal, High, Realtime')
+    reason: Optional[str] = Field(default='Manual admin action from UI', description='Причина выполнения действия')
+    dump_folder: Optional[str] = Field(default=None, description='Пользовательская папка для дампа')
+
+
+class ProcessSafeOpsResponse(BaseModel):
+    """Ответ на безопасное действие над процессом."""
+    instance_id: int = Field(..., description='Идентификатор инстанса')
+    pid: int = Field(..., description='PID процесса')
+    action: str = Field(..., description='Выполненное действие')
+    success: bool = Field(..., description='Успешность операции')
+    message: str = Field(..., description='Сообщение о результате')
+    details: Dict[str, Any] = Field(default_factory=dict, description='Дополнительные метаданные')
+
+
+# =============================================================================
+# Per-PID Telemetry Engine Models (ТЗ TZ_PER_PID_RESOURCE_TELEMETRY_COMPLETION)
+# =============================================================================
+
+class CpuDetail(BaseModel):
+    """Детализация процессора для попроцессной телеметрии."""
+    percent: float = Field(default=0.0, description='Загрузка процессора в процентах')
+    user_time_ms: int = Field(default=0, description='Время выполнения в пользовательском режиме (мс)')
+    kernel_time_ms: int = Field(default=0, description='Время выполнения в режиме ядра (мс)')
+    thread_count: int = Field(default=1, description='Количество активных потоков')
+
+
+class MemoryDetail(BaseModel):
+    """Детализация оперативной памяти для попроцессной телеметрии."""
+    working_set_mb: float = Field(default=0.0, description='Рабочий набор памяти (Working Set) в МБ')
+    private_bytes_mb: float = Field(default=0.0, description='Приватная память (Private Bytes) в МБ')
+    page_faults: int = Field(default=0, description='Количество ошибок страниц памяти (Page Faults)')
+
+
+class GpuDetail(BaseModel):
+    """Детализация GPU и видеопамяти для попроцессной телеметрии."""
+    vram_dedicated_mb: float = Field(default=0.0, description='Выделенная видеопамять (VRAM) в МБ')
+    utilization_percent: float = Field(default=0.0, description='Утилизация GPU движка в процентах')
+
+
+class IoDetail(BaseModel):
+    """Детализация дискового ввода-вывода и дескрипторов."""
+    read_bytes_sec: int = Field(default=0, description='Скорость чтения с диска (байт/с)')
+    write_bytes_sec: int = Field(default=0, description='Скорость записи на диск (байт/с)')
+    handles_count: int = Field(default=0, description='Количество открытых дескрипторов')
+    read_ops_total: int = Field(default=0, description='Всего операций чтения')
+    write_ops_total: int = Field(default=0, description='Всего операций записи')
+
+
+class NetworkDetail(BaseModel):
+    """Детализация сетевой активности процесса."""
+    bytes_sent_sec: int = Field(default=0, description='Скорость отправки по сети (байт/с)')
+    bytes_recv_sec: int = Field(default=0, description='Скорость приема по сети (байт/с)')
+    active_sockets: int = Field(default=0, description='Количество активных сетевых сокетов')
+
+
+class ProcessTelemetryResponse(BaseModel):
+    """Строгий канонический REST API контракт телеметрии процесса по PID."""
+    pid: int = Field(..., description='Идентификатор процесса (PID)')
+    process_name: str = Field(..., description='Имя исполняемого файла')
+    executable_path: Optional[str] = Field(default=None, description='Полный путь к исполняемому файлу')
+    cpu: CpuDetail = Field(default_factory=CpuDetail, description='Метрики процессора')
+    memory: MemoryDetail = Field(default_factory=MemoryDetail, description='Метрики памяти')
+    gpu: GpuDetail = Field(default_factory=GpuDetail, description='Метрики GPU/VRAM')
+    io: IoDetail = Field(default_factory=IoDetail, description='Метрики дискового I/O и дескрипторов')
+    network: NetworkDetail = Field(default_factory=NetworkDetail, description='Метрики сети')
+    timestamp: str = Field(default='', description='Время фиксации снимка')
+
+
+class ProcessFileEventItem(BaseModel):
+    """Запись события файловой активности процесса."""
+    event_id: int = Field(..., description='Уникальный ID события')
+    pid: int = Field(..., description='Идентификатор процесса (PID)')
+    process_name: str = Field(..., description='Имя процесса')
+    action_type: str = Field(..., description='Тип действия (CREATE, MODIFY, DELETE, RENAME)')
+    target_directory: str = Field(..., description='Отслеживаемая целевая директория')
+    file_path: str = Field(..., description='Полный путь к затронутому файлу')
+    bytes_affected: int = Field(default=0, description='Объем затронутых байт')
+    timestamp: str = Field(..., description='Время регистрации события')
+
+
+class TrackedDirectoryRequest(BaseModel):
+    """Запрос на управление отслеживаемой директорией."""
+    action: str = Field(..., description="Действие: 'add' или 'remove'")
+    directory_path: str = Field(..., description='Абсолютный путь к директории')
+
+
+class TrackedDirectoryResponse(BaseModel):
+    """Ответ на операцию с отслеживаемой директорией."""
+    status: str = Field(default='ok', description='Статус операции')
+    action: str = Field(..., description='Выполненное действие')
+    directory_path: str = Field(..., description='Путь к директории')
+    tracked_directories: List[str] = Field(default_factory=list, description='Актуальный список отслеживаемых директорий')
+
+
+class ProcessPidSnapshot(BaseModel):
+    """Каноническая модель единого снимка ресурсов процесса по PID для SQLite."""
+    snapshot_id: Optional[int] = Field(default=None, description='ID снимка')
+    pid: int = Field(..., description='PID процесса')
+    process_name: str = Field(..., description='Имя процесса')
+    executable_path: Optional[str] = Field(default=None, description='Путь к исполняемому файлу')
+    cpu_percent: float = Field(default=0.0, description='Загрузка CPU %')
+    user_time_ms: int = Field(default=0, description='User time ms')
+    kernel_time_ms: int = Field(default=0, description='Kernel time ms')
+    thread_count: int = Field(default=1, description='Количество потоков')
+    working_set_bytes: int = Field(default=0, description='Working set байт')
+    private_bytes: int = Field(default=0, description='Private bytes')
+    page_faults_count: int = Field(default=0, description='Page faults')
+    gpu_vram_bytes: int = Field(default=0, description='VRAM байт')
+    gpu_utilization: float = Field(default=0.0, description='GPU load %')
+    read_bytes_total: int = Field(default=0, description='Всего прочитано байт')
+    write_bytes_total: int = Field(default=0, description='Всего записано байт')
+    read_ops_total: int = Field(default=0, description='Всего операций чтения')
+    write_ops_total: int = Field(default=0, description='Всего операций записи')
+    net_bytes_sent_total: int = Field(default=0, description='Всего отправлено байт по сети')
+    net_bytes_recv_total: int = Field(default=0, description='Всего получено байт по сети')
+    handle_count: int = Field(default=0, description='Дескрипторы')
+    gdi_objects: int = Field(default=0, description='GDI объекты')
+    user_objects: int = Field(default=0, description='USER объекты')
+    timestamp: str = Field(default='', description='Время снимка')
+
+
+
+
+
+
+

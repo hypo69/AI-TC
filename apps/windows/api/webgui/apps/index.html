@@ -1,0 +1,411 @@
+<!--
+=============================================================================
+Process Name: Windows Web Interface - Index View
+=============================================================================
+Description:
+  Шаблон клиентского веб-интерфейса index.
+
+Usage Examples:
+    Web Route:
+      /windows/api/webgui/apps/index.html
+
+    Tab Frame Integration:
+      <iframe src="/windows/api/webgui/apps/index.html" class="w-100 h-100 border-0"></iframe>
+
+File: index.html
+Project: ai-breadboard
+Package: windows/api/webgui/apps
+Author: hypo69
+Copyright: © 2026 hypo69
+Updated: 2026-10-10 11:48:00
+=============================================================================
+-->
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Breadboard — Приложения (/apps)</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="/html/css/main.css?v=20261008_v1" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="/html/js/toast.js?v=20261006_v10"></script>
+  <script src="https://cdn.jsdelivr.net/npm/i18next@23.11.5/i18next.min.js"></script>
+</head>
+<body>
+
+<div class="container-fluid mt-1 px-2" id="apps-interface">
+
+  <!-- Navigation Bar (/tc, /apps) -->
+  <div class="d-flex align-items-center justify-content-between mb-2 main-nav-container rounded px-2 py-1 flex-wrap gap-2">
+    <!-- Левая часть: кнопка меню, брендинг и индикатор активного раздела -->
+    <div class="d-flex align-items-center gap-2">
+      <!-- Кнопка открытия левого выдвижного меню -->
+      <button class="btn btn-sm btn-primary d-flex align-items-center gap-1.5 px-2 py-1 rounded shadow-sm"
+              id="apps-drawer-toggle-btn"
+              type="button"
+              data-bs-toggle="offcanvas"
+              data-bs-target="#appsSideNavOffcanvas"
+              aria-controls="appsSideNavOffcanvas"
+              title="Открыть меню разделов"
+              style="font-size: 0.82rem; font-weight: 500;">
+        <i class="bi bi-list fs-6"></i>
+        <span class="d-none d-md-inline">Меню</span>
+      </button>
+
+      <!-- Брендинг -->
+      <span class="fw-bold d-flex align-items-center gap-1.5 text-primary fs-6 user-select-none" style="letter-spacing: 0.3px;">
+        <i class="bi bi-cpu-fill fs-5"></i>
+        <span class="d-none d-sm-inline">Test Computer</span>
+      </span>
+    </div>
+
+    <!-- Top Menu Buttons — генерируются из tc_menu_config.json -->
+    <div class="d-flex align-items-center gap-1 flex-wrap"></div>
+
+    <!-- Controls (Model Badge, Model Test Gear, Settings) -->
+    <div class="d-flex align-items-center gap-2 flex-shrink-0 ms-auto">
+      <!-- Active AI Model Badge -->
+      <span id="apps-model-badge" class="badge rounded-pill bg-body-tertiary text-body border align-items-center gap-1.5 px-3 py-1.5 shadow-sm" style="font-size: 0.8rem; cursor: default;" title="Инициализация модели ИИ...">
+        <i class="bi bi-cpu-fill text-info"></i>
+        <span class="fw-semibold" id="apps-model-text">AI: Загрузка...</span>
+      </span>
+
+      <!-- Model Quick Test Dropdown Trigger & Popover -->
+      <div class="dropdown" id="model-ping-dropdown-wrapper">
+        <button class="btn btn-sm btn-outline-secondary d-flex align-items-center justify-content-center p-0 rounded-circle" 
+                id="btn-model-ping-gear" 
+                type="button" 
+                data-bs-toggle="dropdown" 
+                data-bs-auto-close="outside" 
+                aria-expanded="false" 
+                title="Проверка доступности модели" 
+                style="width: 30px; height: 30px;">
+          <i class="bi bi-gear"></i>
+        </button>
+        <div class="dropdown-menu dropdown-menu-end shadow-lg border border-secondary-subtle p-3" aria-labelledby="btn-model-ping-gear" style="min-width: 360px; max-width: 460px; z-index: 1060;">
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <span class="fw-bold small d-flex align-items-center gap-1.5 text-body">
+              <i class="bi bi-cpu text-primary"></i>
+              <span>Проверка доступности модели</span>
+            </span>
+          </div>
+          <div class="mb-2">
+            <input type="text" class="form-control form-control-sm" id="model-ping-input" value="Проверка доступности модели" placeholder="Введите сообщение...">
+          </div>
+          <div class="d-flex justify-content-end mb-2">
+            <button class="btn btn-sm btn-primary d-flex align-items-center gap-1.5 px-3" id="btn-model-ping-send" type="button">
+              <i class="bi bi-send-fill" id="model-ping-btn-icon"></i>
+              <span id="model-ping-btn-text">Отправить</span>
+            </button>
+          </div>
+          <div id="model-ping-response-container" style="display: none;">
+            <label class="form-label small text-muted mb-1 fw-semibold">Ответ модели:</label>
+            <div id="model-ping-response" class="small p-2 rounded bg-body-tertiary border text-break font-monospace" style="max-height: 220px; overflow-y: auto; white-space: pre-wrap; font-size: 0.8rem; user-select: text;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Settings Gear Button -->
+      <button class="btn btn-sm btn-outline-secondary d-flex align-items-center justify-content-center p-0 rounded-circle" id="user-settings-gear-btn" data-bs-toggle="modal" data-bs-target="#userSettingsModal" title="Настройки профиля и темы" style="width: 30px; height: 30px;" data-i18n-title="userSettings.title">
+        <i class="bi bi-sliders"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Плавающий боковой ярлычок (вкладка) слева -->
+  <button class="left-drawer-tab-trigger btn shadow" 
+          type="button" 
+          data-bs-toggle="offcanvas" 
+          data-bs-target="#appsSideNavOffcanvas" 
+          aria-controls="appsSideNavOffcanvas" 
+          title="Открыть меню навигации">
+    <i class="bi bi-list fs-6"></i>
+    <span class="left-drawer-tab-text">МЕНЮ</span>
+  </button>
+
+  <!-- Левая выдвижная вкладка / панель навигации (Offcanvas) -->
+  <div class="offcanvas offcanvas-start left-drawer-nav" tabindex="-1" id="appsSideNavOffcanvas" aria-labelledby="appsSideNavOffcanvasLabel">
+    <div class="offcanvas-header border-bottom py-2 px-3">
+      <h5 class="offcanvas-title d-flex align-items-center gap-2 fs-6 fw-bold" id="appsSideNavOffcanvasLabel">
+        <i class="bi bi-grid-fill text-primary"></i>
+        <span>Приложения (/apps)</span>
+      </h5>
+      <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Закрыть"></button>
+    </div>
+    <div class="offcanvas-body p-3 d-flex flex-column justify-content-between" style="overflow-y: auto;">
+      <div class="drawer-sections-wrapper">
+        <div class="nav-drawer-group mb-3">
+          <div class="nav-drawer-group-title d-flex align-items-center gap-1 mb-2">
+            <i class="bi bi-grid-fill text-primary"></i>
+            <span>Разделы Test Computer</span>
+          </div>
+          <div class="list-group list-group-flush rounded border" id="appsNavTabs"></div>
+        </div>
+      </div>
+
+      <!-- Footer Drawer -->
+      <div class="nav-drawer-footer border-top pt-2 mt-auto d-flex flex-column gap-2">
+        <button class="btn btn-sm btn-outline-warning w-100 d-flex align-items-center justify-content-between py-2 px-3 rounded" id="btn-godmode" type="button" onclick="openGodModeFolder()" title="Открыть панель всех настроек Windows (God Mode)">
+          <div class="d-flex align-items-center gap-2">
+            <span class="fs-6">⚡</span>
+            <span class="fw-medium text-body">God Mode (Все настройки)</span>
+          </div>
+          <i class="bi bi-box-arrow-up-right text-muted small"></i>
+        </button>
+        <button class="btn btn-sm btn-outline-secondary w-100 d-flex align-items-center gap-2 py-2 rounded" id="menu-editor-btn" type="button">
+          <i class="bi bi-gear-fill"></i>
+          <span class="fw-medium">Редактор меню</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- User / Quick Settings Modal -->
+  <div class="modal fade" id="userSettingsModal" tabindex="-1" aria-labelledby="userSettingsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content shadow border-secondary-subtle">
+        <div class="modal-header border-secondary-subtle">
+          <h5 class="modal-title d-flex align-items-center gap-2" id="userSettingsModalLabel">
+            <i class="bi bi-gear-fill text-primary"></i>
+            <span data-i18n="userSettings.title">Настройки интерфейса</span>
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+        </div>
+        <div class="modal-body p-3">
+          <!-- Language Selection -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold small d-flex align-items-center gap-2" for="apps-lang-selector">
+              <i class="bi bi-translate text-info"></i>
+              <span data-i18n="userSettings.language">Язык интерфейса</span>
+            </label>
+            <select class="form-select lang-selector" id="apps-lang-selector">
+              <option value="ru-RU">Русский (ru-RU)</option>
+              <option value="en-US">English (en-US)</option>
+              <option value="he-IL">עברית (he-IL)</option>
+              <option value="uk-UA">Українська (uk-UA)</option>
+            </select>
+          </div>
+
+          <!-- Theme Selection -->
+          <div class="mb-2">
+            <label class="form-label fw-semibold small d-flex align-items-center gap-2" for="apps-theme-selector">
+              <i class="bi bi-palette text-warning"></i>
+              <span data-i18n="userSettings.theme">Тема оформления</span>
+            </label>
+            <select class="form-select theme-selector" id="apps-theme-selector">
+              <option value="system">🌓 Системная</option>
+              <optgroup label="☀️ Светлые темы">
+                <option value="light">☀️ Светлая (Классическая)</option>
+                <option value="brick">🧱 Кирпичная (Терракота)</option>
+              </optgroup>
+              <optgroup label="🌙 Тёмные темы">
+                <option value="dark">🌙 Тёмная (Контрастная)</option>
+                <option value="terminal">📟 Терминал (Matrix / CRT)</option>
+              </optgroup>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Menu Editor Modal -->
+  <div class="modal fade" id="menuEditorModal" tabindex="-1" aria-labelledby="menuEditorModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+      <div class="modal-content bg-dark text-white">
+        <div class="modal-header border-secondary">
+          <h5 class="modal-title fw-bold" id="menuEditorModalLabel">
+            <i class="bi bi-gear-fill text-primary"></i> Редактор меню
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+        </div>
+        <div class="modal-body">
+          <div class="alert alert-info small mb-3">
+            <i class="bi bi-info-circle"></i> Настройте отображение и порядок элементов меню. Элементы сгруппированы по позициям: сверху, сбоку и скрытые. Переключатели меняют размещение, а стрелки и слайдеры — порядок элементов.
+          </div>
+          
+          <div class="menu-editor-section">
+            <div id="allMenuEditor">
+              <div class="text-muted small p-3 text-center">Загрузка...</div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer border-secondary">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+          <button type="button" class="btn btn-primary" id="saveMenuConfig">
+            <i class="bi bi-save"></i> Сохранить
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Tab Content Container (Apps Only) -->
+  <div class="tab-content" id="mainTabContent">
+    <!-- About System Tab (Default Primary) -->
+    <div id="tab-about-system" class="tab-pane fade show active"></div>
+
+    <!-- Chat Tab -->
+    <div id="tab-chat" class="tab-pane fade"></div>
+
+    <!-- Scenarios Tab -->
+    <div id="tab-scenarios" class="tab-pane fade"></div>
+
+    <!-- Network Terminal Tab -->
+    <div id="tab-network" class="tab-pane fade"></div>
+
+    <!-- Hardware Load Inspector Tab -->
+    <div id="tab-hardware-load-inspector" class="tab-pane fade"></div>
+
+    <!-- Processes Load & Activity Inspector Tab -->
+    <div id="tab-processes-load-inspector" class="tab-pane fade"></div>
+
+    <!-- Windows System Administrator Tab -->
+    <div id="tab-windows-admin" class="tab-pane fade"></div>
+
+    <!-- Windows Focus Settings Tab -->
+    <div id="tab-focus-settings" class="tab-pane fade"></div>
+
+    <!-- System Control Center Tab (System Logs & Activity) -->
+    <div id="tab-system-control" class="tab-pane fade"></div>
+
+    <!-- Post-Install Wizard Tab -->
+    <div id="tab-post-install-wizard" class="tab-pane fade"></div>
+
+    <!-- Maintenance & Recovery Tab -->
+    <div id="tab-maintenance-recovery" class="tab-pane fade"></div>
+
+    <!-- System Log Viewer Tab -->
+    <div id="tab-system-logs" class="tab-pane fade"></div>
+
+    <!-- Software Audit Tab -->
+    <div id="tab-software-audit" class="tab-pane fade"></div>
+
+    <!-- Registry Viewer Tab -->
+    <div id="tab-registry-viewer" class="tab-pane fade"></div>
+
+    <!-- Microsoft Defender Security Tab -->
+    <div id="tab-defender" class="tab-pane fade"></div>
+
+    <!-- Startup Auditor Tab -->
+    <div id="tab-startup-auditor" class="tab-pane fade"></div>
+
+    <!-- Windows Backup & Libraries Manager Tab -->
+    <div id="tab-windows-backup" class="tab-pane fade"></div>
+
+    <!-- Hardware & Sensors Monitor Tab -->
+    <div id="tab-hardware-monitor" class="tab-pane fade"></div>
+
+    <!-- Cloudflared Monitor Tab -->
+    <div id="tab-cloudflared" class="tab-pane fade"></div>
+
+    <!-- Google Cloud Monitor Tab -->
+    <div id="tab-gcloud" class="tab-pane fade"></div>
+
+    <!-- Website Intelligence Monitor Tab -->
+    <div id="tab-website-monitor" class="tab-pane fade"></div>
+
+    <!-- Exchange Trading Terminal Tab -->
+    <div id="tab-trading" class="tab-pane fade"></div>
+
+    <!-- User Assistant Tab -->
+    <div id="tab-user-assistant" class="tab-pane fade"></div>
+
+    <!-- Helpdesk Tab -->
+    <div id="tab-helpdesk" class="tab-pane fade"></div>
+
+    <!-- Wikipedia Research Lab Tab -->
+    <div id="tab-wikipedia-research" class="tab-pane fade"></div>
+
+    <!-- AI Software Transparency Scanner Tab -->
+    <div id="tab-software-transparency" class="tab-pane fade"></div>
+
+    <!-- User Directories and Storage Tab -->
+    <div id="tab-user-directories" class="tab-pane fade"></div>
+
+    <!-- Ninite Auto-Updater Tab -->
+    <div id="tab-ninite-updater" class="tab-pane fade"></div>
+
+    <!-- File Recovery (R-Studio) Tab -->
+    <div id="tab-file-recovery" class="tab-pane fade"></div>
+
+    <!-- Telemetry Research Tab -->
+    <div id="tab-telemetry-research" class="tab-pane fade"></div>
+
+    <!-- Process Leak Hunter Tab -->
+    <div id="tab-process-leaks" class="tab-pane fade"></div>
+
+    <!-- Behavioral Forensics Tab -->
+    <div id="tab-forensics" class="tab-pane fade"></div>
+
+    <!-- Kernel Quality & Throttling Tab -->
+    <div id="tab-throttling" class="tab-pane fade"></div>
+
+    <!-- Storage & Battery Wear Tab -->
+    <div id="tab-storage-wear" class="tab-pane fade"></div>
+
+    <!-- Peripherals & Wireless Network Tab -->
+    <div id="tab-peripherals" class="tab-pane fade"></div>
+
+    <!-- RAG Tab -->
+    <div id="tab-rag" class="tab-pane fade"></div>
+
+    <!-- PixelRAG Tab -->
+    <div id="tab-pixelrag" class="tab-pane fade"></div>
+
+    <!-- Models & API Tab -->
+    <div id="tab-models" class="tab-pane fade"></div>
+
+    <!-- AI Agents Tab -->
+    <div id="tab-agents" class="tab-pane fade"></div>
+
+    <!-- Skills Tab -->
+    <div id="tab-skills" class="tab-pane fade"></div>
+
+    <!-- MCP Servers Tab -->
+    <div id="tab-mcp" class="tab-pane fade"></div>
+
+    <!-- Google User Desktop Tab -->
+    <div id="tab-google-desktop" class="tab-pane fade"></div>
+
+    <!-- File History Search Tab -->
+    <div id="tab-file-history-search" class="tab-pane fade"></div>
+
+    <!-- AI Benchmark Tab -->
+    <div id="tab-ai-benchmark" class="tab-pane fade"></div>
+
+    <!-- Windows CLI Modular Applications Tabs -->
+    <div id="tab-storage-manager" class="tab-pane fade"></div>
+    <div id="tab-disk-speed" class="tab-pane fade"></div>
+    <div id="tab-boot-recovery" class="tab-pane fade"></div>
+    <div id="tab-servicing-integrity" class="tab-pane fade"></div>
+    <div id="tab-services-manager" class="tab-pane fade"></div>
+    <div id="tab-task-scheduler" class="tab-pane fade"></div>
+    <div id="tab-process-manager" class="tab-pane fade"></div>
+    <div id="tab-firewall-manager" class="tab-pane fade"></div>
+    <div id="tab-security-acl" class="tab-pane fade"></div>
+    <div id="tab-performance-tracing" class="tab-pane fade"></div>
+
+    <div id="tab-log-settings" class="tab-pane fade"></div>
+    <div id="tab-software-manager" class="tab-pane fade"></div>
+    <div id="tab-taskbar-controller" class="tab-pane fade"></div>
+    <div id="tab-accounts-identity" class="tab-pane fade"></div>
+    <div id="tab-power-lifecycle" class="tab-pane fade"></div>
+    <div id="tab-app-logs" class="tab-pane fade"></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<link rel="stylesheet" href="/html/ai_modal_dialog/style.css?v=20261010_v3">
+<script src="/html/ai_modal_dialog/main.js?v=20261010_v3"></script>
+<script src="/html/js/window-api.js?v=20261008_v3"></script>
+<script src="/html/js/chatService.js?v=20261008_v3"></script>
+<script src="/html/js/appConfigEditor.js?v=20261008_v3"></script>
+<script type="module" src="/html/js/panel-loader.js?v=20261010_v1"></script>
+<script type="module" src="/html/apps/main.js?v=20261010_v1"></script>
+
+</body>
+</html>
