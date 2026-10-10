@@ -18,7 +18,7 @@
 # Package: apps.windows
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 22:22:44
+# Updated: 2026-10-10 22:58:16
 # =============================================================================
 
 from __future__ import annotations
@@ -294,7 +294,7 @@ def main() -> None:
             return
 
     if args.logs_catalog or args.logs_domains or args.process_provenance or args.power_lifecycle or args.sysmon_status:
-        from apps.windows.telemetry.event_catalog import WindowsEventCatalogEngine
+        from apps.windows.telemetry.catalog.event_catalog import WindowsEventCatalogEngine
         catalog_engine = WindowsEventCatalogEngine()
 
         if args.logs_domains:

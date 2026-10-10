@@ -16,7 +16,7 @@
 # Package: apps.windows.telemetry
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 22:28:45
+# Updated: 2026-10-10 22:58:27
 # =============================================================================
 
 from __future__ import annotations
@@ -30,7 +30,7 @@ import platform
 import socket
 import time
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 try:
     import psutil
     PSUTIL_AVAILABLE = True

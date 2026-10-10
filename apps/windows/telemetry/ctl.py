@@ -20,7 +20,7 @@
 # Package: apps.windows.telemetry
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 22:22:44
+# Updated: 2026-10-10 22:58:16
 # =============================================================================
 
 from __future__ import annotations
@@ -267,7 +267,7 @@ def cmd_security(args: argparse.Namespace) -> int:
 
 def cmd_logs(args: argparse.Namespace) -> int:
     """Обрабатывает подкоманды каталога журналов событий Windows."""
-    from apps.windows.telemetry.event_catalog import WindowsEventCatalogEngine
+    from apps.windows.telemetry.catalog.event_catalog import WindowsEventCatalogEngine
     engine = WindowsEventCatalogEngine()
     action = getattr(args, 'logs_action', None) or 'domains'
 

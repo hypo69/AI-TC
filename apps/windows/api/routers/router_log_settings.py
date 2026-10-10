@@ -17,7 +17,7 @@
 # Package: apps.windows.api.routers
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-10 22:58:16
 # =============================================================================
 
 from __future__ import annotations
@@ -541,7 +541,7 @@ async def get_channel_events(
 # -----------------------------------------------------------------------------
 # Иерархический каталог провайдеров и 7 доменов телеметрии
 # -----------------------------------------------------------------------------
-from apps.windows.telemetry.event_catalog import WindowsEventCatalogEngine
+from apps.windows.telemetry.catalog.event_catalog import WindowsEventCatalogEngine
 
 _catalog_engine = WindowsEventCatalogEngine()
 
