@@ -138,3 +138,13 @@ async def test_live_snapshot_contract(collector: SystemCollector) -> None:
     assert snap.cpu is not None and snap.memory.total_gb > 0
     assert 0 < len(snap.top_processes) <= 10
     assert snap.disks and snap.gpus
+
+
+async def test_hardware_tree_built_and_cached(collector: SystemCollector) -> None:
+    """Дерево компонентов строится через HardwareTreeBuilder, содержит ключевые категории и кэшируется."""
+    nodes = await collector.get_hardware_tree_async(force=True)
+    categories = {n.category for n in nodes}
+    assert {'System', 'Windows Updates'} <= categories
+    assert nodes[0].category == 'System' and nodes[0].properties.get('Компьютер (Host)')
+    cached = await collector.get_hardware_tree_async()
+    assert cached is nodes
