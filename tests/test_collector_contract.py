@@ -12,7 +12,7 @@
 # Package: tests
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-11 10:46:41
+# Updated: 2026-10-11 10:48:15
 # =============================================================================
 
 from __future__ import annotations
@@ -162,3 +162,16 @@ def test_software_info_contract(collector: SystemCollector) -> None:
     assert isinstance(office, OfficeSuiteInfo)
     assert collector.get_ms_office_info() is office
     assert isinstance(collector.get_onedrive_info(), CloudStorageInfo)
+
+def test_history_mixin_methods_present_and_read_only_calls_work(collector: SystemCollector) -> None:
+    """Методы истории доступны через SystemCollector (миксин); чтения из хранилища возвращают списки."""
+    from apps.windows.telemetry.history_mixin import TelemetryHistoryMixin
+
+    assert isinstance(collector, TelemetryHistoryMixin)
+    for name in ('get_hardware_audit', 'archive_hardware_state', 'get_startup_audit', 'get_process_lineage',
+                 'get_reboot_report', 'get_extended_system_audit', 'get_process_provenance_history'):
+        assert callable(getattr(collector, name))
+    assert isinstance(collector.get_snapshots(limit=3), list)
+    assert isinstance(collector.get_hardware_history(limit=3), list)
+    assert isinstance(collector.get_startup_history(limit=3), list)
+    assert isinstance(collector.get_hardware_changes(limit=3), list)
