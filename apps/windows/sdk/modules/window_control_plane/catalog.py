@@ -19,17 +19,16 @@
 # Package: apps.windows.sdk.modules.window_control_plane
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-11 04:20:00
 # =============================================================================
 
 from __future__ import annotations
 """Единый каталог параметров Window Management Control Plane (295 параметров)."""
 
+import json
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 from logger import logger
-from apps.windows.sdk.modules.window_control_plane.catalog_data_1 import GET_CATALOG_PART_1
-from apps.windows.sdk.modules.window_control_plane.catalog_data_2 import GET_CATALOG_PART_2
-from apps.windows.sdk.modules.window_control_plane.catalog_data_3 import GET_CATALOG_PART_3
 from apps.windows.sdk.modules.window_control_plane.models import (
     ControlPlaneSummaryResponse,
     DocStatus,
@@ -38,6 +37,8 @@ from apps.windows.sdk.modules.window_control_plane.models import (
     SupportStatus,
     WindowSettingDefinition,
 )
+
+CATALOG_DATA_PATH: Path = Path(__file__).with_name('catalog_data.json')
 
 
 class WindowControlPlaneCatalog:
@@ -52,12 +53,9 @@ class WindowControlPlaneCatalog:
         self._load_and_index()
 
     def _load_and_index(self) -> None:
-        """Загрузка всех частей каталога и индексация."""
-        part1 = GET_CATALOG_PART_1()
-        part2 = GET_CATALOG_PART_2()
-        part3 = GET_CATALOG_PART_3()
-
-        all_items = part1 + part2 + part3
+        """Загрузка каталога из JSON (с валидацией pydantic) и индексация."""
+        raw = json.loads(CATALOG_DATA_PATH.read_text(encoding='utf-8'))
+        all_items = [WindowSettingDefinition.model_validate(entry) for entry in raw]
         self._items_list = all_items
 
         for item in all_items:
