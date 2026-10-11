@@ -12,7 +12,7 @@
 # Package: tests
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-11 04:33:19
+# Updated: 2026-10-11 10:46:41
 # =============================================================================
 
 from __future__ import annotations
@@ -150,3 +150,15 @@ async def test_hardware_tree_built_and_cached(collector: SystemCollector) -> Non
     assert nodes[0].category == 'System' and nodes[0].properties.get('Компьютер (Host)')
     cached = await collector.get_hardware_tree_async()
     assert cached is nodes
+
+def test_software_info_contract(collector: SystemCollector) -> None:
+    """Сведения о ПО возвращают корректные модели; Windows Update и Office кэшируются."""
+    from apps.windows.telemetry.models import CloudStorageInfo, OfficeSuiteInfo, WindowsUpdateInfo
+
+    updates = collector.get_updates_info()
+    assert isinstance(updates, WindowsUpdateInfo)
+    assert collector.get_updates_info() is updates
+    office = collector.get_ms_office_info()
+    assert isinstance(office, OfficeSuiteInfo)
+    assert collector.get_ms_office_info() is office
+    assert isinstance(collector.get_onedrive_info(), CloudStorageInfo)
