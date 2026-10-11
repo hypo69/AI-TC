@@ -58,3 +58,7 @@
 | **Сумма методов сбора** | **8,72** | **3,28** | |
 
 Остаток: `get_gpu_metrics` (nvidia-smi + PowerShell CIM) и `psutil.process_iter` по всем процессам (~1,5 с на `proc_info`).
+
+### Дополнение к этапу 3: GPU
+
+`GpuProber.probe_all` выполнял `nvidia-smi`, WMI `VideoController` и два запроса WDDM-счётчиков (PowerShell) последовательно. Теперь независимые опросы идут параллельно в пуле потоков: `get_gpu_metrics` 1,57 → 0,78 с, **сумма методов сбора 2,46 с** (было 8,72 с).

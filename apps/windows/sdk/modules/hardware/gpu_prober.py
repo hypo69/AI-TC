@@ -16,7 +16,7 @@
 # Package: apps.windows.sdk.modules.hardware
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-11 04:27:42
 # =============================================================================
 
 from __future__ import annotations
@@ -27,8 +27,9 @@ import re
 import os
 import shutil
 import subprocess
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 from logger import logger
 
 @dataclass
@@ -244,29 +245,33 @@ class GpuProber:
     def probe_all(self) -> List[GpuDeviceTelemetry]:
         """Опрашивает все доступные GPU в системе (NVIDIA, AMD, Intel Arc, WMI и WDDM счетчики).
 
+        Независимые внешние опросы выполняются параллельно в пуле потоков.
+
         Returns:
             List[GpuDeviceTelemetry]: Список обнаруженных видеокарт без дублирования.
         """
         gpus: List[GpuDeviceTelemetry] = []
-        if self._nvidia_smi:
-            nvidia_gpus = self._probe_nvidia()
-            if nvidia_gpus:
-                gpus.extend(nvidia_gpus)
-        if self._amd_smi:
-            amd_gpus = self._probe_amd()
-            if amd_gpus:
-                gpus.extend(amd_gpus)
+        with ThreadPoolExecutor(max_workers=4, thread_name_prefix='gpu_probe') as pool:
+            nvidia_future = pool.submit(self._probe_nvidia) if self._nvidia_smi else None
+            amd_future = pool.submit(self._probe_amd) if self._amd_smi else None
+            wmi_future = pool.submit(self._probe_wmi)
+            wddm_future = pool.submit(self._query_wddm_counters)
 
-        # Опрашиваем WMI для обнаружения встроенных видеокарт (например Intel UHD)
-        wmi_gpus = self._probe_wmi()
-        for w_gpu in wmi_gpus:
-            # Проверяем, не найдена ли уже эта видеокарта через SMI
-            already_exists = any(_is_same_gpu_device(w_gpu.name, existing.name) for existing in gpus)
-            if not already_exists:
-                gpus.append(w_gpu)
+            if nvidia_future:
+                gpus.extend(nvidia_future.result() or [])
+            if amd_future:
+                gpus.extend(amd_future.result() or [])
 
-        # Обогащаем данными WDDM / Direct3D счетчиков производительности (движки 3D/Decode/Copy и память)
-        self._enrich_wddm_performance(gpus)
+            # WMI нужен для обнаружения встроенных видеокарт (например Intel UHD)
+            for w_gpu in wmi_future.result():
+                # Проверяем, не найдена ли уже эта видеокарта через SMI
+                already_exists = any(_is_same_gpu_device(w_gpu.name, existing.name) for existing in gpus)
+                if not already_exists:
+                    gpus.append(w_gpu)
+
+            # Обогащаем данными WDDM / Direct3D счетчиков производительности (движки 3D/Decode/Copy и память)
+            luid_memory, luid_engines = wddm_future.result()
+        self._enrich_wddm_performance(gpus, luid_memory, luid_engines)
 
         # Переиндексируем список
         for idx, g in enumerate(gpus):
@@ -274,19 +279,28 @@ class GpuProber:
 
         return gpus
 
-    def _enrich_wddm_performance(self, gpus: List[GpuDeviceTelemetry]) -> None:
-        """Обогащает метрики видеокарт счетчиками WDDM/Direct3D (движки 3D/Video/Copy и память)."""
-        if not gpus:
-            return
+    def _query_wddm_counters(self) -> Tuple[Dict[str, Dict[str, float]], Dict[str, Dict[str, float]]]:
+        """Опрашивает счетчики WDDM/Direct3D: память адаптеров и загрузку графических движков.
+
+        Два PowerShell-запроса выполняются параллельно.
+
+        Returns:
+            Tuple[Dict, Dict]: (память по LUID, загрузка движков по LUID); пустые словари при ошибке.
+        """
+        ps_mem = 'Get-CimInstance Win32_PerfFormattedData_GPUPerformanceCounters_GPUAdapterMemory -ErrorAction SilentlyContinue | Select-Object Name, DedicatedUsage, SharedUsage, TotalCommitted | ConvertTo-Json -Compress'
+        ps_eng = 'Get-CimInstance Win32_PerfFormattedData_GPUPerformanceCounters_GPUEngine -ErrorAction SilentlyContinue | Select-Object Name, UtilizationPercentage | ConvertTo-Json -Compress'
+        luid_memory: Dict[str, Dict[str, float]] = {}
+        luid_engines: Dict[str, Dict[str, float]] = {}
         try:
-            # 1. Опрос счетчиков памяти видеоадаптеров
-            ps_mem = 'Get-CimInstance Win32_PerfFormattedData_GPUPerformanceCounters_GPUAdapterMemory -ErrorAction SilentlyContinue | Select-Object Name, DedicatedUsage, SharedUsage, TotalCommitted | ConvertTo-Json -Compress'
-            res_mem = subprocess.run(['powershell', '-NoProfile', '-Command', ps_mem], capture_output=True, text=True, timeout=5)
+            with ThreadPoolExecutor(max_workers=2, thread_name_prefix='wddm_query') as pool:
+                mem_future = pool.submit(subprocess.run, ['powershell', '-NoProfile', '-Command', ps_mem], capture_output=True, text=True, timeout=5)
+                eng_future = pool.submit(subprocess.run, ['powershell', '-NoProfile', '-Command', ps_eng], capture_output=True, text=True, timeout=5)
+                res_mem = mem_future.result()
+                res_eng = eng_future.result()
+
             mems = json.loads(res_mem.stdout) if res_mem.stdout.strip() else []
             if isinstance(mems, dict):
                 mems = [mems]
-
-            luid_memory: Dict[str, Dict[str, float]] = {}
             for m in mems:
                 name = str(m.get('Name', ''))
                 if 'luid_' in name:
@@ -298,14 +312,9 @@ class GpuProber:
                         tot = float(m.get('TotalCommitted') or 0.0) / (1024 ** 2)
                         luid_memory[luid] = {'dedicated_mb': ded, 'shared_mb': shared, 'total_mb': tot}
 
-            # 2. Опрос счетчиков графических движков
-            ps_eng = 'Get-CimInstance Win32_PerfFormattedData_GPUPerformanceCounters_GPUEngine -ErrorAction SilentlyContinue | Select-Object Name, UtilizationPercentage | ConvertTo-Json -Compress'
-            res_eng = subprocess.run(['powershell', '-NoProfile', '-Command', ps_eng], capture_output=True, text=True, timeout=5)
             engs = json.loads(res_eng.stdout) if res_eng.stdout.strip() else []
             if isinstance(engs, dict):
                 engs = [engs]
-
-            luid_engines: Dict[str, Dict[str, float]] = {}
             for it in engs:
                 name = str(it.get('Name', ''))
                 if '_luid_' in name and '_engtype_' in name:
@@ -317,6 +326,26 @@ class GpuProber:
                             val = float(it.get('UtilizationPercentage') or 0.0)
                             luid_engines.setdefault(luid, {}).setdefault(eng_type, 0.0)
                             luid_engines[luid][eng_type] += val
+        except Exception as exc:
+            logger.debug(f'WDDM counters query error: {exc}')
+        return luid_memory, luid_engines
+
+    def _enrich_wddm_performance(
+        self,
+        gpus: List[GpuDeviceTelemetry],
+        luid_memory: Dict[str, Dict[str, float]],
+        luid_engines: Dict[str, Dict[str, float]],
+    ) -> None:
+        """Обогащает метрики видеокарт счетчиками WDDM/Direct3D (движки 3D/Video/Copy и память).
+
+        Args:
+            gpus: Список видеокарт для обогащения.
+            luid_memory: Память адаптеров по LUID (результат _query_wddm_counters).
+            luid_engines: Загрузка графических движков по LUID (результат _query_wddm_counters).
+        """
+        if not gpus:
+            return
+        try:
 
             # 3. Сопоставление LUID и адаптеров
             for g in gpus:
