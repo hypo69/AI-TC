@@ -16,7 +16,7 @@
 # Package: apps.windows.telemetry
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 22:58:27
+# Updated: 2026-10-11 04:25:19
 # =============================================================================
 
 from __future__ import annotations
@@ -81,6 +81,8 @@ from apps.windows.telemetry_research.startup_history_manager import StartupHisto
 from .process_token_collector import ProcessTokenCollector
 from .sqlite import TelemetryStorage
 
+NPU_CACHE_TTL_SEC: float = 3600.0
+
 class SystemCollector:
     """Telemetry collector for system load, hardware devices, and processes."""
 
@@ -105,6 +107,8 @@ class SystemCollector:
         self._ram_sticks_cache_time: float = 0.0
         self._physical_disks_cached: Optional[List[PhysicalDiskHealth]] = None
         self._physical_disks_cache_time: float = 0.0
+        self._npus_cached: Optional[List[NpuMetrics]] = None
+        self._npus_cache_time: float = 0.0
         self.storage = storage or TelemetryStorage.get_instance()
         self.auditor = auditor or HardwareAuditor(storage=self.storage)
         self.history_manager = history_manager or HardwareHistoryManager()
@@ -429,9 +433,15 @@ class SystemCollector:
     def get_npu_metrics(self) -> List[NpuMetrics]:
         """Collect NPU neural accelerator devices and AI capabilities.
 
+        Результат кэшируется на NPU_CACHE_TTL_SEC секунд: набор NPU-устройств статичен,
+        а PnP-опрос через PowerShell занимает ~0,6 с. При ошибке опроса кэш не заполняется.
+
         Returns:
             List[NpuMetrics]: Detected NPU devices.
         """
+        now = time.time()
+        if self._npus_cached is not None and now - self._npus_cache_time < NPU_CACHE_TTL_SEC:
+            return list(self._npus_cached)
         npus: List[NpuMetrics] = []
         try:
             from apps.windows.sdk.modules.hardware.gpu_prober import GpuProber
@@ -450,9 +460,11 @@ class SystemCollector:
                     has_openvino=n.has_openvino,
                     ai_backends=n.ai_backends,
                 ))
+            self._npus_cached = npus
+            self._npus_cache_time = now
         except Exception as ex:
             logger.debug(f'Ошибка сбора метрик NPU: {ex}')
-        return npus
+        return list(npus)
 
     def get_disk_metrics(self) -> tuple[List[DiskPartitionMetrics], DiskIoMetrics]:
         """Collect disk partitions capacity and read/write rates.
@@ -645,7 +657,7 @@ class SystemCollector:
         if PSUTIL_AVAILABLE:
             handle_attr = 'num_handles' if os.name == 'nt' else 'num_fds'
             proc_dict: Dict[int, Dict[str, Any]] = {}
-            for p in psutil.process_iter(attrs=['pid', 'ppid', 'name', 'status', 'cpu_percent', 'memory_info', 'memory_percent', 'num_threads', 'username', 'create_time', 'exe', 'cmdline', 'cpu_times', 'io_counters', handle_attr]):
+            for p in psutil.process_iter(attrs=['pid', 'ppid', 'name', 'cpu_percent', 'memory_info', 'memory_percent', 'num_threads', 'username', 'create_time', 'exe', 'cpu_times', 'io_counters', handle_attr]):
                 try:
                     proc_dict[p.info['pid']] = p.info
                 except (psutil.NoSuchProcess, psutil.AccessDenied):
@@ -657,7 +669,21 @@ class SystemCollector:
                 if p_id in windowed_pids
             }
 
-            for pid, info in proc_dict.items():
+            def _rank_key(info: Dict[str, Any]) -> float:
+                """Ключ ранжирования процесса, совпадающий с итоговой сортировкой."""
+                sort_key_name = (sort_by or 'cpu').lower()
+                if sort_key_name in ('handles', 'descriptors'):
+                    return float(info.get(handle_attr) or 0)
+                if sort_key_name in ('memory', 'ram'):
+                    mem = info.get('memory_info')
+                    return round((int(mem.rss) if mem and hasattr(mem, 'rss') else 0) / (1024 * 1024), 1)
+                return round(info.get('cpu_percent') or 0.0, 1)
+
+            ranked_pids = sorted(proc_dict, key=lambda pid_: _rank_key(proc_dict[pid_]), reverse=True)
+            selected_pids = ranked_pids if limit_val is None or limit_val <= 0 else ranked_pids[:limit_val]
+
+            for pid in selected_pids:
+                info = proc_dict[pid]
                 try:
                     p_name = info.get('name') or 'unknown'
                     low_name = p_name.lower()
@@ -707,7 +733,13 @@ class SystemCollector:
                     creation_time_str = datetime.fromtimestamp(create_time_val, tz=timezone.utc).isoformat() if create_time_val > 0 else None
                     process_guid = f'proc_{pid}_{int(create_time_val)}'
 
-                    raw_cmdline = info.get('cmdline')
+                    try:
+                        proc_handle = psutil.Process(pid)
+                        raw_cmdline = proc_handle.cmdline()
+                        proc_status = proc_handle.status() or 'running'
+                    except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+                        raw_cmdline = None
+                        proc_status = 'running'
                     cmdline_str = ' '.join(raw_cmdline) if isinstance(raw_cmdline, list) else (str(raw_cmdline) if raw_cmdline else None)
                     launch_reason = self._classify_launch_reason(parent_name, p_name, session_id, cmdline_str)
 
@@ -728,7 +760,7 @@ class SystemCollector:
                     procs.append(ProcessMetrics(
                         pid=pid,
                         name=p_name,
-                        status=info.get('status') or 'running',
+                        status=proc_status,
                         cpu_percent=cpu_p,
                         memory_mb=rss_mb,
                         memory_percent=round(info.get('memory_percent') or 0.0, 1),
