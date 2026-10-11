@@ -30,7 +30,7 @@ from apps.windows.telemetry.sqlite import TelemetryStorage
 from apps.windows.telemetry.sqlite.reader import TelemetryReader
 from apps.windows.telemetry.sqlite.writer import TelemetryWriter
 
-BASELINE_PATH = Path(__file__).parent / 'data' / 'telemetry_sqlite_api.json'
+BASELINE_PATH = Path(__file__).parent / 'api_baselines' / 'telemetry_sqlite_api.json'
 
 
 def _api(cls: type) -> dict[str, str]:
