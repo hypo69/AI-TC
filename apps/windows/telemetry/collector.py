@@ -16,7 +16,7 @@
 # Package: apps.windows.telemetry
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-11 04:30:19
+# Updated: 2026-10-11 04:32:30
 # =============================================================================
 
 from __future__ import annotations
@@ -30,7 +30,7 @@ import platform
 import socket
 import time
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 try:
     import psutil
     PSUTIL_AVAILABLE = True
@@ -79,7 +79,8 @@ from apps.windows.telemetry_research.hardware_auditor import HardwareAuditor
 from apps.windows.telemetry_research.hardware_history_manager import HardwareHistoryManager
 from apps.windows.telemetry_research.startup_history_manager import StartupHistoryManager
 from .hardware_tree import HardwareTreeBuilder
-from .process_token_collector import ProcessTokenCollector
+from .network_activity import NetworkActivityCollector
+from .process_metrics import ProcessMetricsCollector
 from .sqlite import TelemetryStorage
 
 NPU_CACHE_TTL_SEC: float = 3600.0
@@ -97,7 +98,6 @@ class SystemCollector:
         """Initialize telemetry collector with timing, I/O baseline, hardware auditor, startup history, and storage."""
         self._last_disk_io = psutil.disk_io_counters() if PSUTIL_AVAILABLE else None
         self._last_net_io = psutil.net_io_counters(pernic=True) if PSUTIL_AVAILABLE else None
-        self._last_proc_net_io: Dict[int, Tuple[float, float, float]] = {}
         self._last_time = time.time()
         self._cpu_model_cached: Optional[str] = None
         self._identity_cached: Optional[Dict[str, Any]] = None
@@ -114,6 +114,8 @@ class SystemCollector:
         self.auditor = auditor or HardwareAuditor(storage=self.storage)
         self.history_manager = history_manager or HardwareHistoryManager()
         self._hardware_tree_builder = HardwareTreeBuilder(self)
+        self._process_collector = ProcessMetricsCollector()
+        self._network_activity = NetworkActivityCollector()
         self.startup_history_manager = startup_history_manager or StartupHistoryManager()
 
     def get_system_identity(self) -> Dict[str, Any]:
@@ -596,252 +598,18 @@ class SystemCollector:
 
 
 
-    @staticmethod
-    def _classify_launch_reason(
-        parent_name: Optional[str],
-        process_name: Optional[str] = None,
-        session_id: Optional[int] = None,
-        cmdline: Optional[str] = None,
-    ) -> str:
-        """Классификация причины/контекста запуска процесса по его родителю и окружению.
-
-        Args:
-            parent_name: Имя родительского процесса.
-            process_name: Имя текущего процесса.
-            session_id: Номер сессии Windows (0 = системные службы, 1+ = интерактивная сессия).
-            cmdline: Командная строка процесса (опционально).
-
-        Returns:
-            str: Категория запуска ('service', 'scheduled_task', 'shell_interactive', 'terminal_cli', 'ide_developer', 'system_boot', 'spawned_by_parent', 'unknown').
-        """
-        p_name = (parent_name or '').lower()
-        if p_name in ('services.exe',) or (p_name in ('svchost.exe',) and session_id == 0):
-            return 'service'
-        if p_name in ('taskeng.exe', 'taskhostw.exe', 'taskhost.exe') or (cmdline and '-task' in cmdline.lower()):
-            return 'scheduled_task'
-        if p_name in ('explorer.exe',):
-            return 'shell_interactive'
-        if p_name in ('cmd.exe', 'powershell.exe', 'pwsh.exe', 'wt.exe', 'windowsterminal.exe', 'bash.exe', 'zsh.exe', 'conhost.exe'):
-            return 'terminal_cli'
-        if p_name in ('code.exe', 'devenv.exe', 'pycharm64.exe', 'idea64.exe', 'rider64.exe', 'cursor.exe', 'windsurf.exe'):
-            return 'ide_developer'
-        if p_name in ('winlogon.exe', 'userinit.exe', 'smss.exe', 'csrss.exe', 'wininit.exe', 'lsass.exe'):
-            return 'system_boot'
-        if p_name:
-            clean_parent = p_name.replace('.exe', '')
-            return f'spawned_by_{clean_parent}'
-        return 'unknown'
 
     def get_top_processes(self, limit: Any = 25, sort_by: str = 'cpu') -> List[ProcessMetrics]:
-        """Retrieve active processes sorted by resource consumption, with token and provenance info.
+        """Retrieve active processes sorted by resource consumption (делегирует ProcessMetricsCollector).
 
         Args:
             limit: Maximum processes to return (0 for all).
             sort_by: Attribute to sort by ('cpu', 'memory'/'ram', 'handles'/'descriptors').
+
         Returns:
-            List[ProcessMetrics]: Ranked process metrics, including provenance, integrity_level and elevation.
+            List[ProcessMetrics]: Ranked process metrics.
         """
-        limit_val = limit.default if hasattr(limit, "default") else (int(limit) if isinstance(limit, (int, float, str)) and str(limit).isdigit() else 25)
-        # Collect token information for all processes
-        token_collector = ProcessTokenCollector()
-        token_info_map = {info.pid: info for info in token_collector.collect()}
-
-        # Классификация оконных процессов
-        from apps.windows.sdk.modules.process_manager.core.classifier import (
-            ProcessClassifier,
-            WINDOWS_SYSTEM_PROCESS_NAMES,
-            KNOWN_APP_FRIENDLY_NAMES,
-        )
-        classifier = ProcessClassifier()
-        windowed_pids, titles_map = classifier.get_windowed_pids_and_titles()
-
-        procs: List[ProcessMetrics] = []
-        if PSUTIL_AVAILABLE:
-            handle_attr = 'num_handles' if os.name == 'nt' else 'num_fds'
-            proc_dict: Dict[int, Dict[str, Any]] = {}
-            for p in psutil.process_iter(attrs=['pid', 'ppid', 'name', 'cpu_percent', 'memory_info', 'memory_percent', 'num_threads', 'username', 'create_time', 'exe', 'cpu_times', 'io_counters', handle_attr]):
-                try:
-                    proc_dict[p.info['pid']] = p.info
-                except (psutil.NoSuchProcess, psutil.AccessDenied):
-                    continue
-
-            name_to_windowed = {
-                (info.get('name') or '').lower(): True
-                for p_id, info in proc_dict.items()
-                if p_id in windowed_pids
-            }
-
-            def _rank_key(info: Dict[str, Any]) -> float:
-                """Ключ ранжирования процесса, совпадающий с итоговой сортировкой."""
-                sort_key_name = (sort_by or 'cpu').lower()
-                if sort_key_name in ('handles', 'descriptors'):
-                    return float(info.get(handle_attr) or 0)
-                if sort_key_name in ('memory', 'ram'):
-                    mem = info.get('memory_info')
-                    return round((int(mem.rss) if mem and hasattr(mem, 'rss') else 0) / (1024 * 1024), 1)
-                return round(info.get('cpu_percent') or 0.0, 1)
-
-            ranked_pids = sorted(proc_dict, key=lambda pid_: _rank_key(proc_dict[pid_]), reverse=True)
-            selected_pids = ranked_pids if limit_val is None or limit_val <= 0 else ranked_pids[:limit_val]
-
-            for pid in selected_pids:
-                info = proc_dict[pid]
-                try:
-                    p_name = info.get('name') or 'unknown'
-                    low_name = p_name.lower()
-                    exe_low = (info.get('exe') or '').lower()
-
-                    mem_info = info.get('memory_info')
-                    rss_bytes = int(mem_info.rss) if mem_info and hasattr(mem_info, 'rss') else 0
-                    rss_mb = round(rss_bytes / (1024 * 1024), 1)
-                    private_bytes = int(getattr(mem_info, 'vms', 0) or getattr(mem_info, 'private', 0) or 0) if mem_info else 0
-                    page_faults = int(getattr(mem_info, 'num_page_faults', 0) or 0) if mem_info else 0
-
-                    cpu_times = info.get('cpu_times')
-                    user_time_ms = int(getattr(cpu_times, 'user', 0) * 1000) if cpu_times else 0
-                    kernel_time_ms = int(getattr(cpu_times, 'system', 0) * 1000) if cpu_times else 0
-
-                    io_cnt = info.get('io_counters')
-                    rb_total = int(getattr(io_cnt, 'read_bytes', 0) or 0) if io_cnt else 0
-                    wb_total = int(getattr(io_cnt, 'write_bytes', 0) or 0) if io_cnt else 0
-                    ro_total = int(getattr(io_cnt, 'read_count', 0) or 0) if io_cnt else 0
-                    wo_total = int(getattr(io_cnt, 'write_count', 0) or 0) if io_cnt else 0
-
-                    cpu_p = round(info.get('cpu_percent') or 0.0, 1)
-                    num_h = info.get(handle_attr) or 0
-                    token = token_info_map.get(pid)
-                    integrity = token.integrity_level if token else None
-                    elevation = token.elevation if token else None
-                    sid = token.sid if token else None
-                    session_id = token.session_id if token else None
-
-                    ppid = info.get('ppid')
-                    parent_info = proc_dict.get(ppid) if ppid else None
-                    parent_name = parent_info.get('name') if parent_info else None
-
-                    # Построение цепочки предков
-                    ancestors = [p_name or str(pid)]
-                    curr_pid = ppid
-                    visited = {pid}
-                    while curr_pid and curr_pid in proc_dict and curr_pid not in visited:
-                        visited.add(curr_pid)
-                        curr_p = proc_dict[curr_pid]
-                        ancestors.append(curr_p.get('name') or f'PID:{curr_pid}')
-                        curr_pid = curr_p.get('ppid')
-                    ancestors.reverse()
-                    ancestor_chain = ' → '.join(ancestors)
-
-                    create_time_val = info.get('create_time') or 0.0
-                    creation_time_str = datetime.fromtimestamp(create_time_val, tz=timezone.utc).isoformat() if create_time_val > 0 else None
-                    process_guid = f'proc_{pid}_{int(create_time_val)}'
-
-                    try:
-                        proc_handle = psutil.Process(pid)
-                        raw_cmdline = proc_handle.cmdline()
-                        proc_status = proc_handle.status() or 'running'
-                    except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
-                        raw_cmdline = None
-                        proc_status = 'running'
-                    cmdline_str = ' '.join(raw_cmdline) if isinstance(raw_cmdline, list) else (str(raw_cmdline) if raw_cmdline else None)
-                    launch_reason = self._classify_launch_reason(parent_name, p_name, session_id, cmdline_str)
-
-                    # Классификация категории
-                    has_win = pid in windowed_pids
-                    is_app = has_win or (low_name in name_to_windowed and low_name not in WINDOWS_SYSTEM_PROCESS_NAMES)
-                    if is_app:
-                        category = 'app'
-                    elif low_name in WINDOWS_SYSTEM_PROCESS_NAMES or ('c:\\windows\\system32' in exe_low and not has_win):
-                        category = 'windows'
-                    else:
-                        category = 'background'
-
-                    win_titles = titles_map.get(pid, [])
-                    first_title = win_titles[0] if win_titles else None
-                    friendly = classifier._get_friendly_name(p_name, win_titles)
-
-                    procs.append(ProcessMetrics(
-                        pid=pid,
-                        name=p_name,
-                        status=proc_status,
-                        cpu_percent=cpu_p,
-                        memory_mb=rss_mb,
-                        memory_percent=round(info.get('memory_percent') or 0.0, 1),
-                        num_threads=info.get('num_threads') or 1,
-                        num_handles=num_h,
-                        username=info.get('username'),
-                        integrity_level=integrity,
-                        elevation=elevation,
-                        ppid=ppid,
-                        parent_name=parent_name,
-                        executable_path=info.get('exe'),
-                        sid=sid,
-                        session_id=session_id,
-                        creation_time=creation_time_str,
-                        process_guid=process_guid,
-                        ancestor_chain=ancestor_chain,
-                        launch_reason=launch_reason,
-                        category=category,
-                        is_app=is_app,
-                        friendly_name=friendly,
-                        window_title=first_title,
-                        user_time_ms=user_time_ms,
-                        kernel_time_ms=kernel_time_ms,
-                        working_set_bytes=rss_bytes,
-                        private_bytes=private_bytes,
-                        page_faults_count=page_faults,
-                        read_bytes_total=rb_total,
-                        write_bytes_total=wb_total,
-                        read_ops_total=ro_total,
-                        write_ops_total=wo_total,
-                    ))
-                except (psutil.NoSuchProcess, psutil.AccessDenied):
-                    continue
-        else:
-            # Fallback for non‑psutil environments
-            now_iso = datetime.now(timezone.utc).isoformat()
-            p = ProcessMetrics(
-                pid=os.getpid(),
-                name='python.exe',
-                status='running',
-                cpu_percent=1.5,
-                memory_mb=120.0,
-                memory_percent=1.0,
-                num_threads=8,
-                num_handles=42,
-                username=os.getenv('USERNAME', 'SYSTEM'),
-                ppid=os.getppid() if hasattr(os, 'getppid') else None,
-                parent_name='cmd.exe',
-                executable_path=os.path.abspath(__file__),
-                sid='S-1-5-21-mock-sid',
-                session_id=1,
-                creation_time=now_iso,
-                process_guid=f'proc_{os.getpid()}_{int(time.time())}',
-                ancestor_chain='cmd.exe → python.exe',
-                launch_reason='terminal_cli',
-                category='background',
-                is_app=False,
-                friendly_name='Python',
-            )
-            token = token_info_map.get(p.pid)
-            if token:
-                p.integrity_level = token.integrity_level
-                p.elevation = token.elevation
-                p.sid = token.sid
-                p.session_id = token.session_id
-            procs.append(p)
-
-        # Sorting according to requested key
-        sort_key = (sort_by or 'cpu').lower()
-        if sort_key in ('handles', 'descriptors'):
-            procs.sort(key=lambda x: x.num_handles, reverse=True)
-        elif sort_key in ('memory', 'ram'):
-            procs.sort(key=lambda x: x.memory_mb, reverse=True)
-        else:
-            procs.sort(key=lambda x: x.cpu_percent, reverse=True)
-
-        if limit_val is None or limit_val <= 0:
-            return procs
-        return procs[:limit_val]
+        return self._process_collector.get_top_processes(limit=limit, sort_by=sort_by)
 
     def get_battery_metrics(self) -> BatteryMetrics:
         """Collect laptop or UPS battery charge level and AC power status.
@@ -991,8 +759,8 @@ class SystemCollector:
         self._ram_sticks_cache_time = now
         return sticks
 
-    def get_listening_ports(self, limit: int=15) -> List[NetworkPortMetrics]:
-        """Collect active listening TCP/UDP sockets with process attribution.
+    def get_listening_ports(self, limit: int = 15) -> List[NetworkPortMetrics]:
+        """Collect active listening TCP/UDP sockets (делегирует NetworkActivityCollector).
 
         Args:
             limit: Maximum listening ports to return.
@@ -1000,158 +768,20 @@ class SystemCollector:
         Returns:
             List[NetworkPortMetrics]: Active listening ports.
         """
-        ports: List[NetworkPortMetrics] = []
-        if PSUTIL_AVAILABLE:
-            try:
-                conns = psutil.net_connections(kind='inet')
-                seen = set()
-                for c in conns:
-                    if c.status == 'LISTEN' or c.type == socket.SOCK_DGRAM:
-                        p_num = c.laddr.port
-                        if p_num in seen:
-                            continue
-                        seen.add(p_num)
-                        p_name = None
-                        if c.pid:
-                            try:
-                                p_name = psutil.Process(c.pid).name()
-                            except Exception:
-                                pass
-                        ports.append(NetworkPortMetrics(port=p_num, protocol='TCP' if c.type == socket.SOCK_STREAM else 'UDP', address=c.laddr.ip or '0.0.0.0', pid=c.pid, process_name=p_name))
-                        if len(ports) >= limit:
-                            break
-            except Exception as ex:
-                logger.debug(f'Failed to query listening ports: {ex}')
-        return ports
+        return self._network_activity.get_listening_ports(limit=limit)
 
-    def get_process_network_activity(self, limit: int=50, only_internet: bool=False) -> List[ProcessNetworkActivity]:
-        """Collect active network connections and traffic attribution for processes.
+    def get_process_network_activity(self, limit: int = 50, only_internet: bool = False) -> List[ProcessNetworkActivity]:
+        """Collect per-process network connections (делегирует NetworkActivityCollector).
 
         Args:
             limit: Maximum connections to return.
-            only_internet: Whether to restrict only to external internet addresses.
+            only_internet: Return only connections to external addresses.
 
         Returns:
-            List[ProcessNetworkActivity]: Active network connections with process and traffic description.
+            List[ProcessNetworkActivity]: Process network activity records.
         """
-        activities: List[ProcessNetworkActivity] = []
-        if not PSUTIL_AVAILABLE:
-            return activities
-        try:
-            raw_conns = psutil.net_connections(kind='inet')
-        except Exception as ex:
-            logger.debug(f'Failed to query network connections: {ex}')
-            return activities
-        proc_cache: Dict[int, Dict[str, Any]] = {}
-        now_ts = time.time()
+        return self._network_activity.get_process_network_activity(limit=limit, only_internet=only_internet)
 
-        def _get_proc_info(pid: Optional[int]) -> Dict[str, Any]:
-            if not pid or pid == 0:
-                return {'name': 'System Idle', 'user': 'SYSTEM', 'read_kb': 0.0, 'write_kb': 0.0, 'delta_read_kb': 0.0, 'delta_write_kb': 0.0, 'read_speed_kbs': 0.0, 'write_speed_kbs': 0.0}
-            if pid == 4:
-                return {'name': 'System', 'user': 'NT AUTHORITY\\SYSTEM', 'read_kb': 0.0, 'write_kb': 0.0, 'delta_read_kb': 0.0, 'delta_write_kb': 0.0, 'read_speed_kbs': 0.0, 'write_speed_kbs': 0.0}
-            if pid in proc_cache:
-                return proc_cache[pid]
-            try:
-                p = psutil.Process(pid)
-                pname = p.name()
-                puser = ''
-                try:
-                    puser = p.username()
-                except Exception:
-                    puser = ''
-                read_kb = 0.0
-                write_kb = 0.0
-                delta_read_kb = 0.0
-                delta_write_kb = 0.0
-                read_speed_kbs = 0.0
-                write_speed_kbs = 0.0
-                try:
-                    io = p.io_counters()
-                    read_kb = round(io.read_bytes / 1024, 1)
-                    write_kb = round(io.write_bytes / 1024, 1)
-                    if hasattr(self, '_last_proc_net_io') and pid in self._last_proc_net_io:
-                        prev_t, prev_r, prev_w = self._last_proc_net_io[pid]
-                        dt = max(now_ts - prev_t, 0.1)
-                        if io.read_bytes >= prev_r:
-                            delta_read_kb = round((io.read_bytes - prev_r) / 1024, 1)
-                            read_speed_kbs = round(delta_read_kb / dt, 1)
-                        if io.write_bytes >= prev_w:
-                            delta_write_kb = round((io.write_bytes - prev_w) / 1024, 1)
-                            write_speed_kbs = round(delta_write_kb / dt, 1)
-                    if hasattr(self, '_last_proc_net_io'):
-                        self._last_proc_net_io[pid] = (now_ts, io.read_bytes, io.write_bytes)
-                except Exception:
-                    pass
-                info = {'name': pname, 'user': puser, 'read_kb': read_kb, 'write_kb': write_kb, 'delta_read_kb': delta_read_kb, 'delta_write_kb': delta_write_kb, 'read_speed_kbs': read_speed_kbs, 'write_speed_kbs': write_speed_kbs}
-                proc_cache[pid] = info
-                return info
-            except Exception:
-                info = {'name': f'PID {pid}', 'user': '', 'read_kb': 0.0, 'write_kb': 0.0, 'delta_read_kb': 0.0, 'delta_write_kb': 0.0, 'read_speed_kbs': 0.0, 'write_speed_kbs': 0.0}
-                proc_cache[pid] = info
-                return info
-
-        def _is_ext_internet(ip: str) -> bool:
-            if not ip:
-                return False
-            if ip in ('127.0.0.1', '::1', '0.0.0.0', '::') or ip.startswith('127.') or ip.startswith('fe80:'):
-                return False
-            return True
-        for c in raw_conns:
-            laddr_str = f'{c.laddr.ip}:{c.laddr.port}' if c.laddr else '-'
-            raddr_str = f'{c.raddr.ip}:{c.raddr.port}' if c.raddr else '-'
-            rip = c.raddr.ip if c.raddr else ''
-            rport = c.raddr.port if c.raddr else 0
-            lport = c.laddr.port if c.laddr else 0
-            is_ext = _is_ext_internet(rip)
-            if only_internet and (not is_ext):
-                continue
-            proto = 'TCP' if c.type == socket.SOCK_STREAM else 'UDP'
-            status = c.status or ('LISTEN' if not c.raddr else 'ESTABLISHED')
-            p_info = _get_proc_info(c.pid)
-            p_name = p_info['name']
-            p_user = p_info['user']
-            service_type, sent_desc, recv_desc = self._classify_traffic(p_name, rport or lport, proto, status, is_ext)
-            activities.append(ProcessNetworkActivity(pid=c.pid or 0, name=p_name, user=p_user, local_address=laddr_str, remote_address=raddr_str, remote_host=None, protocol=proto, status=status, is_internet=is_ext, service_type=service_type, sent_kb=p_info.get('write_kb', 0.0), recv_kb=p_info.get('read_kb', 0.0), delta_sent_kb=p_info.get('delta_write_kb', 0.0), delta_recv_kb=p_info.get('delta_read_kb', 0.0), sent_rate_kbs=p_info.get('write_speed_kbs', 0.0), recv_rate_kbs=p_info.get('read_speed_kbs', 0.0), sent_summary=sent_desc, recv_summary=recv_desc))
-            if len(activities) >= limit:
-                break
-        return activities
-
-    @staticmethod
-    def _classify_traffic(proc_name: str, port: int, proto: str, status: str, is_internet: bool) -> tuple[str, str, str]:
-        """Classify network traffic service type and generate human-readable summaries."""
-        p_lower = proc_name.lower()
-        if status == 'LISTEN' or not is_internet:
-            if 'python' in p_lower or 'uvicorn' in p_lower or 'node' in p_lower:
-                return ('Локальный Web API / Сервер', 'HTTP ответы локальным клиентам / WebSockets', 'Входящие HTTP запросы от фронтенда / браузера')
-            return ('Локальная служба / Socket', 'Служебные ответы локальной подсистемы', 'Ожидание входящих подключений (Listen)')
-        if port in (443, 8443):
-            if any((b in p_lower for b in ('edge', 'chrome', 'firefox', 'brave', 'opera', 'browser'))):
-                return ('HTTPS / Веб-навигация', 'Исходящие HTTPS запросы, URL заголовки, формы, cookies', 'HTML страницы, скрипты, видео, изображения, медиа')
-            if any((m in p_lower for m in ('telegram', 'discord', 'slack', 'whatsapp', 'skype'))):
-                return ('Мессенджер / Зашифрованный чат', 'Текстовые сообщения, медиа-файлы, голосовые пакеты, пинги', 'Входящие сообщения, аудио/видеопоток, обновления чатов')
-            if any((s in p_lower for s in ('onedrive', 'googledrivefs', 'dropbox', 'cloud'))):
-                return ('Облачная синхронизация / Хранилище', 'Выгрузка локальных файлов, метаданные изменений', 'Синхронизация файлов из облака, снимки папок')
-            if any((d in p_lower for d in ('code', 'devenv', 'language_server', 'python', 'pycharm', 'git'))):
-                return ('Разработка / LLM API & Git', 'AI промпты к LLM моделям, API вызовы, git push, пакеты', 'Сгенерированный AI код, ответы API, пакеты библиотек')
-            if any((w in p_lower for w in ('svchost', 'system', 'msmpeng', 'searchindexer', 'spoolsv'))):
-                return ('Системные службы Windows / Облако MS', 'Телеметрия Defender, проверка сертификатов, запросы ОС', 'Сигнатуры безопасности, метаданные обновлений Windows')
-            return ('HTTPS / Зашифрованный веб-трафик', 'Зашифрованные HTTPS/TLS запросы и полезная нагрузка', 'Ответы удаленного веб-сервера, зашифрованные данные')
-        if port in (80, 8080):
-            return ('HTTP / Открытый веб-трафик', 'HTTP GET/POST запросы, клиентские заголовки', 'HTML веб-страницы, незашифрованный контент, ответы')
-        if port == 53:
-            return ('DNS / Разрешение имен', 'Запросы на получение IP-адресов доменов (DNS Queries)', 'DNS-ответы с IP-адресами серверов (DNS Answers)')
-        if port in (5222, 5223, 5228):
-            return ('Push-нотификации / XMPP', 'Heartbeat пинги, исходящие push-запросы', 'Входящие фоновые push-уведомления и события')
-        if port == 22:
-            return ('SSH / Защищенный терминал', 'Команды консоли, зашифрованные SSH сессии', 'Вывод удаленного терминала, файловые потоки SFTP')
-        if port == 7680:
-            return ('WUDO / P2P обновления Windows', 'P2P раздача фрагментов обновлений ОС', 'P2P получение компонентов обновлений ОС')
-        if port in (465, 587):
-            return ('SMTP / Почтовая отправка', 'Исходящие электронные письма (MIME/SMTP)', 'Квитанции доставки, подтверждения почтового сервера')
-        if port in (993, 995):
-            return ('IMAP/POP3 / Почтовый прием', 'Команды проверки новых писем и папок', 'Входящие электронные письма, заголовки, вложения')
-        return (f'{proto}/{port}', f'Исходящие пакеты данных ({proto}) на порт {port}', f'Входящие пакеты и ответы сервера с порта {port}')
 
     def get_health_alerts(self) -> SystemHealthAlerts:
         """Check system reliability indicators and pending reboot status.

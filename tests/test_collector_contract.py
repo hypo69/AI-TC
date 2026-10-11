@@ -12,7 +12,7 @@
 # Package: tests
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-11 04:45:00
+# Updated: 2026-10-11 04:33:19
 # =============================================================================
 
 from __future__ import annotations
@@ -20,6 +20,8 @@ from __future__ import annotations
 import pytest
 
 from apps.windows.telemetry.collector import SystemCollector
+from apps.windows.telemetry.network_activity import NetworkActivityCollector
+from apps.windows.telemetry.process_metrics import ProcessMetricsCollector
 from apps.windows.telemetry.models import (
     BatteryMetrics,
     DiskIoMetrics,
@@ -57,7 +59,7 @@ def collector() -> SystemCollector:
 )
 def test_classify_launch_reason(parent: str | None, session: int | None, cmdline: str | None, expected: str) -> None:
     """Классификация причины запуска по родителю, сессии и командной строке."""
-    assert SystemCollector._classify_launch_reason(parent, 'child.exe', session, cmdline) == expected
+    assert ProcessMetricsCollector._classify_launch_reason(parent, 'child.exe', session, cmdline) == expected
 
 
 def test_classify_traffic_returns_triple() -> None:
@@ -65,7 +67,7 @@ def test_classify_traffic_returns_triple() -> None:
     for args in [('python.exe', 8000, 'TCP', 'LISTEN', False),
                  ('chrome.exe', 443, 'TCP', 'ESTABLISHED', True),
                  ('unknown.exe', 12345, 'UDP', 'ESTABLISHED', True)]:
-        result = SystemCollector._classify_traffic(*args)
+        result = NetworkActivityCollector._classify_traffic(*args)
         assert len(result) == 3 and all(isinstance(x, str) and x for x in result)
 
 
