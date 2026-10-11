@@ -24,7 +24,7 @@
 
 from __future__ import annotations
 
-"""Класс TelemetryWriter для сериализации, подготовки строк и транзакционной записи в SQLite."""
+"""Миксин записи инвентаря оборудования (CPU, RAM, GPU, диски, сеть) и телеметрических выборок."""
 
 import json
 import sqlite3

@@ -79,3 +79,11 @@ def test_writer_domains_write_rows(storage: TelemetryStorage) -> None:
         io_rows = conn.execute('SELECT COUNT(*) FROM disk_io_events').fetchone()[0]
     assert cpu_rows == 1 and io_rows == 1
     assert writer.save_services_snapshot('snap-1', []) == 0
+
+def test_reader_domains_read_empty_db(storage: TelemetryStorage) -> None:
+    """По одному методу из каждой группы чтения отрабатывают на пустой БД и возвращают пустые списки."""
+    reader = storage.reader
+    assert reader.get_snapshots() == []
+    assert reader.get_disk_inventory() == []
+    assert reader.get_reboot_history() == []
+    assert reader.get_security_events() == []
