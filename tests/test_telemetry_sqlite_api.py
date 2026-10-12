@@ -46,7 +46,7 @@ def _api(cls: type) -> dict[str, str]:
     return out
 
 
-@pytest.mark.parametrize('cls', [TelemetryWriter, TelemetryReader], ids=lambda c: c.__name__)
+@pytest.mark.parametrize('cls', [TelemetryWriter, TelemetryReader, TelemetryStorage], ids=lambda c: c.__name__)
 def test_public_api_unchanged(cls: type) -> None:
     """Набор методов и их сигнатуры совпадают с эталоном, снятым до декомпозиции."""
     baseline = json.loads(BASELINE_PATH.read_text(encoding='utf-8'))[cls.__name__]
