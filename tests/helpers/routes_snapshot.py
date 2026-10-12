@@ -40,7 +40,10 @@ def collect_routes(module_prefix: str) -> list[str]:
         if not info.name.startswith(module_prefix):
             continue
         mod = importlib.import_module(f'{routers_pkg.__name__}.{info.name}')
-        for obj in vars(mod).values():
+        candidates = list(vars(mod).values())
+        if not any(isinstance(o, APIRouter) for o in candidates) and hasattr(mod, 'init_router'):
+            candidates.append(mod.init_router())
+        for obj in candidates:
             if isinstance(obj, APIRouter) and id(obj) not in seen:
                 seen.add(id(obj))
                 for route in obj.routes:
