@@ -62,3 +62,16 @@
 ### Дополнение к этапу 3: GPU
 
 `GpuProber.probe_all` выполнял `nvidia-smi`, WMI `VideoController` и два запроса WDDM-счётчиков (PowerShell) последовательно. Теперь независимые опросы идут параллельно в пуле потоков: `get_gpu_metrics` 1,57 → 0,78 с, **сумма методов сбора 2,46 с** (было 8,72 с).
+
+## Этап 4 (продолжение): декомпозиция монолитов
+
+| Файл | Было | Стало | Подпакет / миксины |
+|---|---|---|---|
+| `telemetry/sqlite/storage.py` | 1135 | 446 | миксины `storage_*.py` |
+| `api/routers/router_admin.py` | 2263 | 60 | `routers/admin/` |
+| `api/routers/router_about_system.py` | 2175 | 47 | `routers/about_system/` |
+| `api/routers/router_scenarios.py` | 1618 | 27 | `routers/scenarios/` |
+| `api/routers/router_chat.py` | 1249 | 46 | `routers/chat/` |
+| `api/routers/router_tc.py` | 1063 | 44 | `routers/tc/` |
+
+Защита от регрессий: `tests/api_baselines/router_routes.json` (маршруты роутеров), `tests/api_baselines/telemetry_sqlite_api.json` (API фасада хранилища). Остаются >500 строк: `models.py` (1236), `collector.py`, `reader_snapshots.py`, `writer_audits.py`, `routers/admin/skills.py` (614) и др.
