@@ -20,7 +20,7 @@ from typing import Optional
 
 from pydantic import BaseModel, Field
 
-from apps.windows.telemetry_research.diagnostic_engine import SystemDiagnosticEngine as SystemAIDiagnostician
+from apps.windows.telemetry.analytics.diagnostic_engine import SystemDiagnosticEngine as SystemAIDiagnostician
 from apps.windows.telemetry import SystemCollector
 from apps.windows.telemetry.sqlite import TelemetryStorage
 from apps.windows.telemetry.sampling_controller import SamplingController

@@ -426,7 +426,7 @@ async def get_process_telemetry_file_activity(limit: int=50) -> List[Dict[str, A
 @router.get('/reboots')
 async def get_reboots_report(limit: int = 20, hours: int = 720) -> Dict[str, Any]:
     """Сводный отчет анализа и корреляции причин перезагрузок и выключений ОС."""
-    from apps.windows.telemetry_research.reboot_analyzer import WindowsRebootAnalyzer
+    from apps.windows.telemetry.analytics.reboot_analyzer import WindowsRebootAnalyzer
     analyzer = WindowsRebootAnalyzer()
     report = analyzer.collect_reboot_history(limit=limit, hours=hours, persist_to_storage=True)
     return report.model_dump()
@@ -434,7 +434,7 @@ async def get_reboots_report(limit: int = 20, hours: int = 720) -> Dict[str, Any
 @router.get('/reboots/latest')
 async def get_latest_reboot_info() -> Dict[str, Any]:
     """Детальная информация о последней перезагрузке текущей сессии."""
-    from apps.windows.telemetry_research.reboot_analyzer import WindowsRebootAnalyzer
+    from apps.windows.telemetry.analytics.reboot_analyzer import WindowsRebootAnalyzer
     analyzer = WindowsRebootAnalyzer()
     session = analyzer.analyze_current_boot()
     if not session:

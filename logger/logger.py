@@ -88,7 +88,7 @@ BG_COLORS: Dict[str, str] = {
 SUBSYSTEM_ROUTING_MAP: List[Tuple[Tuple[str, ...], str]] = [
     # 1. Стек Windows (apps/windows)
     (('apps/windows/api', 'apps\\windows\\api', 'router_tc', 'internal_app'), 'windows_api.log'),
-    (('apps/windows/telemetry', 'apps\\windows\\telemetry', 'telemetry_research', 'lhm'), 'telemetry.log'),
+    (('apps/windows/telemetry', 'apps\\windows\\telemetry', 'analytics', 'lhm'), 'telemetry.log'),
     (('apps/windows/wikillm', 'apps\\windows\\wikillm'), 'wikillm.log'),
     (('apps/windows', 'apps\\windows', 'src/ai/agents/windows_tools', 'src\\ai\\agents\\windows_tools', 'windows_admin'), 'windows.log'),
 

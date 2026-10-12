@@ -31,7 +31,7 @@ try:
 except ImportError:
     from logger import logger
 from .collector import SystemCollector
-from apps.windows.telemetry_research.hardware_history_manager import HardwareHistoryManager
+from apps.windows.telemetry.analytics.hardware_history_manager import HardwareHistoryManager
 from .sqlite import TelemetryStorage
 from .telemetry_config import TelemetryConfigManager
 from .w64_collector import AIW64Collector

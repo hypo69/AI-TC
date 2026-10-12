@@ -30,10 +30,10 @@
 
 ```powershell
 # Запуск через Python
-py apps/windows/telemetry_research/main.py --port 8090
+py apps/windows/telemetry/analytics/main.py --port 8090
 
 # Или как модуль
-py -m apps.windows.telemetry_research.main --port 8090
+py -m apps.windows.telemetry.analytics.main --port 8090
 ```
 
 После запуска веб-интерфейс доступен по адресу:
@@ -45,12 +45,12 @@ py -m apps.windows.telemetry_research.main --port 8090
 
 Сформировать HTML-дашборд из консоли:
 ```powershell
-py apps/windows/telemetry_research/cli.py --output report.html --format html
+py apps/windows/telemetry/analytics/cli.py --output report.html --format html
 ```
 
 Вывести текстовое резюме и результаты проверки гипотез:
 ```powershell
-py apps/windows/telemetry_research/cli.py --format summary
+py apps/windows/telemetry/analytics/cli.py --format summary
 ```
 
 ---
@@ -58,7 +58,7 @@ py apps/windows/telemetry_research/cli.py --format summary
 ## 📂 Структура пакета
 
 ```
-apps/windows/telemetry_research/
+apps/windows/telemetry/analytics/
 ├── __init__.py         # Экспорт классов подсистемы
 ├── analyzer.py         # Аналитический движок и проверка гипотез
 ├── charts.py           # Генерация конфигураций графиков (Chart.js / SVG)

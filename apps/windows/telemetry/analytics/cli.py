@@ -7,15 +7,15 @@
 #
 # Usage Examples:
 #   CLI:
-#     python -m apps.windows.telemetry_research.cli
+#     python -m apps.windows.telemetry.analytics.cli
 #   Python API:
-#     from apps.windows.telemetry_research.cli import parse_args
+#     from apps.windows.telemetry.analytics.cli import parse_args
 #
 #     res = parse_args()
 #
 # File: cli.py
 # Project: ai-windows-admin
-# Package: apps.windows.telemetry_research
+# Package: apps.windows.telemetry.analytics
 # Author: hypo69
 # Copyright: © 2026 hypo69
 # Updated: 2026-10-10 22:22:30

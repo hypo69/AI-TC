@@ -7,13 +7,13 @@
 #
 # Usage Examples:
 #   Python API:
-#     from apps.windows.telemetry_research.grouped_telemetry import TelemetryGroupInfo
+#     from apps.windows.telemetry.analytics.grouped_telemetry import TelemetryGroupInfo
 #
 #     service = TelemetryGroupInfo()
 #
 # File: grouped_telemetry.py
 # Project: ai-windows-admin
-# Package: apps.windows.telemetry_research
+# Package: apps.windows.telemetry.analytics
 # Author: hypo69
 # Copyright: © 2026 hypo69
 # Updated: 2026-10-10 17:35:00

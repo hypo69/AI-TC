@@ -7,13 +7,13 @@
 #
 # Usage Examples:
 #   Python API:
-#     from apps.windows.telemetry_research.reboot_analyzer import WindowsRebootAnalyzer
+#     from apps.windows.telemetry.analytics.reboot_analyzer import WindowsRebootAnalyzer
 #
 #     service = WindowsRebootAnalyzer()
 #
 # File: reboot_analyzer.py
 # Project: ai-windows-admin
-# Package: apps.windows.telemetry_research
+# Package: apps.windows.telemetry.analytics
 # Author: hypo69
 # Copyright: © 2026 hypo69
 # Updated: 2026-10-10 17:35:00

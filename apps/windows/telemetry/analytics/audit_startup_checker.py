@@ -7,13 +7,13 @@
 #
 # Usage Examples:
 #   Python API:
-#     from apps.windows.telemetry_research.audit_startup_checker import StartupAuditResult
+#     from apps.windows.telemetry.analytics.audit_startup_checker import StartupAuditResult
 #
 #     service = StartupAuditResult()
 #
 # File: audit_startup_checker.py
 # Project: ai-windows-admin
-# Package: apps.windows.telemetry_research
+# Package: apps.windows.telemetry.analytics
 # Author: hypo69
 # Copyright: © 2026 hypo69
 # Updated: 2026-10-10 17:35:00

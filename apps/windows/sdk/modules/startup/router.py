@@ -85,7 +85,7 @@ def init_router() -> APIRouter:
 
         rep = auditor.run_audit()
         try:
-            from apps.windows.telemetry_research.startup_history_manager import StartupHistoryManager
+            from apps.windows.telemetry.analytics.startup_history_manager import StartupHistoryManager
             archive_entry = StartupHistoryManager.archive_report(rep, previous_archive=None)
             storage.save_startup_archive(archive_entry)
         except Exception:

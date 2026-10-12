@@ -7,13 +7,13 @@
 #
 # Usage Examples:
 #   Python API:
-#     from apps.windows.telemetry_research.startup_history_manager import StartupHistoryManager
+#     from apps.windows.telemetry.analytics.startup_history_manager import StartupHistoryManager
 #
 #     service = StartupHistoryManager()
 #
 # File: startup_history_manager.py
 # Project: ai-windows-admin
-# Package: apps.windows.telemetry_research
+# Package: apps.windows.telemetry.analytics
 # Author: hypo69
 # Copyright: © 2026 hypo69
 # Updated: 2026-10-10 17:35:00

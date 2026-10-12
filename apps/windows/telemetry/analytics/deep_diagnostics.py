@@ -7,13 +7,13 @@
 #
 # Usage Examples:
 #   Python API:
-#     from apps.windows.telemetry_research.deep_diagnostics import LASTINPUTINFO
+#     from apps.windows.telemetry.analytics.deep_diagnostics import LASTINPUTINFO
 #
 #     service = LASTINPUTINFO()
 #
 # File: deep_diagnostics.py
 # Project: ai-windows-admin
-# Package: apps.windows.telemetry_research
+# Package: apps.windows.telemetry.analytics
 # Author: hypo69
 # Copyright: © 2026 hypo69
 # Updated: 2026-10-10 17:35:00

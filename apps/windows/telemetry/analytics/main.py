@@ -7,15 +7,15 @@
 #
 # Usage Examples:
 #   CLI:
-#     python -m apps.windows.telemetry_research.main
+#     python -m apps.windows.telemetry.analytics.main
 #   Python API:
-#     from apps.windows.telemetry_research.main import parse_args
+#     from apps.windows.telemetry.analytics.main import parse_args
 #
 #     res = parse_args()
 #
 # File: main.py
 # Project: ai-windows-admin
-# Package: apps.windows.telemetry_research
+# Package: apps.windows.telemetry.analytics
 # Author: hypo69
 # Copyright: © 2026 hypo69
 # Updated: 2026-10-10 22:22:30
@@ -69,7 +69,7 @@ def main() -> int:
     logger.console("=" * 65 + "\n")
 
     uvicorn.run(
-        "apps.windows.telemetry_research.server:app",
+        "apps.windows.telemetry.analytics.server:app",
         host=args.host,
         port=args.port,
         reload=args.reload,

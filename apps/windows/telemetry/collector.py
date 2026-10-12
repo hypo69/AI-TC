@@ -67,9 +67,9 @@ from .models import (
     WindowsUpdateInfo,
 )
 from .sensors import get_hardware_sensors
-from apps.windows.telemetry_research.hardware_auditor import HardwareAuditor
-from apps.windows.telemetry_research.hardware_history_manager import HardwareHistoryManager
-from apps.windows.telemetry_research.startup_history_manager import StartupHistoryManager
+from apps.windows.telemetry.analytics.hardware_auditor import HardwareAuditor
+from apps.windows.telemetry.analytics.hardware_history_manager import HardwareHistoryManager
+from apps.windows.telemetry.analytics.startup_history_manager import StartupHistoryManager
 from .hardware_tree import HardwareTreeBuilder
 from .history_mixin import TelemetryHistoryMixin
 from .network_activity import NetworkActivityCollector

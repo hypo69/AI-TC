@@ -7,7 +7,7 @@ Description:
 
   Зачем нужен этот скрипт:
     1. Автономный запуск сервера аналитики: поднимает FastAPI-бэкенд для модуля
-       apps/windows/telemetry_research на выделенном порту (по умолчанию 8090).
+       apps/windows/telemetry/analytics на выделенном порту (по умолчанию 8090).
     2. Автоматический запуск браузера: открывает интерактивный дашборд с графиками
        нагрузки CPU, GPU, процессов и метрик оборудования.
     3. Контроль окружения: автоматический поиск подходящего Python/venv и проверка портов.
@@ -99,7 +99,7 @@ if (Test-Path $venvPython) {
     exit 1
 }
 
-$targetModule = Join-Path $scriptDir 'apps\windows\telemetry_research\main.py'
+$targetModule = Join-Path $scriptDir 'apps\windows\telemetry\analytics\main.py'
 if (-not (Test-Path $targetModule)) {
     Write-Error "Модуль telemetry_research не найден по пути: $targetModule"
     exit 1
@@ -113,7 +113,7 @@ Write-Host "  🔬 AI-Windows-Admin: Исследование телеметри
 Write-Host "=================================================================" -ForegroundColor Cyan
 Write-Host "  • URL веб-интерфейса: $url" -ForegroundColor Yellow
 Write-Host "  • Интерпретатор:      $pythonExe" -ForegroundColor Gray
-Write-Host "  • Модуль:             apps/windows/telemetry_research" -ForegroundColor Gray
+Write-Host "  • Модуль:             apps/windows/telemetry/analytics" -ForegroundColor Gray
 if ($Reload) {
     Write-Host "  • Режим Hot-Reload:   Включен" -ForegroundColor Magenta
 }

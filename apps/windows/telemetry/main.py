@@ -154,7 +154,7 @@ def run_telemetry_service(
     deep_diag = None
     try:
         from .collector import SystemCollector
-        from apps.windows.telemetry_research.deep_diagnostics import DeepDiagnosticsEngine
+        from apps.windows.telemetry.analytics.deep_diagnostics import DeepDiagnosticsEngine
         system_collector = SystemCollector(storage=storage)
         deep_diag = DeepDiagnosticsEngine()
     except Exception as init_err:
@@ -252,7 +252,7 @@ def run_telemetry_service(
 
                 # Этап 4. Проверка критических аудитов при запуске
                 try:
-                    from apps.windows.telemetry_research.audit_startup_checker import run_startup_audit
+                    from apps.windows.telemetry.analytics.audit_startup_checker import run_startup_audit
                     startup_audit = run_startup_audit(
                         check_integrity=True,
                         check_performance=True,

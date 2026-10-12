@@ -24,7 +24,7 @@ import tempfile
 import shutil
 from pathlib import Path
 from apps.windows.sdk.modules.startup.core.models import StartupEntry, AuditReport, AuditSummary
-from apps.windows.telemetry_research.startup_history_manager import StartupHistoryManager
+from apps.windows.telemetry.analytics.startup_history_manager import StartupHistoryManager
 
 def test_startup_history_diff_detection() -> None:
     """Проверка корректного обнаружения добавления, удаления и изменения записей."""

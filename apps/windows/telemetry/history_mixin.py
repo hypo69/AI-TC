@@ -221,7 +221,7 @@ class TelemetryHistoryMixin:
         Returns:
             RebootAnalysisReport: Сводный аналитический отчет.
         """
-        from apps.windows.telemetry_research.reboot_analyzer import WindowsRebootAnalyzer
+        from apps.windows.telemetry.analytics.reboot_analyzer import WindowsRebootAnalyzer
         analyzer = WindowsRebootAnalyzer(storage=self.storage)
         return analyzer.collect_reboot_history(limit=limit, hours=hours)
 
@@ -231,7 +231,7 @@ class TelemetryHistoryMixin:
         Returns:
             Optional[RebootSession]: Информация о последнем перезапуске.
         """
-        from apps.windows.telemetry_research.reboot_analyzer import WindowsRebootAnalyzer
+        from apps.windows.telemetry.analytics.reboot_analyzer import WindowsRebootAnalyzer
         analyzer = WindowsRebootAnalyzer(storage=self.storage)
         return analyzer.analyze_current_boot()
 
@@ -241,7 +241,7 @@ class TelemetryHistoryMixin:
         Returns:
             ExtendedSystemAuditReport: Сводный отчет расширенного аудита.
         """
-        from apps.windows.telemetry_research.deep_diagnostics import DeepDiagnosticsEngine
+        from apps.windows.telemetry.analytics.deep_diagnostics import DeepDiagnosticsEngine
         engine = DeepDiagnosticsEngine()
         report = engine.collect_extended_system_audit()
         try:
