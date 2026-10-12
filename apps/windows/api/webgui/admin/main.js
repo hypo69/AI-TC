@@ -14,7 +14,7 @@
  * Package: windows/api/webgui/admin
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-10 19:41:00
+ * Updated: 2026-10-12 08:20:00
  * =============================================================================
  */
 
@@ -407,10 +407,24 @@ function onTabSwitched(targetId) {
 }
 
 // Programmatic tab switcher
+let currentActiveAdminTabId = null;
+
 function switchTab(targetId) {
   if (!targetId) return;
   const cleanId = targetId.startsWith('#') ? targetId.slice(1) : targetId;
   const tabId = cleanId.startsWith('tab-') ? cleanId : `tab-${cleanId}`;
+
+  // 0. Деактивация предыдущей вкладки
+  if (currentActiveAdminTabId && currentActiveAdminTabId !== tabId) {
+    const prevName = currentActiveAdminTabId.replace(/^tab-/, '').replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+    const deactivateFn = window[`deactivate${prevName[0].toUpperCase() + prevName.slice(1)}Tab`];
+    if (typeof deactivateFn === 'function') {
+      try { deactivateFn(); } catch (err) { console.debug('deactivate hook error:', err); }
+    }
+    document.dispatchEvent(new CustomEvent('tab:deactivated', { detail: { tabId: currentActiveAdminTabId, name: prevName } }));
+  }
+
+  currentActiveAdminTabId = tabId;
 
   // 1. Update active state on dropdown items & toggles
   document.querySelectorAll('#mainTabs .dropdown-item').forEach((item) => {
@@ -454,9 +468,25 @@ function switchTab(targetId) {
 
   // 3. Notify lifecycle callback
   onTabSwitched(tabId);
+
+  // 4. Активация новой вкладки
+  const newName = tabId.replace(/^tab-/, '').replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+  const activateFn = window[`activate${newName[0].toUpperCase() + newName.slice(1)}Tab`];
+  if (typeof activateFn === 'function') {
+    try { activateFn(); } catch (err) { console.debug('activate hook error:', err); }
+  }
+  document.dispatchEvent(new CustomEvent('tab:activated', { detail: { tabId, name: newName } }));
 }
 window.switchTab = switchTab;
 window.switchToTab = switchTab;
+window.isTabActive = function(tabId) {
+  if (typeof document !== 'undefined' && document.hidden) return false;
+  if (!tabId) return false;
+  const cleanId = tabId.startsWith('tab-') ? tabId : `tab-${tabId}`;
+  const rawId = cleanId.replace(/^tab-/, '');
+  const pane = document.getElementById(cleanId) || document.getElementById(rawId);
+  return pane ? pane.classList.contains('active') : false;
+};
 
 // Setup dropdowns navigation
 function setupDropdownTabs() {
@@ -612,7 +642,7 @@ async function initInterface() {
 
   // Определение и фильтрация вкладок микроприложений (/apps)
   const appTabDefs = [
-    { id: 'about_system', tab: 'about-system', html: '/html/about_system_tab/index.html?v=20261008_v2', js: '/html/about_system_tab/main.js?v=20261008_v2' },
+    { id: 'about_system', tab: 'about-system', html: '/html/about_system_tab/index.html?v=20261012_v1', js: '/html/about_system_tab/main.js?v=20261012_v1' },
     { id: 'network_terminal', tab: 'network', html: '/html/network_tab/index.html', js: '/html/network_tab/main.js' },
     { id: 'system_inspector', tab: 'hardware-load-inspector', html: '/html/system_inspector_tab/index.html?v=20261008_v16', js: '/html/system_inspector_tab/main.js?v=20261008_v16' },
     { id: 'processes_load_inspector', tab: 'processes-load-inspector', html: '/html/processes_load_inspector_tab/index.html?v=20261008_v1', js: '/html/processes_load_inspector_tab/main.js?v=20261008_v1' },

@@ -19,7 +19,7 @@
 # Package: apps.windows.telemetry.sqlite
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-11 11:30:00
+# Updated: 2026-10-12 08:08:00
 # =============================================================================
 
 from __future__ import annotations
@@ -130,20 +130,16 @@ class TelemetrySnapshotReaderMixin:
             return raw_rows
 
     def get_latest_storage_data(self) -> Dict[str, Any]:
-        """Извлекает последние данные о накопителях и разделах с LOCF-подтяжкой."""
+        """Извлекает последние данные о накопителях и разделах с гарантированной LOCF-подтяжкой."""
         with self._cm.lock, self._cm.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute('''
                 SELECT id, timestamp, created_at, disks_json, physical_disks_json
                 FROM system_snapshots
-                WHERE disks_json IS NOT NULL OR physical_disks_json IS NOT NULL
                 ORDER BY id DESC
                 LIMIT 1;
             ''')
             row = cursor.fetchone()
-            if not row:
-                cursor.execute('SELECT id, timestamp, created_at, disks_json, physical_disks_json FROM system_snapshots ORDER BY id DESC LIMIT 1;')
-                row = cursor.fetchone()
             if not row:
                 return {'partitions': [], 'physical_disks': []}
 
@@ -153,6 +149,18 @@ class TelemetrySnapshotReaderMixin:
                     partitions = json.loads(row['disks_json'])
                 except Exception:
                     partitions = []
+            if not partitions:
+                cursor.execute('''
+                    SELECT disks_json FROM system_snapshots
+                    WHERE disks_json IS NOT NULL AND disks_json != '' AND disks_json != '[]'
+                    ORDER BY id DESC LIMIT 1;
+                ''')
+                locf_d = cursor.fetchone()
+                if locf_d and locf_d['disks_json']:
+                    try:
+                        partitions = json.loads(locf_d['disks_json'])
+                    except Exception:
+                        partitions = []
 
             physical_disks: List[Dict[str, Any]] = []
             if row['physical_disks_json']:
@@ -160,6 +168,18 @@ class TelemetrySnapshotReaderMixin:
                     physical_disks = json.loads(row['physical_disks_json'])
                 except Exception:
                     physical_disks = []
+            if not physical_disks:
+                cursor.execute('''
+                    SELECT physical_disks_json FROM system_snapshots
+                    WHERE physical_disks_json IS NOT NULL AND physical_disks_json != '' AND physical_disks_json != '[]'
+                    ORDER BY id DESC LIMIT 1;
+                ''')
+                locf_p = cursor.fetchone()
+                if locf_p and locf_p['physical_disks_json']:
+                    try:
+                        physical_disks = json.loads(locf_p['physical_disks_json'])
+                    except Exception:
+                        physical_disks = []
 
             return {
                 'id': row['id'],

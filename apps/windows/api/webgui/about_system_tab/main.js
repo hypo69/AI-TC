@@ -14,7 +14,7 @@
  * Package: windows/api/webgui/about_system_tab
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-10 17:35:00
+ * Updated: 2026-10-12 06:50:00
  * =============================================================================
  */
 
@@ -812,9 +812,15 @@
 
             // Наработка и дата первого включения
             const pohFormatted = formatPohLocal(d.power_on_hours);
-            const pohHtml = pohFormatted
-              ? `<div class="font-monospace text-info">${pohFormatted}</div><div class="small text-muted font-monospace mt-0.5">Старт: ${escapeHtml(d.first_power_on || '—')}</div>`
-              : '<span class="text-muted font-monospace small">—</span>';
+            const startStr = d.first_power_on ? `Старт: ${escapeHtml(d.first_power_on)}` : '';
+            let pohHtml = '<span class="text-muted font-monospace small">—</span>';
+            if (pohFormatted && startStr) {
+              pohHtml = `<div class="font-monospace text-info">${pohFormatted}</div><div class="small text-muted font-monospace mt-0.5">${startStr}</div>`;
+            } else if (pohFormatted) {
+              pohHtml = `<div class="font-monospace text-info">${pohFormatted}</div>`;
+            } else if (startStr) {
+              pohHtml = `<div class="small text-muted font-monospace">${startStr}</div>`;
+            }
 
             // Объемы ввода/вывода (запись и чтение)
             const ioHtml = `

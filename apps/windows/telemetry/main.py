@@ -18,7 +18,7 @@
 # Package: apps.windows.telemetry
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 20:33:00
+# Updated: 2026-10-12 07:25:00
 # =============================================================================
 
 from __future__ import annotations
@@ -371,6 +371,14 @@ def run_telemetry_service(
                             logger.info(f"🛡️ [DEFENDER LOG] Инкрементально собрано {def_rep.total_events_ingested} событий Defender (RecordID: {def_rep.last_record_id})")
                     except Exception as sec_err:
                         logger.debug(f"Ошибка сбора событий безопасности: {sec_err}")
+
+                # Синхронизация паспортов и активности процессов в SQLite (process_definition, process_instance, process_sample)
+                try:
+                    from apps.windows.sdk.core.process_activity_engine import ProcessActivityEngine
+                    proc_engine = ProcessActivityEngine(storage=storage)
+                    proc_engine.sync_processes()
+                except Exception as proc_sync_err:
+                    logger.debug(f"Ошибка синхронизации активности процессов (ProcessActivityEngine): {proc_sync_err}")
 
                 heavy_dur = time.time() - heavy_start
                 logger.info(f'✅ [{mode.upper()}] Периодический тяжелый опрос завершен за {heavy_dur:.2f}с (Всего сенсоров: {len(heavy_readings_total)})')

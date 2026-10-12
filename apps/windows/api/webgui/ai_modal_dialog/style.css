@@ -11,17 +11,36 @@
  * Package: apps.windows.api.webgui.ai_modal_dialog
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-10 17:35:00
+ * Updated: 2026-10-12 08:10:00
  * =============================================================================
  */
 
+#universal-ai-table-modal .modal-dialog,
+#universal-ai-prompt-editor-modal .modal-dialog {
+  max-width: 80vw;
+  width: 80vw;
+  height: 80vh;
+  margin: auto;
+}
+
 #universal-ai-table-modal .modal-content,
 #universal-ai-prompt-editor-modal .modal-content {
+  height: 100%;
+  max-height: 80vh;
   background-color: var(--modal-bg);
   color: var(--modal-text);
   border: 1px solid var(--modal-border);
   box-shadow: var(--shadow-lg);
   border-radius: var(--radius-md, 8px);
+}
+
+@media (max-width: 768px) {
+  #universal-ai-table-modal .modal-dialog,
+  #universal-ai-prompt-editor-modal .modal-dialog {
+    max-width: 95vw;
+    width: 95vw;
+    height: 90vh;
+  }
 }
 
 #universal-ai-table-modal .modal-header,

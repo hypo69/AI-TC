@@ -26,7 +26,7 @@
  * Package: apps.windows.api.webgui.ai_modal_dialog
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-10 17:35:00
+ * Updated: 2026-10-12 07:09:00
  * =============================================================================
  */
 
@@ -332,11 +332,13 @@
       }
     }
 
-    // Загрузка системной инструкции для текущего типа / панели
+    // Загрузка системной инструкции для текущего типа / конкретной панели
     let currentTemplateData = null;
+    const panelQuery = opts.panelId ? `?panel_id=${encodeURIComponent(opts.panelId)}` : '';
+
     async function loadSystemInstruction() {
       try {
-        const data = await safeApiFetch(`/api/v1/diagnostics/prompts/${encodeURIComponent(opts.tableType)}`, {}, 4000);
+        const data = await safeApiFetch(`/api/v1/diagnostics/prompts/${encodeURIComponent(opts.tableType)}${panelQuery}`, {}, 4000);
         if (data) {
           currentTemplateData = data;
           if (systemTextarea) {
@@ -344,11 +346,18 @@
           }
           if (customBadge) {
             customBadge.style.display = data.is_customized ? 'inline-block' : 'none';
+            if (data.is_customized) {
+              customBadge.textContent = data.table_type === opts.panelId ? 'Панель (Кастом)' : 'Тип (Кастом)';
+            }
           }
           if (systemStatus) {
-            systemStatus.textContent = data.is_customized
-              ? 'Загружена пользовательская системная инструкция'
-              : `Стандартная системная инструкция: «${data.name || opts.tableType}»`;
+            if (data.is_customized) {
+              systemStatus.textContent = data.table_type === opts.panelId
+                ? `Индивидуальная инструкция панели #${opts.panelId}`
+                : `Пользовательская системная инструкция типа «${opts.tableType}»`;
+            } else {
+              systemStatus.textContent = `Стандартная системная инструкция: «${data.name || opts.tableType}»`;
+            }
           }
         }
       } catch (e) {
@@ -358,15 +367,15 @@
 
     loadSystemInstruction();
 
-    // Сохранение системной инструкции прямо из модального окна
+    // Сохранение системной инструкции прямо из модального окна (приоритетно для panel_id)
     if (saveSystemBtn) {
       saveSystemBtn.onclick = async () => {
         const instruction = systemTextarea ? systemTextarea.value : '';
         try {
           const promptTmpl = currentTemplateData?.prompt_template || '{title}\n{subtitle}\n{metadata}\n{raw_data}';
-          const name = currentTemplateData?.name || opts.tableType;
+          const name = currentTemplateData?.name || (opts.panelId ? `Панель ${opts.panelId}` : opts.tableType);
 
-          await safeApiFetch(`/api/v1/diagnostics/prompts/${encodeURIComponent(opts.tableType)}`, {
+          await safeApiFetch(`/api/v1/diagnostics/prompts/${encodeURIComponent(opts.tableType)}${panelQuery}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -377,13 +386,20 @@
             })
           }, 6000);
 
-          if (customBadge) customBadge.style.display = 'inline-block';
+          if (customBadge) {
+            customBadge.style.display = 'inline-block';
+            customBadge.textContent = opts.panelId ? 'Панель (Кастом)' : 'Кастомная';
+          }
           if (systemStatus) {
-            systemStatus.textContent = 'Системная инструкция успешно сохранена!';
+            systemStatus.textContent = opts.panelId
+              ? `Инструкция для панели #${opts.panelId} сохранена!`
+              : 'Системная инструкция успешно сохранена!';
             systemStatus.className = 'text-success small';
             setTimeout(() => {
               if (systemStatus) {
-                systemStatus.textContent = 'Пользовательская инструкция активна';
+                systemStatus.textContent = opts.panelId
+                  ? `Индивидуальная инструкция панели #${opts.panelId} активна`
+                  : 'Пользовательская инструкция активна';
                 systemStatus.className = 'text-secondary small';
               }
             }, 3000);
@@ -398,9 +414,10 @@
     // Сброс системной инструкции к дефолтной
     if (resetSystemBtn) {
       resetSystemBtn.onclick = async () => {
-        if (!confirm(`Сбросить системную инструкцию для «${opts.tableType}» к значению по умолчанию?`)) return;
+        const resetTargetTitle = opts.panelId ? `панели «#${opts.panelId}»` : `«${opts.tableType}»`;
+        if (!confirm(`Сбросить системную инструкцию для ${resetTargetTitle} к значению по умолчанию?`)) return;
         try {
-          const data = await safeApiFetch(`/api/v1/diagnostics/prompts/${encodeURIComponent(opts.tableType)}/reset`, {
+          const data = await safeApiFetch(`/api/v1/diagnostics/prompts/${encodeURIComponent(opts.tableType)}/reset${panelQuery}`, {
             method: 'POST'
           }, 6000);
           if (data) {

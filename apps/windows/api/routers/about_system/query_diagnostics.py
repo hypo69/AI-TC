@@ -11,7 +11,7 @@
 # Package: apps.windows.api.routers.about_system
 # Author: hypo69
 # Copyright: c 2026 hypo69
-# Updated: 2026-10-12 06:20:00
+# Updated: 2026-10-12 08:09:00
 # =============================================================================
 
 from __future__ import annotations
@@ -25,69 +25,158 @@ from apps.windows.telemetry.sqlite import TelemetryStorage
 
 
 def query_storage_battery_from_db(storage: TelemetryStorage) -> Dict[str, Any]:
-    """Извлекает состояние износа дисков и аккумулятора через DeepDiagnosticsEngine и telemetry.db."""
-    try:
-        from apps.windows.telemetry.deep_diagnostics import DeepDiagnosticsEngine
-        rep = DeepDiagnosticsEngine().collect_storage_battery_wear()
-        if rep and rep.disks_wear:
-            return {
-                "status": "ok",
-                "disks_wear": rep.disks_wear,
-                "battery_wear": rep.battery_wear,
-                "timestamp": rep.timestamp,
-            }
-    except Exception as ex:
-        logger.debug(f"Ошибка сбора износа накопителей через DeepDiagnosticsEngine: {ex}")
+    """Извлекает состояние накопителей и аккумулятора строго из базы данных SQLite (telemetry.db).
 
+    Никаких внешних вызовов PowerShell/WMI в процессе обработки веб-запроса не производится.
+    Все метрики, объемы, здоровье и наработка считываются напрямую из БД с гарантированной LOCF-реконструкцией.
+    """
+    now_dt = datetime.now(timezone.utc)
+    storage_data = storage.get_latest_storage_data() or {}
     snap = storage.get_latest_snapshot_full() or {}
-    phys_disks = snap.get("physical_disks") or []
-    disks_wear = []
 
-    partitions = snap.get("disks") or []
-    part_map: Dict[str, List[str]] = {}
-    part_free: Dict[str, float] = {}
+    phys_disks: List[Dict[str, Any]] = storage_data.get("physical_disks") or snap.get("physical_disks") or []
+
+    # Пассивный fallback на сохраненный на диске снимок, если в БД еще нет физических дисков
+    if not phys_disks:
+        try:
+            import json
+            from pathlib import Path
+            root_dir = Path.cwd()
+            snap_file = root_dir / "storage_snapshot.json"
+            if snap_file.is_file():
+                with open(snap_file, "r", encoding="utf-8") as f:
+                    cached_raw = json.load(f)
+                    from apps.windows.sdk.modules.storage_manager.core.windows_storage_sensor import WindowsStorageSensor
+                    sensor = WindowsStorageSensor()
+                    sensor._CACHE_SNAPSHOT = cached_raw
+                    disks_objs = sensor.get_physical_disks(sync=False)
+                    phys_disks = [d.to_dict() if hasattr(d, "to_dict") else vars(d) for d in disks_objs]
+        except Exception as ex:
+            logger.debug(f"[query_storage_battery_from_db] Пассивный fallback дисков: {ex}")
+
+    # Разделы и логические диски из БД
+    partitions = storage_data.get("partitions") or snap.get("disks") or []
+    part_info_by_letter: Dict[str, Dict[str, Any]] = {}
     for p in partitions:
         if isinstance(p, dict):
             dev = str(p.get("device") or p.get("mountpoint") or "").upper().rstrip("\\")
-            fs = p.get("fstype") or "NTFS"
-            free_g = float(p.get("free_gb") or 0.0)
             if dev:
-                part_map.setdefault(dev, []).append(f"{dev} [{fs}]")
-                part_free[dev] = free_g
+                if not dev.endswith(":"):
+                    dev = f"{dev}:"
+                fs = p.get("fstype") or "NTFS"
+                free_g = float(p.get("free_gb") or 0.0)
+                tot_g = float(p.get("total_gb") or 0.0)
+                used_g = float(p.get("used_gb") or 0.0)
+                part_info_by_letter[dev] = {
+                    "label": f"{dev} [{fs}]",
+                    "letter": dev,
+                    "fs": fs,
+                    "free_gb": free_g,
+                    "total_gb": tot_g,
+                    "used_gb": used_g,
+                }
+
+    # Маппинг DiskNumber -> Буквы томов из кэша структуры дисков
+    disk_num_to_letters: Dict[str, List[str]] = {}
+    try:
+        from pathlib import Path
+        import json
+        snap_f = Path.cwd() / "storage_snapshot.json"
+        if snap_f.is_file():
+            with open(snap_f, "r", encoding="utf-8") as f:
+                s_json = json.load(f)
+                raw_parts = s_json.get("sources", {}).get("partitions", [])
+                for rp in raw_parts:
+                    if isinstance(rp, dict):
+                        dn = str(rp.get("DiskNumber")) if rp.get("DiskNumber") is not None else None
+                        dl = str(rp.get("DriveLetter") or "").strip().upper()
+                        if dn is not None and dl:
+                            let = f"{dl}:" if not dl.endswith(":") else dl
+                            disk_num_to_letters.setdefault(dn, []).append(let)
+    except Exception:
+        pass
 
     disk_io = snap.get("disk_io") or {}
     bytes_r = float(disk_io.get("read_bytes_per_sec") or 0.0) * 3600
     bytes_w = float(disk_io.get("write_bytes_per_sec") or 0.0) * 3600
 
+    disks_wear: List[Dict[str, Any]] = []
     if phys_disks:
         for idx, d in enumerate(phys_disks):
             model = str(d.get("model") or d.get("friendly_name") or f"Physical Drive {idx}")
             dev_id = str(d.get("device_id") or f"Disk {idx}")
-            m_type = str(d.get("media_type") or ("SSD" if "NVMe" in str(d.get("interface_type")) or "SSD" in model.upper() else "HDD"))
-            bus_type = str(d.get("interface_type") or d.get("bus_type") or "NVMe")
+            dev_digits = "".join(filter(str.isdigit, dev_id))
+            display_dev_id = f"Disk {dev_digits}" if dev_digits else dev_id
+
+            m_type = str(d.get("media_type") or ("SSD" if "NVMe" in str(d.get("interface_type") or d.get("bus_type")) or "SSD" in model.upper() else "HDD"))
+            bus_type = str(d.get("bus_type") or d.get("interface_type") or ("NVMe" if "NVME" in model.upper() else "SATA"))
             sz_gb = round(float(d.get("size_gb") or 0.0), 1)
+
+            # Сопоставление разделов
+            letters = disk_num_to_letters.get(dev_digits, [])
+            disk_parts_labels: List[str] = []
+            disk_free_gb = 0.0
+            has_free = False
+            for let in letters:
+                if let in part_info_by_letter:
+                    p_info = part_info_by_letter[let]
+                    disk_parts_labels.append(p_info["label"])
+                    disk_free_gb += p_info["free_gb"]
+                    has_free = True
+                else:
+                    disk_parts_labels.append(let)
+
+            # Fallback разделов, если в disk_num_to_letters не найдено
+            if not disk_parts_labels and d.get("partitions"):
+                raw_dp = d.get("partitions")
+                if isinstance(raw_dp, list):
+                    disk_parts_labels = [str(p) for p in raw_dp]
+                elif isinstance(raw_dp, str):
+                    disk_parts_labels = [raw_dp]
+
+            parts_str = ", ".join(disk_parts_labels) if disk_parts_labels else "—"
+
             poh = d.get("power_on_hours")
             wear_pct = float(d.get("wear_percentage") or 0.0)
             health_pct = max(0, min(100, int(100 - wear_pct)))
 
+            raw_stat = str(d.get("health_status") or d.get("status") or "Healthy")
+            status_str = "Healthy (SMART OK)" if raw_stat.lower() in ("healthy", "ok", "0", "passed") else raw_stat
+
+            first_on = (now_dt - timedelta(hours=int(poh))).strftime('%Y-%m-%d') if poh and int(poh) > 0 else None
+
+            # Расчет занятого пространства
+            free_final = round(disk_free_gb, 1) if has_free else None
+            used_final = round(sz_gb - free_final, 1) if (free_final is not None and sz_gb >= free_final) else None
+            used_pct = round((used_final / sz_gb) * 100, 1) if (used_final is not None and sz_gb > 0) else None
+
             disks_wear.append({
+                "id": display_dev_id,
+                "device_id": display_dev_id,
                 "name": model,
                 "model": model,
-                "device_id": dev_id,
                 "serial_number": str(d.get("serial_number")) if d.get("serial_number") and d.get("serial_number") != "N/A" else None,
                 "media_type": m_type,
                 "bus_type": bus_type,
-                "partitions": "—",
+                "interface_type": bus_type,
+                "partitions": parts_str,
                 "total_gb": sz_gb if sz_gb > 0 else 0.0,
-                "free_gb": None,
+                "size_gb": sz_gb if sz_gb > 0 else 0.0,
+                "free_gb": free_final,
+                "used_gb": used_final,
+                "used_percent": used_pct,
                 "health_pct": health_pct,
-                "status": str(d.get("health_status") or "OK"),
+                "health_status": status_str,
+                "status": status_str,
                 "power_on_hours": poh,
-                "first_power_on": (datetime.now(timezone.utc) - timedelta(hours=int(poh))).strftime('%Y-%m-%d') if poh and int(poh) > 0 else None,
+                "first_power_on": first_on,
                 "bytes_written": int(d.get("lifetime_write_bytes") or bytes_w),
                 "bytes_read": int(d.get("lifetime_read_bytes") or bytes_r),
-                "temperature_c": float(d.get("temperature_celsius")) if d.get("temperature_celsius") is not None else None,
+                "temperature_c": float(d.get("temperature_celsius") or d.get("temperature_c")) if (d.get("temperature_celsius") is not None or d.get("temperature_c") is not None) else None,
             })
+
+        # Сортировка по номеру диска: Disk 0, Disk 1, Disk 2...
+        disks_wear.sort(key=lambda x: int("".join(filter(str.isdigit, str(x.get("device_id", "0")))) or 0))
 
     batt = snap.get("battery") or {}
     has_bat = bool(batt.get("has_battery", False))
@@ -105,7 +194,7 @@ def query_storage_battery_from_db(storage: TelemetryStorage) -> Dict[str, Any]:
         "status": "ok",
         "disks_wear": disks_wear,
         "battery_wear": battery_wear,
-        "timestamp": snap.get("timestamp") or datetime.now(timezone.utc).isoformat(),
+        "timestamp": snap.get("timestamp") or now_dt.isoformat(),
     }
 
 

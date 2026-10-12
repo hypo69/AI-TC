@@ -18,7 +18,7 @@
 # Package: apps.windows.api.routers
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 19:28:00
+# Updated: 2026-10-12 08:12:00
 # =============================================================================
 
 from __future__ import annotations
@@ -163,6 +163,26 @@ PANEL_SQL_REGISTRY: Dict[str, Dict[str, str]] = {
         "sql": "SELECT id, timestamp, created_at, disks_json, physical_disks_json FROM system_snapshots ORDER BY id DESC LIMIT :limit;",
     },
     "panel-about-disks-wear": {
+        "table": "system_snapshots",
+        "sql": "SELECT id, timestamp, created_at, physical_disks_json, disks_json FROM system_snapshots ORDER BY id DESC LIMIT :limit;",
+    },
+    "panel-system-inspector-storage": {
+        "table": "system_snapshots",
+        "sql": "SELECT id, timestamp, created_at, physical_disks_json, disks_json FROM system_snapshots ORDER BY id DESC LIMIT :limit;",
+    },
+    "system-inspector-storage": {
+        "table": "system_snapshots",
+        "sql": "SELECT id, timestamp, created_at, physical_disks_json, disks_json FROM system_snapshots ORDER BY id DESC LIMIT :limit;",
+    },
+    "panel-system-inspector-zdorove-diskov-nvmessd": {
+        "table": "system_snapshots",
+        "sql": "SELECT id, timestamp, created_at, physical_disks_json, disks_json FROM system_snapshots ORDER BY id DESC LIMIT :limit;",
+    },
+    "disks-wear": {
+        "table": "system_snapshots",
+        "sql": "SELECT id, timestamp, created_at, physical_disks_json, disks_json FROM system_snapshots ORDER BY id DESC LIMIT :limit;",
+    },
+    "panel-about-system-4-iznos-nakopiteley-i-batarei": {
         "table": "system_snapshots",
         "sql": "SELECT id, timestamp, created_at, physical_disks_json, disks_json FROM system_snapshots ORDER BY id DESC LIMIT :limit;",
     },

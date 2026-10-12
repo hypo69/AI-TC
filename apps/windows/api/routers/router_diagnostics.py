@@ -16,7 +16,7 @@
 # Package: apps.windows.api.routers
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-12 07:08:00
 # =============================================================================
 
 from __future__ import annotations
@@ -28,7 +28,7 @@ import re
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from header import __root__
@@ -94,25 +94,42 @@ def init_router() -> APIRouter:
         return prompt_manager.list_templates()
 
     @router.get("/prompts/{table_type}", response_model=DiagnosticPromptTemplate)
-    async def get_diagnostic_prompt(table_type: str) -> DiagnosticPromptTemplate:
-        """Возвращает шаблон промпта для конкретного типа таблицы."""
-        return prompt_manager.get_template(table_type)
+    async def get_diagnostic_prompt(
+        table_type: str,
+        panel_id: Optional[str] = Query(None, description="Идентификатор панели для приоритетного поиска кастомного промпта")
+    ) -> DiagnosticPromptTemplate:
+        """Возвращает шаблон промпта для конкретного типа таблицы или панели."""
+        return prompt_manager.get_template(table_type, panel_id=panel_id)
 
     @router.post("/prompts/{table_type}", response_model=DiagnosticPromptTemplate)
-    async def save_diagnostic_prompt(table_type: str, req: DiagnosticPromptUpdateRequest) -> DiagnosticPromptTemplate:
-        """Сохраняет пользовательский шаблон промпта для типа таблицы."""
+    async def save_diagnostic_prompt(
+        table_type: str,
+        req: DiagnosticPromptUpdateRequest,
+        panel_id: Optional[str] = Query(None, description="Опциональный panel_id для изолированного сохранения для конкретной панели")
+    ) -> DiagnosticPromptTemplate:
+        """Сохраняет пользовательский шаблон промпта для типа таблицы или панели."""
+        target_key = panel_id or table_type
         return prompt_manager.save_template(
             table_type=table_type,
             system_instruction=req.system_instruction,
             prompt_template=req.prompt_template,
             name=req.name,
             description=req.description,
+            target_key=target_key,
         )
 
     @router.post("/prompts/{table_type}/reset", response_model=DiagnosticPromptTemplate)
-    async def reset_diagnostic_prompt(table_type: str) -> DiagnosticPromptTemplate:
+    async def reset_diagnostic_prompt(
+        table_type: str,
+        panel_id: Optional[str] = Query(None, description="Опциональный panel_id для сброса шаблона конкретной панели")
+    ) -> DiagnosticPromptTemplate:
         """Сбрасывает шаблон промпта к дефолтной системной версии."""
-        return prompt_manager.reset_template(table_type)
+        target_key = panel_id or table_type
+        return prompt_manager.reset_template(
+            table_type=table_type,
+            fallback_table_type=table_type,
+            target_key=target_key
+        )
 
     def _resolve_diagnostic_model(requested_model: Optional[str] = None, web_search: bool = False) -> str:
         """Определяет модель для диагностики из запроса или активного файла конфигурации.
@@ -268,8 +285,8 @@ def init_router() -> APIRouter:
                 is_verified=False,
             )
 
-        # Получаем соответствующий шаблон промпта для типа таблицы
-        tmpl = prompt_manager.get_template(req.table_type)
+        # Получаем соответствующий шаблон промпта для типа таблицы с приоритетом panel_id
+        tmpl = prompt_manager.get_template(req.table_type, panel_id=req.panel_id)
         sys_instruction = req.system_instruction.strip() if (req.system_instruction and req.system_instruction.strip()) else tmpl.system_instruction
 
         # 3. Вызов языковой модели с поддержкой провайдеров (Gemini, Gemini CLI, AGY) и пула ключей

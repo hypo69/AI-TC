@@ -21,7 +21,7 @@
 # Package: logger
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 21:51:00
+# Updated: 2026-10-12 06:41:00
 # =============================================================================
 
 from __future__ import annotations
@@ -202,7 +202,7 @@ class CompressingHandler(logging.handlers.RotatingFileHandler):
     def __init__(self, filename: str, maxBytes: int = 10 * 1024 * 1024, backupCount: int = 5, encoding: str = 'utf-8'):
         super().__init__(filename, maxBytes=maxBytes, backupCount=backupCount, encoding=encoding, delay=False)
         self.buffer: Dict[str, int] = {}
-        self._lock = threading.Lock()
+        self._lock = threading.RLock()
         self._dirty = False
 
     def emit(self, record: logging.LogRecord) -> None:

@@ -14,7 +14,7 @@
  * Package: windows/api/webgui/admin
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-10 17:35:00
+ * Updated: 2026-10-12 08:20:00
  * =============================================================================
  */
 
@@ -110,11 +110,21 @@ function registerGlobalFunctions() {
   window.showNotification = showNotification;
   window.showChatLogicModal = showChatLogicModal;
   window.verifyPassword = verifyPassword;
+  window.isTabActive = function(tabId) {
+    if (typeof document !== 'undefined' && document.hidden) return false;
+    if (!tabId) return false;
+    const cleanId = tabId.startsWith('tab-') ? tabId : `tab-${tabId}`;
+    const rawId = cleanId.replace(/^tab-/, '');
+    const pane = document.getElementById(cleanId) || document.getElementById(rawId);
+    return pane ? pane.classList.contains('active') : false;
+  };
 }
 
 // ============================================================================
 // УПРАВЛЕНИЕ ВКЛАДКАМИ
 // ============================================================================
+
+let currentActiveAdminTabId = null;
 
 /**
  * Переключить на вкладку
@@ -124,6 +134,19 @@ async function switchTab(targetId) {
 
   const cleanId = targetId.startsWith('#') ? targetId.slice(1) : targetId;
   const tabName = cleanId.replace(/^tab-/, '');
+  const tabId = cleanId.startsWith('tab-') ? cleanId : `tab-${cleanId}`;
+
+  // 1. Деактивация предыдущей вкладки
+  if (currentActiveAdminTabId && currentActiveAdminTabId !== tabId) {
+    const prevName = currentActiveAdminTabId.replace(/^tab-/, '').replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+    const deactivateFn = window[`deactivate${prevName[0].toUpperCase() + prevName.slice(1)}Tab`];
+    if (typeof deactivateFn === 'function') {
+      try { deactivateFn(); } catch (err) { console.debug('deactivate hook error:', err); }
+    }
+    document.dispatchEvent(new CustomEvent('tab:deactivated', { detail: { tabId: currentActiveAdminTabId, name: prevName } }));
+  }
+
+  currentActiveAdminTabId = tabId;
 
   console.log(`[AdminInterface] Switching to tab: ${tabName}`);
 
@@ -142,6 +165,14 @@ async function switchTab(targetId) {
   if (typeof window.onTabSwitched === 'function') {
     window.onTabSwitched(cleanId);
   }
+
+  // 2. Активация новой вкладки
+  const newName = tabId.replace(/^tab-/, '').replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+  const activateFn = window[`activate${newName[0].toUpperCase() + newName.slice(1)}Tab`];
+  if (typeof activateFn === 'function') {
+    try { activateFn(); } catch (err) { console.debug('activate hook error:', err); }
+  }
+  document.dispatchEvent(new CustomEvent('tab:activated', { detail: { tabId, name: newName } }));
 
   console.log(`[AdminInterface] Tab switched: ${tabName}`);
 }

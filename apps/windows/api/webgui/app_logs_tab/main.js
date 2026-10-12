@@ -19,7 +19,7 @@
  * Package: windows/api/webgui/app_logs_tab
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-10 19:37:00
+ * Updated: 2026-10-12 08:20:00
  * =============================================================================
  */
 
@@ -940,17 +940,46 @@ async function loadRawContent() {
 }
 
 /**
+ * Проверка активности вкладки App Logs
+ */
+function isAppLogsTabActive() {
+  if (typeof document !== 'undefined' && document.hidden) return false;
+  if (typeof window.isTabActive === 'function') {
+    return Boolean(window.isTabActive('tab-app-logs') || window.isTabActive('app-logs'));
+  }
+  const pane = document.getElementById('tab-app-logs') || document.getElementById('app-logs');
+  return pane ? pane.classList.contains('active') : false;
+}
+
+/**
  * Запуск фонового Live Stream опроса
  */
 function startLivePolling() {
   stopLivePolling();
-  state.liveTimer = setInterval(async () => {
-    if (state.currentMode === 'tail') {
-      await loadTailTerminal();
-    } else {
-      await refreshCurrentView();
-    }
-  }, 3000);
+  if (!isAppLogsTabActive()) return;
+
+  if (window.registerTabPoller) {
+    window.registerTabPoller('tab-app-logs', async () => {
+      if (!isAppLogsTabActive()) return;
+      if (state.currentMode === 'tail') {
+        await loadTailTerminal();
+      } else {
+        await refreshCurrentView();
+      }
+    }, 3000, { pollerId: 'tab-app-logs_live', immediate: false });
+  } else {
+    state.liveTimer = setInterval(async () => {
+      if (!isAppLogsTabActive()) {
+        stopLivePolling();
+        return;
+      }
+      if (state.currentMode === 'tail') {
+        await loadTailTerminal();
+      } else {
+        await refreshCurrentView();
+      }
+    }, 3000);
+  }
 }
 
 /**
@@ -960,6 +989,9 @@ function stopLivePolling() {
   if (state.liveTimer) {
     clearInterval(state.liveTimer);
     state.liveTimer = null;
+  }
+  if (window.unregisterTabPoller) {
+    window.unregisterTabPoller('tab-app-logs_live');
   }
 }
 
@@ -975,6 +1007,21 @@ function escapeHtml(text) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
 }
+
+window.activateAppLogsTab = () => {
+  if (isAppLogsTabActive() && state.liveStream) {
+    startLivePolling();
+  }
+};
+window.deactivateAppLogsTab = () => {
+  stopLivePolling();
+};
+
+document.addEventListener('tab:deactivated', (e) => {
+  if (e.detail?.tabId === 'tab-app-logs' || e.detail?.tabId === 'app-logs') {
+    stopLivePolling();
+  }
+});
 
 // Авто-инициализация при загрузке скрипта
 if (document.readyState === 'loading') {

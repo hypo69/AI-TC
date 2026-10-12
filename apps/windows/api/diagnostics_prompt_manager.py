@@ -18,7 +18,7 @@
 # Package: apps.windows.api
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-12 07:08:00
 # =============================================================================
 
 from __future__ import annotations
@@ -231,12 +231,35 @@ class DiagnosticsPromptManager:
         }
         return aliases.get(key, key)
 
-    def get_template(self, table_type: str) -> DiagnosticPromptTemplate:
-        """Возвращает шаблон промпта для указанного типа таблицы.
+    def get_template(self, table_type: str, panel_id: Optional[str] = None) -> DiagnosticPromptTemplate:
+        """Возвращает шаблон промпта для указанного типа таблицы или конкретной панели.
 
-        Если сохранен пользовательский файл JSON в prompts/diagnostics/, загружает его.
-        Иначе возвращает стандартный шаблон по умолчанию.
+        Приоритет разрешения:
+        1. Если указан panel_id и сохранен файл для панели, загружается он.
+        2. Если сохранен файл для table_type, загружается он.
+        3. Если table_type есть в стандартных DEFAULT_PROMPTS, возвращается стандартный.
+        4. Иначе возвращается универсальный шаблон 'generic'.
         """
+        # 1. Проверка индивидуального шаблона для панели
+        if panel_id and panel_id.strip():
+            safe_panel = panel_id.strip()
+            panel_file = self._get_file_path(safe_panel)
+            if panel_file.is_file():
+                try:
+                    data = json.loads(panel_file.read_text(encoding='utf-8'))
+                    return DiagnosticPromptTemplate(
+                        table_type=data.get('table_type', safe_panel),
+                        name=data.get('name', f"Панель {safe_panel}"),
+                        description=data.get('description', ''),
+                        system_instruction=data.get('system_instruction', ''),
+                        prompt_template=data.get('prompt_template', ''),
+                        variables=data.get('variables', ['title', 'subtitle', 'metadata', 'raw_data']),
+                        is_customized=True
+                    )
+                except Exception as e:
+                    logger.warning(f"Не удалось загрузить кастомный промпт панели из {panel_file}: {e}")
+
+        # 2. Проверка шаблона по типу таблицы
         key = self.normalize_table_type(table_type)
 
         file_path = self._get_file_path(key)
@@ -290,14 +313,18 @@ class DiagnosticsPromptManager:
 
     def save_template(
         self,
-        table_type: str,
-        system_instruction: str,
-        prompt_template: str,
+        table_type: Optional[str] = None,
+        system_instruction: str = "",
+        prompt_template: str = "",
         name: Optional[str] = None,
-        description: Optional[str] = None
+        description: Optional[str] = None,
+        target_key: Optional[str] = None,
     ) -> DiagnosticPromptTemplate:
-        """Сохраняет пользовательский шаблон промпта в файл."""
-        key = self.normalize_table_type(table_type)
+        """Сохраняет пользовательский шаблон промпта в файл (по table_type или target_key/panel_id)."""
+        raw_key = target_key or table_type or "generic"
+        is_panel = raw_key.startswith("panel-") or ("-" in raw_key and raw_key not in DEFAULT_PROMPTS)
+        key = raw_key if is_panel else self.normalize_table_type(raw_key)
+
         file_path = self._get_file_path(key)
         default_info = DEFAULT_PROMPTS.get(key, {})
         final_name = name or default_info.get('name', key.capitalize())
@@ -324,9 +351,17 @@ class DiagnosticsPromptManager:
             is_customized=True
         )
 
-    def reset_template(self, table_type: str) -> DiagnosticPromptTemplate:
+    def reset_template(
+        self,
+        table_type: Optional[str] = None,
+        fallback_table_type: Optional[str] = None,
+        target_key: Optional[str] = None,
+    ) -> DiagnosticPromptTemplate:
         """Сбрасывает шаблон промпта к дефолтному состоянию, удаляя файл кастомизации."""
-        key = self.normalize_table_type(table_type)
+        raw_key = target_key or table_type or "generic"
+        is_panel = raw_key.startswith("panel-") or ("-" in raw_key and raw_key not in DEFAULT_PROMPTS)
+        key = raw_key if is_panel else self.normalize_table_type(raw_key)
+
         file_path = self._get_file_path(key)
         if file_path.is_file():
             try:
@@ -334,7 +369,9 @@ class DiagnosticsPromptManager:
                 logger.info(f"Сброшен шаблон промпта для '{key}' (удален {file_path})")
             except Exception as e:
                 logger.error(f'Не удалось удалить файл шаблона {file_path}: {e}')
-        return self.get_template(key)
+
+        fallback_key = fallback_table_type or (table_type if table_type != raw_key else "generic")
+        return self.get_template(fallback_key)
 
 
 prompt_manager = DiagnosticsPromptManager()

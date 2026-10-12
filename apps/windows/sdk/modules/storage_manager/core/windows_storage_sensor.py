@@ -20,7 +20,7 @@
 # Package: apps.windows.sdk.modules.storage_manager.core
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-12 08:11:00
 # =============================================================================
 
 from __future__ import annotations
@@ -41,7 +41,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-_PROJECT_ROOT = Path(__file__).resolve().parents[5]
+_PROJECT_ROOT = Path(__file__).resolve().parents[6]
 if str(_PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(_PROJECT_ROOT))
 
@@ -386,6 +386,95 @@ def _enrich_disks_with_lhm(disks: List[StorageDiskHealthInfo], sensors: List[Dic
                 d.lifetime_read_tb = round(matched_data["data_read_gb"] / 1024.0, 2)
 
 
+def _enrich_disks_from_telemetry_db(disks: List[StorageDiskHealthInfo]) -> None:
+    """Обогащает метрики накопителей (наработка, температура, износ) из SQLite telemetry.db.
+
+    Используется как надежный fallback для SATA/HDD/SSD дисков, для которых
+    Windows CIM не возвращает PowerOnHours, либо когда LibreHardwareMonitor не запущен.
+    """
+    try:
+        from apps.windows.telemetry.sqlite import TelemetryStorage
+        storage = TelemetryStorage.get_instance(read_only=True)
+    except Exception as exc:
+        logger.debug(f"[WindowsStorageSensor] Не удалось подключиться к TelemetryStorage: {exc}")
+        return
+
+    # 1. Попытка обогащения через актуальные записи sensor_polls
+    try:
+        with storage.connection as conn:
+            cur = conn.cursor()
+            cur.execute("""
+                SELECT hardware_name, sensor_category, sensor_name, value 
+                FROM sensor_polls 
+                WHERE hardware_type LIKE '%storage%' OR hardware_type LIKE '%disk%' OR hardware_type LIKE '%hdd%' OR hardware_type LIKE '%ssd%'
+                ORDER BY id DESC LIMIT 500;
+            """)
+            s_rows = cur.fetchall()
+            if s_rows:
+                db_sensors = [
+                    {
+                        "hardware_type": "storage",
+                        "hardware_name": r[0],
+                        "sensor_category": r[1],
+                        "sensor_name": r[2],
+                        "value_num": r[3],
+                    }
+                    for r in s_rows
+                ]
+                _enrich_disks_with_lhm(disks, db_sensors)
+    except Exception as sp_err:
+        logger.debug(f"[WindowsStorageSensor] Ошибка обогащения через sensor_polls: {sp_err}")
+
+    # 2. Попытка обогащения через последний сохраненный снимок physical_disks
+    try:
+        snap = storage.get_latest_snapshot_full() or {}
+        phys_cached = snap.get("physical_disks") or []
+        if phys_cached:
+            for d in disks:
+                m_lower = (d.model or "").lower().strip()
+                dev_id_lower = (d.device_id or "").lower().strip()
+                d_sn = str(d.serial_number or "").strip().lower()
+
+                for c_disk in phys_cached:
+                    c_m = str(c_disk.get("model") or c_disk.get("name") or "").lower().strip()
+                    c_id = str(c_disk.get("device_id") or "").lower().strip()
+                    c_sn = str(c_disk.get("serial_number") or "").strip().lower()
+
+                    matched = False
+                    if d_sn and c_sn and d_sn != "n/a" and d_sn == c_sn:
+                        matched = True
+                    elif dev_id_lower and dev_id_lower == c_id:
+                        matched = True
+                    elif m_lower and c_m and (m_lower in c_m or c_m in m_lower):
+                        matched = True
+
+                    if matched:
+                        c_poh = c_disk.get("power_on_hours")
+                        if (d.power_on_hours is None or d.power_on_hours == 0) and c_poh and int(c_poh) > 0:
+                            d.power_on_hours = int(c_poh)
+
+                        c_temp = c_disk.get("temperature_celsius") or c_disk.get("temperature_c")
+                        if (d.temperature_c is None or d.temperature_c <= 5.0) and c_temp and float(c_temp) > 5.0:
+                            d.temperature_c = float(c_temp)
+
+                        c_wear = c_disk.get("wear_percentage") or c_disk.get("wear_level_pct")
+                        if (d.wear_percentage is None or d.wear_percentage == 0.0) and c_wear is not None and float(c_wear) > 0.0:
+                            d.wear_percentage = float(c_wear)
+
+                        c_wbytes = c_disk.get("lifetime_write_bytes")
+                        if (d.lifetime_write_bytes is None or d.lifetime_write_bytes == 0) and c_wbytes:
+                            d.lifetime_write_bytes = int(c_wbytes)
+                            d.lifetime_write_tb = round(d.lifetime_write_bytes / (1024 ** 4), 2)
+
+                        c_rbytes = c_disk.get("lifetime_read_bytes")
+                        if (d.lifetime_read_bytes is None or d.lifetime_read_bytes == 0) and c_rbytes:
+                            d.lifetime_read_bytes = int(c_rbytes)
+                            d.lifetime_read_tb = round(d.lifetime_read_bytes / (1024 ** 4), 2)
+                        break
+    except Exception as snap_err:
+        logger.debug(f"[WindowsStorageSensor] Ошибка обогащения через снимки snapshots: {snap_err}")
+
+
 class WindowsStorageSensor:
     """Сенсор дисковой подсистемы на базе нативных интерфейсов Windows и PowerShell."""
     _CACHE_SNAPSHOT: Dict[str, Any] = {}
@@ -540,6 +629,12 @@ class WindowsStorageSensor:
             snapshot = self.normalize_snapshot(raw_data)
             WindowsStorageSensor._CACHE_SNAPSHOT = snapshot
             WindowsStorageSensor._CACHE_TIME = time.time()
+            try:
+                snap_file = _PROJECT_ROOT / "storage_snapshot.json"
+                with open(snap_file, "w", encoding="utf-8") as f:
+                    json.dump(snapshot, f, ensure_ascii=False, indent=2)
+            except Exception as io_err:
+                logger.debug(f"[WindowsStorageSensor] Ошибка записи storage_snapshot.json: {io_err}")
             return snapshot
         finally:
             with WindowsStorageSensor._BG_LOCK:
@@ -900,6 +995,14 @@ class WindowsStorageSensor:
                     _enrich_disks_with_lhm(result_disks, lhm_sensors)
         except Exception as lhm_err:
             logger.debug(f'Обогащение через LHM пропущено: {lhm_err}')
+
+        # Обогащение из базы данных телеметрии (sensor_polls и system_snapshots)
+        # если наработка не была возвращена CIM или LHM сервер был недоступен
+        if any(d.power_on_hours is None or d.power_on_hours == 0 for d in result_disks):
+            try:
+                _enrich_disks_from_telemetry_db(result_disks)
+            except Exception as db_err:
+                logger.debug(f'Обогащение через SQLite пропущено: {db_err}')
 
         return result_disks
 

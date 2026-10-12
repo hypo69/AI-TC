@@ -16,7 +16,7 @@
 # Package: apps.windows.telemetry
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-12 07:25:00
 # =============================================================================
 
 from __future__ import annotations
@@ -220,6 +220,17 @@ class TelemetryLoggerService:
         except Exception as def_init_ex:
             logger.debug(f'Ошибка запуска инициализации Defender: {def_init_ex}')
 
+        # При старте телеметрии синхронизируем паспорта активности процессов в SQLite
+        try:
+            from apps.windows.sdk.core.process_activity_engine import ProcessActivityEngine
+            threading.Thread(
+                target=lambda: ProcessActivityEngine(storage=self.storage).sync_processes(),
+                name='ProcessActivityInitCollector',
+                daemon=True,
+            ).start()
+        except Exception as proc_init_ex:
+            logger.debug(f'Ошибка запуска инициализации активности процессов: {proc_init_ex}')
+
         self._thread = threading.Thread(target=self._worker_loop, name='TelemetryLoggerWorker', daemon=True)
         self._thread.start()
         logger.info(f'Фоновый сервис телеметрии запущен в БД (интервал: {self.interval_sec}с, аудит железа: {self.hardware_audit_interval_sec}с, W64: {self.enable_w64}, БД: {self.storage.db_path})')
@@ -319,6 +330,11 @@ class TelemetryLoggerService:
                         self.collect_and_save_defender_state()
                     except Exception as def_ex:
                         logger.debug(f'Ошибка при периодическом аудите Defender: {def_ex}')
+                    try:
+                        from apps.windows.sdk.core.process_activity_engine import ProcessActivityEngine
+                        ProcessActivityEngine(storage=self.storage).sync_processes()
+                    except Exception as proc_ex:
+                        logger.debug(f'Ошибка при периодической синхронизации активности процессов: {proc_ex}')
                     self._last_hw_audit_time = loop_start
                     self._last_def_audit_time = loop_start
                 if self._last_rollup_time is None or loop_start - self._last_rollup_time >= self.rollup_interval_sec:

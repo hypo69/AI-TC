@@ -11,7 +11,7 @@
 # Package: logger.tests
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 21:52:00
+# Updated: 2026-10-12 06:41:30
 # =============================================================================
 
 """Модульные тесты для пакета logger."""
@@ -79,3 +79,31 @@ def test_logger_console_with_colors_and_levels():
 
     # Вызов с debug уровнем
     logger.console("Отладочное сообщение только для консоли", level=logging.DEBUG)
+
+
+def test_compressing_handler_auto_flush_no_deadlock(tmp_path):
+    """Проверяет, что CompressingHandler при превышении 100 уникальных записей сбрасывает буфер без взаимной блокировки (deadlock)."""
+    from logger.logger import CompressingHandler
+    log_file = tmp_path / "test_compress.log"
+    handler = CompressingHandler(str(log_file))
+    formatter = logging.Formatter('%(message)s')
+    handler.setFormatter(formatter)
+
+    # Записываем 105 уникальных сообщений, что триггерит if len(self.buffer) > 100: self.flush()
+    for i in range(105):
+        record = logging.LogRecord(
+            name="test",
+            level=logging.INFO,
+            pathname=__file__,
+            lineno=1,
+            msg=f"Unique message {i}",
+            args=(),
+            exc_info=None,
+        )
+        handler.emit(record)
+
+    handler.close()
+    assert log_file.exists()
+    content = log_file.read_text(encoding='utf-8')
+    assert "Unique message 0" in content
+    assert "Unique message 104" in content

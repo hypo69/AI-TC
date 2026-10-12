@@ -14,7 +14,7 @@
  * Package: windows/api/webgui/system_inspector_tab
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-10 19:41:00
+ * Updated: 2026-10-12 08:13:00
  * =============================================================================
  */
 
@@ -2791,6 +2791,7 @@
       title: d.name,
       subtitle: `${d.id} | ${d.media_type} | ${totGb} GB`,
       icon: '💾',
+      panelId: 'panel-system-inspector-storage',
       tableType: 'disk',
       badges: [
         { text: d.media_type, class: d.media_type === 'NVMe' ? 'badge bg-primary' : d.media_type === 'SSD' ? 'badge bg-info text-dark' : 'badge bg-warning text-dark' },
@@ -3121,6 +3122,77 @@
     }
   }
 
+  let _lastDisksWearData = null;
+
+  async function fetchStorageHealthFromApi() {
+    try {
+      const res = await fetch('/api/v1/system/diagnostics/storage-battery?t=' + Date.now());
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data && Array.isArray(data.disks_wear)) {
+        _lastDisksWearData = data.disks_wear;
+        renderPhysicalDisksStorage(data.disks_wear);
+      }
+    } catch (e) {
+      console.warn('[SystemInspectorTab] Ошибка получения здоровья накопителей:', e);
+    }
+  }
+
+  function renderPhysicalDisksStorage(disks) {
+    const diskCont = document.getElementById('sys-physical-disks-container');
+    const diskBadge = document.getElementById('sys-disk-health-badge');
+    if (!diskCont || !Array.isArray(disks) || disks.length === 0) return;
+
+    const allHealthy = disks.every(d => {
+      const st = String(d.health_status || d.status || '').toLowerCase();
+      return st.includes('healthy') || st.includes('ok') || st.includes('passed');
+    });
+
+    if (diskBadge) {
+      diskBadge.textContent = allHealthy ? 'SMART OK' : 'Внимание';
+      diskBadge.className = allHealthy
+        ? 'badge bg-success-subtle text-success border border-success'
+        : 'badge bg-warning-subtle text-warning border border-warning';
+    }
+
+    diskCont.innerHTML = disks.map((d, idx) => {
+      const model = d.model || d.name || `Диск ${idx}`;
+      const devId = d.device_id || `Disk ${idx}`;
+      const sizeStr = d.size_gb != null ? `${d.size_gb} GB` : (d.total_gb != null ? `${d.total_gb} GB` : '');
+      const partsStr = d.partitions && d.partitions !== '—'
+        ? `<span class="badge bg-primary-subtle text-info border border-info-subtle ms-1" style="font-size: 0.62rem;">${escapeHtml(d.partitions)}</span>`
+        : '';
+      const isSsd = String(d.media_type || '').toUpperCase().includes('SSD') || String(d.bus_type || '').toUpperCase().includes('NVME');
+      const iconClass = isSsd ? 'bi-device-ssd text-info' : 'bi-hdd text-primary';
+
+      return `
+        <div class="d-flex justify-content-between align-items-center py-1 border-bottom border-dark-subtle sys-disk-item"
+             data-disk-idx="${idx}"
+             style="border-bottom-style: dashed !important; cursor: pointer; transition: background 0.15s;"
+             title="Нажмите для просмотра SMART-характеристик и телеметрии">
+          <div class="d-flex align-items-center text-truncate me-2" style="max-width: 170px;">
+            <i class="bi ${iconClass} me-1.5" style="font-size: 0.8rem;"></i>
+            <span class="text-truncate fw-semibold" style="font-size: 0.72rem; color: var(--text-color);">${escapeHtml(model)}</span>
+          </div>
+          <div class="d-flex align-items-center gap-1">
+            ${partsStr}
+            <span class="badge bg-secondary font-monospace" style="font-size: 0.62rem;">${sizeStr}</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    diskCont.querySelectorAll('.sys-disk-item').forEach(el => {
+      el.addEventListener('click', () => {
+        const idx = parseInt(el.getAttribute('data-disk-idx'), 10);
+        const selectedDisk = disks[idx];
+        if (selectedDisk) {
+          openDriveAiModal(selectedDisk);
+        }
+      });
+    });
+  }
+
   async function fetchCpuLoadFromApi() {
     try {
       const res = await fetch('/api/v1/panel/cpu-load');
@@ -3314,6 +3386,7 @@
           cores_count: (lastCpuData.cores || []).length,
           threads_count: (lastCpuData.threads || []).length
         }, null, 2),
+        panelId: 'panel-system-inspector-cpu-specs',
         tableType: 'cpu',
         actions: []
       });
@@ -3377,6 +3450,7 @@
           engines: gpu.engines || [],
           sensors_count: (gpu.sensors || []).length
         }, null, 2),
+        panelId: 'panel-system-inspector-gpu-specs',
         tableType: 'gpu',
         actions: []
       });
@@ -3897,21 +3971,11 @@
       if (writeSubThumb) writeSubThumb.style.left = `${writePct.toFixed(1)}%`;
     }
 
-    // Physical Disks SMART Health
-    const diskCont = document.getElementById('sys-physical-disks-container');
-    const diskBadge = document.getElementById('sys-disk-health-badge');
-    if (diskCont && Array.isArray(snap.physical_disks) && snap.physical_disks.length > 0) {
-      const allHealthy = snap.physical_disks.every(d => d.health_status === 'Healthy');
-      if (diskBadge) {
-        diskBadge.textContent = allHealthy ? 'SMART OK' : 'Внимание';
-        diskBadge.className = allHealthy ? 'badge bg-success-subtle text-success border border-success' : 'badge bg-warning-subtle text-warning border border-warning';
-      }
-      diskCont.innerHTML = snap.physical_disks.map(d => `
-        <div class="d-flex justify-content-between align-items-center py-0.5 border-bottom border-dark-subtle" style="border-bottom-style: dashed !important;">
-          <span class="text-truncate me-2" style="max-width: 160px;" title="${escapeHtml(d.model)}">${escapeHtml(d.model)}</span>
-          <span class="badge bg-secondary font-monospace" style="font-size: 0.65rem;">${d.size_gb} GB ${escapeHtml(d.media_type || '')}</span>
-        </div>
-      `).join('');
+    // Physical Disks SMART Health (единый API /api/v1/system/diagnostics/storage-battery)
+    if (Array.isArray(snap.physical_disks) && snap.physical_disks.length > 0) {
+      renderPhysicalDisksStorage(snap.physical_disks);
+    } else if (!_lastDisksWearData) {
+      fetchStorageHealthFromApi();
     }
 
     // Battery & Power
@@ -4154,6 +4218,7 @@
             icon: '🌐',
             title: `${item.name} (${item.service_type})`,
             subtitle: `PID: ${item.pid} | ${item.remote_address}`,
+            panelId: 'panel-system-inspector-stabilnost-i-set',
             tableType: 'network',
             badges: [
               { text: `PID ${item.pid}`, class: 'badge bg-info text-dark' },
@@ -5203,6 +5268,7 @@
                 icon: '⚡',
                 title: `Файловое событие: ${e.action}`,
                 subtitle: `${e.path} | ${e.timestamp}`,
+                panelId: 'panel-system-inspector-live-watcher',
                 tableType: 'file_event',
                 badges: [
                   { text: e.action, class: e.is_deletion ? 'badge bg-danger' : (e.action === 'Created' ? 'badge bg-success' : 'badge bg-info text-dark') },
@@ -5856,6 +5922,7 @@
         icon: 'ℹ️',
         title: 'Справка:Изменения файлов в реальном времени (Multi-Directory)',
         subtitle: 'Низкоуровневый мониторинг файловой системы Windows через WinAPI ReadDirectoryChangesW',
+        panelId: 'panel-system-inspector-watcher-help',
         tableType: 'help',
         badges: [
           { text: 'WinAPI ReadDirectoryChangesW', class: 'badge bg-info text-dark' },
@@ -5905,6 +5972,7 @@
       await fetchMemoryIoFromApi();
       await fetchNetworkLoadFromApi();
       await fetchStorageLoadFromApi();
+      await fetchStorageHealthFromApi();
     };
     if (window.registerTabPoller) {
       window.registerTabPoller('tab-hardware-load-inspector', pollHandler, seconds * 1000, { pollerId: 'hw_load_inspector', immediate: false });
@@ -5970,6 +6038,7 @@
       await fetchMemoryIoFromApi();
       await fetchNetworkLoadFromApi();
       await fetchStorageLoadFromApi();
+      await fetchStorageHealthFromApi();
 
       try {
         const snapRes = await fetch('/api/v1/system/summary');
@@ -5999,6 +6068,7 @@
     fetchMemoryIoFromApi();
     fetchNetworkLoadFromApi();
     fetchStorageLoadFromApi();
+    fetchStorageHealthFromApi();
     if (typeof connectSystemWebSocket === 'function') {
       try { connectSystemWebSocket(); } catch (err) { console.debug(err); }
     }
@@ -6009,6 +6079,16 @@
     if (typeof disconnectSystemWebSocket === 'function') {
       try { disconnectSystemWebSocket(); } catch (err) { console.debug(err); }
     }
+  }
+
+  // Регистрация в Universal Panel Loader
+  if (typeof window.registerPanelRenderer === 'function') {
+    window.registerPanelRenderer('panel-system-inspector-storage', () => {
+      fetchStorageHealthFromApi();
+    });
+    window.registerPanelRenderer('panel-system-inspector-zdorove-diskov-nvmessd', () => {
+      fetchStorageHealthFromApi();
+    });
   }
 
   window.initSystemInspectorTab = initSystemInspectorTab;

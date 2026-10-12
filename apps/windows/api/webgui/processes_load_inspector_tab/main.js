@@ -16,11 +16,30 @@
  * Package: windows/api/webgui/processes_load_inspector_tab
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-10 17:35:00
+ * Updated: 2026-10-12 08:20:00
  * =============================================================================
  */
 
 (function() {
+  const TAB_ID = 'tab-processes-load-inspector';
+
+  /**
+   * Проверяет, активна ли данная вкладка в текущий момент.
+   * Учитывает видимость документа (document.hidden), статус в tab-core.js
+   * и наличие класса active у DOM-контейнера вкладки.
+   * @returns {boolean}
+   */
+  function isProcessesTabActive() {
+    if (typeof document !== 'undefined' && document.hidden) {
+      return false;
+    }
+    if (typeof window.isTabActive === 'function') {
+      return Boolean(window.isTabActive(TAB_ID) || window.isTabActive('processes-load-inspector'));
+    }
+    const pane = document.getElementById(TAB_ID) || document.getElementById('processes-load-inspector');
+    return pane ? pane.classList.contains('active') : false;
+  }
+
   // Текущее состояние вкладки
   let currentMode = 'deep-dive'; // 'deep-dive' | 'host-overview'
   let currentInstanceFilter = 'active'; // 'active' | 'history'
@@ -204,6 +223,7 @@
   // ---------------------------------------------------------------------------
 
   async function loadInstancesList() {
+    if (!isProcessesTabActive()) return;
     try {
       const searchVal = document.getElementById('deep-dive-search')?.value.trim() || '';
       const endpoint = currentInstanceFilter === 'active'
@@ -326,7 +346,7 @@
   // ---------------------------------------------------------------------------
 
   async function loadInstanceSamples() {
-    if (!selectedInstanceId) return;
+    if (!isProcessesTabActive() || !selectedInstanceId) return;
     try {
       const limitMap = { '1m': 60, '5m': 150, '1h': 300, '24h': 1000 };
       const limit = limitMap[currentChartInterval] || 100;
@@ -517,14 +537,45 @@
         return;
       }
 
-      tbody.innerHTML = sockets.map(s => `
-        <tr>
+      tbody.innerHTML = sockets.map((s, idx) => `
+        <tr class="inst-socket-row" data-idx="${idx}" style="cursor: pointer;" title="Нажмите для AI-анализа сокета">
           <td><span class="badge bg-dark border border-secondary text-info">${escapeHtml(s.protocol)}</span></td>
           <td class="font-monospace text-light">${escapeHtml(s.local_address)}</td>
           <td class="font-monospace text-warning">${escapeHtml(s.remote_address)}</td>
           <td><span class="badge bg-success-subtle text-success border border-success">${escapeHtml(s.status)}</span></td>
         </tr>
       `).join('');
+
+      tbody.querySelectorAll('.inst-socket-row').forEach(row => {
+        row.onclick = () => {
+          const idx = parseInt(row.getAttribute('data-idx'), 10);
+          const s = sockets[idx];
+          if (!s) return;
+          const modal = window.AIModalDialog || window.AITableModal;
+          if (modal) {
+            modal.show({
+              icon: '🌐',
+              title: `Сокет: ${s.protocol} ${s.local_address}`,
+              subtitle: `Удаленный адрес: ${s.remote_address} | Статус: ${s.status}`,
+              panelId: 'panel-processes-load-inspector-3',
+              tableType: 'network',
+              badges: [
+                { text: s.protocol, class: 'badge bg-info text-dark font-monospace' },
+                { text: s.status, class: 'badge bg-success' }
+              ],
+              metadata: [
+                { label: 'Протокол', value: s.protocol },
+                { label: 'Локальный сокет', value: s.local_address, isCode: true },
+                { label: 'Удаленный узел', value: s.remote_address, isCode: true },
+                { label: 'Состояние', value: s.status }
+              ],
+              rawTitle: 'Параметры сокета процесса',
+              rawContent: JSON.stringify(s, null, 2),
+              requestData: s
+            });
+          }
+        };
+      });
     } catch (e) {
       console.warn('[ProcessActivity] Error loading sockets:', e);
     }
@@ -559,7 +610,7 @@
         return;
       }
 
-      tbody.innerHTML = events.map(ev => {
+      tbody.innerHTML = events.map((ev, idx) => {
         let actionBadge = 'bg-secondary';
         if (ev.action === 'CREATE') actionBadge = 'bg-success';
         else if (ev.action === 'MODIFY') actionBadge = 'bg-warning text-dark';
@@ -568,7 +619,7 @@
 
         const timeStr = ev.timestamp ? new Date(ev.timestamp).toLocaleTimeString('ru-RU') : '--';
         return `
-          <tr>
+          <tr class="inst-file-row" data-idx="${idx}" style="cursor: pointer;" title="Нажмите для AI-анализа файловой операции">
             <td class="font-monospace text-muted">${timeStr}</td>
             <td><span class="badge ${actionBadge}">${escapeHtml(ev.action)}</span></td>
             <td class="font-monospace text-truncate text-light" style="max-width: 280px;" title="${escapeHtml(ev.file_path)}">
@@ -577,6 +628,35 @@
           </tr>
         `;
       }).join('');
+
+      tbody.querySelectorAll('.inst-file-row').forEach(row => {
+        row.onclick = () => {
+          const idx = parseInt(row.getAttribute('data-idx'), 10);
+          const ev = events[idx];
+          if (!ev) return;
+          const modal = window.AIModalDialog || window.AITableModal;
+          if (modal) {
+            modal.show({
+              icon: '📄',
+              title: `Файл [${ev.action}]: ${ev.file_path?.split(/[\\/]/).pop() || 'file'}`,
+              subtitle: ev.file_path || '',
+              panelId: 'panel-processes-load-inspector-4',
+              tableType: 'file_event',
+              badges: [
+                { text: ev.action, class: `badge bg-info text-dark font-monospace` }
+              ],
+              metadata: [
+                { label: 'Действие', value: ev.action },
+                { label: 'Полный путь', value: ev.file_path, isCode: true },
+                { label: 'Время операции', value: ev.timestamp || '-' }
+              ],
+              rawTitle: 'Метаданные файлового события',
+              rawContent: JSON.stringify(ev, null, 2),
+              requestData: ev
+            });
+          }
+        };
+      });
     } catch (e) {
       console.warn('[ProcessActivity] Error loading file activity:', e);
     }
@@ -656,6 +736,26 @@
       }
     });
 
+    // 4.1. AI Анализ и аудит процесса через Universal AI Modal
+    document.getElementById('btn-safeops-ai-audit')?.addEventListener('click', () => {
+      if (!selectedInstanceData) {
+        showToast('Процесс не выбран', 'warning');
+        return;
+      }
+      if (window.AIModalDialog) {
+        window.AIModalDialog.show({
+          title: `AI Анализ процесса: ${selectedInstanceData.name || 'Unknown'} (PID: ${selectedInstanceData.pid})`,
+          panelId: 'panel-processes-load-inspector-vyberite-protsess',
+          tableType: 'process',
+          row: selectedInstanceData,
+          contextData: {
+            selectedInstance: selectedInstanceData,
+            timestamp: new Date().toISOString()
+          }
+        });
+      }
+    });
+
     // 5. Завершить процесс (с модальным подтверждением)
     document.getElementById('btn-safeops-kill')?.addEventListener('click', () => {
       if (!selectedInstanceId || !selectedInstanceData) return;
@@ -699,6 +799,7 @@
   // ---------------------------------------------------------------------------
 
   async function fetchHostOverview() {
+    if (!isProcessesTabActive()) return;
     await Promise.all([
       fetchHostProcesses(),
       fetchNetworkActivity(),
@@ -707,6 +808,7 @@
   }
 
   async function fetchHostProcesses() {
+    if (!isProcessesTabActive()) return;
     try {
       const res = await fetch('/api/v1/system/summary?process_limit=50');
       if (res.ok) {
@@ -775,6 +877,7 @@
             title: p.name,
             subtitle: `PID: ${p.pid} | CPU: ${(p.cpu_percent || 0).toFixed(1)}% | RAM: ${(p.memory_mb || 0).toFixed(1)} MB`,
             icon: '⚙️',
+            panelId: 'panel-processes-load-inspector-top-protsessov-khosta-live-strea',
             tableType: 'process',
             badges: [
               { text: p.status || 'RUNNING', class: 'badge bg-success' },
@@ -828,6 +931,7 @@
   // ---------------------------------------------------------------------------
 
   async function fetchNetworkActivity() {
+    if (!isProcessesTabActive()) return;
     try {
       const res = await fetch('/api/v1/system/network-activity?limit=100');
       if (res.ok) {
@@ -1001,6 +1105,7 @@
             title: `${item.name} (PID: ${item.pid}) — ${item.service_type || item.protocol}`,
             subtitle: `${item.protocol} ${item.local_address} -> ${item.remote_address} | Состояние: ${item.status}`,
             icon: '🌐',
+            panelId: 'panel-processes-load-inspector-setevaya-aktivnost-programm-in',
             tableType: 'network',
             badges: [
               { text: item.is_internet ? 'WAN (Интернет)' : 'LAN (Локальный)', class: item.is_internet ? 'badge bg-primary' : 'badge bg-secondary' },
@@ -1034,6 +1139,7 @@
   // ---------------------------------------------------------------------------
 
   async function fetchLiveFileEvents() {
+    if (!isProcessesTabActive()) return;
     try {
       const [resEvents, resTelem] = await Promise.all([
         fetch('/api/v1/system/file-audit/live-events?limit=30'),
@@ -1116,7 +1222,8 @@
               icon: '⚡',
               title: `Файловое событие: ${e.action}`,
               subtitle: `${e.path} | ${e.timestamp}`,
-              tableType: 'generic',
+              panelId: 'panel-processes-load-inspector-5',
+              tableType: 'file_event',
               badges: [
                 { text: e.action, class: e.is_deletion ? 'badge bg-danger' : (e.action === 'Created' ? 'badge bg-success' : 'badge bg-info text-dark') },
                 { text: e.process_name ? `Программа: ${e.process_name}` : 'WinAPI ReadDirectoryChangesW', class: 'badge bg-dark border border-secondary text-info' },
@@ -1155,6 +1262,7 @@
           title: 'Исключения файлового мониторинга (WinAPI)',
           subtitle: `Статус фильтрации: ${data.enabled !== false ? 'ВКЛЮЧЕНА' : 'ВЫКЛЮЧЕНА'}`,
           icon: '🛡️',
+          panelId: 'panel-processes-load-inspector-5',
           tableType: 'generic',
           badges: [
             { text: data.enabled !== false ? 'Фильтрация активна' : 'Фильтрация выключена', class: data.enabled !== false ? 'badge bg-success' : 'badge bg-secondary' }
@@ -1391,41 +1499,131 @@
     initTableResizers();
   }
 
+  function stopPolling() {
+    if (deepDiveTimer) {
+      clearInterval(deepDiveTimer);
+      deepDiveTimer = null;
+    }
+    if (hostOverviewTimer) {
+      clearInterval(hostOverviewTimer);
+      hostOverviewTimer = null;
+    }
+    if (window.unregisterTabPoller) {
+      window.unregisterTabPoller('tab-processes-load-inspector_host');
+      window.unregisterTabPoller('tab-processes-load-inspector_deepdive');
+    }
+  }
+
   function startPolling() {
-    // 1. Поллинг для активного инстанса Deep Dive (1 сек)
-    if (deepDiveTimer) clearInterval(deepDiveTimer);
-    deepDiveTimer = setInterval(async () => {
-      if (isDeepDivePaused || currentMode !== 'deep-dive') return;
+    stopPolling();
+    if (!isProcessesTabActive()) return;
+
+    if (window.registerTabPoller) {
+      // Регистрация в системном диспетчере вкладок tab-core.js (активны только при открытой вкладке)
+      window.registerTabPoller('tab-processes-load-inspector', async () => {
+        if (!isProcessesTabActive()) return;
+        if (currentMode === 'host-overview') {
+          await fetchHostOverview();
+        } else {
+          await loadInstancesList();
+        }
+      }, 3000, { pollerId: 'tab-processes-load-inspector_host', immediate: false });
+
+      window.registerTabPoller('tab-processes-load-inspector', async () => {
+        if (!isProcessesTabActive() || isDeepDivePaused || currentMode !== 'deep-dive') return;
+        if (selectedInstanceId && selectedInstanceData && selectedInstanceData.status === 'RUNNING') {
+          await loadInstanceSamples();
+        }
+      }, 1000, { pollerId: 'tab-processes-load-inspector_deepdive', immediate: false });
+    } else {
+      // Резервный таймер для среды без tab-core.js с самоконтролем активности
+      hostOverviewTimer = setInterval(async () => {
+        if (!isProcessesTabActive()) {
+          stopPolling();
+          return;
+        }
+        if (currentMode === 'host-overview') {
+          await fetchHostOverview();
+        } else {
+          await loadInstancesList();
+        }
+      }, 3000);
+
+      deepDiveTimer = setInterval(async () => {
+        if (!isProcessesTabActive()) {
+          stopPolling();
+          return;
+        }
+        if (isDeepDivePaused || currentMode !== 'deep-dive') return;
+        if (selectedInstanceId && selectedInstanceData && selectedInstanceData.status === 'RUNNING') {
+          await loadInstanceSamples();
+        }
+      }, 1000);
+    }
+  }
+
+  async function activateTab() {
+    if (!isProcessesTabActive()) return;
+    startPolling();
+    if (currentMode === 'host-overview') {
+      await fetchHostOverview();
+    } else {
+      await loadInstancesList();
       if (selectedInstanceId && selectedInstanceData && selectedInstanceData.status === 'RUNNING') {
         await loadInstanceSamples();
       }
-    }, 1000);
+    }
+  }
 
-    // 2. Поллинг инстансов и хоста (3 сек)
-    if (hostOverviewTimer) clearInterval(hostOverviewTimer);
-    hostOverviewTimer = setInterval(async () => {
-      if (currentMode === 'host-overview') {
-        await fetchHostOverview();
-      } else {
-        await loadInstancesList();
-      }
-    }, 3000);
+  function deactivateTab() {
+    stopPolling();
   }
 
   // ---------------------------------------------------------------------------
-  // Точка входа модуля
+  // Точка входа модуля и жизненный цикл
   // ---------------------------------------------------------------------------
+
+  let isInitialized = false;
 
   async function init() {
-    initCharts();
-    setupEventListeners();
-    await loadInstancesList();
-    fetchNetworkActivity();
-    fetchLiveFileEvents();
-    startPolling();
+    if (!isInitialized) {
+      initCharts();
+      setupEventListeners();
+      isInitialized = true;
+    }
+    // Запускаем сетевые запросы и поллинг ТОЛЬКО если вкладка действительно активна
+    if (isProcessesTabActive()) {
+      await activateTab();
+    } else {
+      stopPolling();
+    }
   }
 
+  // Экспорт хуков жизненного цикла
   window.initProcessesLoadInspectorTab = init;
+  window.activateProcessesLoadInspectorTab = activateTab;
+  window.deactivateProcessesLoadInspectorTab = deactivateTab;
+
+  // Реакция на события переключения вкладок и видимости документа
+  document.addEventListener('tab:activated', (e) => {
+    if (e.detail?.tabId === TAB_ID || e.detail?.tabId === 'processes-load-inspector') {
+      activateTab();
+    }
+  });
+
+  document.addEventListener('tab:deactivated', (e) => {
+    if (e.detail?.tabId === TAB_ID || e.detail?.tabId === 'processes-load-inspector') {
+      deactivateTab();
+    }
+  });
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      deactivateTab();
+    } else if (isProcessesTabActive()) {
+      activateTab();
+    }
+  });
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);

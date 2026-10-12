@@ -14,7 +14,7 @@
  * Package: windows/api/webgui/admin
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-10 19:41:00
+ * Updated: 2026-10-12 08:20:00
  * =============================================================================
  */
 
@@ -35,6 +35,18 @@ import TabStatePersistence from '../js/tab-state-persistence.js';
 import TabSwitchOptimizer from '../js/tab-switch-optimizer.js';
 
 console.log('[LazyInitPatch] Patching admin interface initialization...');
+
+// Глобальный хелпер активности вкладок
+if (typeof window.isTabActive !== 'function') {
+  window.isTabActive = function(tabId) {
+    if (typeof document !== 'undefined' && document.hidden) return false;
+    if (!tabId) return false;
+    const cleanId = tabId.startsWith('tab-') ? tabId : `tab-${tabId}`;
+    const rawId = cleanId.replace(/^tab-/, '');
+    const pane = document.getElementById(cleanId) || document.getElementById(rawId);
+    return pane ? pane.classList.contains('active') : false;
+  };
+}
 
 // Инициализируем persistence для админки
 const tabPersistence = new TabStatePersistence('admin');
@@ -106,13 +118,13 @@ window.addEventListener('load', async () => {
     // Микроприложения (с привязкой к ID приложения в конфиге профиля)
     { tabName: 'network', appId: 'network_terminal', htmlUrl: `/html/network_tab/index.html`, jsUrl: `/html/network_tab/main.js` },
     { tabName: 'system-inspector', appId: 'system_inspector', htmlUrl: `/html/system_inspector_tab/index.html`, jsUrl: `/html/system_inspector_tab/main.js` },
-    { tabName: 'about-system', appId: 'about_system', htmlUrl: `/html/about_system_tab/index.html?v=20261008_v2`, jsUrl: `/html/about_system_tab/main.js?v=20261008_v2` },
+    { tabName: 'about-system', appId: 'about_system', htmlUrl: `/html/about_system_tab/index.html?v=20261012_v1`, jsUrl: `/html/about_system_tab/main.js?v=20261012_v1` },
     { tabName: 'windows-admin', appId: 'windows_sysadmin', htmlUrl: `/html/windows_admin_tab/index.html`, jsUrl: `/html/windows_admin_tab/main.js` },
     { tabName: 'cloudflared', appId: 'cloudflared_monitor', htmlUrl: `/html/cloudflared_tab/index.html`, jsUrl: `/html/cloudflared_tab/main.js` },
     { tabName: 'user-assistant', appId: 'user_assistant', htmlUrl: `/html/user_assistant_tab/index.html`, jsUrl: `/html/user_assistant_tab/main.js` },
     { tabName: 'gcloud', appId: 'gcloud_monitor', htmlUrl: `/html/gcloud_tab/index.html`, jsUrl: `/html/gcloud_tab/main.js` },
     { tabName: 'website-monitor', appId: 'website_monitor', htmlUrl: `/html/website_monitor_tab/index.html`, jsUrl: `/html/website_monitor_tab/main.js` },
-    { tabName: 'system-control', appId: 'system_control_center', htmlUrl: `/html/system_control_tab/index.html?v=20261010_v2`, jsUrl: `/html/system_control_tab/main.js?v=20261010_v2` },
+    { tabName: 'system-control', appId: 'system_control_center', htmlUrl: `/html/system_control_tab/index.html?v=20261012_v1`, jsUrl: `/html/system_control_tab/main.js?v=20261012_v1` },
     { tabName: 'system-logs', appId: 'system_log_viewer', htmlUrl: `/html/system_logs_tab/index.html`, jsUrl: `/html/system_logs_tab/main.js` },
     { tabName: 'software-audit', appId: 'software_audit', htmlUrl: `/html/software_audit_tab/index.html`, jsUrl: `/html/software_audit_tab/main.js` },
     { tabName: 'registry-viewer', appId: 'registry_viewer', htmlUrl: `/html/registry_viewer_tab/index.html`, jsUrl: `/html/registry_viewer_tab/main.js` },

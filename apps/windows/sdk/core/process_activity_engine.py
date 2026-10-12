@@ -20,7 +20,7 @@
 # Package: apps.windows.sdk.core
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 22:28:45
+# Updated: 2026-10-12 07:25:00
 # =============================================================================
 
 from __future__ import annotations
@@ -406,7 +406,7 @@ class ProcessActivityEngine:
     # -------------------------------------------------------------------------
 
     def get_active_instances(self, limit: int = 100, search: Optional[str] = None) -> List[ProcessInstanceRecord]:
-        """Возвращает список активных инстансов процессов.
+        """Возвращает список активных инстансов процессов из БД (Read-Only).
 
         Args:
             limit: Лимит записей.
@@ -415,10 +415,6 @@ class ProcessActivityEngine:
         Returns:
             List[ProcessInstanceRecord]: Список активных инстансов.
         """
-        # Если последнее сканирование было более 3 секунд назад, обновляем
-        if time.time() - self._last_scan_time > 3.0:
-            self.sync_processes()
-
         conn = self._get_conn()
         cursor = conn.cursor()
 

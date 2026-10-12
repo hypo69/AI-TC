@@ -15,7 +15,7 @@
  * Package: windows/api/webgui/system_control_tab
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-10 19:16:00
+ * Updated: 2026-10-12 07:12:00
  * =============================================================================
  */
 
@@ -565,7 +565,7 @@
     let clustersHtml = '';
     if (clustersList && clustersList.length > 0) {
       clustersHtml = clustersList.slice(0, 15).map((c, i) => `
-        <tr>
+        <tr class="slc-cluster-row" data-idx="${i}" style="cursor: pointer;" title="Нажмите для AI-диагностики кластера">
           <td class="font-monospace" style="color: var(--text-muted);">${i + 1}</td>
           <td><span class="badge ${getSeverityClass(c.level)}">${escapeHtml(c.level || 'Info')}</span></td>
           <td class="text-truncate" style="max-width: 140px; color: var(--text-color);" title="${escapeHtml(c.provider)}">${escapeHtml(c.provider)}</td>
@@ -642,6 +642,45 @@
         </div>
       </div>
     `;
+
+    // Интерактивный клик по строке кластера дедупликации
+    contentEl.querySelectorAll('.slc-cluster-row').forEach(row => {
+      row.onclick = () => {
+        const idx = parseInt(row.getAttribute('data-idx'), 10);
+        const c = clustersList[idx];
+        if (!c) return;
+
+        const modal = window.AIModalDialog || window.AITableModal;
+        if (modal) {
+          modal.show({
+            icon: '📊',
+            title: `Кластер #${c.event_id || 'GRP'} (${c.provider || 'Windows'})`,
+            subtitle: `Повторений: ${c.count} | Уровень: ${c.level || 'Info'}`,
+            panelId: 'panel-system-control-2',
+            tableType: 'security_event',
+            badges: [
+              { text: `${c.count} повторений`, class: 'badge bg-warning text-dark font-monospace' },
+              { text: c.level || 'Info', class: `badge ${getSeverityClass(c.level)}` }
+            ],
+            metadata: [
+              { label: 'Event ID', value: String(c.event_id || '-') },
+              { label: 'Поставщик', value: c.provider || '-' },
+              { label: 'Уровень', value: c.level || 'Info' },
+              { label: 'Всего повторений', value: String(c.count) },
+              { label: 'Первое появление', value: c.first_seen || '-' }
+            ],
+            rawTitle: 'Шаблон сообщения (Masked Pattern)',
+            rawContent: c.pattern || c.template || '',
+            requestData: {
+              event_id: c.event_id,
+              provider: c.provider,
+              count: c.count,
+              pattern: c.pattern || c.template
+            }
+          });
+        }
+      };
+    });
   }
 
   async function loadAuditDigest() {
@@ -990,8 +1029,49 @@
     }
   }
 
-  function showEventDetails(entry) {
+  function showEventDetails(entry, panelId = 'panel-system-control-3') {
     if (!entry) return;
+
+    const modal = window.AIModalDialog || window.AITableModal;
+    if (modal) {
+      const lvl = entry.level || 'Info';
+      const isErr = String(lvl).toLowerCase().includes('err') || String(lvl).toLowerCase().includes('crit');
+      const isWarn = String(lvl).toLowerCase().includes('warn');
+      const badgeCls = isErr ? 'badge bg-danger' : (isWarn ? 'badge bg-warning text-dark' : 'badge bg-info text-dark');
+      const chan = (entry.channel || currentChannel || 'System').replace(/^evt:/i, '');
+
+      modal.show({
+        icon: isErr ? '🚨' : (isWarn ? '⚠️' : '📋'),
+        title: `Событие #${entry.event_id > 0 ? entry.event_id : 'LOG'} (${entry.provider || entry.source || 'Windows'})`,
+        subtitle: `Уровень: ${lvl} | ${entry.timestamp || ''}`,
+        panelId: panelId,
+        tableType: 'security_event',
+        badges: [
+          { text: lvl, class: badgeCls },
+          { text: chan, class: 'badge border text-secondary' }
+        ],
+        metadata: [
+          { label: 'Event ID', value: entry.event_id > 0 ? String(entry.event_id) : '-' },
+          { label: 'Поставщик / Источник', value: entry.provider || entry.source || '-' },
+          { label: 'Уровень важности', value: lvl },
+          { label: 'Время регистрации', value: entry.timestamp || '-' },
+          { label: 'Канал логов', value: chan },
+          { label: 'Компьютер / Хост', value: entry.computer || 'LOCAL' },
+          { label: 'PID процесса', value: entry.process_id > 0 ? String(entry.process_id) : '-' }
+        ],
+        rawTitle: 'Текст сообщения журнала событий',
+        rawContent: entry.message || entry.raw_data || '',
+        requestData: {
+          event_id: entry.event_id,
+          provider: entry.provider || entry.source,
+          level: lvl,
+          channel: chan,
+          computer: entry.computer
+        }
+      });
+      return;
+    }
+
     const modalEl = document.getElementById('slc-event-detail-modal');
     if (!modalEl) return;
 
@@ -1619,7 +1699,7 @@
       }
 
       return `
-        <tr>
+        <tr class="pwr-session-row" data-session-id="${escapeHtml(s.session_id)}" style="cursor: pointer;" title="Нажмите для AI-анализа сессии питания">
           <td class="font-monospace text-primary small fw-bold">${escapeHtml(s.session_id)}</td>
           <td class="font-monospace small">${escapeHtml(s.boot_time)}</td>
           <td class="font-monospace small text-muted">${s.shutdown_time ? escapeHtml(s.shutdown_time) : '<span class="text-success fw-bold">Сейчас</span>'}</td>
@@ -1636,12 +1716,49 @@
       `;
     }).join('');
 
-    tbody.querySelectorAll('.pwr-detail-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const sId = btn.dataset.sessionId;
+    tbody.querySelectorAll('.pwr-session-row').forEach(row => {
+      row.addEventListener('click', (evt) => {
+        const sId = row.dataset.sessionId;
         showPowerSessionDetailModal(sId);
       });
     });
+  }
+
+  function showPowerEventDetail(e) {
+    if (!e) return;
+    const modal = window.AIModalDialog || window.AITableModal;
+    if (modal) {
+      const isErr = e.event_id === 41 || e.event_id === 6008 || e.event_id === 1001;
+      modal.show({
+        icon: isErr ? '🚨' : '⚡',
+        title: `Событие питания #${e.event_id} (${e.provider || 'Kernel-Power'})`,
+        subtitle: `Тип: ${e.event_type || 'Lifecycle'} | ${e.timestamp || ''}`,
+        panelId: 'panel-system-control-5',
+        tableType: 'security_event',
+        badges: [
+          { text: `Event ${e.event_id}`, class: isErr ? 'badge bg-danger' : 'badge bg-info text-dark' },
+          { text: e.event_type || 'Power', class: 'badge border text-secondary' }
+        ],
+        metadata: [
+          { label: 'Event ID', value: String(e.event_id) },
+          { label: 'Поставщик', value: e.provider || 'Kernel-Power' },
+          { label: 'Пользователь', value: e.user || 'SYSTEM' },
+          { label: 'Процесс', value: e.process || '-' },
+          { label: 'Время события', value: e.timestamp || '-' },
+          { label: 'Причина / Сообщение', value: e.reason || e.details?.message || '-', fullWidth: true }
+        ],
+        rawTitle: 'Сырые XML данные события',
+        rawContent: e.raw_xml || JSON.stringify(e, null, 2),
+        requestData: {
+          event_id: e.event_id,
+          provider: e.provider,
+          user: e.user,
+          process: e.process,
+          reason: e.reason
+        }
+      });
+      return;
+    }
   }
 
   function filterAndRenderPowerEvents() {
@@ -1680,7 +1797,7 @@
       return;
     }
 
-    tbody.innerHTML = filtered.map(e => {
+    tbody.innerHTML = filtered.map((e, idx) => {
       let eidBadge = `<span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle font-monospace">${e.event_id}</span>`;
       if (e.event_id === 1074) {
         eidBadge = '<span class="badge bg-warning-subtle text-warning-emphasis border border-warning font-monospace fw-bold">1074 User32</span>';
@@ -1705,7 +1822,7 @@
       const desc = e.reason || e.details?.message || '--';
 
       return `
-        <tr>
+        <tr class="pwr-event-row" data-idx="${idx}" style="cursor: pointer;" title="Нажмите для AI-диагностики инцидента питания">
           <td class="font-monospace small">${escapeHtml(e.timestamp)}</td>
           <td>${eidBadge}</td>
           <td class="small text-muted font-monospace">${escapeHtml(e.provider)}</td>
@@ -1723,8 +1840,18 @@
       `;
     }).join('');
 
+    tbody.querySelectorAll('.pwr-event-row').forEach(row => {
+      row.addEventListener('click', (evt) => {
+        if (evt.target.closest('.pwr-xml-btn')) return;
+        const idx = parseInt(row.dataset.idx, 10);
+        const e = filtered[idx];
+        if (e) showPowerEventDetail(e);
+      });
+    });
+
     tbody.querySelectorAll('.pwr-xml-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', (evt) => {
+        evt.stopPropagation();
         const xml = btn.dataset.xml;
         showPowerXmlModal(xml);
       });
@@ -1734,6 +1861,41 @@
   function showPowerSessionDetailModal(sessionId) {
     const session = allPowerSessions.find(s => s.session_id === sessionId);
     if (!session) return;
+
+    const modal = window.AIModalDialog || window.AITableModal;
+    if (modal) {
+      const isUnexp = Boolean(session.unexpected_shutdown || session.bugcheck);
+      modal.show({
+        icon: isUnexp ? '⚡' : '⏻',
+        title: `Сессия питания: ${session.session_id}`,
+        subtitle: `Статус: ${session.shutdown_type || 'Active'} | Аптайм: ${session.uptime_human || '--'}`,
+        panelId: 'panel-system-control-4',
+        tableType: 'user_account',
+        badges: [
+          { text: session.shutdown_type || 'Active', class: isUnexp ? 'badge bg-danger' : 'badge bg-success' },
+          { text: session.uptime_human || 'Active', class: 'badge border text-secondary' }
+        ],
+        metadata: [
+          { label: 'ID сессии', value: session.session_id },
+          { label: 'Время старта (Boot)', value: session.boot_time || '-' },
+          { label: 'Время завершения', value: session.shutdown_time || 'Активна' },
+          { label: 'Инициатор', value: session.initiator || 'Система' },
+          { label: 'Процесс', value: session.process || 'N/A' },
+          { label: 'Причина выключения', value: session.reason || 'N/A', fullWidth: true }
+        ],
+        rawTitle: 'Контекст и хронология событий сессии',
+        rawContent: JSON.stringify(session, null, 2),
+        requestData: {
+          session_id: session.session_id,
+          initiator: session.initiator,
+          process: session.process,
+          reason: session.reason,
+          shutdown_type: session.shutdown_type,
+          unexpected: session.unexpected_shutdown
+        }
+      });
+      return;
+    }
 
     const modalTitle = document.getElementById('pwr-modal-title');
     const modalBody = document.getElementById('pwr-modal-body');
@@ -2186,6 +2348,39 @@
   }
 
   function showDefenderEventDetail(ev) {
+    const modal = window.AIModalDialog || window.AITableModal;
+    if (modal && ev) {
+      const isThreat = ev.category_key === 'threats' || (ev.level || '').toLowerCase().includes('crit') || (ev.level || '').toLowerCase().includes('err');
+      modal.show({
+        icon: isThreat ? '🚨' : '🛡️',
+        title: `Defender ID ${ev.event_id}: ${ev.category || 'Безопасность'}`,
+        subtitle: `Уровень: ${ev.level || 'Info'} | ${ev.timestamp || ''}`,
+        panelId: 'panel-system-control-defender-filter',
+        tableType: 'security_event',
+        badges: [
+          { text: ev.level || 'Info', class: `badge ${getSeverityClass(ev.level)}` },
+          { text: ev.category || 'Defender', class: 'badge bg-secondary' }
+        ],
+        metadata: [
+          { label: 'Event ID', value: String(ev.event_id) },
+          { label: 'Категория', value: ev.category || 'Защита' },
+          { label: 'Уровень', value: ev.level || 'Info' },
+          { label: 'Время регистрации', value: ev.timestamp || '-' },
+          { label: 'Журнал', value: 'Microsoft-Windows-Windows Defender/Operational', isCode: true, fullWidth: true }
+        ],
+        rawTitle: 'Подробности и параметры события Defender',
+        rawContent: ev.message || '',
+        requestData: {
+          event_id: ev.event_id,
+          category: ev.category,
+          category_key: ev.category_key,
+          level: ev.level,
+          description: ev.message
+        }
+      });
+      return;
+    }
+
     const modalEl = document.getElementById('defEventDetailModal');
     const bodyEl = document.getElementById('def-modal-body');
     const titleEl = document.getElementById('def-modal-title');
