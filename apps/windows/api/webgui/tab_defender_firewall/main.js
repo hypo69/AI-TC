@@ -2,28 +2,29 @@
  * @file apps/windows/api/webgui/tab_defender_firewall/main.js
  * @description Корневой модуль-оркестратор центра безопасности Microsoft Defender & Firewall
  * @author hypo69
- * @version 2.0.0
- * Updated: 2026-10-17 01:29:00
+ * @version 2.1.0
+ * Updated: 2026-10-28 14:53:00
  */
 
-import { showAlert } from './common/ui_utils.js';
-import { loadDefenderStatus } from './panel_overview/panel.js';
-import { loadASRRules, loadCFA, bindCfaAddModal, resetAsrCfaCache } from './panel_asr_cfa/panel.js';
+import { showAlert } from './common/ui_utils.js?v=20261028_v5';
+import { loadDefenderStatus } from './panel_overview/panel.js?v=20261028_v5';
+import { loadASRRules, loadCFA, bindCfaAddModal, resetAsrCfaCache } from './panel_asr_cfa/panel.js?v=20261028_v5';
 import {
   loadExclusions,
   loadThreats,
   loadProcesses,
   loadEvents,
   resetThreatsEventsCache
-} from './panel_threats_events/panel.js';
-import { loadDiagnostics, setupActions, resetDiagCache } from './panel_diag_tasks/panel.js';
+} from './panel_threats_events/panel.js?v=20261028_v5';
+import { loadDiagnostics, setupActions, resetDiagCache } from './panel_diag_tasks/panel.js?v=20261028_v5';
 import {
+  bindFirewallControls,
   initFirewallSubtab,
   isFirewallSubtabActive,
   fetchFirewallSummary,
   forceRefreshFirewall,
   renderFirewall
-} from './panel_firewall/panel.js';
+} from './panel_firewall/panel.js?v=20261028_v5';
 
 let isDefenderInitialized = false;
 let isRefreshingDefender = false;
@@ -65,21 +66,65 @@ export async function refreshActiveDefenderTab(force = false) {
 }
 
 /**
+ * Извлекает целевую субвкладку из URL hash (#tab-defender-firewall#firewall)
+ * @returns {string|null} 'firewall' | 'defender' | null
+ */
+export function getDefenderSubTabFromHash() {
+  if (typeof location === 'undefined' || !location.hash) return null;
+  const parts = location.hash.replace(/^#/, '').split('#');
+  if (parts[0] === 'tab-firewall-manager' || parts[0] === 'firewall-manager') {
+    return 'firewall';
+  }
+  if (parts.length < 2) return null;
+  const sub = parts[1].toLowerCase().trim();
+  if (sub === 'firewall' || sub === 'subpane-firewall' || sub === 'fw') {
+    return 'firewall';
+  }
+  if (sub === 'defender' || sub === 'subpane-defender') {
+    return 'defender';
+  }
+  return null;
+}
+
+/**
  * Переключение между верхними субвкладками Защитника и Брандмауэра
  * @param {string} subtabName 'defender' | 'firewall'
+ * @param {boolean} [updateUrl=true] Обновлять ли URL hash
  */
-export function switchDefenderSubTab(subtabName) {
-  if (subtabName === 'firewall') {
-    const btn = document.getElementById('subtab-firewall-btn');
-    if (btn && window.bootstrap && window.bootstrap.Tab) {
-      new window.bootstrap.Tab(btn).show();
+export function switchDefenderSubTab(subtabName, updateUrl = true) {
+  const norm = String(subtabName || '').toLowerCase().trim();
+  const isFirewall = norm === 'firewall' || norm === 'subpane-firewall' || norm === 'fw' || norm === '#subpane-firewall';
+  const targetSub = isFirewall ? 'firewall' : 'defender';
+
+  const fwBtn = document.getElementById('subtab-firewall-btn');
+  const defBtn = document.getElementById('subtab-defender-btn');
+  const fwPane = document.getElementById('subpane-firewall');
+  const defPane = document.getElementById('subpane-defender');
+
+  if (isFirewall) {
+    if (fwBtn && window.bootstrap && window.bootstrap.Tab) {
+      const tabInst = window.bootstrap.Tab.getInstance(fwBtn) || new window.bootstrap.Tab(fwBtn);
+      tabInst.show();
     }
+    if (defBtn) defBtn.classList.remove('active');
+    if (fwBtn) fwBtn.classList.add('active');
+    if (defPane) defPane.classList.remove('show', 'active');
+    if (fwPane) fwPane.classList.add('show', 'active');
     initFirewallSubtab();
   } else {
-    const btn = document.getElementById('subtab-defender-btn');
-    if (btn && window.bootstrap && window.bootstrap.Tab) {
-      new window.bootstrap.Tab(btn).show();
+    if (defBtn && window.bootstrap && window.bootstrap.Tab) {
+      const tabInst = window.bootstrap.Tab.getInstance(defBtn) || new window.bootstrap.Tab(defBtn);
+      tabInst.show();
     }
+    if (fwBtn) fwBtn.classList.remove('active');
+    if (defBtn) defBtn.classList.add('active');
+    if (fwPane) fwPane.classList.remove('show', 'active');
+    if (defPane) defPane.classList.add('show', 'active');
+    refreshActiveDefenderTab(false);
+  }
+
+  if (updateUrl && typeof window.setPanelHash === 'function') {
+    window.setPanelHash('tab-defender-firewall', targetSub);
   }
 }
 
@@ -107,6 +152,26 @@ function bindSubtabListeners() {
     fwSubtabBtn._lazyBound = true;
     fwSubtabBtn.addEventListener('shown.bs.tab', () => {
       initFirewallSubtab();
+      if (typeof window.setPanelHash === 'function') {
+        window.setPanelHash('tab-defender-firewall', 'firewall');
+      }
+    });
+    fwSubtabBtn.addEventListener('click', () => {
+      switchDefenderSubTab('firewall');
+    });
+  }
+
+  const defSubtabBtn = document.getElementById('subtab-defender-btn');
+  if (defSubtabBtn && !defSubtabBtn._lazyBound) {
+    defSubtabBtn._lazyBound = true;
+    defSubtabBtn.addEventListener('shown.bs.tab', () => {
+      refreshActiveDefenderTab(false);
+      if (typeof window.setPanelHash === 'function') {
+        window.setPanelHash('tab-defender-firewall', 'defender');
+      }
+    });
+    defSubtabBtn.addEventListener('click', () => {
+      switchDefenderSubTab('defender');
     });
   }
 
@@ -130,18 +195,22 @@ export async function initDefenderFirewallTab() {
   setupActions(() => refreshActiveDefenderTab(true));
   bindCfaAddModal();
   bindSubtabListeners();
+  bindFirewallControls();
 
   if (window.AISmartTooltip && typeof window.AISmartTooltip.initAll === 'function') {
     window.AISmartTooltip.initAll(document.getElementById('tab-defender-firewall') || document);
   }
 
+  const hashSub = getDefenderSubTabFromHash();
+  if (hashSub) {
+    switchDefenderSubTab(hashSub, false);
+  }
+
   const isActive = window.isTabActive ? (window.isTabActive('tab-defender-firewall') || window.isTabActive('tab-defender')) : true;
   if (isActive) {
-    if (isFirewallSubtabActive()) {
-      await fetchFirewallSummary();
-    } else {
-      await refreshActiveDefenderTab();
-    }
+    // Загружаем данные как для Defender, так и для Firewall, чтобы переключение было мгновенным
+    fetchFirewallSummary();
+    await refreshActiveDefenderTab();
   }
 }
 
@@ -150,9 +219,18 @@ export async function initDefenderFirewallTab() {
  */
 export async function activateDefenderFirewallTab() {
   console.log('[DefenderFirewallTab] Activating Defender & Firewall Security Center Tab...');
+  bindSubtabListeners();
+  bindFirewallControls();
+
+  const hashSub = getDefenderSubTabFromHash();
+  if (hashSub) {
+    switchDefenderSubTab(hashSub, false);
+  }
+
   if (isFirewallSubtabActive()) {
     await fetchFirewallSummary();
   } else {
+    fetchFirewallSummary();
     await refreshActiveDefenderTab();
   }
 }

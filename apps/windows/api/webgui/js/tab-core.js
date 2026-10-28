@@ -17,7 +17,7 @@
  * Package: windows/api/webgui/js
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-20 18:54:00
+ * Updated: 2026-10-28 14:54:00
  * =============================================================================
  */
 
@@ -398,6 +398,12 @@ export function switchTab(tabId) {
         window.switchSoftwareSubTab(subPanelId);
       } catch (err) {
         console.debug('switchSoftwareSubTab error:', err);
+      }
+    } else if (subPanelId && (id === 'tab-defender-firewall' || id === 'tab-defender') && typeof window.switchDefenderSubTab === 'function') {
+      try {
+        window.switchDefenderSubTab(subPanelId, false);
+      } catch (err) {
+        console.debug('switchDefenderSubTab error:', err);
       }
     }
 

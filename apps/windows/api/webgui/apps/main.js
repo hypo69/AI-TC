@@ -14,7 +14,7 @@
  * Package: windows/api/webgui/apps
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-28 14:44:00
+ * Updated: 2026-10-28 14:54:00
  * =============================================================================
  */
 
@@ -26,7 +26,7 @@
 import { setupGlobalApi, setupThemeAndLang } from './modules/init-interface.js';
 import { fetchAppsStatus, updateModelBadge } from './modules/status-manager.js';
 import { initModelTester, sendModelPing } from './modules/model-tester.js';
-import { APP_TAB_DEFS } from './modules/tabs-config.js?v=20261028_v4';
+import { APP_TAB_DEFS } from './modules/tabs-config.js?v=20261028_v5';
 import { applyTranslations } from '../js/i18n.js';
 import { switchTab, loadTab, setupTabClicks } from '../js/tab-core.js';
 import { loadPanelData, initPanels } from '../js/panel-loader.js';
@@ -80,12 +80,13 @@ export async function switchAppTab(tabId) {
   const rawClean = String(tabId).replace(/^#/, '');
   const parts = rawClean.split('#');
   const baseTab = parts[0];
-  const subPanel = parts[1] || null;
+  let subPanel = parts[1] || null;
   tabId = baseTab;
 
   // Редирект Брандмауэр -> Defender (суб-панель Firewall)
   if (tabId === 'tab-firewall-manager' || tabId === 'firewall-manager') {
     tabId = 'tab-defender-firewall';
+    subPanel = subPanel || 'firewall';
     setTimeout(() => {
       if (typeof window.switchDefenderSubTab === 'function') {
         window.switchDefenderSubTab('firewall');
@@ -255,6 +256,12 @@ export async function switchAppTab(tabId) {
     setTimeout(() => {
       if (typeof window.switchAppInternalsSubTab === 'function') {
         window.switchAppInternalsSubTab(subPanel, false);
+      }
+    }, 70);
+  } else if (subPanel && (normId === 'tab-defender-firewall' || normId === 'defender-firewall' || normId === 'tab-defender' || normId === 'defender')) {
+    setTimeout(() => {
+      if (typeof window.switchDefenderSubTab === 'function') {
+        window.switchDefenderSubTab(subPanel, false);
       }
     }, 70);
   }

@@ -17,7 +17,7 @@
  * Package: windows/api/webgui/apps/modules
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-28 14:44:00
+ * Updated: 2026-10-28 14:54:00
  * =============================================================================
  */
 
@@ -49,8 +49,8 @@ export const APP_TAB_DEFS = [
   { id: 'system_log_viewer', tab: 'system-logs', tabId: 'tab-system-logs', html: '/html/tab_system_logs/index.html', js: '/html/tab_system_logs/main.js' },
   { id: 'software_audit', tab: 'software-audit', tabId: 'tab-software-audit', html: '/html/tab_software_audit/index.html', js: '/html/tab_software_audit/main.js' },
   { id: 'registry_viewer', tab: 'registry-viewer', tabId: 'tab-registry-viewer', html: '/html/tab_registry_viewer/index.html', js: '/html/tab_registry_viewer/main.js' },
-  { id: 'windows_defender', tab: 'defender-firewall', tabId: 'tab-defender-firewall', html: '/html/tab_defender_firewall/index.html?v=20261016_v1', js: '/html/tab_defender_firewall/main.js?v=20261016_v1' },
-  { id: 'windows_defender_legacy', tab: 'defender', tabId: 'tab-defender', html: '/html/tab_defender_firewall/index.html?v=20261016_v1', js: '/html/tab_defender_firewall/main.js?v=20261016_v1' },
+  { id: 'windows_defender', tab: 'defender-firewall', tabId: 'tab-defender-firewall', html: '/html/tab_defender_firewall/index.html?v=20261028_v5', js: '/html/tab_defender_firewall/main.js?v=20261028_v5' },
+  { id: 'windows_defender_legacy', tab: 'defender', tabId: 'tab-defender', html: '/html/tab_defender_firewall/index.html?v=20261028_v5', js: '/html/tab_defender_firewall/main.js?v=20261028_v5' },
   { id: 'windows_startup_auditor', tab: 'startup-auditor', tabId: 'tab-startup-auditor', html: '/html/tab_startup_auditor/index.html?v=20261006_v15', js: '/html/tab_startup_auditor/main.js?v=20261006_v15' },
   { id: 'windows_backup_manager', tab: 'windows-backup', tabId: 'tab-windows-backup', html: '/html/tab_windows_backup/index.html?v=20261004_v1', js: '/html/tab_windows_backup/main.js?v=20261004_v1' },
   { id: 'hardware_monitor', tab: 'hardware-monitor', tabId: 'tab-hardware-monitor', html: '/html/tab_hardware_monitor/index.html', js: '/html/tab_hardware_monitor/main.js' },

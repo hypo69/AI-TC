@@ -2,8 +2,8 @@
  * @file apps/windows/api/webgui/tab_defender_firewall/panel_firewall/panel.js
  * @description Панель управления Брандмауэром Windows (профили Domain/Private/Public, netsh advfirewall правила)
  * @author hypo69
- * @version 1.0.0
- * Updated: 2026-10-17 01:28:00
+ * @version 1.1.0
+ * Updated: 2026-10-28 14:53:00
  */
 
 import { escapeHtml } from '../common/ui_utils.js';
@@ -215,31 +215,40 @@ export async function executeFirewallAction(ruleName, action) {
 }
 
 /**
- * Инициализация вкладки брандмауэра
+ * Инициализация обработчиков событий панели брандмауэра
  */
-export function initFirewallSubtab() {
-  if (!isFirewallInitialized) {
-    isFirewallInitialized = true;
-    const refreshBtn = document.getElementById('fw-refresh-btn');
-    if (refreshBtn) refreshBtn.addEventListener('click', forceRefreshFirewall);
+export function bindFirewallControls() {
+  if (isFirewallInitialized) return;
+  isFirewallInitialized = true;
 
-    const resetBtn = document.getElementById('fw-reset-defaults-btn');
-    if (resetBtn) resetBtn.addEventListener('click', () => {
+  const refreshBtn = document.getElementById('fw-refresh-btn');
+  if (refreshBtn) refreshBtn.addEventListener('click', forceRefreshFirewall);
+
+  const resetBtn = document.getElementById('fw-reset-defaults-btn');
+  if (resetBtn) {
+    resetBtn.addEventListener('click', () => {
       if (confirm('Сбросить правила брандмауэра к значениям по умолчанию?')) {
         executeFirewallAction('all', 'reset_defaults');
       }
     });
-
-    const searchInput = document.getElementById('fw-search-input');
-    if (searchInput) searchInput.addEventListener('input', applyFirewallFilters);
-
-    if (window.registerTabPoller) {
-      window.registerTabPoller('tab-defender-firewall', () => {
-        if (isFirewallSubtabActive()) {
-          fetchFirewallSummary();
-        }
-      }, 20000, { pollerId: 'tab-defender-firewall_fw', immediate: false });
-    }
   }
-  fetchFirewallSummary();
+
+  const searchInput = document.getElementById('fw-search-input');
+  if (searchInput) searchInput.addEventListener('input', applyFirewallFilters);
+
+  if (window.registerTabPoller) {
+    window.registerTabPoller('tab-defender-firewall', () => {
+      if (isFirewallSubtabActive()) {
+        fetchFirewallSummary();
+      }
+    }, 20000, { pollerId: 'tab-defender-firewall_fw', immediate: false });
+  }
+}
+
+/**
+ * Инициализация и загрузка данных субвкладки брандмауэра
+ */
+export function initFirewallSubtab() {
+  bindFirewallControls();
+  return fetchFirewallSummary();
 }
