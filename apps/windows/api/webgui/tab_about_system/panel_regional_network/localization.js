@@ -2,7 +2,7 @@
  * Модуль управления языковыми пакетами (Русский, Иврит, Английский),
  * клавиатурными раскладками и часовыми поясами.
  * Файл: apps/windows/api/webgui/tab_about_system/panel_regional_network/localization.js
- * Updated: 2026-10-28 14:32:00
+ * Updated: 2026-10-28 14:44:00
  */
 
 import { escapeHtml } from '../common/ui_utils.js';
@@ -171,6 +171,7 @@ export function renderLanguagePacksList(packs = [], onManagePack = null) {
     const isInstalled = !!p.is_installed;
     const isActive = !!p.is_active;
     const isDisplay = !!p.is_display_language;
+    const isOsInstall = !!p.is_os_install_language;
     const isDefaultInput = !!p.is_default_input;
     const orderIdx = Number(p.order_index || 0);
     const lcid = p.lcid || '';
@@ -199,9 +200,31 @@ export function renderLanguagePacksList(packs = [], onManagePack = null) {
 
     const displayBadge = isDisplay
       ? `<span class="badge border border-primary text-primary bg-transparent py-0.5 px-2" title="Текущий язык интерфейса Windows (Display Language)">
-          <i class="bi bi-window-desktop me-1"></i>Язык интерфейса ОС
+          <i class="bi bi-window-desktop me-1"></i>Текущий язык интерфейса
          </span>`
       : '';
+
+    const osInstallBadge = isOsInstall
+      ? `<span class="badge border border-info text-info bg-transparent py-0.5 px-2" title="Основной язык установленной ОС (InstallLanguage)">
+          <i class="bi bi-disc-fill me-1"></i>Базовый язык ОС
+         </span>`
+      : '';
+
+    const radioId = `reg-radio-disp-${escapeHtml(tagLower)}`;
+    const displayRadioHtml = `
+      <div class="form-check p-1.5 px-2.5 my-1.5 rounded border d-flex align-items-center justify-content-between" style="background: var(--surface-2); border-color: ${isDisplay ? 'var(--bs-primary)' : 'var(--border-color)'} !important;">
+        <div class="d-flex align-items-center gap-2">
+          <input class="form-check-input m-0 radio-lang-display" type="radio"
+            name="reg-display-language-radio" id="${radioId}"
+            value="${escapeHtml(tag)}" data-tag="${escapeHtml(tag)}"
+            ${isDisplay ? 'checked' : ''} style="cursor: pointer;">
+          <label class="form-check-label small fw-semibold ${isDisplay ? 'text-primary' : 'text-body'} mb-0" for="${radioId}" style="cursor: pointer; font-size: 0.77rem;">
+            Сделать языком интерфейса
+          </label>
+        </div>
+        ${isDisplay ? '<i class="bi bi-check-circle-fill text-primary small" title="Активный язык интерфейса Windows"></i>' : ''}
+      </div>
+    `;
 
     // Список активных клавиатурных раскладок
     let layoutsHtml = '';
@@ -332,7 +355,11 @@ export function renderLanguagePacksList(packs = [], onManagePack = null) {
               ${muiBadge}
               ${inputOrderBadge}
               ${displayBadge}
+              ${osInstallBadge}
             </div>
+
+            <!-- Radio: Сделать языком интерфейса -->
+            ${displayRadioHtml}
 
             <!-- Секция раскладок клавиатуры -->
             <div class="mt-2 pt-2 border-top" style="border-color: var(--border-color) !important;">
@@ -350,7 +377,6 @@ export function renderLanguagePacksList(packs = [], onManagePack = null) {
           <div class="pt-2 mt-2.5 border-top d-flex align-items-center justify-content-between flex-wrap gap-1" style="border-color: var(--border-color) !important;">
             <div class="d-flex align-items-center flex-wrap gap-1">
               ${btnDefaultInput}
-              ${btnDisplayLang}
             </div>
             <div>
               ${btnPrimaryToggle}
@@ -362,6 +388,14 @@ export function renderLanguagePacksList(packs = [], onManagePack = null) {
   }).join('');
 
   if (onManagePack) {
+    container.querySelectorAll('.radio-lang-display').forEach(radio => {
+      radio.onchange = async (e) => {
+        const tag = radio.getAttribute('data-tag') || radio.value;
+        if (!tag) return;
+        await onManagePack(tag, 'set_display_language', '', null);
+      };
+    });
+
     container.querySelectorAll('.btn-lang-pack-action').forEach(btn => {
       btn.onclick = async (e) => {
         e.preventDefault();

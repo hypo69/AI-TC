@@ -2,7 +2,7 @@
  * Модуль интеграции с универсальным модальным окном ИИ-ассистента (#universal-ai-table-modal / AIModalDialog).
  * Реализует паспорт процесса и форензику расследования повторяющихся вызовов PowerShell.
  * Файл: apps/windows/api/webgui/tab_processes_load_inspector/panel_ai_audit/panel.js
- * Updated: 2026-10-20 15:38:00
+ * Updated: 2026-10-28 14:45:00
  */
 
 import { showToast } from '../common/ui_utils.js';
@@ -61,7 +61,7 @@ export async function resolveAIModal() {
     const link = document.createElement('link');
     link.id = 'link-ai-modal-dialog-style';
     link.rel = 'stylesheet';
-    link.href = '/html/ai_modal_dialog/style.css?v=20261020_v7';
+    link.href = '/html/ai_modal_dialog/style.css?v=20261028_v1';
     document.head.appendChild(link);
   }
 

@@ -20,7 +20,7 @@
  * Package: src/api/webgui/css
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-20 19:15:00
+ * Updated: 2026-10-28 14:45:00
  * =============================================================================
  */
 
@@ -43,7 +43,7 @@
 @import "torrents.css?v=20261008_v1";
 
 /* 7. Адаптивные переопределения и совместимость тем с Bootstrap */
-@import "overrides.css?v=20261020_v14";
+@import "overrides.css?v=20261028_v1";
 
 /* 8. Глобальные переопределения для минимизации дублирования CSS */
 @import "global-overrides.css?v=20261020_v15";

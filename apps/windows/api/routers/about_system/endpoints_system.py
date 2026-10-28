@@ -11,7 +11,7 @@
 # Package: apps.windows.api.routers.about_system
 # Author: hypo69
 # Copyright: c 2026 hypo69
-# Updated: 2026-10-28 14:30:00
+# Updated: 2026-10-28 14:43:00
 # =============================================================================
 
 from __future__ import annotations
@@ -187,7 +187,13 @@ def register_system_action_endpoints(router: APIRouter, storage: TelemetryStorag
 
             # Языковые пакеты Windows (Русский, Иврит, Английский)
             lang_packs: List[LanguagePackInfo] = []
+            os_inst_lang = ""
+            disp_lang = ""
             try:
+                from apps.windows.sdk.modules.regional.keyboard_helper import get_system_language_identity
+                ident = get_system_language_identity(os.name == "nt")
+                os_inst_lang = ident.get("os_install_language", "")
+                disp_lang = ident.get("display_language", "")
                 lang_packs = [LanguagePackInfo(**p) for p in rm.get_language_packs()]
             except Exception as e:
                 logger.debug(f"[router_about_system] Ошибка сбора языковых пакетов: {e}")
@@ -216,6 +222,8 @@ def register_system_action_endpoints(router: APIRouter, storage: TelemetryStorag
                 timezones=tz_list,
                 locales=curated_locales,
                 language_packs=lang_packs,
+                os_install_language=os_inst_lang,
+                display_language=disp_lang,
             )
 
         return await asyncio.to_thread(_fetch_options)

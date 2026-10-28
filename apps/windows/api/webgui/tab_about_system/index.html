@@ -17,7 +17,7 @@ Usage Examples:
  * Package: windows/api/webgui/about_system_tab
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-28 14:32:00
+ * Updated: 2026-10-28 14:43:00
  * =============================================================================
 -->
 <!-- About System Application Tab -->
@@ -831,11 +831,18 @@ Usage Examples:
 <td class="ui-spec-val">
 <div class="d-flex align-items-center justify-content-between">
 <div>
-<span id="about-ident-language">Русский</span>
-<div class="small text-muted font-monospace" id="about-ident-locales">User: ru-RU | Sys: ru-RU</div>
-<div class="small text-muted font-monospace" id="about-ident-inputs">Русский (RU), English (US)</div>
+<div class="d-flex align-items-center gap-1.5 flex-wrap">
+  <span class="text-muted small">Текущий язык интерфейса:</span>
+  <strong class="text-body" id="about-ident-language">Русский (Россия) [ru-RU]</strong>
 </div>
-<button class="btn btn-sm btn-link p-0 text-info text-decoration-none btn-open-reg-tab" data-bs-target="#aboutRegionalSettingsModal" data-bs-toggle="modal" data-reg-tab="pane-loc" title="Настроить локали">
+<div class="small font-monospace mt-0.5">
+  <span class="text-muted">Основной язык установленной ОС:</span>
+  <span class="text-info fw-semibold ms-1" id="about-ident-os-install-lang">Английский (English (United States)) [en-US]</span>
+</div>
+<div class="small text-muted font-monospace mt-0.5" id="about-ident-locales">Локали: User: ru-RU | Sys: ru-RU</div>
+<div class="small text-muted font-monospace mt-0.5" id="about-ident-inputs">★ Русский [RU] • English [EN] • עברית [HE]</div>
+</div>
+<button class="btn btn-sm btn-link p-0 text-info text-decoration-none btn-open-reg-tab" data-bs-target="#aboutRegionalSettingsModal" data-bs-toggle="modal" data-reg-tab="pane-loc" title="Настроить языковые пакеты, раскладки и локали">
 <i class="bi bi-gear-fill" style="font-size: 0.76rem;"></i>
 </button>
 </div>

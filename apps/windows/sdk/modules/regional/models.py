@@ -11,7 +11,7 @@
 # Package: apps.windows.sdk.modules.regional
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-28 14:25:00
+# Updated: 2026-10-28 14:42:00
 # =============================================================================
 
 from __future__ import annotations
@@ -40,6 +40,7 @@ class LanguagePackModel(BaseModel):
     is_installed: bool = Field(default=False, description="Установлен ли физически MUI-пакет в системе")
     is_active: bool = Field(default=False, description="Присутствует ли язык в текущей раскладке пользователя")
     is_display_language: bool = Field(default=False, description="Является ли языком интерфейса Windows (Display Language)")
+    is_os_install_language: bool = Field(default=False, description="Является ли основным языком установленной системы (InstallLanguage)")
     is_default_input: bool = Field(default=False, description="Является ли первым языком ввода по умолчанию")
     order_index: int = Field(default=99, description="Позиция языка в списке языков ввода пользователя (1, 2, 3...)")
     is_target: bool = Field(default=False, description="Является ли язык целевым приоритетным (Русский, Иврит, Английский)")

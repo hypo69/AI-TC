@@ -240,6 +240,7 @@ class LanguagePackInfo(BaseModel):
     is_installed: bool = Field(default=False, description="Установлен ли пакет в системе")
     is_active: bool = Field(default=False, description="Активен ли в профиле пользователя")
     is_display_language: bool = Field(default=False, description="Является ли языком интерфейса Windows")
+    is_os_install_language: bool = Field(default=False, description="Является ли основным языком установленной системы (InstallLanguage)")
     is_default_input: bool = Field(default=False, description="Является ли первым языком ввода по умолчанию")
     order_index: int = Field(default=99, description="Позиция в списке языков ввода (1, 2, 3...)")
     is_target: bool = Field(default=True, description="Принадлежит ли к целевой тройке (Русский, Иврит, Английский)")
@@ -309,6 +310,8 @@ class RegionalOptionsResponse(BaseModel):
     timezones: List[TimezoneOption] = Field(default_factory=list, description="Список доступных часовых поясов")
     locales: List[LocaleOption] = Field(default_factory=list, description="Список распространенных локалей")
     language_packs: List[LanguagePackInfo] = Field(default_factory=list, description="Список языковых пакетов Windows")
+    os_install_language: str = Field(default="", description="Основной язык установленной системы (InstallLanguage)")
+    display_language: str = Field(default="", description="Текущий язык интерфейса Windows (Display Language)")
 
 
 class SetTimezoneRequest(BaseModel):

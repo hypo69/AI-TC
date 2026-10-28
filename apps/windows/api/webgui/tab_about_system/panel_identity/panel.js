@@ -9,11 +9,11 @@
  * - Телеметрию батареи и профилей электропитания
  * - Профили брандмауэра Windows Defender и статус UAC
  * 
- * Updated: 2026-10-20 18:44:00
+ * Updated: 2026-10-28 14:43:00
  */
 
-import { apiFetch, setText, setStatusText, setFormattedStatusHtml, formatStatusHtml, setHtml, escapeHtml } from '../common/ui_utils.js?v=20261020_v9';
-import { applyBatteryData, fetchBatteryWear } from '../panel_battery/panel.js?v=20261020_v9';
+import { apiFetch, setText, setStatusText, setFormattedStatusHtml, formatStatusHtml, setHtml, escapeHtml } from '../common/ui_utils.js?v=20261028_v4';
+import { applyBatteryData, fetchBatteryWear } from '../panel_battery/panel.js?v=20261028_v4';
 
 /**
  * Форматирование коммерческого наименования процессора.
@@ -55,15 +55,15 @@ export function applySummaryData(snap) {
       : (snap.user_groups ? [].concat(snap.user_groups).join(', ') : '');
     const userPrivilege = userObj.privilege || snap.user_privilege || '';
 
-    const lang = snap.system_language || 'Русский (Россия) [ru-RU]';
+    const lang = snap.display_language || snap.system_language || 'Русский (Россия) [ru-RU]';
     const userLoc = snap.user_locale || 'ru-RU';
     const sysLoc = snap.system_locale || 'ru-RU';
-    const instLang = snap.os_install_language || snap.install_language || '';
+    const instLang = snap.os_install_language || snap.install_language || 'Английский (English (United States)) [en-US]';
     const tz = snap.timezone || 'UTC+03:00';
     const cp = snap.codepage || 'UTF-8 (ACP: 65001)';
     const inputs = Array.isArray(snap.input_languages) && snap.input_languages.length > 0
-      ? snap.input_languages.join(', ')
-      : 'Русский (RU), English (US), עברית (IL)';
+      ? snap.input_languages.join(' • ')
+      : '★ Русский [RU] • English [EN] • עברית [HE]';
 
     setText('about-ident-hostname', host);
     setText('about-ident-domain', `Workgroup / Host: ${host}`);
@@ -135,9 +135,8 @@ export function applySummaryData(snap) {
     if (userGroups) setText('about-ident-user-groups', `Группы: ${userGroups}`);
 
     setText('about-ident-language', lang);
-    const localesText = instLang
-      ? `Локали: User: ${userLoc} | Sys: ${sysLoc} | Оригинал: ${instLang}`
-      : `Локали: User: ${userLoc} | Sys: ${sysLoc}`;
+    setText('about-ident-os-install-lang', instLang);
+    const localesText = `Локали: User: ${userLoc} | Sys: ${sysLoc}`;
     setText('about-ident-locales', localesText);
 
     // Защита от поврежденных кодировок со знаками '???'

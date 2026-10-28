@@ -15,7 +15,7 @@
  * Package: windows/api/webgui/css
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-20 12:27:00
+ * Updated: 2026-10-28 14:45:00
  * =============================================================================
  */
 
@@ -329,7 +329,7 @@ html[data-bs-theme="light"] body {
   }
 
   /* pre/code без явного светлого фона */
-  pre:not(.prompt-dump-details pre) {
+  pre:not(.prompt-dump-details pre):not(.uai-cmd-output):not(.uai-data-preview):not(.uai-matrix-preview) {
     background-color: var(--surface-2) !important;
     color: var(--text-color) !important;
     border: 1px solid var(--border-color);
@@ -597,7 +597,8 @@ html[data-bs-theme="light"] body {
     color: var(--nav-active);
   }
 
-  pre, code, kbd, samp {
+  pre:not(.uai-cmd-output):not(.uai-data-preview):not(.uai-matrix-preview),
+  code, kbd, samp {
     color: #39ff14 !important;
     background-color: #060a06 !important;
     border: 1px solid #1a4223;
@@ -622,4 +623,45 @@ html[data-bs-theme="light"] body {
     color: #39ff14 !important;
     border-bottom: 2px solid #00ff66 !important;
   }
+}
+
+
+/* ── Принудительный консольный стиль для вывода команд терминала во всех темах ── */
+.uai-cmd-output,
+pre.uai-cmd-output,
+.font-monospace.uai-cmd-output,
+.uai-ready-tool-card .uai-cmd-output,
+.uai-code-runner-box .uai-cmd-output,
+pre[id^="uai-term-"][id$="-output"],
+[data-bs-theme] pre.uai-cmd-output,
+[data-theme] pre.uai-cmd-output,
+body pre.uai-cmd-output {
+  background-color: #000000 !important;
+  background: #000000 !important;
+  color: #ffffff !important;
+  font-family: var(--font-mono, "Cascadia Code", "Consolas", "Courier New", monospace) !important;
+  font-weight: bold !important;
+  border: 1px solid #30363d !important;
+  border-radius: 4px !important;
+}
+
+/* ── Блок предпросмотра данных телеметрии: 70% ширины, высота по содержимому без скроллеров ── */
+.uai-data-preview,
+.uai-matrix-preview,
+pre.uai-data-preview,
+pre.uai-matrix-preview,
+pre.uai-data-preview.uai-matrix-preview,
+[data-bs-theme] pre.uai-data-preview,
+[data-theme] pre.uai-data-preview,
+body pre.uai-data-preview {
+  width: 70% !important;
+  max-width: 70% !important;
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+  overflow-y: visible !important;
+  overflow-x: hidden !important;
+  white-space: pre-wrap !important;
+  word-break: break-all !important;
+  overflow-wrap: anywhere !important;
 }

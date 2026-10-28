@@ -11,7 +11,7 @@
  * Package: apps.windows.api.webgui.ai_modal_dialog
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-20 20:35:00
+ * Updated: 2026-10-28 14:45:00
  * =============================================================================
  */
 
@@ -622,21 +622,27 @@ textarea.uai-cmd-input:focus,
   white-space: normal !important;
 }
 
+/* Терминальный консольный вывод команд: черный фон, белый monospace bold во всех темах */
+.uai-cmd-output,
+pre.uai-cmd-output,
+.font-monospace.uai-cmd-output,
 .uai-ready-tool-card .uai-cmd-output,
-.uai-code-runner-box .uai-cmd-output {
+.uai-code-runner-box .uai-cmd-output,
+pre[id^="uai-term-"][id$="-output"] {
   background-color: #000000 !important;
+  background: #000000 !important;
   color: #ffffff !important;
-  font-weight: 600 !important;
+  font-family: var(--font-mono, "Cascadia Code", "Consolas", "Courier New", monospace) !important;
+  font-weight: bold !important;
   border: 1px solid #30363d !important;
   border-radius: 4px !important;
   padding: 0.6rem 0.8rem !important;
-  font-family: var(--font-mono, "Cascadia Code", "Consolas", "Courier New", monospace) !important;
   font-size: 0.88rem !important;
   line-height: 1.45 !important;
-  max-height: 240px;
+  max-height: 350px;
   overflow-y: auto;
   white-space: pre-wrap !important;
-  word-break: break-all;
+  word-break: break-all !important;
   margin: 0 !important;
 }
 
@@ -836,10 +842,19 @@ html body .uai-investigation-accordion {
   font-weight: 600;
 }
 
-/* Окно данных телеметрии внутри шага расследования */
+/* Окно данных телеметрии внутри шага расследования: ширина 70%, высота по содержимому без скроллеров */
 .uai-data-preview,
 .uai-matrix-preview,
-pre.uai-data-preview {
+pre.uai-data-preview,
+pre.uai-matrix-preview,
+pre.uai-data-preview.uai-matrix-preview {
+  width: 70% !important;
+  max-width: 70% !important;
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+  overflow-x: hidden !important;
+  overflow-y: visible !important;
   background-color: #010401 !important;
   color: #00ff66 !important;
   border: 1px solid rgba(0, 255, 65, 0.3) !important;
@@ -849,10 +864,9 @@ pre.uai-data-preview {
   font-size: 0.8rem !important;
   font-weight: 600 !important;
   line-height: 1.45 !important;
-  max-height: 180px;
-  overflow-y: auto;
   white-space: pre-wrap !important;
-  word-break: break-all;
+  word-break: break-all !important;
+  overflow-wrap: anywhere !important;
   margin-top: 0.35rem !important;
   margin-bottom: 0.35rem !important;
   box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.8) !important;

@@ -17,7 +17,7 @@
  * Package: windows/api/webgui/apps/modules
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-28 14:33:00
+ * Updated: 2026-10-28 14:44:00
  * =============================================================================
  */
 
@@ -34,7 +34,7 @@ export const APP_TAB_DEFS = [
   { id: 'telemetry_control', tab: 'telemetry-control', tabId: 'tab-telemetry-control', html: '/html/tab_telemetry_control/index.html?v=20261013_v2', js: '/html/tab_telemetry_control/main.js?v=20261013_v2' },
   { id: 'interactive_agent', tab: 'interactive-agent', tabId: 'tab-interactive-agent', html: '/html/tab_interactive_agent/index.html?v=20261013_v1', js: '/html/tab_interactive_agent/main.js?v=20261013_v1' },
 
-  { id: 'about_system', tab: 'about-system', tabId: 'tab-about-system', html: '/html/tab_about_system/index.html?v=20261028_v3', js: '/html/tab_about_system/main.js?v=20261028_v3' },
+  { id: 'about_system', tab: 'about-system', tabId: 'tab-about-system', html: '/html/tab_about_system/index.html?v=20261028_v4', js: '/html/tab_about_system/main.js?v=20261028_v4' },
   { id: 'scenarios', tab: 'scenarios', tabId: 'tab-scenarios', html: '/html/tab_scenarios/index.html?v=20261006_v8', js: '/html/tab_scenarios/main.js?v=20261006_v8' },
   { id: 'chat', tab: 'chat', tabId: 'tab-chat', html: '/html/tab_chat/index.html?v=20260923_v5', js: '/html/tab_chat/main.js?v=20260923_v5' },
   { id: 'network_terminal', tab: 'network', tabId: 'tab-network', html: '/html/tab_network/index.html?v=20261020_v2', js: '/html/tab_network/main.js?v=20261020_v2' },

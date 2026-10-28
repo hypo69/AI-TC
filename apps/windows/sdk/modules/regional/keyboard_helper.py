@@ -12,7 +12,7 @@
 # Package: apps.windows.sdk.modules.regional
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-28 14:30:00
+# Updated: 2026-10-28 14:40:00
 # =============================================================================
 
 from __future__ import annotations
@@ -166,17 +166,80 @@ def read_user_keyboard_state(is_windows: bool) -> Tuple[List[Tuple[str, str]], D
     return preload_items, substitutes
 
 
+def get_system_language_identity(is_windows: bool = True) -> Dict[str, str]:
+    """Определяет основной язык установленной ОС (InstallLanguage) и текущий язык интерфейса (Display Language)."""
+    install_lcid = "0409"
+    ui_lcid_int = 0x0419
+    preferred_tag = ""
+
+    if is_windows:
+        try:
+            ui_lcid_int = int(ctypes.windll.kernel32.GetUserDefaultUILanguage()) & 0xFFFF
+        except Exception:
+            ui_lcid_int = 0x0419
+
+        try:
+            import winreg
+            with winreg.OpenKey(
+                winreg.HKEY_LOCAL_MACHINE,
+                r"SYSTEM\CurrentControlSet\Control\Nls\Language",
+            ) as k_nls:
+                inst_val, _ = winreg.QueryValueEx(k_nls, "InstallLanguage")
+                if inst_val:
+                    install_lcid = str(inst_val).strip().lower().zfill(4)[-4:]
+        except Exception:
+            pass
+
+        try:
+            import winreg
+            with winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Control Panel\Desktop") as k_desk:
+                for val_name in ("PreferredUILanguagesPending", "PreferredUILanguages"):
+                    try:
+                        val, _ = winreg.QueryValueEx(k_desk, val_name)
+                        if isinstance(val, (list, tuple)) and len(val) > 0 and str(val[0]).strip():
+                            preferred_tag = str(val[0]).strip()
+                            break
+                    except Exception:
+                        continue
+        except Exception:
+            pass
+
+    inst_meta = resolve_target_meta(install_lcid)
+    if inst_meta:
+        install_lang_str = f"{inst_meta['native_name']} [{inst_meta['tag']}]" if inst_meta["name"] in inst_meta["native_name"] else f"{inst_meta['name']} ({inst_meta['native_name']}) [{inst_meta['tag']}]"
+        install_tag = inst_meta["tag"]
+    else:
+        install_lang_str = f"LCID {install_lcid.upper()}"
+        install_tag = install_lcid.upper()
+
+    disp_meta = resolve_target_meta(preferred_tag) if preferred_tag else None
+    if not disp_meta:
+        disp_meta = resolve_target_meta(f"{ui_lcid_int:04x}")
+
+    if disp_meta:
+        display_lang_str = f"{disp_meta['native_name']} [{disp_meta['tag']}]" if disp_meta["name"] in disp_meta["native_name"] else f"{disp_meta['name']} ({disp_meta['native_name']}) [{disp_meta['tag']}]"
+        display_tag = disp_meta["tag"]
+    else:
+        display_lang_str = preferred_tag or f"LCID {ui_lcid_int:04X}"
+        display_tag = preferred_tag or f"{ui_lcid_int:04X}"
+
+    return {
+        "os_install_language": install_lang_str,
+        "os_install_language_tag": install_tag,
+        "display_language": display_lang_str,
+        "display_language_tag": display_tag,
+    }
+
+
 def collect_language_packs_full(is_windows: bool) -> List[Dict[str, Any]]:
     """Собирает полные сведения о языковых пакетах и раскладках клавиатуры (Русский, Иврит, Английский)."""
     installed_mui: set[str] = set()
     user_langs_ordered: List[str] = []
-    ui_lang_lcid = 0x0419
+    lang_ident = get_system_language_identity(is_windows)
+    active_disp_tag = lang_ident["display_language_tag"].lower()
+    active_inst_tag = lang_ident["os_install_language_tag"].lower()
 
     if is_windows:
-        try:
-            ui_lang_lcid = int(ctypes.windll.kernel32.GetUserDefaultUILanguage()) & 0xFFFF
-        except Exception:
-            ui_lang_lcid = 0x0419
 
         try:
             import winreg
@@ -289,7 +352,8 @@ def collect_language_packs_full(is_windows: bool) -> List[Dict[str, Any]]:
 
         act_layouts = active_layouts_by_lcid.get(lcid, [])
         is_act = (order_idx < 99) or (len(act_layouts) > 0)
-        is_disp = (ui_lang_lcid == t["lcid_int"])
+        is_disp = (active_disp_tag in alts_lower)
+        is_os_install = (active_inst_tag in alts_lower)
 
         # Доступные системные раскладки для этого языка
         avail_layouts: List[Dict[str, Any]] = []
@@ -312,6 +376,7 @@ def collect_language_packs_full(is_windows: bool) -> List[Dict[str, Any]]:
             "is_installed": is_inst,
             "is_active": is_act,
             "is_display_language": is_disp,
+            "is_os_install_language": is_os_install,
             "is_default_input": (order_idx == 1),
             "order_index": order_idx,
             "is_target": True,

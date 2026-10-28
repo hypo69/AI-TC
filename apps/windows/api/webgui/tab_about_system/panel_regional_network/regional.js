@@ -1,18 +1,18 @@
 /**
  * Модуль региональных настроек, локализации, часовых поясов и учетных записей.
  * Файл: apps/windows/api/webgui/tab_about_system/panel_regional_network/regional.js
- * Updated: 2026-10-28 14:33:00
+ * Updated: 2026-10-28 14:44:00
  */
 
-import { apiFetch, escapeHtml, setText } from '../common/ui_utils.js?v=20261028_v3';
+import { apiFetch, escapeHtml, setText } from '../common/ui_utils.js?v=20261028_v4';
 import {
   changeNetworkCategory,
   toggleNetworkDiscovery,
   updateNetworkProfileUI,
   setNetworkInterfaceIndex,
   isDiscoveryEnabled
-} from './network.js?v=20261028_v3';
-import { renderTimezonesList, renderLanguagePacksList, formatActivePacksSummary } from './localization.js?v=20261028_v3';
+} from './network.js?v=20261028_v4';
+import { renderTimezonesList, renderLanguagePacksList, formatActivePacksSummary } from './localization.js?v=20261028_v4';
 
 let cachedRegionalData = null;
 let regionalCallbacks = {};
@@ -92,7 +92,11 @@ export async function manageLanguagePack(tag, action = 'activate', klid = '', bt
         setText('about-ident-inputs', formatActivePacksSummary(data.language_packs));
         const dispPack = data.language_packs.find(p => p.is_display_language);
         if (dispPack) {
-          setText('about-ident-language', `${dispPack.name} [${dispPack.tag}]`);
+          setText('about-ident-language', `${dispPack.name} (${dispPack.native_name || dispPack.name}) [${dispPack.tag}]`);
+        }
+        const instPack = data.language_packs.find(p => p.is_os_install_language);
+        if (instPack) {
+          setText('about-ident-os-install-lang', `${instPack.name} (${instPack.native_name || instPack.name}) [${instPack.tag}]`);
         }
       } else {
         await loadRegionalOptions('pane-loc');
@@ -169,6 +173,12 @@ export async function loadRegionalOptions(targetPaneId = null) {
     renderTimezonesList(data.timezones || [], curQuery, data.current_timezone);
 
     renderLanguagePacksList(data.language_packs || [], manageLanguagePack);
+    if (data.display_language) {
+      setText('about-ident-language', data.display_language);
+    }
+    if (data.os_install_language) {
+      setText('about-ident-os-install-lang', data.os_install_language);
+    }
     if (Array.isArray(data.language_packs) && data.language_packs.length > 0) {
       setText('about-ident-inputs', formatActivePacksSummary(data.language_packs));
     }
