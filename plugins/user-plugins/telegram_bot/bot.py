@@ -12,17 +12,18 @@
 # Package: plugins.telegram_bot
 # Author: hypo69
 # Copyright: © 2026 hypo69
+# Updated: 2026-10-28 05:03:00
 # =============================================================================
 
-"""Telegram bot engine and command router.
-
-Manages the python-telegram-bot Application lifecycle, polling loop,
-user authentication, account linking, remote control web app, and AI chat.
-"""
+"""Движок Telegram-бота и маршрутизатор команд."""
 
 from __future__ import annotations
 
 import asyncio
+from datetime import datetime
+from pathlib import Path
+import re
+import time
 from typing import Any, Dict, List, Optional
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update, WebAppInfo
@@ -458,7 +459,66 @@ class TelegramBotEngine:
         api_base = self.config.get("api_base_url", "http://127.0.0.1:8000")
         await handle_telegram_voiceover_request(update, context, text=text, api_base_url=api_base)
 
-    # ── Dialogue Audio Handlers ───────────────────────────────────────────────
+    # ── Dialogue Audio & Workspace Scenario Handlers ──────────────────────────
+
+    async def _try_handle_david_moshe_scenario(
+        self,
+        update: Update,
+        candidate_name_or_text: str,
+    ) -> bool:
+        """Проверяет условие сценария рабочего пространства דוד משה и выполняет 10-сек спиннер с добавлением файла."""
+        if not update.message:
+            return False
+
+        try:
+            from apps.ai_assistant.core.workspace_manager import WorkspaceManager
+            wm = WorkspaceManager()
+            scen_srv = wm.scenario_service
+            active_ws = wm.store.get_active_workspace_id() or ""
+            caption = (update.message.caption or "").strip()
+
+            is_trig = (
+                scen_srv.is_trigger_file(candidate_name_or_text)
+                or scen_srv.is_trigger_file(caption)
+            )
+            if not is_trig:
+                return False
+
+            target_ws_id = active_ws if scen_srv.is_david_moshe_workspace(active_ws) else scen_srv.resolve_david_moshe_workspace_id(wm)
+            cfg = scen_srv.load_scenario_config()
+            delay_sec = int(cfg.get("delay_seconds", 10))
+            target_file_path = cfg.get("target_file_path", "")
+
+            status_msg = await update.message.reply_text(
+                f"⏳ *Рабочее пространство:* `דוד משה`\n"
+                f"📥 Получен файл: `{candidate_name_or_text}`\n"
+                f"🔄 *Запущен спиннер обработки ({delay_sec} сек)...*"
+            )
+
+            final_state = await scen_srv.trigger_scenario(
+                wm=wm,
+                workspace_id=target_ws_id,
+                trigger_source="telegram_bot",
+                trigger_file_name=candidate_name_or_text,
+                delay_seconds=float(delay_sec),
+                wait_for_completion=True,
+            )
+
+            if final_state.get("status") == "completed":
+                await status_msg.edit_text(
+                    f"✅ *Сценарий рабочего пространства `דוד משה` выполнен!*\n\n"
+                    f"📄 *Добавлен файл в рабочую область:*\n"
+                    f"`{target_file_path}`\n\n"
+                    f"🔗 Зафиксировано в Git, извлечены факты и обновлён индекс знаний.",
+                    parse_mode="Markdown",
+                )
+            else:
+                err_text = final_state.get("error", "Неизвестная ошибка")
+                await status_msg.edit_text(f"❌ Ошибка выполнения сценария: {err_text}")
+            return True
+        except Exception as exc:
+            logger.error(f"[TelegramBotEngine] Ошибка выполнения сценария דוד משה: {exc}", exc_info=True)
+            return False
 
     async def _save_and_process_audio(
         self,
@@ -467,8 +527,11 @@ class TelegramBotEngine:
         attachment: Any,
         default_filename: str,
     ) -> None:
-        """Authenticate user, save audio directly into isolated user workspace, and process with audio tools."""
+        """Аутентифицирует пользователя, проверяет сценарий דוד משה или сохраняет аудио в папку пользователя."""
         if not update.message or not update.effective_user:
+            return
+
+        if await self._try_handle_david_moshe_scenario(update, default_filename):
             return
 
         tg_id = update.effective_user.id
@@ -639,6 +702,9 @@ class TelegramBotEngine:
 
         user_text = update.message.text.strip()
         if not user_text:
+            return
+
+        if await self._try_handle_david_moshe_scenario(update, user_text):
             return
 
         tg_id = update.effective_user.id

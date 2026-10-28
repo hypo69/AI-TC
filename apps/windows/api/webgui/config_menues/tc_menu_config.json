@@ -1,5 +1,5 @@
 {
-  "version": "20261016_v4",
+  "version": "20261028_v2",
   "menu": {
     "topButtons": [
       {
@@ -67,6 +67,14 @@
         "icon": "bi-chat-dots",
         "tab": "tab-scenarios",
         "order": 8,
+        "visible": true
+      },
+      {
+        "id": "sound_settings",
+        "label": "Звук и громкость",
+        "icon": "bi-volume-up",
+        "tab": "tab-sound-settings",
+        "order": 9,
         "visible": true
       }
     ],

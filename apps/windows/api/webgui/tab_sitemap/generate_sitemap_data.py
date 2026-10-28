@@ -10,7 +10,7 @@
 # Package: apps.windows.api.webgui.tab_sitemap
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-20 15:25:00
+# Updated: 2026-10-28 05:20:00
 # =============================================================================
 
 from __future__ import annotations
@@ -1089,6 +1089,23 @@ _TABS_METADATA: List[Dict[str, Any]] = [
             "Список приоритетных приложений, которым разрешено отправлять уведомления"
         ],
         "defaultVisible": False
+    },
+    {
+        "id": "sound_settings",
+        "tabId": "tab-sound-settings",
+        "title": "Звук и громкость (Аудиомикшер Windows)",
+        "icon": "bi-volume-up-fill",
+        "category": "admin",
+        "categoryTitle": "Администрирование и Настройки",
+        "description": "Панель управления системными звуками, мастер-громкостью WASAPI, аудио-сессиями приложений, звуковыми схемами и эффектами уведомлений.",
+        "features": [
+            "Раздельная регулировка громкости системных звуков и общей мастер-громкости WASAPI",
+            "Интерактивный аудиомикшер активных звуковых сессий приложений в реальном времени",
+            "Управление звуком запуска Windows (Startup Sound) и звуковыми схемами (.Schemes)",
+            "Прослушивание и настройка WAV-файлов системных событий (AppEvents)",
+            "Быстрый запуск системных апплетов: Параметры звука, SndVol и mmsys.cpl"
+        ],
+        "defaultVisible": True
     },
     {
         "id": "theme_editor",

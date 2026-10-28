@@ -14,7 +14,7 @@
  * Package: windows/api/webgui/apps
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-20 15:25:00
+ * Updated: 2026-10-28 05:20:00
  * =============================================================================
  */
 
@@ -26,7 +26,7 @@
 import { setupGlobalApi, setupThemeAndLang } from './modules/init-interface.js';
 import { fetchAppsStatus, updateModelBadge } from './modules/status-manager.js';
 import { initModelTester, sendModelPing } from './modules/model-tester.js';
-import { APP_TAB_DEFS } from './modules/tabs-config.js';
+import { APP_TAB_DEFS } from './modules/tabs-config.js?v=20261028_v2';
 import { applyTranslations } from '../js/i18n.js';
 import { switchTab, loadTab, setupTabClicks } from '../js/tab-core.js';
 import { loadPanelData, initPanels } from '../js/panel-loader.js';

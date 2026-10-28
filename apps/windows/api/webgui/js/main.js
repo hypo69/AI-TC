@@ -17,7 +17,7 @@
  * Package: windows/api/webgui/js
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-20 15:00:00
+ * Updated: 2026-10-28 05:20:00
  * =============================================================================
  */
 
@@ -83,6 +83,7 @@ const TABS = {
   'post-install-wizard':      ['/html/tab_post_install_wizard/index.html',      '/html/tab_post_install_wizard/main.js'],
   'windows-admin':            ['/html/tab_windows_admin/index.html',            '/html/tab_windows_admin/main.js'],
   'focus-settings':           ['/html/tab_focus_settings/index.html',           '/html/tab_focus_settings/main.js'],
+  'sound-settings':           ['/html/tab_sound_settings/index.html',           '/html/tab_sound_settings/main.js'],
   'taskbar-controller':       ['/html/tab_taskbar/index.html',                  '/html/tab_taskbar/main.js'],
   'startup-auditor':          ['/html/tab_startup_auditor/index.html',          '/html/tab_startup_auditor/main.js'],
   'services-manager':         ['/html/tab_services_manager/index.html',         '/html/tab_services_manager/main.js'],
