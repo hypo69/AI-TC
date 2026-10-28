@@ -1,20 +1,21 @@
 /**
  * Модуль региональных настроек, локализации, часовых поясов и учетных записей.
  * Файл: apps/windows/api/webgui/tab_about_system/panel_regional_network/regional.js
- * Updated: 2026-10-20 18:54:00
+ * Updated: 2026-10-28 14:33:00
  */
 
-import { apiFetch, escapeHtml, setText } from '../common/ui_utils.js';
+import { apiFetch, escapeHtml, setText } from '../common/ui_utils.js?v=20261028_v3';
 import {
   changeNetworkCategory,
   toggleNetworkDiscovery,
   updateNetworkProfileUI,
   setNetworkInterfaceIndex,
   isDiscoveryEnabled
-} from './network.js';
-import { renderTimezonesList, renderLanguagePacksList } from './localization.js';
+} from './network.js?v=20261028_v3';
+import { renderTimezonesList, renderLanguagePacksList, formatActivePacksSummary } from './localization.js?v=20261028_v3';
 
 let cachedRegionalData = null;
+let regionalCallbacks = {};
 
 /**
  * Переключает активную вкладку в модальном окне региональных настроек.
@@ -57,32 +58,50 @@ export function showRegModalAlert(msg, type = 'success') {
 }
 
 /**
- * Вызов API установки или активации языкового пакета.
- * @param {string} tag - Тэг языкового пакета (например 'ru-RU').
- * @param {HTMLElement} btnEl - Кнопка запуска операции.
+ * Вызов API управления языковыми пакетами (Русский, Иврит, Английский) и их раскладками.
+ * @param {string} tag - Тэг языкового пакета (например 'ru-RU', 'he-IL', 'en-US').
+ * @param {string} [action='activate'] - Действие ('install', 'activate', 'deactivate', 'set_default_input', 'set_display_language', 'add_layout', 'remove_layout', 'sync_trio').
+ * @param {string} [klid=''] - Идентификатор раскладки клавиатуры (KLID).
+ * @param {HTMLElement|null} [btnEl=null] - Кнопка запуска операции.
  */
-export async function installLanguagePack(tag, btnEl) {
-  if (!tag) return;
+export async function manageLanguagePack(tag, action = 'activate', klid = '', btnEl = null) {
+  if (!tag && action !== 'sync_trio') return;
   const origHtml = btnEl ? btnEl.innerHTML : '';
   if (btnEl) {
     btnEl.disabled = true;
-    btnEl.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span> Установка...';
+    btnEl.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span>...';
   }
 
   try {
-    const res = await fetch('/api/v1/system/install-language-pack', {
+    const res = await fetch('/api/v1/system/manage-language-pack', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tag }),
+      body: JSON.stringify({ tag: tag || 'ru-RU', action, klid: klid || '' }),
     });
     const data = await res.json();
     if (res.ok && data.status === 'ok') {
-      const msg = data.message || `Языковой пакет ${tag} успешно обработан`;
+      const msg = data.message || `Операция «${action}» для ${tag} успешно выполнена`;
       showRegModalAlert(`✅ ${escapeHtml(msg)}`, 'success');
       if (window.showToast) window.showToast(`✅ ${msg}`, 'success');
-      await loadRegionalOptions('pane-loc');
+
+      if (Array.isArray(data.language_packs) && data.language_packs.length > 0) {
+        if (cachedRegionalData) {
+          cachedRegionalData.language_packs = data.language_packs;
+        }
+        renderLanguagePacksList(data.language_packs, manageLanguagePack);
+        setText('about-ident-inputs', formatActivePacksSummary(data.language_packs));
+        const dispPack = data.language_packs.find(p => p.is_display_language);
+        if (dispPack) {
+          setText('about-ident-language', `${dispPack.name} [${dispPack.tag}]`);
+        }
+      } else {
+        await loadRegionalOptions('pane-loc');
+      }
+      if (regionalCallbacks.refreshSummary) {
+        regionalCallbacks.refreshSummary();
+      }
     } else {
-      const errMsg = data.message || 'Ошибка установки языкового пакета';
+      const errMsg = data.message || 'Ошибка управления языковым пакетом';
       showRegModalAlert(`Ошибка: ${escapeHtml(errMsg)}`, 'danger');
       if (window.showToast) window.showToast(`Ошибка: ${errMsg}`, 'danger');
     }
@@ -94,6 +113,15 @@ export async function installLanguagePack(tag, btnEl) {
       btnEl.innerHTML = origHtml;
     }
   }
+}
+
+/**
+ * Вызов API установки или активации языкового пакета (обратная совместимость).
+ * @param {string} tag - Тэг языкового пакета (например 'ru-RU').
+ * @param {HTMLElement} btnEl - Кнопка запуска операции.
+ */
+export async function installLanguagePack(tag, btnEl) {
+  return manageLanguagePack(tag, 'activate', '', btnEl);
 }
 
 /**
@@ -140,7 +168,10 @@ export async function loadRegionalOptions(targetPaneId = null) {
     const curQuery = searchInput ? searchInput.value.trim() : '';
     renderTimezonesList(data.timezones || [], curQuery, data.current_timezone);
 
-    renderLanguagePacksList(data.language_packs || [], installLanguagePack);
+    renderLanguagePacksList(data.language_packs || [], manageLanguagePack);
+    if (Array.isArray(data.language_packs) && data.language_packs.length > 0) {
+      setText('about-ident-inputs', formatActivePacksSummary(data.language_packs));
+    }
 
     if (Array.isArray(data.locales) && data.locales.length > 0) {
       const sysLocSelect = document.getElementById('reg-loc-sys-select');
@@ -250,9 +281,18 @@ export function openRegionalModal(targetTab = 'pane-net', event = null) {
  * @param {Object} callbacks - Колбэки для обновления часов и перезагрузки данных.
  */
 export function bindRegionalEvents(callbacks = {}) {
+  regionalCallbacks = callbacks || {};
   // Экспорт в глобальный контекст для прямого вызова из inline onclick
   window.openRegionalSettingsModal = openRegionalModal;
   window.openRegionalModal = openRegionalModal;
+
+  const btnSyncTrio = document.getElementById('btn-reg-sync-trio');
+  if (btnSyncTrio) {
+    btnSyncTrio.onclick = async (e) => {
+      e.preventDefault();
+      await manageLanguagePack('ru-RU', 'sync_trio', '', btnSyncTrio);
+    };
+  }
 
   const openButtons = document.querySelectorAll('#btn-open-regional-settings, .btn-open-reg-tab');
   openButtons.forEach(btn => {

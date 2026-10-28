@@ -15,12 +15,13 @@
 # Package: apps.windows.sdk.modules.regional
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-16 20:35:00
+# Updated: 2026-10-28 14:25:00
 # =============================================================================
 
 from __future__ import annotations
 
 from apps.windows.sdk.modules.regional.models import (
+    KeyboardLayoutModel,
     LanguagePackModel,
     TimezoneModel,
     LocaleModel,
@@ -30,6 +31,7 @@ from apps.windows.sdk.modules.regional.manager import RegionalManager
 
 __all__ = [
     "RegionalManager",
+    "KeyboardLayoutModel",
     "LanguagePackModel",
     "TimezoneModel",
     "LocaleModel",

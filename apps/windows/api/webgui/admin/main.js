@@ -1,4 +1,4 @@
-﻿/**
+/**
  * =============================================================================
  * Process Name: Windows Admin - Main Script
  * =============================================================================
@@ -14,7 +14,7 @@
  * Package: windows/api/webgui/admin
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-20 20:44:00
+ * Updated: 2026-10-28 14:30:00
  * =============================================================================
  */
 
@@ -720,7 +720,7 @@ async function initInterface() {
     { id: 'about_system', tab: 'about-system', html: '/html/tab_about_system/index.html?v=20261020_v10', js: '/html/tab_about_system/main.js?v=20261020_v10' },
     { id: 'network_terminal', tab: 'network', html: '/html/tab_network/index.html', js: '/html/tab_network/main.js' },
     { id: 'system_inspector', tab: 'hardware-load-inspector', html: '/html/tab_system_inspector/index.html?v=20261020_v4', js: '/html/tab_system_inspector/main.js?v=20261020_v4' },
-    { id: 'processes_load_inspector', tab: 'processes-load-inspector', html: '/html/tab_processes_load_inspector/index.html?v=20261020_v2', js: '/html/tab_processes_load_inspector/main.js?v=20261020_v2' },
+    { id: 'processes_load_inspector', tab: 'processes-load-inspector', html: '/html/tab_processes_load_inspector/index.html?v=20261028_v1', js: '/html/tab_processes_load_inspector/main.js?v=20261028_v1' },
     { id: 'chat', tab: 'chat', html: '/html/tab_chat/index.html', js: '/html/tab_chat/main.js' },
     { id: 'scenarios', tab: 'scenarios', html: '/html/tab_scenarios/index.html', js: '/html/tab_scenarios/main.js' },
     { id: 'user_assistant', tab: 'user-assistant', html: '/html/tab_user_assistant/index.html', js: '/html/tab_user_assistant/main.js' },

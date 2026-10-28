@@ -23,7 +23,7 @@
 # Package: apps.windows.sdk.modules.regional
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-20 09:26:00
+# Updated: 2026-10-28 14:30:00
 # =============================================================================
 
 from __future__ import annotations
@@ -39,6 +39,10 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from logger import logger
 from apps.common.telemetry_logger import AppTelemetryLogger
+from apps.windows.sdk.modules.regional.keyboard_helper import (
+    collect_language_packs_full,
+    manage_language_pack_action,
+)
 
 
 class RegionalManager:
@@ -77,86 +81,23 @@ class RegionalManager:
             return -1, "", str(exc)
 
     # =========================================================================
-    # 1. Языковые пакеты Windows (Language Packs / MUI)
+    # 1. Языковые пакеты Windows (Language Packs / MUI) и раскладки клавиатуры
     # =========================================================================
 
     def get_language_packs(self) -> List[Dict[str, Any]]:
-        """Возвращает список целевых и физически установленных языковых пакетов Windows.
+        """Возвращает список целевых и физически установленных языковых пакетов и раскладок клавиатуры Windows.
 
-        Считывает установленные MUI-пакеты из реестра
-        ``HKLM\\SYSTEM\\CurrentControlSet\\Control\\MUI\\UILanguages``
-        и активные раскладки пользователя из
-        ``HKCU\\Control Panel\\International\\User Profile\\Languages``.
+        Считывает установленные MUI-пакеты из реестра, активные языки профиля
+        и все подключенные/доступные клавиатурные раскладки (Preload + Substitutes)
+        для приоритетной тройки языков: Русский, Иврит, Английский.
 
         Returns:
-            List[Dict[str, Any]]: Список структур с метаданными языковых пакетов.
+            List[Dict[str, Any]]: Список структур с метаданными языковых пакетов и раскладок.
         """
-        installed_mui: set[str] = set()
-        user_langs: set[str] = set()
-
-        if self._is_windows:
-            try:
-                import winreg
-                with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"SYSTEM\CurrentControlSet\Control\MUI\UILanguages") as key:
-                    count, _, _ = winreg.QueryInfoKey(key)
-                    for i in range(count):
-                        installed_mui.add(winreg.EnumKey(key, i).lower())
-            except Exception as exc:
-                logger.debug(f"[RegionalManager] Ошибка чтения реестра MUI UILanguages: {exc}")
-
-            try:
-                import winreg
-                with winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Control Panel\International\User Profile") as key:
-                    val, _ = winreg.QueryValueEx(key, "Languages")
-                    if isinstance(val, (list, tuple)):
-                        user_langs = {str(item).lower() for item in val}
-            except Exception as exc:
-                logger.debug(f"[RegionalManager] Ошибка чтения User Profile Languages: {exc}")
-
-        targets = [
-            {"tag": "ru-RU", "alts": ["ru", "ru-ru"], "name": "Русский", "native_name": "Русский", "flag": "🇷🇺", "is_target": True},
-            {"tag": "he-IL", "alts": ["he", "he-il"], "name": "Иврит", "native_name": "עברית", "flag": "🇮🇱", "is_target": True},
-            {"tag": "en-US", "alts": ["en", "en-us"], "name": "Английский", "native_name": "English (US)", "flag": "🇺🇸", "is_target": True},
-        ]
-
-        result: List[Dict[str, Any]] = []
-        seen_tags: set[str] = set()
-
-        for t in targets:
-            seen_tags.add(t["tag"].lower())
-            for a in t["alts"]:
-                seen_tags.add(a.lower())
-            is_inst = any(a.lower() in installed_mui for a in [t["tag"]] + t["alts"])
-            is_act = any(a.lower() in user_langs for a in [t["tag"]] + t["alts"])
-            result.append({
-                "tag": t["tag"],
-                "name": t["name"],
-                "native_name": t["native_name"],
-                "flag": t["flag"],
-                "is_installed": is_inst,
-                "is_active": is_act,
-                "is_target": True,
-            })
-
-        for mui_tag in sorted(installed_mui):
-            if mui_tag not in seen_tags:
-                result.append({
-                    "tag": mui_tag,
-                    "name": mui_tag.upper(),
-                    "native_name": mui_tag,
-                    "flag": "🌐",
-                    "is_installed": True,
-                    "is_active": mui_tag in user_langs,
-                    "is_target": False,
-                })
-
-        return result
+        return collect_language_packs_full(self._is_windows)
 
     def install_language_pack(self, tag: str) -> Dict[str, Any]:
         """Устанавливает или активирует языковой пакет Windows (ru-RU, he-IL, en-US).
-
-        Выполняет валидацию BCP-47 кода, добавление языка в профиль пользователя
-        Windows (`Set-WinUserLanguageList`) и вызов cmdlet `Install-Language`.
 
         Args:
             tag: Код языка (например: 'ru-RU', 'he-IL', 'en-US').
@@ -174,59 +115,30 @@ class RegionalManager:
                 "is_installed": False,
                 "is_active": False,
             }
-
-        tag_map = {
-            "ru": "ru-RU",
-            "ru-ru": "ru-RU",
-            "he": "he-IL",
-            "he-il": "he-IL",
-            "en": "en-US",
-            "en-us": "en-US",
-        }
-        canonical_tag = tag_map.get(clean_tag.lower(), clean_tag)
-
-        if not self._is_windows:
-            return {
-                "status": "ok",
-                "tag": canonical_tag,
-                "name": canonical_tag,
-                "message": f"Эмуляция установки пакета {canonical_tag} (не Windows-окружение)",
-                "is_installed": True,
-                "is_active": True,
-            }
-
-        ps_script = f"""
-        $tag = '{canonical_tag}'
-        try {{
-            $list = Get-WinUserLanguageList
-            if ($list.LanguageTag -notcontains $tag -and $list.LanguageTag -notcontains $tag.Split('-')[0]) {{
-                $list.Add($tag)
-                Set-WinUserLanguageList $list -Force -Confirm:$false
-            }}
-        }} catch {{
-            Write-Warning "Set-WinUserLanguageList warning: $_"
-        }}
-
-        if (-not (Get-Command Install-Language -ErrorAction SilentlyContinue)) {{
-            exit 0
-        }}
-        try {{
-            Install-Language -Language $tag -Confirm:$false -ErrorAction SilentlyContinue
-        }} catch {{
-            Write-Warning "Install-Language warning: $_"
-        }}
-        """
-        code, stdout, stderr = self._run_ps_command(ps_script, timeout=20)
-        logger.console(f"Выполнена процедура активации/установки языкового пакета {canonical_tag} (код {code})")
-
+        res = manage_language_pack_action(self._is_windows, self._run_ps_command, clean_tag, "install")
         return {
-            "status": "ok",
-            "tag": canonical_tag,
-            "name": canonical_tag,
-            "message": f"Языковой пакет {canonical_tag} успешно активирован/установлен в системе",
+            "status": res.get("status", "ok"),
+            "tag": res.get("tag", clean_tag),
+            "name": res.get("name", clean_tag),
+            "message": res.get("message", ""),
             "is_installed": True,
             "is_active": True,
+            "language_packs": res.get("language_packs", []),
         }
+
+    def manage_language_pack(self, tag: str, action: str, klid: str = "") -> Dict[str, Any]:
+        """Управляет языковым пакетом и раскладками клавиатуры (Русский, Иврит, Английский).
+
+        Args:
+            tag: Код языка ('ru-RU', 'he-IL', 'en-US').
+            action: Операция ('install', 'activate', 'deactivate', 'set_default_input',
+                    'set_display_language', 'add_layout', 'remove_layout', 'sync_trio').
+            klid: 8-символьный идентификатор раскладки для 'add_layout'/'remove_layout'.
+
+        Returns:
+            Dict[str, Any]: Результат операции и актуальный список пакетов.
+        """
+        return manage_language_pack_action(self._is_windows, self._run_ps_command, tag, action, klid)
 
     # =========================================================================
     # 2. Часовые пояса (Timezones)

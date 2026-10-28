@@ -11,7 +11,7 @@
 # Package: apps.windows.api.routers.about_system
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-20 18:42:00
+# Updated: 2026-10-28 14:33:00
 # =============================================================================
 
 from __future__ import annotations
@@ -24,6 +24,7 @@ from typing import Any, Dict, List
 from logger import logger
 from apps.windows.telemetry.sqlite import TelemetryStorage
 from apps.windows.api.routers.about_system.helpers import get_current_user_account_info, get_clean_system_timezone, get_windows_install_date
+from apps.windows.sdk.modules.regional.keyboard_helper import get_detailed_language_packs
 
 
 async def query_system_summary_full(storage: TelemetryStorage, process_limit: int = 25) -> Dict[str, Any]:
@@ -75,7 +76,27 @@ async def query_system_summary_full(storage: TelemetryStorage, process_limit: in
     if not snap.get("codepage"):
         snap["codepage"] = "UTF-8 (ACP: 65001)"
     if not snap.get("input_languages"):
-        snap["input_languages"] = []
+        try:
+            packs = get_detailed_language_packs()
+            active_packs = sorted(
+                [p for p in packs if p.get("is_active")],
+                key=lambda x: x.get("order_index") or 99,
+            )
+            formatted_inputs = []
+            for p in active_packs:
+                short_tag = (p.get("tag") or "").split("-")[0].upper()
+                layouts = p.get("keyboard_layouts") or []
+                star = "★ " if p.get("is_default_input") else ""
+                if len(layouts) > 1:
+                    formatted_inputs.append(f"{star}{p.get('native_name', short_tag)} [{short_tag}: {len(layouts)} раскл.]")
+                else:
+                    formatted_inputs.append(f"{star}{p.get('native_name', short_tag)} [{short_tag}]")
+            snap["input_languages"] = formatted_inputs
+            disp_pack = next((p for p in packs if p.get("is_display_language")), None)
+            if disp_pack:
+                snap["system_language"] = f"{disp_pack.get('name')} [{disp_pack.get('tag')}]"
+        except Exception:
+            snap["input_languages"] = []
 
     # 3. CPU
     if not snap.get("cpu") or not isinstance(snap["cpu"], dict):

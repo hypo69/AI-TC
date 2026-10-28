@@ -11,7 +11,7 @@
 # Package: apps.windows.api.routers.about_system
 # Author: hypo69
 # Copyright: c 2026 hypo69
-# Updated: 2026-10-16 19:10:00
+# Updated: 2026-10-28 14:30:00
 # =============================================================================
 
 from __future__ import annotations
@@ -222,14 +222,29 @@ class LocaleOption(BaseModel):
     name: str = Field(..., description="Название языка и региона")
 
 
+class KeyboardLayoutItem(BaseModel):
+    """Модель раскладки клавиатуры Windows."""
+    klid: str = Field(..., description="8-символьный идентификатор раскладки (00000419, 0002040d, 00000409)")
+    name: str = Field(..., description="Название раскладки клавиатуры")
+    preload_slot: str = Field(default="", description="Номер слота в HKCU\\Keyboard Layout\\Preload")
+    is_active: bool = Field(default=True, description="Активна ли раскладка в профиле пользователя")
+
+
 class LanguagePackInfo(BaseModel):
-    """Модель сведений о языковом пакете Windows."""
+    """Модель сведений о языковом пакете и раскладках клавиатуры Windows."""
     tag: str = Field(..., description="Код языка (ru-RU, he-IL, en-US)")
     name: str = Field(..., description="Название языка")
     native_name: str = Field(default="", description="Название на родном языке")
     flag: str = Field(default="🌐", description="Флаг языка")
+    lcid: str = Field(default="", description="4-символьный код LCID языка (0419, 040D, 0409)")
     is_installed: bool = Field(default=False, description="Установлен ли пакет в системе")
     is_active: bool = Field(default=False, description="Активен ли в профиле пользователя")
+    is_display_language: bool = Field(default=False, description="Является ли языком интерфейса Windows")
+    is_default_input: bool = Field(default=False, description="Является ли первым языком ввода по умолчанию")
+    order_index: int = Field(default=99, description="Позиция в списке языков ввода (1, 2, 3...)")
+    is_target: bool = Field(default=True, description="Принадлежит ли к целевой тройке (Русский, Иврит, Английский)")
+    keyboard_layouts: List[KeyboardLayoutItem] = Field(default_factory=list, description="Активные раскладки клавиатуры")
+    available_layouts: List[KeyboardLayoutItem] = Field(default_factory=list, description="Доступные раскладки клавиатуры для добавления")
 
 
 class InstallLanguagePackRequest(BaseModel):
@@ -241,8 +256,32 @@ class InstallLanguagePackResponse(BaseModel):
     """Результат установки языкового пакета."""
     status: str = Field(default="ok", description="Статус операции (ok/error)")
     tag: str = Field(default="", description="Код языка")
+    name: str = Field(default="", description="Название языка")
     message: str = Field(default="", description="Информационное сообщение")
     installed: bool = Field(default=False, description="Установлен ли пакет")
+    is_installed: bool = Field(default=False, description="Установлен ли пакет")
+    is_active: bool = Field(default=False, description="Активен ли пакет")
+    language_packs: List[LanguagePackInfo] = Field(default_factory=list, description="Обновленный список языковых пакетов")
+
+
+class ManageLanguagePackRequest(BaseModel):
+    """Запрос на управление языковым пакетом и раскладками клавиатуры (Русский, Иврит, Английский)."""
+    tag: str = Field(default="ru-RU", description="Код языка (ru-RU, he-IL, en-US)")
+    action: str = Field(
+        default="install",
+        description="Операция: install, activate, deactivate, set_default_input, set_display_language, add_layout, remove_layout, sync_trio",
+    )
+    klid: str = Field(default="", description="Идентификатор раскладки KLID (для add_layout / remove_layout)")
+
+
+class ManageLanguagePackResponse(BaseModel):
+    """Результат операции управления языковым пакетом и раскладками клавиатуры."""
+    status: str = Field(default="ok", description="Статус операции (ok/error)")
+    tag: str = Field(default="", description="Код языка")
+    name: str = Field(default="", description="Название языка")
+    action: str = Field(default="", description="Выполненное действие")
+    message: str = Field(default="", description="Информационное сообщение")
+    language_packs: List[LanguagePackInfo] = Field(default_factory=list, description="Актуальный список языковых пакетов и раскладок")
 
 
 class RegionalOptionsResponse(BaseModel):

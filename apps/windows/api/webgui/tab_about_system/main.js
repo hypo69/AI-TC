@@ -4,19 +4,19 @@
  * Запрашивает единый агрегированный срез данных через /api/v1/about-system/bundle
  * без отправки разрозненных сетевых запросов от каждой панели.
  * Файл: apps/windows/api/webgui/tab_about_system/main.js
- * Updated: 2026-10-20 20:41:00
+ * Updated: 2026-10-28 14:33:00
  */
 
-import { apiFetch, clearTabCache, showGlobalSpinner, setText } from './common/ui_utils.js?v=20261020_v9';
-import { applyKpiData } from './panel_kpi/panel.js?v=20261020_v9';
-import { applyIdentityData, applyControlStatusData, applyDisksWearData, applyStorageBatteryWearData, bindIdentityEvents, fetchSecurityHealth, fetchDisksWear, fetchStorageBatteryWear } from './panel_identity/panel.js?v=20261020_v9';
-import { applyBatteryData, fetchBatteryWear, bindBatteryEvents } from './panel_battery/panel.js?v=20261020_v9';
-import { applyHardwareData, bindHardwareEvents, fetchHardwareTree, renderDisksTable } from './panel_hardware/panel.js?v=20261020_v9';
-import { openHardwareComponentHistory } from './panel_hardware/enrichment.js?v=20261020_v9';
-import { initAIDiagnosticsPanel, runAIDiagnostics } from './panel_ai_diagnostics/panel.js?v=20261020_v9';
-import { bindRegionalEvents, loadRegionalOptions, openRegionalModal } from './panel_regional_network/regional.js?v=20261020_v9';
-import { fetchNetworkProfile, updateNetworkProfileUI, setNetworkInterfaceIndex } from './panel_regional_network/network.js?v=20261020_v9';
-import { initHistoryPanel, fetchAboutSystemHistory } from './panel_history/panel.js?v=20261020_v9';
+import { apiFetch, clearTabCache, showGlobalSpinner, setText } from './common/ui_utils.js?v=20261028_v3';
+import { applyKpiData } from './panel_kpi/panel.js?v=20261028_v3';
+import { applyIdentityData, applyControlStatusData, applyDisksWearData, applyStorageBatteryWearData, bindIdentityEvents, fetchSecurityHealth, fetchDisksWear, fetchStorageBatteryWear } from './panel_identity/panel.js?v=20261028_v3';
+import { applyBatteryData, fetchBatteryWear, bindBatteryEvents } from './panel_battery/panel.js?v=20261028_v3';
+import { applyHardwareData, bindHardwareEvents, fetchHardwareTree, renderDisksTable } from './panel_hardware/panel.js?v=20261028_v3';
+import { openHardwareComponentHistory } from './panel_hardware/enrichment.js?v=20261028_v3';
+import { initAIDiagnosticsPanel, runAIDiagnostics } from './panel_ai_diagnostics/panel.js?v=20261028_v3';
+import { bindRegionalEvents, loadRegionalOptions, openRegionalModal } from './panel_regional_network/regional.js?v=20261028_v3';
+import { fetchNetworkProfile, updateNetworkProfileUI, setNetworkInterfaceIndex } from './panel_regional_network/network.js?v=20261028_v3';
+import { initHistoryPanel, fetchAboutSystemHistory } from './panel_history/panel.js?v=20261028_v3';
 
 let clockInterval = null;
 let isInitialized = false;

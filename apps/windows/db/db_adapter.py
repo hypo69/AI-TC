@@ -11,7 +11,7 @@
 # Package: apps.windows.db
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-15 09:25:00
+# Updated: 2026-10-28 14:25:00
 # =============================================================================
 
 from __future__ import annotations
@@ -20,7 +20,9 @@ import json
 import os
 import re
 import sqlite3
+import ssl
 import threading
+import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -52,7 +54,7 @@ class DatabaseAdapter:
             config: Готовый словарь конфигурации базы данных (опционально).
             config_path: Путь к файлу конфигурации (опционально).
         """
-        self._lock = threading.Lock()
+        self._lock = threading.RLock()
         self._mariadb_conn: Optional[Any] = None
         self._sqlite_conn: Optional[sqlite3.Connection] = None
         self.config = config or self._load_db_config(config_path)
@@ -169,7 +171,7 @@ class DatabaseAdapter:
                 return self._sqlite_conn
 
             cfg = self.config.get("sqlite", {})
-            raw_path = cfg.get("path", "data/wikillm.db")
+            raw_path = cfg.get("path") or "data/windows_wikillm/knowledge.db"
             if raw_path == ":memory:":
                 db_path = ":memory:"
             else:
@@ -182,10 +184,183 @@ class DatabaseAdapter:
             conn.execute("PRAGMA journal_mode = WAL;")
             conn.execute("PRAGMA foreign_keys = ON;")
             self._sqlite_conn = conn
+            self._ensure_sqlite_tables(conn)
             return conn
+
+    def _ensure_sqlite_tables(self, conn: Optional[sqlite3.Connection] = None) -> None:
+        """Создает необходимые локальные таблицы SQLite и мигрирует данные при необходимости."""
+        c = conn or self._sqlite_conn
+        if c is None:
+            c = self._get_sqlite_conn()
+
+        try:
+            with self._lock:
+                cur = c.cursor()
+                cur.execute("""
+                CREATE TABLE IF NOT EXISTS wikillm_knowledge (
+                    canonical_key TEXT PRIMARY KEY,
+                    title TEXT NOT NULL,
+                    category TEXT NOT NULL DEFAULT 'general',
+                    description TEXT,
+                    is_verified INTEGER NOT NULL DEFAULT 1,
+                    claims_json TEXT,
+                    remediation_json TEXT,
+                    updated_at REAL NOT NULL
+                );
+                """)
+                cur.execute("""
+                CREATE TABLE IF NOT EXISTS wikillm_procedural_tools (
+                    tool_id TEXT PRIMARY KEY,
+                    canonical_key TEXT NOT NULL,
+                    title TEXT NOT NULL,
+                    description TEXT,
+                    script_type TEXT NOT NULL DEFAULT 'powershell',
+                    script_content TEXT NOT NULL,
+                    parameters_schema_json TEXT,
+                    risk_level TEXT NOT NULL DEFAULT 'safe',
+                    is_automated INTEGER NOT NULL DEFAULT 0,
+                    tags_json TEXT,
+                    status TEXT NOT NULL DEFAULT 'active',
+                    version TEXT NOT NULL DEFAULT '1.0.0',
+                    compatibility_json TEXT,
+                    execution_metrics_json TEXT,
+                    execution_count INTEGER NOT NULL DEFAULT 0,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL
+                );
+                """)
+                cur.execute("""
+                CREATE INDEX IF NOT EXISTS idx_proc_tools_canon ON wikillm_procedural_tools (canonical_key);
+                """)
+                cur.execute("""
+                CREATE TABLE IF NOT EXISTS wiki_llm_profiles (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    profile_name TEXT NOT NULL UNIQUE,
+                    top_k INTEGER NOT NULL DEFAULT 5,
+                    fetch_k INTEGER NOT NULL DEFAULT 20,
+                    score_threshold REAL NOT NULL DEFAULT 0.70,
+                    reranker_enabled INTEGER NOT NULL DEFAULT 1,
+                    rerank_top_n INTEGER NOT NULL DEFAULT 5,
+                    temperature REAL NOT NULL DEFAULT 0.2,
+                    max_context_tokens INTEGER NOT NULL DEFAULT 4096,
+                    grounding_required INTEGER NOT NULL DEFAULT 1,
+                    data TEXT,
+                    updated_at REAL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                );
+                """)
+
+                # Проверяем, есть ли записи в wikillm_knowledge
+                cur.execute("SELECT COUNT(*) FROM wikillm_knowledge;")
+                knowledge_count = cur.fetchone()[0]
+
+                # Если wikillm_knowledge пуста, проверяем наличие legacy-таблицы entities
+                if knowledge_count == 0:
+                    cur.execute("SELECT name FROM sqlite_master WHERE type='table';")
+                    existing_tables = [r[0] for r in cur.fetchall()]
+                    if "entities" in existing_tables:
+                        claims_map: Dict[str, List[str]] = {}
+                        if "claims" in existing_tables:
+                            try:
+                                cur.execute("SELECT canonical_key, statement FROM claims;")
+                                for row in cur.fetchall():
+                                    claims_map.setdefault(row[0], []).append(row[1])
+                            except Exception:
+                                pass
+
+                        resolutions_map: Dict[str, List[str]] = {}
+                        if "resolutions" in existing_tables:
+                            try:
+                                cur.execute("SELECT canonical_key, title, description FROM resolutions;")
+                                for row in cur.fetchall():
+                                    desc = f": {row[2]}" if row[2] else ""
+                                    resolutions_map.setdefault(row[0], []).append(f"{row[1]}{desc}")
+                            except Exception:
+                                pass
+
+                        try:
+                            cur.execute("SELECT * FROM entities;")
+                            for ent in cur.fetchall():
+                                d = dict(ent)
+                                ckey = d.get("canonical_key", "")
+                                if not ckey:
+                                    continue
+                                title = d.get("name") or d.get("title") or ckey
+                                desc = d.get("summary") or d.get("description") or ""
+                                cat = d.get("category") or "general"
+                                updated_val = d.get("updated_at")
+                                ts = time.time()
+                                if updated_val is not None:
+                                    try:
+                                        ts = float(updated_val)
+                                    except (ValueError, TypeError):
+                                        try:
+                                            from datetime import datetime
+                                            ts = datetime.fromisoformat(str(updated_val)).timestamp()
+                                        except Exception:
+                                            ts = time.time()
+
+                                cur.execute("""
+                                INSERT OR IGNORE INTO wikillm_knowledge 
+                                    (canonical_key, title, category, description, is_verified, claims_json, remediation_json, updated_at)
+                                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                                """, (
+                                    ckey,
+                                    title,
+                                    cat,
+                                    desc,
+                                    1 if d.get("is_verified", 1) else 0,
+                                    json.dumps(claims_map.get(ckey, []), ensure_ascii=False),
+                                    json.dumps(resolutions_map.get(ckey, []), ensure_ascii=False),
+                                    ts
+                                ))
+                        except Exception as ent_err:
+                            logger.debug(f"[DatabaseAdapter] Ошибка автомиграции из entities: {ent_err}")
+
+                    # Если записей по-прежнему 0 (в entities ничего не было), вставляем базовую запись
+                    cur.execute("SELECT COUNT(*) FROM wikillm_knowledge;")
+                    if cur.fetchone()[0] == 0:
+                        cur.execute("""
+                        INSERT OR IGNORE INTO wikillm_knowledge
+                            (canonical_key, title, category, description, is_verified, claims_json, remediation_json, updated_at)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                        """, (
+                            "win_event_4624",
+                            "Успешный вход в систему (Event 4624)",
+                            "security_audit",
+                            "Событие успешного входа пользователя в систему. Фиксирует тип входа (Logon Type) и SID.",
+                            1,
+                            json.dumps(["Вход выполнен успешно", "Фиксирует учетные данные субъекта"], ensure_ascii=False),
+                            json.dumps(["Проверить IP-адрес источника при сетевом входе", "Сверить рабочие часы"], ensure_ascii=False),
+                            time.time()
+                        ))
+
+                # Проверяем наличие профилей по умолчанию
+                cur.execute("SELECT COUNT(*) FROM wiki_llm_profiles;")
+                profiles_count = cur.fetchone()[0]
+                if profiles_count == 0:
+                    default_profiles = [
+                        ("fast", 3, 10, 0.60, 0, 3, 0.1, 2048, 0, json.dumps({"top_k": 3, "fetch_k": 10, "score_threshold": 0.60, "reranker_enabled": False, "rerank_top_n": 3, "temperature": 0.1, "max_context_tokens": 2048, "grounding_required": False})),
+                        ("balanced", 5, 20, 0.70, 1, 5, 0.2, 4096, 1, json.dumps({"top_k": 5, "fetch_k": 20, "score_threshold": 0.70, "reranker_enabled": True, "rerank_top_n": 5, "temperature": 0.2, "max_context_tokens": 4096, "grounding_required": True})),
+                        ("precise", 8, 30, 0.85, 1, 5, 0.0, 8192, 1, json.dumps({"top_k": 8, "fetch_k": 30, "score_threshold": 0.85, "reranker_enabled": True, "rerank_top_n": 5, "temperature": 0.0, "max_context_tokens": 8192, "grounding_required": True}))
+                    ]
+                    now_ts = time.time()
+                    for prof in default_profiles:
+                        cur.execute("""
+                        INSERT OR IGNORE INTO wiki_llm_profiles 
+                            (profile_name, top_k, fetch_k, score_threshold, reranker_enabled, rerank_top_n, temperature, max_context_tokens, grounding_required, data, updated_at)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        """, (*prof, now_ts))
+
+                c.commit()
+        except Exception as sqlite_err:
+            logger.error(f"[DatabaseAdapter] Ошибка инициализации таблиц SQLite: {sqlite_err}")
 
     def _ensure_tables(self) -> None:
         """Создает необходимые таблицы базы данных, если они отсутствуют."""
+        # 1. Всегда гарантируем наличие локальных таблиц SQLite
+        self._ensure_sqlite_tables()
+
         create_sql_mariadb = """
         CREATE TABLE IF NOT EXISTS wikillm_knowledge (
             canonical_key VARCHAR(255) PRIMARY KEY,
@@ -199,24 +374,13 @@ class DatabaseAdapter:
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
         """
 
-        create_sql_sqlite = """
-        CREATE TABLE IF NOT EXISTS wikillm_knowledge (
-            canonical_key TEXT PRIMARY KEY,
-            title TEXT NOT NULL,
-            category TEXT NOT NULL DEFAULT 'general',
-            description TEXT,
-            is_verified INTEGER NOT NULL DEFAULT 1,
-            claims_json TEXT,
-            remediation_json TEXT,
-            updated_at REAL NOT NULL
-        );
-        """
-
         if self.engine == "mariadb":
             conn_type = str(self.config.get("mariadb", {}).get("connection_type", "direct")).lower()
             if conn_type == "php_api":
                 try:
-                    self.init_empty_tables()
+                    res = self.init_empty_tables()
+                    if not res.get("ok"):
+                        raise RuntimeError(res.get("error") or res.get("message") or "Сбой вызова PHP API")
                     return
                 except Exception as err:
                     logger.warning(
@@ -234,13 +398,6 @@ class DatabaseAdapter:
                         f"[DatabaseAdapter] Сбой инициализации MariaDB: {err}. Переключение на локальный SQLite."
                     )
                     self.engine = "sqlite"
-
-        try:
-            conn = self._get_sqlite_conn()
-            conn.execute(create_sql_sqlite)
-            conn.commit()
-        except Exception as sqlite_err:
-            logger.error(f"[DatabaseAdapter] Ошибка инициализации таблиц SQLite: {sqlite_err}")
 
     def _prepare_sql_and_params(
         self,
@@ -269,9 +426,16 @@ class DatabaseAdapter:
         adapted_sql = sql
         # Адаптация конструкции ON DUPLICATE KEY UPDATE для SQLite 3.24+
         if "ON DUPLICATE KEY UPDATE" in adapted_sql.upper():
+            conflict_col = "canonical_key"
+            sql_lower = adapted_sql.lower()
+            if "wiki_llm_profiles" in sql_lower:
+                conflict_col = "profile_name"
+            elif "wikillm_procedural_tools" in sql_lower:
+                conflict_col = "tool_id"
+
             adapted_sql = re.sub(
                 r"ON DUPLICATE KEY UPDATE",
-                "ON CONFLICT(canonical_key) DO UPDATE SET",
+                f"ON CONFLICT({conflict_col}) DO UPDATE SET",
                 adapted_sql,
                 flags=re.IGNORECASE,
             )
@@ -300,6 +464,7 @@ class DatabaseAdapter:
                     )
                     if res.get("ok"):
                         return int(res.get("affected_rows", 0))
+                    raise RuntimeError(res.get("error") or res.get("message") or "Ошибка запроса PHP API")
                 except Exception as err:
                     logger.warning(f"[DatabaseAdapter] Ошибка PHP API в execute: {err}. Запасной путь SQLite.")
                     self.engine = "sqlite"
@@ -343,6 +508,7 @@ class DatabaseAdapter:
                     )
                     if res.get("ok") and "rows" in res:
                         return list(res["rows"])
+                    raise RuntimeError(res.get("error") or res.get("message") or "Ошибка запроса PHP API")
                 except Exception as err:
                     logger.warning(f"[DatabaseAdapter] Ошибка PHP API в fetch_all: {err}. Запасной путь SQLite.")
                     self.engine = "sqlite"
@@ -476,8 +642,11 @@ class DatabaseAdapter:
             headers["X-API-Key"] = str(api_key).strip()
 
         req = urllib.request.Request(full_url, data=body_data, headers=headers, method="POST")
+        ssl_ctx = ssl.create_default_context()
+        ssl_ctx.check_hostname = False
+        ssl_ctx.verify_mode = ssl.CERT_NONE
         try:
-            with urllib.request.urlopen(req, timeout=timeout) as response:
+            with urllib.request.urlopen(req, timeout=timeout, context=ssl_ctx) as response:
                 resp_bytes = response.read()
                 return json.loads(resp_bytes.decode("utf-8"))
         except urllib.error.HTTPError as http_err:

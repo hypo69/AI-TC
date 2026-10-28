@@ -17,7 +17,7 @@ Usage Examples:
  * Package: windows/api/webgui/about_system_tab
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-20 17:43:00
+ * Updated: 2026-10-28 14:32:00
  * =============================================================================
 -->
 <!-- About System Application Tab -->
@@ -310,7 +310,7 @@ Usage Examples:
 </div>
 <!-- Regional, Timezone & User Account Settings Modal Dialog -->
 <div aria-hidden="true" aria-labelledby="aboutRegionalSettingsModalLabel" class="modal fade" id="aboutRegionalSettingsModal" tabindex="-1">
-<div class="modal-dialog modal-dialog-centered modal-lg">
+<div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-xl">
 <div class="modal-content" style="background: var(--surface-1); color: var(--text-color); border: 1px solid var(--border-color);">
 <div class="modal-header" style="background: var(--surface-2); border-bottom: 1px solid var(--border-color);">
 <div class="d-flex align-items-center gap-2">
@@ -362,45 +362,75 @@ Usage Examples:
 </div>
 </div>
 </div>
-<!-- Pane 2: Locales -->
+<!-- Pane 2: Locales & Language Packs -->
 <div class="regional-tab-pane d-none" id="pane-loc">
-<div class="p-2.5 mb-2 rounded border" style="background: var(--surface-2); border-color: var(--border-color) !important;">
-<div class="row g-3 mb-2">
-<div class="col-sm-6">
-<label class="form-label small fw-bold mb-1">Системная локаль (System Locale):</label>
-<select class="form-select form-select-sm" id="reg-loc-sys-select">
-<option value="ru-RU">Русский (Россия) [ru-RU]</option>
-<option value="en-US">English (United States) [en-US]</option>
-<option value="en-GB">English (United Kingdom) [en-GB]</option>
-<option value="he-IL">עברית (ישראל) [he-IL]</option>
-<option value="de-DE">Deutsch (Deutschland) [de-DE]</option>
-<option value="fr-FR">Français (France) [fr-FR]</option>
-<option value="es-ES">Español (España) [es-ES]</option>
-<option value="it-IT">Italiano (Italia) [it-IT]</option>
-<option value="zh-CN">中文 (简体, 中国) [zh-CN]</option>
-<option value="ja-JP">日本語 (日本) [ja-JP]</option>
-</select>
-<div class="small text-muted mt-1" style="font-size: 0.72rem;">Для программ без поддержки Юникода и форматов дат/чисел.</div>
-</div>
-<div class="col-sm-6">
-<label class="form-label small fw-bold mb-1">Пользовательская культура (User Culture):</label>
-<select class="form-select form-select-sm" id="reg-loc-usr-select">
-<option value="ru-RU">Русский (Россия) [ru-RU]</option>
-<option value="en-US">English (United States) [en-US]</option>
-<option value="en-GB">English (United Kingdom) [en-GB]</option>
-<option value="he-IL">עברית (ישראל) [he-IL]</option>
-<option value="de-DE">Deutsch (Deutschland) [de-DE]</option>
-</select>
-<div class="small text-muted mt-1" style="font-size: 0.72rem;">Язык форматирования времени, валюты и пользовательских параметров.</div>
-</div>
-</div>
-<div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top" style="border-color: var(--border-color) !important;">
-<span class="small text-warning"><i class="bi bi-info-circle me-1"></i>Вступает в силу после перезагрузки</span>
-<button class="btn btn-sm btn-info text-dark fw-bold px-3 rounded-pill" id="btn-reg-save-loc">
-<i class="bi bi-check-lg me-1"></i> Применить локаль
-                </button>
-</div>
-</div>
+  <!-- Блок 1: Полный контроль языковых пакетов и раскладок клавиатуры (Русский, Иврит, Английский) -->
+  <div class="p-2.5 mb-3 rounded border" style="background: var(--surface-2); border-color: var(--border-color) !important;">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2 pb-2 border-bottom" style="border-color: var(--border-color) !important;">
+      <div>
+        <div class="d-flex align-items-center gap-2">
+          <i class="bi bi-translate text-info"></i>
+          <span class="small fw-bold">Языковые пакеты и раскладки клавиатуры (Русский • Иврит • Английский)</span>
+        </div>
+        <div class="small text-muted" style="font-size: 0.72rem;">
+          Полный контроль установленных языковых пакетов (MUI), порядка переключения ввода и клавиатурных раскладок
+        </div>
+      </div>
+      <div class="d-flex align-items-center gap-1.5">
+        <button class="btn btn-sm btn-outline-info rounded-pill px-2.5 py-0.5 font-monospace" id="btn-reg-sync-trio" title="Подключить и синхронизировать всю тройку языков (Русский, Иврит, Английский) и их стандартные раскладки">
+          <i class="bi bi-check2-all me-1"></i>Подключить всю тройку (RU • HE • EN)
+        </button>
+      </div>
+    </div>
+    <div class="row g-2" id="reg-lang-packs-container">
+      <div class="col-12 text-center py-3 text-muted small">
+        <span class="spinner-border spinner-border-sm text-info me-1" role="status"></span>Загрузка установленных языковых пакетов и раскладок клавиатуры...
+      </div>
+    </div>
+  </div>
+
+  <!-- Блок 2: Системная локаль и региональные форматы -->
+  <div class="p-2.5 mb-2 rounded border" style="background: var(--surface-2); border-color: var(--border-color) !important;">
+    <div class="d-flex align-items-center gap-2 mb-2">
+      <i class="bi bi-globe2 text-warning"></i>
+      <span class="small fw-bold">Системная локаль и региональные форматы (System Locale &amp; Culture)</span>
+    </div>
+    <div class="row g-3 mb-2">
+      <div class="col-sm-6">
+        <label class="form-label small fw-bold mb-1">Системная локаль (System Locale):</label>
+        <select class="form-select form-select-sm" id="reg-loc-sys-select">
+          <option value="ru-RU">Русский (Россия) [ru-RU]</option>
+          <option value="en-US">English (United States) [en-US]</option>
+          <option value="en-GB">English (United Kingdom) [en-GB]</option>
+          <option value="he-IL">עברית (ישראל) [he-IL]</option>
+          <option value="de-DE">Deutsch (Deutschland) [de-DE]</option>
+          <option value="fr-FR">Français (France) [fr-FR]</option>
+          <option value="es-ES">Español (España) [es-ES]</option>
+          <option value="it-IT">Italiano (Italia) [it-IT]</option>
+          <option value="zh-CN">中文 (简体, 中国) [zh-CN]</option>
+          <option value="ja-JP">日本語 (日本) [ja-JP]</option>
+        </select>
+        <div class="small text-muted mt-1" style="font-size: 0.72rem;">Для программ без поддержки Юникода (ANSI) и системных служб.</div>
+      </div>
+      <div class="col-sm-6">
+        <label class="form-label small fw-bold mb-1">Пользовательская культура (User Culture):</label>
+        <select class="form-select form-select-sm" id="reg-loc-usr-select">
+          <option value="ru-RU">Русский (Россия) [ru-RU]</option>
+          <option value="en-US">English (United States) [en-US]</option>
+          <option value="en-GB">English (United Kingdom) [en-GB]</option>
+          <option value="he-IL">עברית (ישראל) [he-IL]</option>
+          <option value="de-DE">Deutsch (Deutschland) [de-DE]</option>
+        </select>
+        <div class="small text-muted mt-1" style="font-size: 0.72rem;">Язык форматирования дат, времени, чисел и валюты.</div>
+      </div>
+    </div>
+    <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top" style="border-color: var(--border-color) !important;">
+      <span class="small text-warning"><i class="bi bi-info-circle me-1"></i>Смена системной локали вступает в силу после перезагрузки</span>
+      <button class="btn btn-sm btn-info text-dark fw-bold px-3 rounded-pill" id="btn-reg-save-loc">
+        <i class="bi bi-check-lg me-1"></i> Применить локаль
+      </button>
+    </div>
+  </div>
 </div>
 <!-- Pane 3: User Account -->
 <div class="regional-tab-pane d-none" id="pane-usr">

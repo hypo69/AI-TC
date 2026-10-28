@@ -17,7 +17,7 @@
  * Package: windows/api/webgui/apps/modules
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-28 04:38:00
+ * Updated: 2026-10-28 14:33:00
  * =============================================================================
  */
 
@@ -34,12 +34,12 @@ export const APP_TAB_DEFS = [
   { id: 'telemetry_control', tab: 'telemetry-control', tabId: 'tab-telemetry-control', html: '/html/tab_telemetry_control/index.html?v=20261013_v2', js: '/html/tab_telemetry_control/main.js?v=20261013_v2' },
   { id: 'interactive_agent', tab: 'interactive-agent', tabId: 'tab-interactive-agent', html: '/html/tab_interactive_agent/index.html?v=20261013_v1', js: '/html/tab_interactive_agent/main.js?v=20261013_v1' },
 
-  { id: 'about_system', tab: 'about-system', tabId: 'tab-about-system', html: '/html/tab_about_system/index.html?v=20261020_v10', js: '/html/tab_about_system/main.js?v=20261020_v10' },
+  { id: 'about_system', tab: 'about-system', tabId: 'tab-about-system', html: '/html/tab_about_system/index.html?v=20261028_v3', js: '/html/tab_about_system/main.js?v=20261028_v3' },
   { id: 'scenarios', tab: 'scenarios', tabId: 'tab-scenarios', html: '/html/tab_scenarios/index.html?v=20261006_v8', js: '/html/tab_scenarios/main.js?v=20261006_v8' },
   { id: 'chat', tab: 'chat', tabId: 'tab-chat', html: '/html/tab_chat/index.html?v=20260923_v5', js: '/html/tab_chat/main.js?v=20260923_v5' },
   { id: 'network_terminal', tab: 'network', tabId: 'tab-network', html: '/html/tab_network/index.html?v=20261020_v2', js: '/html/tab_network/main.js?v=20261020_v2' },
   { id: 'system_inspector', tab: 'hardware-load-inspector', tabId: 'tab-hardware-load-inspector', html: '/html/tab_system_inspector/index.html?v=20261020_v3', js: '/html/tab_system_inspector/main.js?v=20261020_v3' },
-  { id: 'processes_load_inspector', tab: 'processes-load-inspector', tabId: 'tab-processes-load-inspector', html: '/html/tab_processes_load_inspector/index.html?v=20261020_v3', js: '/html/tab_processes_load_inspector/main.js?v=20261020_v3' },
+  { id: 'processes_load_inspector', tab: 'processes-load-inspector', tabId: 'tab-processes-load-inspector', html: '/html/tab_processes_load_inspector/index.html?v=20261028_v1', js: '/html/tab_processes_load_inspector/main.js?v=20261028_v1' },
   { id: 'windows_sysadmin', tab: 'windows-admin', tabId: 'tab-windows-admin', html: '/html/tab_windows_admin/index.html?v=20261015_v2', js: '/html/tab_windows_admin/main.js?v=20261015_v2' },
   { id: 'focus_settings', tab: 'focus-settings', tabId: 'tab-focus-settings', html: '/html/tab_focus_settings/index.html?v=20261006_v1', js: '/html/tab_focus_settings/main.js?v=20261006_v1' },
   { id: 'system32_commands', tab: 'system32-commands', tabId: 'tab-system32-commands', html: '/html/tab_system32_commands/index.html?v=20261006_v1', js: '/html/tab_system32_commands/main.js?v=20261006_v1' },

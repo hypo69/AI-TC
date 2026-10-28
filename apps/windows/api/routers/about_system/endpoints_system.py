@@ -11,7 +11,7 @@
 # Package: apps.windows.api.routers.about_system
 # Author: hypo69
 # Copyright: c 2026 hypo69
-# Updated: 2026-10-16 20:38:00
+# Updated: 2026-10-28 14:30:00
 # =============================================================================
 
 from __future__ import annotations
@@ -36,6 +36,8 @@ from .models import RegionalOptionsResponse
 from .models import LanguagePackInfo
 from .models import InstallLanguagePackRequest
 from .models import InstallLanguagePackResponse
+from .models import ManageLanguagePackRequest
+from .models import ManageLanguagePackResponse
 from .models import RenameComputerRequest
 from .models import RenameComputerResponse
 from .models import SetLocaleRequest
@@ -387,13 +389,38 @@ def register_system_action_endpoints(router: APIRouter, storage: TelemetryStorag
     async def install_language_pack_endpoint(req: InstallLanguagePackRequest) -> InstallLanguagePackResponse:
         """Установка или активация языкового пакета Windows через Windows SDK."""
         res = await asyncio.to_thread(windows_sdk.modules.regional.install_language_pack, req.tag)
+        packs = [LanguagePackInfo(**p) for p in res.get("language_packs", [])]
         return InstallLanguagePackResponse(
             status=res.get("status", "ok"),
             tag=res.get("tag", req.tag),
             name=res.get("name", req.tag),
             message=res.get("message", ""),
+            installed=res.get("is_installed", False),
             is_installed=res.get("is_installed", False),
             is_active=res.get("is_active", False),
+            language_packs=packs,
+        )
+
+    # =========================================================================
+    # 19. Полное управление языковыми пакетами и раскладками: POST /api/v1/system/manage-language-pack
+    # =========================================================================
+    @router.post("/api/v1/system/manage-language-pack", response_model=ManageLanguagePackResponse)
+    async def manage_language_pack_endpoint(req: ManageLanguagePackRequest) -> ManageLanguagePackResponse:
+        """Полное управление тройкой языковых пакетов (Русский, Иврит, Английский) и их раскладками клавиатуры."""
+        res = await asyncio.to_thread(
+            windows_sdk.modules.regional.manage_language_pack,
+            req.tag,
+            req.action,
+            req.klid,
+        )
+        packs = [LanguagePackInfo(**p) for p in res.get("language_packs", [])]
+        return ManageLanguagePackResponse(
+            status=res.get("status", "ok"),
+            tag=res.get("tag", req.tag),
+            name=res.get("name", req.tag),
+            action=res.get("action", req.action),
+            message=res.get("message", ""),
+            language_packs=packs,
         )
 
 

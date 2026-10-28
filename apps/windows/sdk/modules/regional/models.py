@@ -11,13 +11,22 @@
 # Package: apps.windows.sdk.modules.regional
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-16 20:35:00
+# Updated: 2026-10-28 14:25:00
 # =============================================================================
 
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field
+
+
+class KeyboardLayoutModel(BaseModel):
+    """Модель раскладки клавиатуры Windows."""
+
+    klid: str = Field(..., description="8-символьный идентификатор раскладки (например: 00000419, 0002040d)")
+    name: str = Field(..., description="Название раскладки клавиатуры")
+    preload_slot: str = Field(default="", description="Номер слота в HKCU\\Keyboard Layout\\Preload")
+    is_active: bool = Field(default=True, description="Активна ли раскладка в профиле пользователя")
 
 
 class LanguagePackModel(BaseModel):
@@ -27,9 +36,15 @@ class LanguagePackModel(BaseModel):
     name: str = Field(..., description="Название языка на русском языке")
     native_name: str = Field(..., description="Самоназвание языка (Native Name)")
     flag: str = Field(default="🌐", description="Флаг или пиктограмма языка")
+    lcid: str = Field(default="", description="4-символьный код LCID языка (0419, 040D, 0409)")
     is_installed: bool = Field(default=False, description="Установлен ли физически MUI-пакет в системе")
     is_active: bool = Field(default=False, description="Присутствует ли язык в текущей раскладке пользователя")
+    is_display_language: bool = Field(default=False, description="Является ли языком интерфейса Windows (Display Language)")
+    is_default_input: bool = Field(default=False, description="Является ли первым языком ввода по умолчанию")
+    order_index: int = Field(default=99, description="Позиция языка в списке языков ввода пользователя (1, 2, 3...)")
     is_target: bool = Field(default=False, description="Является ли язык целевым приоритетным (Русский, Иврит, Английский)")
+    keyboard_layouts: List[KeyboardLayoutModel] = Field(default_factory=list, description="Активные раскладки клавиатуры этого языка")
+    available_layouts: List[KeyboardLayoutModel] = Field(default_factory=list, description="Доступные системные раскладки для добавления")
 
 
 class TimezoneModel(BaseModel):

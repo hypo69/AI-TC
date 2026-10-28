@@ -10,7 +10,7 @@
 # Package: apps.windows.api.routers
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-15 08:53:00
+# Updated: 2026-10-28 14:32:00
 # =============================================================================
 
 from __future__ import annotations
@@ -336,28 +336,41 @@ async def list_wiki_entities(
     """
     Search and retrieve WikiLLM knowledge entities from MariaDB/SQLite/JSON.
     """
+    q_str = str(q) if isinstance(q, str) else None
+    cat_str = str(category) if isinstance(category, str) else None
+    limit_num = 50
+    if isinstance(limit, int):
+        limit_num = limit
+    elif hasattr(limit, "default") and isinstance(limit.default, int):
+        limit_num = limit.default
+    elif limit is not None:
+        try:
+            limit_num = int(limit)
+        except Exception:
+            limit_num = 50
+
     db = get_db_adapter()
     if not db:
         items = list(_load_fallback_entities().values())
-        if q:
-            q_lower = q.lower()
+        if q_str:
+            q_lower = q_str.lower()
             items = [i for i in items if q_lower in i.get("title", "").lower() or q_lower in i.get("canonical_key", "").lower()]
-        if category:
-            items = [i for i in items if i.get("category") == category]
-        return [WikiEntitySchema(**i) for i in items[:limit]]
+        if cat_str:
+            items = [i for i in items if i.get("category") == cat_str]
+        return [WikiEntitySchema(**i) for i in items[:limit_num]]
 
     try:
         sql = "SELECT canonical_key, title, category, description, is_verified, claims_json, remediation_json FROM wikillm_knowledge WHERE 1=1"
         params = {}
 
-        if q:
+        if q_str:
             sql += " AND (title LIKE :q OR canonical_key LIKE :q OR description LIKE :q)"
-            params['q'] = f"%{q}%"
-        if category:
+            params['q'] = f"%{q_str}%"
+        if cat_str:
             sql += " AND category = :cat"
-            params['cat'] = category
+            params['cat'] = cat_str
 
-        sql += " ORDER BY updated_at DESC LIMIT " + str(limit)
+        sql += f" ORDER BY updated_at DESC LIMIT {limit_num}"
 
         rows = db.fetch_all(sql, params)
         result = []
@@ -375,7 +388,7 @@ async def list_wiki_entities(
     except Exception as e:
         logger.error(f"[ERROR] Failed to fetch WikiLLM entities: {e}")
         items = list(_load_fallback_entities().values())
-        return [WikiEntitySchema(**i) for i in items[:limit]]
+        return [WikiEntitySchema(**i) for i in items[:limit_num]]
 
 
 @router.get("/entities/{canonical_key}", response_model=WikiEntitySchema)

@@ -14,7 +14,7 @@
 # Package: apps.windows.api
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-22 14:40:00
+# Updated: 2026-10-28 14:32:00
 # =============================================================================
 
 from __future__ import annotations
@@ -193,7 +193,7 @@ def discover_and_register_routers(
                     excluded.add(module_name)
                     excluded.add(alt_module)
                     registered_count += 1
-                    logger.debug(f"[AutoDiscovery] Зарегистрирован дополнительный роутер: {module_name}")
+                    logger.console(f"[AutoDiscovery] Зарегистрирован дополнительный роутер: {module_name}", text_color="gray")
         except Exception as router_err:
             logger.warning(f"[AutoDiscovery] Пропуск роутера {module_name} из-за ошибки: {router_err}")
 

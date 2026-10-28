@@ -2,7 +2,7 @@
  * Корневой оркестратор комплексного инспектора процессов хоста (Processes Load Inspector).
  * Координирует работу панелей: Диспетчер процессов, Топ потоков, Deep Dive, Сеть/Файлы, Leak Hunter и ИИ-ассистент.
  * Файл: apps/windows/api/webgui/tab_processes_load_inspector/main.js
- * Updated: 2026-10-20 11:10:00
+ * Updated: 2026-10-28 14:30:00
  */
 
 import {
@@ -136,8 +136,8 @@ export function startPolling() {
   stopPolling();
   if (!isProcessesTabActive()) return;
 
-  const activeSub = getActiveSubTabId();
-  const intervalMs = (activeSub === 'manager' || activeSub === 'leaks') ? 5000 : 3000;
+  // Единый интервал опроса 5 секунд, привязанный к шагу сброса телеметрии в SQLite (tc_flush_interval_seconds: 5.0)
+  const intervalMs = 5000;
 
   if (window.registerTabPoller) {
     window.registerTabPoller('tab-processes-load-inspector', async () => {

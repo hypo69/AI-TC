@@ -21,7 +21,7 @@
 # Package: logger
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-27 23:32:00
+# Updated: 2026-10-28 14:32:00
 # =============================================================================
 
 from __future__ import annotations
@@ -56,6 +56,9 @@ TEXT_COLORS: Dict[str, str] = {
     'cyan': colorama.Fore.CYAN,
     'white': colorama.Fore.WHITE,
     'light_gray': colorama.Fore.LIGHTBLACK_EX,
+    'gray': colorama.Fore.LIGHTBLACK_EX,
+    'grey': colorama.Fore.LIGHTBLACK_EX,
+    'dark_gray': colorama.Fore.LIGHTBLACK_EX,
     'light_red': colorama.Fore.LIGHTRED_EX,
     'light_green': colorama.Fore.LIGHTGREEN_EX,
     'light_yellow': colorama.Fore.LIGHTYELLOW_EX,
@@ -74,6 +77,9 @@ BG_COLORS: Dict[str, str] = {
     'cyan': colorama.Back.CYAN,
     'white': colorama.Back.WHITE,
     'light_gray': colorama.Back.LIGHTBLACK_EX,
+    'gray': colorama.Back.LIGHTBLACK_EX,
+    'grey': colorama.Back.LIGHTBLACK_EX,
+    'dark_gray': colorama.Back.LIGHTBLACK_EX,
     'light_red': colorama.Back.LIGHTRED_EX,
     'light_green': colorama.Back.LIGHTGREEN_EX,
     'light_yellow': colorama.Back.LIGHTYELLOW_EX,

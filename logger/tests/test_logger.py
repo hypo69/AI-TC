@@ -11,7 +11,7 @@
 # Package: logger.tests
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-27 23:33:00
+# Updated: 2026-10-28 14:32:00
 # =============================================================================
 
 """Модульные тесты для пакета logger."""
@@ -70,6 +70,8 @@ def test_logger_console_with_colors_and_levels():
     """Проверяет вызов logger.console с различными цветами и уровнями логирования."""
     # Вызов с цветом
     logger.console("Цветное консольное сообщение", text_color="green", bg_color="black")
+    logger.console("Серое консольное сообщение", text_color="gray")
+    logger.console("Серое консольное сообщение (light_gray)", text_color="light_gray")
     
     # Вызов с ошибкой и exc_info
     try:
