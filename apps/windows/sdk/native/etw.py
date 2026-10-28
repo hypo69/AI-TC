@@ -7,16 +7,16 @@
 #
 # Usage Examples:
 #   Python API:
-#     from apps.windows.telemetry.win32_ffi.etw import GUID
+#     from apps.windows.sdk.win32_ffi.etw import GUID
 #
 #     service = GUID()
 #
 # File: etw.py
 # Project: ai-windows-admin
-# Package: apps.windows.telemetry.win32_ffi
+# Package: apps.windows.sdk.win32_ffi
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 22:28:45
+# Updated: 2026-10-13 16:25:00
 # =============================================================================
 
 """Event Tracing for Windows (ETW) wrapper for real-time event monitoring."""

@@ -1,5 +1,5 @@
 {
-  "version": "20260923_v3",
+  "version": "20261016_v4",
   "menu": {
     "topButtons": [],
     "sidebarItems": [
@@ -7,24 +7,16 @@
         "id": "chat",
         "label": "Чат",
         "i18n": "tabs.chat",
-        "icon": "💬",
+        "icon": "bi-chat-dots",
         "tab": "tab-chat",
         "order": 1,
-        "visible": true
-      },
-      {
-        "id": "user_assistant",
-        "label": "User Assistant",
-        "icon": "🗓️",
-        "tab": "tab-user-assistant",
-        "order": 2,
         "visible": true
       },
       {
         "id": "rag",
         "label": "RAG",
         "i18n": "tabs.rag",
-        "icon": "🧠",
+        "icon": "bi-cpu",
         "tab": "tab-rag",
         "order": 3,
         "visible": true
@@ -32,45 +24,25 @@
       {
         "id": "pixelrag",
         "label": "PixelRAG",
-        "icon": "🖼️",
+        "icon": "bi-image",
         "tab": "tab-pixelrag",
         "order": 4,
         "visible": true
       },
       {
-        "id": "models",
-        "label": "Модели и API",
-        "i18n": "tabs.models",
-        "icon": "🤖",
-        "tab": "tab-models",
+        "id": "ai_ecosystem",
+        "label": "Экосистема ИИ (Агенты, Навыки, MCP)",
+        "icon": "bi-robot",
+        "tab": "tab-ai-ecosystem",
         "order": 5,
         "visible": true
       },
       {
-        "id": "agents",
-        "label": "Агенты ИИ",
-        "i18n": "tabs.agents",
-        "icon": "🧩",
-        "tab": "tab-agents",
+        "id": "app_internals",
+        "label": "Внутренняя кухня (App Internals)",
+        "icon": "bi-code-square",
+        "tab": "tab-app-internals",
         "order": 6,
-        "visible": true
-      },
-      {
-        "id": "skills",
-        "label": "Навыки",
-        "i18n": "tabs.skills",
-        "icon": "⚡",
-        "tab": "tab-skills",
-        "order": 7,
-        "visible": true
-      },
-      {
-        "id": "mcp",
-        "label": "MCP Серверы",
-        "i18n": "tabs.mcp",
-        "icon": "🔌",
-        "tab": "tab-mcp",
-        "order": 8,
         "visible": true
       }
     ]

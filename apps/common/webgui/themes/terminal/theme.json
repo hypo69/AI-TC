@@ -1,0 +1,10 @@
+{
+  "id": "terminal",
+  "name": "Терминал (Matrix / CRT)",
+  "nameEn": "Terminal (Matrix / CRT)",
+  "category": "dark",
+  "icon": "bi-terminal-fill",
+  "iconColor": "text-success",
+  "description": "Тёмная тема в ретро-стиле зеленого фосфорного терминала с моноширинными акцентами",
+  "baseType": "dark"
+}

@@ -16,7 +16,7 @@
 # Package: apps.windows.sdk.modules.system_checkpoints.core
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-16 22:17:00
 # =============================================================================
 
 from __future__ import annotations
@@ -40,6 +40,9 @@ from apps.windows.system_checkpoints.models import (
 from apps.windows.system_checkpoints.core.image_manager import SystemImageManager
 from apps.windows.system_checkpoints.core.winre_manager import WinREManager
 from apps.windows.system_checkpoints.core.freshness_auditor import FreshnessAuditor
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from apps.windows.system_checkpoints.core.restore_point_advisor import RestorePointAdvisor
 
 
 class CheckpointCoordinator:
@@ -57,6 +60,7 @@ class CheckpointCoordinator:
         image_manager: Optional[SystemImageManager] = None,
         winre_manager: Optional[WinREManager] = None,
         freshness_auditor: Optional[FreshnessAuditor] = None,
+        advisor: Optional[Any] = None,
     ) -> None:
         """Инициализация координатора контрольных точек.
 
@@ -65,11 +69,21 @@ class CheckpointCoordinator:
             image_manager: Экземпляр SystemImageManager (DI).
             winre_manager: Экземпляр WinREManager (DI).
             freshness_auditor: Экземпляр FreshnessAuditor (DI).
+            advisor: Экземпляр RestorePointAdvisor (DI).
         """
         self.catalog_path = Path(catalog_path)
         self.image_manager = image_manager or SystemImageManager()
         self.winre_manager = winre_manager or WinREManager()
         self.freshness_auditor = freshness_auditor or FreshnessAuditor()
+        self._advisor = advisor
+
+    @property
+    def advisor(self) -> Any:
+        """Ленивая инициализация RestorePointAdvisor."""
+        if self._advisor is None:
+            from apps.windows.system_checkpoints.core.restore_point_advisor import RestorePointAdvisor
+            self._advisor = RestorePointAdvisor(coordinator=self)
+        return self._advisor
 
     def _get_restore_manager(self):
         """Ленивая инициализация нативного WindowsSystemRestoreManager."""

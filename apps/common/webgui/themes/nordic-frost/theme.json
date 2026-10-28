@@ -1,0 +1,16 @@
+{
+  "id": "nordic-frost",
+  "name": "Nordic Frost (Скандинавский морозный)",
+  "nameEn": "Nordic Frost",
+  "category": "dark",
+  "icon": "bi-snow",
+  "iconColor": "text-info",
+  "description": "Прохладный минималистичный скандинавский синий стиль",
+  "baseType": "dark",
+  "tokens": {
+    "--bg-color": "#0f172a",
+    "--surface-1": "#1e293b",
+    "--surface-2": "#334155",
+    "--ui-accent": "#38bdf8"
+  }
+}

@@ -14,7 +14,7 @@
 # Package: apps.windows.api
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-28 04:40:00
 # =============================================================================
 
 from __future__ import annotations
@@ -30,7 +30,7 @@ import os
 from logger import logger
 
 appdata_root = Path(os.getenv('APPDATA', str(Path.home() / 'AppData' / 'Roaming')))
-DB_PATH: Path = appdata_root / 'AI-Windows-Admin' / 'chat_sessions' / 'chat_sessions.db'
+DB_PATH: Path = appdata_root / 'ai-tc' / 'chat_sessions' / 'chat_sessions.db'
 
 
 def get_db_connection() -> sqlite3.Connection:

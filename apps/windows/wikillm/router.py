@@ -16,7 +16,7 @@
 # Package: apps.windows.wikillm
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-18 23:48:00
 # =============================================================================
 
 from __future__ import annotations
@@ -191,6 +191,7 @@ class ApproveKnowledgeRequest(BaseModel):
     performance_impact: Optional[str] = Field(default="", description="Влияние на ресурсы")
     recommendation: Optional[str] = Field(default="", description="Рекомендация")
     action_steps: List[str] = Field(default_factory=list, description="Пошаговые действия")
+    developer_advice: Optional[str] = Field(default="", description="Советы разработчику, документация и скрипты")
     possible_causes: List[str] = Field(default_factory=list, description="Возможные причины")
     tags: List[str] = Field(default_factory=list, description="Теги для поиска")
     model_name: Optional[str] = Field(default=None, description="Модель, сгенерировавшая исходный ответ")
@@ -200,6 +201,31 @@ class ApproveKnowledgeRequest(BaseModel):
 async def approve_knowledge(req: ApproveKnowledgeRequest) -> Dict[str, Any]:
     """Фиксирует и одобряет проверенное пользователем знание в локальной базе WikiLLM."""
     engine = get_engine()
+
+    # Защита: отклоняем сохранение сообщений об ошибках модели
+    lower_summary = (req.summary or "").lower()
+    lower_rec = (req.recommendation or "").lower()
+    error_markers = (
+        "streaming error:",
+        "model error:",
+        "service unavailable",
+        "503",
+        "resourceexhausted",
+        "resource_exhausted",
+        "429 too many requests",
+        "quota exceeded",
+        "rate limit",
+        "все api ключи исчерпаны",
+        "harness process exited",
+        "ошибка провайдера",
+        "сбой ответа модели",
+    )
+    if any(m in lower_summary for m in error_markers) or any(m in lower_rec for m in error_markers) or len((req.summary or "").strip()) < 10:
+        raise HTTPException(
+            status_code=400,
+            detail="Нельзя зафиксировать в базе знаний WikiLLM сообщение об ошибке модели или некорректный ответ."
+        )
+
 
     canonical_key = req.canonical_key
     if not canonical_key or canonical_key == "unknown:unspecified":
@@ -259,6 +285,15 @@ async def approve_knowledge(req: ApproveKnowledgeRequest) -> Dict[str, Any]:
         claims.append(
             Claim(
                 statement=f"Рекомендация: {req.recommendation}",
+                confidence=1.0,
+                source=KnowledgeSource.DOCUMENTED,
+                verified=True,
+            )
+        )
+    if req.developer_advice:
+        claims.append(
+            Claim(
+                statement=f"Советы разработчику: {req.developer_advice}",
                 confidence=1.0,
                 source=KnowledgeSource.DOCUMENTED,
                 verified=True,

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Windows-Admin Root - Conftest
+# Process Name: AI-TC Root - Conftest
 # =============================================================================
 # Description:
 #   Test configuration for ai-windows-admin.
@@ -12,11 +12,11 @@
 #     res = test_data_dir()
 #
 # File: conftest.py
-# Project: ai-windows-admin
+# Project: ai-tc
 # Package: root
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-28 00:10:00
 # =============================================================================
 
 """Test configuration for ai-windows-admin.
@@ -82,36 +82,24 @@ def mock_db():
     mock.delete_record = Mock(return_value=True)
     return mock
 
-@pytest.fixture
-def mock_qbt_client():
-    """Mock for QBittorrentClient."""
-    mock = Mock()
-    mock.torrents = Mock(return_value=[])
-    mock.add_torrent_by_url = Mock(return_value=True)
-    mock.add_torrent_by_file = Mock(return_value=True)
-    mock.recheck = Mock(return_value=True)
-    mock.set_location = Mock(return_value=True)
-    return mock
 
 @pytest.fixture
 def temp_db_path(tmp_path):
     """Temporary database path for tests."""
     return tmp_path / 'test_media.db'
 
+
 @pytest.fixture
 def sample_media_records():
     """Example media records for tests."""
     return [{'id': 1, 'title': 'Test Movie', 'title_ru': 'Тестовый Фильм', 'title_orig': 'Test Movie', 'type': 'movie', 'disk_name': 'DISK_1', 'year': 2024, 'path': 'E:/Movies/Test Movie.mkv', 'main_category': 'Боевики', 'imdb_rating': 8.5, 'kinopoisk_rating': 8.7}, {'id': 2, 'title': 'Test Series', 'title_ru': 'Тестовый Сериал', 'title_orig': 'Test Series', 'type': 'series', 'disk_name': 'DISK_1', 'year': 2024, 'path': 'E:/Series/Test Series/S01E01.mkv', 'main_category': 'Драмы', 'season': 1, 'episode': 1}]
 
-@pytest.fixture
-def sample_torrents():
-    """Example torrents for tests."""
-    return [{'hash': 'abc123', 'name': 'Test Torrent', 'state': 'Downloading', 'progress': 0.45, 'size': 1073741824, 'save_path': 'E:/Downloads'}]
 
 @pytest.fixture(autouse=True)
 def setup_env():
     """Configure environment for each test."""
-    preserved = {k: v for k, v in os.environ.items() if k in ('APPDATA', 'LOCALAPPDATA', 'USERPROFILE', 'USERNAME', 'SYSTEMROOT', 'WINDIR', 'PATH', 'TEMP', 'TMP')}
+    preserved = {k: v for k, v in os.environ.items() if k in ('APP_NAME', 'APPDATA', 'LOCALAPPDATA', 'USERPROFILE', 'USERNAME', 'SYSTEMROOT', 'WINDIR', 'PATH', 'TEMP', 'TMP', 'PROGRAMDATA', 'ALLUSERSPROFILE', 'ProgramData')}
+    preserved.setdefault('APP_NAME', 'AI-TC')
     preserved.update({'GOOGLE_CLIENT_ID': 'test_client_id', 'GOOGLE_CLIENT_SECRET': 'test_secret', 'JWT_SECRET': 'test_jwt_secret', 'NGROK_AUTOTOKEN': 'test_ngrok', 'GEMINI_API_KEY_NAMES': 'test_key'})
     with patch.dict(os.environ, preserved, clear=True):
         yield

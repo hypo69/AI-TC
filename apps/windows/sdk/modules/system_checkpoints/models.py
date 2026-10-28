@@ -16,7 +16,7 @@
 # Package: apps.windows.sdk.modules.system_checkpoints
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-16 22:16:00
 # =============================================================================
 
 from __future__ import annotations
@@ -264,3 +264,117 @@ class WinREActionRequest(BaseModel):
     """Модель запроса управления WinRE."""
     action: str = Field(..., description="Действие: 'enable', 'disable' или 'set_path'")
     custom_path: Optional[str] = Field(default=None, description="Кастомный путь для set_path")
+
+
+# --- Модели умного восстановления (Smart Restore Advisor) ---
+
+class AdvisorDecision(str, Enum):
+    """Решение советника по созданию точки восстановления."""
+    CREATE = "CREATE"       # 🟢 Создать (обнаружены значимые изменения)
+    SKIP = "SKIP"           # 🔵 Пропустить (нет значимых изменений, конфигурация идентична)
+    MONITOR = "MONITOR"     # 🟡 Наблюдение (незначительные изменения зафиксированы в журнале)
+    CLARIFY = "CLARIFY"     # 🔴 Уточнить (защита отключена или недостаточно данных)
+
+
+class AdvisorTrigger(str, Enum):
+    """Событие-триггер для проверки состояния."""
+    USER_REQUEST = "USER_REQUEST"            # Прямой запрос пользователя/администратора
+    SOFTWARE_INSTALL = "SOFTWARE_INSTALL"    # Установка/удаление программного обеспечения
+    UPDATE = "UPDATE"                        # Обновление Windows (Windows Update)
+    DRIVER_CHANGE = "DRIVER_CHANGE"          # Установка/обновление драйвера устройства
+    PERIODIC_AUDIT = "PERIODIC_AUDIT"        # Плановый периодический аудит состояния
+
+
+class CategoryImportance(str, Enum):
+    """Значимость категории для принятия решения о точке восстановления."""
+    HIGH = "HIGH"          # Высокая (драйверы, системные файлы, службы, обновления, BCD)
+    MEDIUM = "MEDIUM"      # Средняя (программы, ключевые ветки реестра)
+    LOW = "LOW"            # Низкая / Игнорируемая (пользовательские файлы, временные ключи)
+
+
+@dataclass
+class CategoryDelta:
+    """Изменение конкретной сущности в категории."""
+    category: str
+    change_type: str        # ADDED, REMOVED, MODIFIED
+    item_key: str
+    details: str = ""
+    importance: str = "HIGH"
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Преобразование дельты в словарь."""
+        return {
+            "category": self.category,
+            "change_type": self.change_type,
+            "item_key": self.item_key,
+            "details": self.details,
+            "importance": self.importance,
+        }
+
+
+@dataclass
+class CategoryFingerprint:
+    """Отпечаток (fingerprint) отдельной категории состояния системы."""
+    category: str
+    category_title_ru: str
+    hash: str
+    items_count: int = 0
+    changed: bool = False
+    importance: str = "HIGH"
+    details: str = ""
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Преобразование отпечатка категории в словарь."""
+        return {
+            "category": self.category,
+            "category_title_ru": self.category_title_ru,
+            "hash": self.hash,
+            "items_count": self.items_count,
+            "changed": self.changed,
+            "importance": self.importance,
+            "details": self.details,
+        }
+
+
+@dataclass
+class AdvisorEvaluationResult:
+    """Результат предварительной оценки целесообразности создания точки восстановления."""
+    decision: AdvisorDecision
+    trigger: str
+    questions: Dict[str, Dict[str, Any]]
+    composite_fingerprint: str
+    categories: Dict[str, CategoryFingerprint]
+    deltas: List[CategoryDelta]
+    summary: str
+    readiness: Dict[str, Any]
+    recommended_action: str
+    evaluated_at: str = field(default_factory=lambda: datetime.now().isoformat())
+    previous_snapshot_time: Optional[str] = None
+    ai_explanation: Optional[str] = None
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Преобразование результата оценки в словарь."""
+        return {
+            "decision": self.decision.value,
+            "trigger": self.trigger,
+            "questions": self.questions,
+            "composite_fingerprint": self.composite_fingerprint,
+            "categories": {k: v.to_dict() for k, v in self.categories.items()},
+            "deltas": [d.to_dict() for d in self.deltas],
+            "deltas_count": len(self.deltas),
+            "summary": self.summary,
+            "readiness": self.readiness,
+            "recommended_action": self.recommended_action,
+            "evaluated_at": self.evaluated_at,
+            "previous_snapshot_time": self.previous_snapshot_time,
+            "ai_explanation": self.ai_explanation,
+        }
+
+
+class SmartRestorePointCreateRequest(BaseModel):
+    """Модель запроса умного создания точки восстановления."""
+    title: Optional[str] = Field(default=None, description="Пользовательский заголовок точки (если не указан, генерируется авто)")
+    trigger: AdvisorTrigger = Field(default=AdvisorTrigger.USER_REQUEST, description="Событие-триггер проверки")
+    force: bool = Field(default=False, description="Принудительное создание, даже если вердикт SKIP или MONITOR")
+    checkpoint_type: CheckpointType = Field(default=CheckpointType.PERIODIC, description="Тип создаваемой контрольной точки")
+

@@ -1,0 +1,70 @@
+<!--
+=============================================================================
+Process Name: Windows Web Interface - Interactive Scenario Agent Tab View
+=============================================================================
+Description:
+  Интерактивный диалоговый агент сценариев со стейт-машиной сессий (Stateful Agent).
+  Позволяет запускать многошаговые сценарии управления Windows с запросом уточнений.
+
+File: index.html
+Project: ai-windows-admin
+Package: windows/api/webgui/tab_interactive_agent
+Author: hypo69
+Copyright: © 2026 hypo69
+Updated: 2026-10-20 10:55:00
+=============================================================================
+-->
+<div class="tab-pane fade" id="tab-interactive-agent" role="tabpanel">
+  <!-- Заголовок вкладки -->
+  <div class="tab-header d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+    <div class="d-flex align-items-center gap-2">
+      <span class="tab-header-icon fs-4 text-warning">🤖</span>
+      <div>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+          <h3 class="tab-header-title panel-header mb-0">Интерактивный Агент Сценариев</h3>
+          
+        </div>
+        <small class="tab-header-subtitle text-secondary">Автономное пошаговое выполнение сценариев автоматизации Windows, SafeOps верификация и откат действий</small>
+      </div>
+    </div>
+    
+  </div>
+
+  <div class="card shadow-sm mb-3">
+    <div class="panel-header d-flex align-items-center justify-content-between">
+      <h3 class="panel-header mb-0"><i class="bi bi-robot me-2"></i>Интерактивный Агент Сценариев (Stateful Agent)</h3>
+      <span class="badge bg-info" id="agent-session-badge">IDLE</span>
+    </div>
+    <div class="card-body">
+      <!-- Поле ввода задачи -->
+      <div class="input-group mb-3" id="agent-initial-input-group">
+        <input type="text" id="agent-user-prompt" class="form-control" 
+               placeholder="Опишите задачу (напр.: Сделай ссылку на папку Public Docs с рабочих столов всех ПК сети)...">
+        <button class="btn btn-primary" id="btn-start-agent" onclick="window._startInteractiveAgent()">
+          <i class="bi bi-play-fill me-1"></i>Запустить агент
+        </button>
+      </div>
+
+      <!-- Таймлайн шагов рассуждений и выполнения -->
+      <div id="agent-stepper-container" class="my-3 d-none">
+        <h6 class="border-bottom pb-2 text-muted"><i class="bi bi-list-task me-1"></i>Ход выполнения и рассуждений:</h6>
+        <div id="agent-steps-list" class="list-group mb-3"></div>
+      </div>
+
+      <!-- Динамическая панель взаимодействия с пользователем (когда агент ждет ввода) -->
+      <div id="agent-interactive-widget" class="alert alert-warning d-none border-warning" role="alert">
+        <h6 class="alert-heading text-dark" id="agent-prompt-title">
+          <i class="bi bi-question-circle-fill text-warning me-2"></i>Агенту требуется уточнение
+        </h6>
+        <p class="mb-2" id="agent-prompt-text"></p>
+        <div class="input-group">
+          <input type="text" id="agent-reply-input" class="form-control" placeholder="Введите требуемые данные...">
+          <button class="btn btn-warning fw-bold" onclick="window._submitAgentReply()">
+            Отправить ответ агенту <i class="bi bi-send-fill ms-1"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+

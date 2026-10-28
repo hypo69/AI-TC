@@ -159,9 +159,9 @@ Successfully портированы **все PowerShell скрипты** AI Wind
 from scripts.cli.paths import get_paths
 
 paths = get_paths()
-# Windows: C:\Users\user\AppData\Local\AI-Windows-Admin
-# Linux:   /home/user/.local/share/AI-Windows-Admin
-# macOS:   /Users/user/Library/Application Support/AI-Windows-Admin
+# Windows: C:\Users\user\AppData\Local\ai-tc
+# Linux:   /home/user/.local/share/ai-tc
+# macOS:   /Users/user/Library/Application Support/ai-tc
 ```
 
 ### Одинаковые команды везде
@@ -535,7 +535,7 @@ assist status
 # Кроссплатформенно везде:
 from pathlib import Path
 
-config_path = Path.home() / ".config" / "AI-Windows-Admin"
+config_path = Path.home() / ".config" / "ai-tc"
 # Автоматически правильно на всех ОС
 ```
 

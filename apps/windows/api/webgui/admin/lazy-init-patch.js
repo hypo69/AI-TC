@@ -14,7 +14,7 @@
  * Package: windows/api/webgui/admin
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-12 08:20:00
+ * Updated: 2026-10-20 20:43:00
  * =============================================================================
  */
 
@@ -90,52 +90,52 @@ window.addEventListener('load', async () => {
   // Инициализируем ленивую загрузку с определением всех вкладок
   const allTabDefinitions = [
     // Основные вкладки (Диалог и аудио)
-    { tabName: 'chat', htmlUrl: `/html/chat/index.html`, jsUrl: `/html/chat/main.js` },
-    { tabName: 'voice', htmlUrl: `/html/voice_tab/index.html`, jsUrl: `/html/voice_tab/main.js` },
-    { tabName: 'tts', htmlUrl: `/html/tts_tab/index.html`, jsUrl: `/html/tts_tab/main.js` },
+    { tabName: 'chat', htmlUrl: `/html/tab_chat/index.html`, jsUrl: `/html/tab_chat/main.js` },
+    { tabName: 'voice', htmlUrl: `/html/tab_voice/index.html`, jsUrl: `/html/tab_voice/main.js` },
+    { tabName: 'tts', htmlUrl: `/html/tab_tts/index.html`, jsUrl: `/html/tab_tts/main.js` },
     
     // ИИ и Знания
-    { tabName: 'rag', htmlUrl: `/html/rag_tab/index.html`, jsUrl: `/html/rag_tab/main.js` },
-    { tabName: 'models', htmlUrl: `/html/models_tab/index.html`, jsUrl: `/html/models_tab/main.js` },
-    { tabName: 'agents', htmlUrl: `/html/agents_tab/index.html`, jsUrl: `/html/agents_tab/main.js` },
-    { tabName: 'skills', htmlUrl: `/html/skills_tab/index.html`, jsUrl: `/html/skills_tab/main.js` },
-    { tabName: 'mcp', htmlUrl: `/html/mcp_tab/index.html`, jsUrl: `/html/mcp_tab/main.js` },
-    { tabName: 'observability', htmlUrl: `/html/system_inspector_tab/index.html`, jsUrl: `/html/system_inspector_tab/main.js` },
-    { tabName: 'telegram-rag', htmlUrl: `/html/telegram_rag_tab/index.html`, jsUrl: `/html/telegram_rag_tab/main.js` },
-    { tabName: 'sources', htmlUrl: `/html/sources_tab/index.html`, jsUrl: `/html/sources_tab/main.js` },
-    { tabName: 'search', htmlUrl: `/html/search_tab/index.html`, jsUrl: `/html/search_tab/main.js` },
+    { tabName: 'rag', htmlUrl: `/html/tab_rag/index.html`, jsUrl: `/html/tab_rag/main.js` },
+    { tabName: 'models', htmlUrl: `/html/tab_models/index.html`, jsUrl: `/html/tab_models/main.js` },
+    { tabName: 'agents', htmlUrl: `/html/tab_agents/index.html`, jsUrl: `/html/tab_agents/main.js` },
+    { tabName: 'skills', htmlUrl: `/html/tab_skills/index.html`, jsUrl: `/html/tab_skills/main.js` },
+    { tabName: 'mcp', htmlUrl: `/html/tab_mcp/index.html`, jsUrl: `/html/tab_mcp/main.js` },
+    { tabName: 'observability', htmlUrl: `/html/tab_system_inspector/index.html`, jsUrl: `/html/tab_system_inspector/main.js` },
+    { tabName: 'telegram-rag', htmlUrl: `/html/tab_telegram_rag/index.html`, jsUrl: `/html/tab_telegram_rag/main.js` },
+    { tabName: 'sources', htmlUrl: `/html/tab_sources/index.html`, jsUrl: `/html/tab_sources/main.js` },
+    { tabName: 'search', htmlUrl: `/html/tab_search/index.html`, jsUrl: `/html/tab_search/main.js` },
     
     // Система и Администратор
-    { tabName: 'admin', htmlUrl: `/html/admin_tab/index.html`, jsUrl: `/html/admin_tab/main.js` },
-    { tabName: 'users', htmlUrl: `/html/users_tab/index.html`, jsUrl: `/html/users_tab/main.js` },
-    { tabName: 'plugins', htmlUrl: `/html/plugins_tab/index.html`, jsUrl: `/html/plugins_tab/main.js` },
-    { tabName: 'google-accounts', htmlUrl: `/html/google_accounts_tab/index.html`, jsUrl: `/html/google_accounts_tab/main.js` },
-    { tabName: 'instructions', htmlUrl: `/html/instructions_tab/index.html`, jsUrl: `/html/instructions_tab/main.js` },
-    { tabName: 'news', htmlUrl: `/html/news_tab/index.html`, jsUrl: `/html/news_tab/main.js` },
+    { tabName: 'admin', htmlUrl: `/html/tab_admin/index.html`, jsUrl: `/html/tab_admin/main.js` },
+    { tabName: 'users', htmlUrl: `/html/tab_users/index.html`, jsUrl: `/html/tab_users/main.js` },
+    { tabName: 'plugins', htmlUrl: `/html/tab_plugins/index.html`, jsUrl: `/html/tab_plugins/main.js` },
+    { tabName: 'google-accounts', htmlUrl: `/html/tab_google_accounts/index.html`, jsUrl: `/html/tab_google_accounts/main.js` },
+    { tabName: 'instructions', htmlUrl: `/html/tab_instructions/index.html`, jsUrl: `/html/tab_instructions/main.js` },
+    { tabName: 'news', htmlUrl: `/html/tab_news/index.html`, jsUrl: `/html/tab_news/main.js` },
     { tabName: 'logs', htmlUrl: `/html/logs/index.html`, jsUrl: `/html/logs/main.js` },
     { tabName: 'help', htmlUrl: `/html/help/index.html`, jsUrl: `/html/help/main.js` },
     
     // Микроприложения (с привязкой к ID приложения в конфиге профиля)
-    { tabName: 'network', appId: 'network_terminal', htmlUrl: `/html/network_tab/index.html`, jsUrl: `/html/network_tab/main.js` },
-    { tabName: 'system-inspector', appId: 'system_inspector', htmlUrl: `/html/system_inspector_tab/index.html`, jsUrl: `/html/system_inspector_tab/main.js` },
-    { tabName: 'about-system', appId: 'about_system', htmlUrl: `/html/about_system_tab/index.html?v=20261012_v1`, jsUrl: `/html/about_system_tab/main.js?v=20261012_v1` },
-    { tabName: 'windows-admin', appId: 'windows_sysadmin', htmlUrl: `/html/windows_admin_tab/index.html`, jsUrl: `/html/windows_admin_tab/main.js` },
-    { tabName: 'cloudflared', appId: 'cloudflared_monitor', htmlUrl: `/html/cloudflared_tab/index.html`, jsUrl: `/html/cloudflared_tab/main.js` },
-    { tabName: 'user-assistant', appId: 'user_assistant', htmlUrl: `/html/user_assistant_tab/index.html`, jsUrl: `/html/user_assistant_tab/main.js` },
-    { tabName: 'gcloud', appId: 'gcloud_monitor', htmlUrl: `/html/gcloud_tab/index.html`, jsUrl: `/html/gcloud_tab/main.js` },
-    { tabName: 'website-monitor', appId: 'website_monitor', htmlUrl: `/html/website_monitor_tab/index.html`, jsUrl: `/html/website_monitor_tab/main.js` },
-    { tabName: 'system-control', appId: 'system_control_center', htmlUrl: `/html/system_control_tab/index.html?v=20261012_v1`, jsUrl: `/html/system_control_tab/main.js?v=20261012_v1` },
-    { tabName: 'system-logs', appId: 'system_log_viewer', htmlUrl: `/html/system_logs_tab/index.html`, jsUrl: `/html/system_logs_tab/main.js` },
-    { tabName: 'software-audit', appId: 'software_audit', htmlUrl: `/html/software_audit_tab/index.html`, jsUrl: `/html/software_audit_tab/main.js` },
-    { tabName: 'registry-viewer', appId: 'registry_viewer', htmlUrl: `/html/registry_viewer_tab/index.html`, jsUrl: `/html/registry_viewer_tab/main.js` },
-    { tabName: 'startup-auditor', appId: 'windows_startup_auditor', htmlUrl: `/html/startup_auditor_tab/index.html`, jsUrl: `/html/startup_auditor_tab/main.js` },
-    { tabName: 'windows-backup', appId: 'windows_backup_manager', htmlUrl: `/html/windows_backup_tab/index.html?v=20260924_v2`, jsUrl: `/html/windows_backup_tab/main.js?v=20260924_v2` },
-    { tabName: 'wikipedia-research', appId: 'wikipedia_research', htmlUrl: `/html/wikipedia_research_tab/index.html`, jsUrl: `/html/wikipedia_research_tab/main.js` },
-    { tabName: 'process-leaks', appId: 'process_leaks', htmlUrl: `/html/process_leaks_tab/index.html?v=20260924_v1`, jsUrl: `/html/process_leaks_tab/main.js?v=20260924_v1` },
-    { tabName: 'forensics', appId: 'forensics', htmlUrl: `/html/forensics_tab/index.html?v=20260924_v1`, jsUrl: `/html/forensics_tab/main.js?v=20260924_v1` },
-    { tabName: 'throttling', appId: 'throttling', htmlUrl: `/html/throttling_tab/index.html?v=20260924_v1`, jsUrl: `/html/throttling_tab/main.js?v=20260924_v1` },
-    { tabName: 'storage-wear', appId: 'storage_wear', htmlUrl: `/html/storage_wear_tab/index.html?v=20260924_v1`, jsUrl: `/html/storage_wear_tab/main.js?v=20260924_v1` },
-    { tabName: 'peripherals', appId: 'peripherals', htmlUrl: `/html/peripherals_tab/index.html?v=20260924_v1`, jsUrl: `/html/peripherals_tab/main.js?v=20260924_v1` },
+    { tabName: 'network', appId: 'network_terminal', htmlUrl: `/html/tab_network/index.html`, jsUrl: `/html/tab_network/main.js` },
+    { tabName: 'system-inspector', appId: 'system_inspector', htmlUrl: `/html/tab_system_inspector/index.html`, jsUrl: `/html/tab_system_inspector/main.js` },
+    { tabName: 'about-system', appId: 'about_system', htmlUrl: `/html/tab_about_system/index.html?v=20261020_v10`, jsUrl: `/html/tab_about_system/main.js?v=20261020_v10` },
+    { tabName: 'windows-admin', appId: 'windows_sysadmin', htmlUrl: `/html/tab_windows_admin/index.html`, jsUrl: `/html/tab_windows_admin/main.js` },
+    { tabName: 'cloudflared', appId: 'cloudflared_monitor', htmlUrl: `/html/tab_cloudflared/index.html`, jsUrl: `/html/tab_cloudflared/main.js` },
+    { tabName: 'user-assistant', appId: 'user_assistant', htmlUrl: `/html/tab_user_assistant/index.html`, jsUrl: `/html/tab_user_assistant/main.js` },
+    { tabName: 'gcloud', appId: 'gcloud_monitor', htmlUrl: `/html/tab_gcloud/index.html`, jsUrl: `/html/tab_gcloud/main.js` },
+    { tabName: 'website-monitor', appId: 'website_monitor', htmlUrl: `/html/tab_website_monitor/index.html`, jsUrl: `/html/tab_website_monitor/main.js` },
+    { tabName: 'system-control', appId: 'system_control_center', htmlUrl: `/html/tab_system_control/index.html?v=20261020_v4`, jsUrl: `/html/tab_system_control/main.js?v=20261020_v4` },
+    { tabName: 'system-logs', appId: 'system_log_viewer', htmlUrl: `/html/tab_system_logs/index.html`, jsUrl: `/html/tab_system_logs/main.js` },
+    { tabName: 'software-audit', appId: 'software_audit', htmlUrl: `/html/tab_software_audit/index.html`, jsUrl: `/html/tab_software_audit/main.js` },
+    { tabName: 'registry-viewer', appId: 'registry_viewer', htmlUrl: `/html/tab_registry_viewer/index.html`, jsUrl: `/html/tab_registry_viewer/main.js` },
+    { tabName: 'startup-auditor', appId: 'windows_startup_auditor', htmlUrl: `/html/tab_startup_auditor/index.html`, jsUrl: `/html/tab_startup_auditor/main.js` },
+    { tabName: 'windows-backup', appId: 'windows_backup_manager', htmlUrl: `/html/tab_windows_backup/index.html?v=20260924_v2`, jsUrl: `/html/tab_windows_backup/main.js?v=20260924_v2` },
+    { tabName: 'wikipedia-research', appId: 'wikipedia_research', htmlUrl: `/html/tab_wikipedia_research/index.html`, jsUrl: `/html/tab_wikipedia_research/main.js` },
+    { tabName: 'process-leaks', appId: 'process_leaks', htmlUrl: `/html/tab_process_leaks/index.html?v=20260924_v1`, jsUrl: `/html/tab_process_leaks/main.js?v=20260924_v1` },
+    { tabName: 'forensics', appId: 'forensics', htmlUrl: `/html/tab_forensics/index.html?v=20260924_v1`, jsUrl: `/html/tab_forensics/main.js?v=20260924_v1` },
+    { tabName: 'throttling', appId: 'throttling', htmlUrl: `/html/tab_throttling/index.html?v=20260924_v1`, jsUrl: `/html/tab_throttling/main.js?v=20260924_v1` },
+    { tabName: 'storage-wear', appId: 'storage_wear', htmlUrl: `/html/tab_storage_wear/index.html?v=20260924_v1`, jsUrl: `/html/tab_storage_wear/main.js?v=20260924_v1` },
+    { tabName: 'peripherals', appId: 'peripherals', htmlUrl: `/html/tab_peripherals/index.html?v=20261016_v2`, jsUrl: `/html/tab_peripherals/main.js?v=20261016_v2` },
   ];
 
   try {
@@ -178,3 +178,4 @@ window.addEventListener('load', async () => {
 console.log('[LazyInitPatch] Patch loaded successfully');
 
 export {};
+

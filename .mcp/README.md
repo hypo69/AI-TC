@@ -58,15 +58,15 @@ Example for different clients:
 ```json
 {
   "mcpServers": {
-    "aiwindowsadmin-gemini-search": {
+    "aitc-gemini-search": {
       "command": "python3",
-      "args": ["/path/to/AI-Windows-Admin/.mcp/gemini_search_mcp_server.py"],
-      "cwd": "/path/to/AI-Windows-Admin"
+      "args": ["/path/to/ai-tc/.mcp/gemini_search_mcp_server.py"],
+      "cwd": "/path/to/ai-tc"
     },
-    "aiwindowsadmin-langchain": {
+    "aitc-langchain": {
       "command": "python3",
-      "args": ["/path/to/AI-Windows-Admin/.mcp/langchain_mcp_server.py"],
-      "cwd": "/path/to/AI-Windows-Admin"
+      "args": ["/path/to/ai-tc/.mcp/langchain_mcp_server.py"],
+      "cwd": "/path/to/ai-tc"
     }
   }
 }
@@ -77,12 +77,12 @@ Example for different clients:
 ```json
 {
   "mcpServers": {
-    "aiwindowsadmin": {
+    "aitc": {
       "command": "python3",
-      "args": ["/path/to/AI-Windows-Admin/.mcp/langchain_mcp_server.py"],
+      "args": ["/path/to/ai-tc/.mcp/langchain_mcp_server.py"],
       "environment": {
-        "AIWINDOWSADMIN_DIR": "/path/to/AI-Windows-Admin",
-        "PYTHONPATH": "/path/to/AI-Windows-Admin"
+        "AITC_DIR": "/path/to/ai-tc",
+        "PYTHONPATH": "/path/to/ai-tc"
       }
     }
   }
@@ -214,9 +214,9 @@ certs = get_certs_dir()
 # macOS: /Users/user/Library/Certs
 
 data = get_data_dir()
-# Windows: C:\Users\user\AppData\Local\AI-Windows-Admin
-# Linux: /home/user/.local/share/AI-Windows-Admin
-# macOS: /Users/user/Library/Application Support/AI-Windows-Admin
+# Windows: C:\Users\user\AppData\Local\ai-tc
+# Linux: /home/user/.local/share/ai-tc
+# macOS: /Users/user/Library/Application Support/ai-tc
 ```
 
 ### Пример 3: Работа с .env
@@ -236,7 +236,7 @@ api_key = get_env_var("GEMINI_API_KEY")
 
 **Старое (Windows-специфичное):**
 ```python
-config_path = r"C:\Users\user\AI-Windows-Admin\config.json"
+config_path = r"C:\Users\user\AppData\Local\ai-tc\config.json"
 if os.name == "nt":
     import subprocess
     subprocess.run(["taskkill", "/F", "/PID", str(pid)])

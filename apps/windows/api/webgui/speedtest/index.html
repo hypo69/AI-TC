@@ -1,0 +1,59 @@
+<!--
+=============================================================================
+Process Name: Windows Web Interface - Speedtest View
+=============================================================================
+Description:
+  Компонент проверки скорости интернета и пинга (tab-speedtest).
+  Сетка управления .speedtest-controls-grid выровнена через d-flex justify-content-start.
+
+Usage Examples:
+  Web Route:
+    /html/speedtest/index.html
+
+File: index.html
+Project: ai-windows-admin
+Package: windows/api/webgui/speedtest
+Author: hypo69
+Copyright: © 2026 hypo69
+Updated: 2026-10-20 09:37:00
+=============================================================================
+-->
+<div class="speedtest-container p-3" id="tab-speedtest-container">
+  <div class="card shadow-sm border-0 mb-3">
+    <div class="panel-header d-flex justify-content-between align-items-center">
+      <h3 class="panel-header mb-0"><i class="bi bi-speedometer2 text-warning me-2"></i>Тест скорости сети</h3>
+      <span class="badge bg-secondary" id="speedtest-server-badge">Auto Server</span>
+    </div>
+    <div class="card-body">
+      <div class="speedtest-controls-grid d-flex justify-content-start align-items-center gap-2 mb-3">
+        <button class="btn btn-warning rounded-pill px-4 fw-bold" id="btn-start-speedtest">
+          <i class="bi bi-play-fill me-1"></i>Начать тест скорости
+        </button>
+        <button class="btn btn-outline-secondary rounded-pill px-3" id="btn-cancel-speedtest" style="display:none;">
+          Отмена
+        </button>
+        <span class="small text-muted ms-2" id="speedtest-status-indicator">Готов к запуску</span>
+      </div>
+      <div class="row g-3">
+        <div class="col-md-4">
+          <div class="p-3 bg-body-tertiary rounded text-center">
+            <div class="text-secondary small">СКАЧИВАНИЕ</div>
+            <div class="fs-3 fw-bold text-success" id="speedtest-download-val">-- Mbps</div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="p-3 bg-body-tertiary rounded text-center">
+            <div class="text-secondary small">ОТДАЧА</div>
+            <div class="fs-3 fw-bold text-primary" id="speedtest-upload-val">-- Mbps</div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="p-3 bg-body-tertiary rounded text-center">
+            <div class="text-secondary small">ЗАДЕРЖКА (PING)</div>
+            <div class="fs-3 fw-bold text-info" id="speedtest-ping-val">-- ms</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

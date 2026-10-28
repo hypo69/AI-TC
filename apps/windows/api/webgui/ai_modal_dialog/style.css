@@ -11,35 +11,61 @@
  * Package: apps.windows.api.webgui.ai_modal_dialog
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-12 08:10:00
+ * Updated: 2026-10-20 20:35:00
  * =============================================================================
  */
 
+/* Стабильные габариты модального окна ИИ-помощника: 90% ширины (90vw) и 90% высоты (90vh) */
 #universal-ai-table-modal .modal-dialog,
 #universal-ai-prompt-editor-modal .modal-dialog {
-  max-width: 80vw;
-  width: 80vw;
-  height: 80vh;
-  margin: auto;
+  --bs-modal-width: 90vw;
+  max-width: 90vw !important;
+  width: 90vw !important;
+  height: 90vh !important;
+  max-height: 90vh !important;
+  min-height: 90vh !important;
+  margin: 5vh auto !important;
 }
 
 #universal-ai-table-modal .modal-content,
 #universal-ai-prompt-editor-modal .modal-content {
-  height: 100%;
-  max-height: 80vh;
+  width: 100% !important;
+  height: 90vh !important;
+  max-height: 90vh !important;
+  min-height: 90vh !important;
   background-color: var(--modal-bg);
   color: var(--modal-text);
   border: 1px solid var(--modal-border);
   box-shadow: var(--shadow-lg);
   border-radius: var(--radius-md, 8px);
+  display: flex;
+  flex-direction: column;
+}
+
+#universal-ai-table-modal .modal-body,
+#universal-ai-prompt-editor-modal .modal-body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 1rem 1.25rem !important;
 }
 
 @media (max-width: 768px) {
   #universal-ai-table-modal .modal-dialog,
   #universal-ai-prompt-editor-modal .modal-dialog {
-    max-width: 95vw;
-    width: 95vw;
-    height: 90vh;
+    --bs-modal-width: 95vw;
+    max-width: 95vw !important;
+    width: 95vw !important;
+    height: 94vh !important;
+    max-height: 94vh !important;
+    min-height: 94vh !important;
+    margin: 3vh auto !important;
+  }
+
+  #universal-ai-table-modal .modal-content,
+  #universal-ai-prompt-editor-modal .modal-content {
+    height: 94vh !important;
+    max-height: 94vh !important;
+    min-height: 94vh !important;
   }
 }
 
@@ -119,4 +145,806 @@
   padding: 0.1rem 0.35rem;
   font-size: 0.72rem;
   line-height: 1.2;
+}
+
+/* =============================================================================
+   Основное окно ответов модели и базы знаний WikiLLM (аккуратный читаемый размер шрифта)
+   ============================================================================= */
+#uai-modal-ai-explanation,
+.uai-explanation-content {
+  font-size: calc(0.98rem - 1.5pt) !important;
+  line-height: 1.55 !important;
+  color: var(--text-color);
+}
+
+#uai-modal-ai-explanation > div,
+#uai-modal-ai-explanation p {
+  font-size: calc(0.98rem - 1.5pt);
+  line-height: 1.55;
+}
+
+#uai-modal-ai-explanation strong {
+  font-size: calc(0.98rem - 1.5pt);
+}
+
+#uai-modal-ai-explanation .uai-recommendation-box {
+  font-size: calc(0.98rem - 1.5pt);
+  line-height: 1.55;
+  padding: 0.65rem 0.9rem;
+}
+
+#uai-modal-ai-explanation .uai-recommendation-box strong {
+  font-size: calc(0.98rem - 1.5pt);
+}
+
+#uai-modal-ai-explanation ul,
+#uai-modal-ai-explanation ol {
+  font-size: calc(0.95rem - 1.5pt);
+  line-height: 1.55;
+  margin-top: 0.3rem;
+}
+
+#uai-modal-ai-explanation li {
+  margin-bottom: 0.25rem;
+}
+
+#uai-modal-ai-explanation .uai-action-steps-title {
+  font-size: calc(0.88rem - 1.5pt);
+  font-weight: 700;
+  margin-top: 0.5rem;
+}
+
+#uai-modal-ai-explanation .badge {
+  font-size: calc(0.85rem - 1.5pt);
+  padding: 0.25rem 0.5rem;
+}
+
+#uai-modal-ai-explanation .uai-callout-box {
+  font-size: calc(0.95rem - 1.5pt);
+  padding: 0.9rem;
+}
+
+#uai-modal-ai-explanation .uai-callout-box .text-secondary {
+  font-size: calc(0.95rem - 1.5pt) !important;
+  margin-bottom: 0.5rem;
+}
+
+#uai-modal-ai-explanation #uai-approval-container {
+  font-size: calc(0.92rem - 1.5pt);
+  padding: 0.6rem 0.85rem;
+}
+
+#uai-modal-ai-explanation #uai-approval-container .small {
+  font-size: calc(0.92rem - 1.5pt) !important;
+}
+
+#uai-modal-ai-explanation .spinner-border {
+  width: 1.15rem;
+  height: 1.15rem;
+}
+
+#uai-modal-ai-explanation .uai-loading-text {
+  font-size: calc(0.98rem - 1.5pt);
+}
+
+.uai-qa-card {
+  background-color: var(--surface-2) !important;
+  border: 1px solid var(--border-color) !important;
+  color: var(--text-color) !important;
+  box-shadow: var(--shadow-sm);
+}
+
+.uai-qa-card h6,
+.uai-qa-card .chat-content {
+  color: var(--text-color) !important;
+}
+
+.uai-qa-card .chat-content {
+  font-size: calc(0.98rem - 1.5pt) !important;
+  line-height: 1.55 !important;
+}
+
+.uai-qa-card .uai-qa-footer {
+  border-top: 1px solid var(--border-color) !important;
+}
+
+.uai-code-block,
+pre.uai-code-block {
+  background-color: var(--surface-1) !important;
+  border: 1px solid var(--border-color) !important;
+  color: var(--text-color) !important;
+}
+
+code.uai-inline-code {
+  background-color: var(--surface-1) !important;
+  border: 1px solid var(--border-color) !important;
+  color: var(--ui-accent, var(--bs-primary, #0284c7)) !important;
+}
+
+/* ==========================================================================
+   Быстрые вопросы ИИ (uai-chat-quick-buttons) в стиле chat-greeting-prompts
+   ========================================================================== */
+
+#uai-chat-quick-buttons {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  gap: 0.45rem !important;
+  width: 100% !important;
+}
+
+#uai-chat-quick-buttons .chat-prompt-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  width: 100%;
+}
+
+#uai-chat-quick-buttons .chat-prompt-bullet {
+  color: var(--bs-primary, #3b82f6);
+  font-size: 1rem;
+  line-height: 1;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+#uai-chat-quick-buttons .chat-prompt-link {
+  color: var(--bs-primary, #3b82f6) !important;
+  font-size: 1rem !important;
+  line-height: 1.45 !important;
+  text-decoration: none !important;
+  border-bottom: 1px solid rgba(59, 130, 246, 0.5) !important;
+  cursor: pointer !important;
+  transition: color 0.15s ease-in-out, border-color 0.15s ease-in-out;
+  word-break: break-word;
+}
+
+#uai-chat-quick-buttons .chat-prompt-link:hover {
+  color: var(--bs-primary-hover, #60a5fa) !important;
+  border-bottom-color: var(--bs-primary, #3b82f6) !important;
+  opacity: 0.95;
+}
+
+#uai-chat-quick-buttons .chat-prompt-link.active,
+#uai-chat-quick-buttons .chat-prompt-link.selected {
+  color: var(--bs-warning, #f59e0b) !important;
+  border-bottom-color: var(--bs-warning, #f59e0b) !important;
+  font-weight: 600 !important;
+}
+
+#uai-chat-quick-buttons .uai-quick-question-refresh {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.35rem !important;
+  background: transparent !important;
+  border: none !important;
+  border-bottom: 1px dashed rgba(148, 163, 184, 0.4) !important;
+  padding: 0.15rem 0 !important;
+  margin-top: 0.25rem !important;
+  color: var(--text-muted, var(--ui-text-muted, #94a3b8)) !important;
+  font-size: 0.88rem !important;
+  text-decoration: none !important;
+  cursor: pointer !important;
+  transition: color 0.15s ease-in-out, border-color 0.15s ease-in-out;
+}
+
+#uai-chat-quick-buttons .uai-quick-question-refresh:hover {
+  color: var(--bs-primary, #3b82f6) !important;
+  border-bottom-color: var(--bs-primary, #3b82f6) !important;
+}
+
+/* =============================================================================
+   Интерактивный виджет запуска и редактирования команд PowerShell (.uai-code-runner-box)
+   ============================================================================= */
+
+.uai-code-runner-box {
+  background-color: var(--surface-2);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md, 8px);
+  padding: 0.65rem 0.85rem;
+  margin: 0.5rem 0;
+  box-shadow: var(--shadow-sm);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.uai-code-runner-box:hover {
+  border-color: var(--nav-active);
+}
+
+.uai-code-runner-box .uai-btn-run-cmd {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.uai-code-runner-box .uai-cmd-output-container {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px dashed var(--border-color);
+}
+
+/* =============================================================================
+   Карточка готового инструмента / SafeOps действия (.uai-ready-tool-card)
+   ============================================================================= */
+
+.uai-ready-tool-card,
+.uai-code-runner-box {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.45rem !important;
+  height: auto !important;
+  min-height: auto !important;
+  max-width: 100% !important;
+  width: 100% !important;
+  margin: 0.5rem 0 !important;
+  padding: 0.65rem 0.85rem !important;
+  background-color: var(--surface-2) !important;
+  border: 1px solid var(--border-color) !important;
+  border-left: 4px solid var(--nav-active, var(--bs-primary)) !important;
+  border-radius: var(--radius-md, 8px) !important;
+  box-shadow: var(--shadow-sm) !important;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  box-sizing: border-box !important;
+  white-space: normal !important;
+}
+
+.uai-ready-tool-card:hover,
+.uai-code-runner-box:hover {
+  border-color: var(--nav-active) !important;
+  box-shadow: var(--shadow-md) !important;
+}
+
+.uai-tool-card-header {
+  white-space: normal !important;
+  line-height: 1.35;
+  margin-bottom: 0.15rem;
+}
+
+.uai-tool-header-icon {
+  font-size: 1.15rem;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.uai-tool-title {
+  font-size: 0.88rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.uai-tool-desc {
+  font-size: 0.78rem;
+  margin-top: 0.1rem;
+  line-height: 1.3;
+}
+
+/* =============================================================================
+   Терминальное окно командной строки PowerShell (.uai-terminal-window)
+   Черный консольный фон, контрастный текст, управление через переменные тем.
+   ============================================================================= */
+
+.uai-terminal-window {
+  background-color: #000000 !important;
+  border: 1px solid #30363d !important;
+  border-radius: 6px !important;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25) !important;
+  margin: 0.25rem 0;
+  display: flex;
+  flex-direction: column;
+  white-space: normal !important;
+}
+
+.uai-terminal-header {
+  background-color: #161b22 !important;
+  border-bottom: 1px solid #30363d !important;
+  padding: 0.35rem 0.65rem !important;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  user-select: none;
+  white-space: normal !important;
+}
+
+.uai-terminal-title {
+  color: #e6edf3 !important;
+  font-size: 0.78rem !important;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.uai-terminal-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  display: inline-block;
+  opacity: 0.9;
+  flex-shrink: 0;
+}
+
+.uai-dot-red {
+  background-color: #f85149;
+}
+
+.uai-dot-yellow {
+  background-color: #d29922;
+}
+
+.uai-dot-green {
+  background-color: #3fb950;
+}
+
+/* Кнопки панели управления терминала */
+.uai-term-btn {
+  background-color: #21262d !important;
+  color: #c9d1d9 !important;
+  border: 1px solid #363b42 !important;
+  font-size: 0.75rem !important;
+  padding: 0.2rem 0.55rem !important;
+  border-radius: 4px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  line-height: 1.3 !important;
+  transition: all 0.15s ease-in-out !important;
+  cursor: pointer;
+  white-space: nowrap !important;
+}
+
+.uai-term-btn:hover {
+  background-color: #30363d !important;
+  color: #ffffff !important;
+  border-color: #8b949e !important;
+}
+
+.uai-term-btn.active,
+.uai-term-btn:active {
+  background-color: rgba(56, 139, 253, 0.2) !important;
+  color: #58a6ff !important;
+  border-color: #388bfd !important;
+}
+
+.uai-term-btn-run {
+  background-color: #238636 !important;
+  color: #ffffff !important;
+  border: 1px solid #2ea043 !important;
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  padding: 0.2rem 0.75rem !important;
+  border-radius: 4px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  line-height: 1.3 !important;
+  transition: all 0.15s ease-in-out !important;
+  cursor: pointer;
+  white-space: nowrap !important;
+}
+
+.uai-term-btn-run:hover {
+  background-color: #2ea043 !important;
+  color: #ffffff !important;
+  border-color: #3fb950 !important;
+  box-shadow: 0 0 6px rgba(46, 160, 67, 0.4) !important;
+}
+
+.uai-term-btn-run:disabled {
+  opacity: 0.65 !important;
+  cursor: not-allowed;
+}
+
+.uai-terminal-settings-panel {
+  background-color: #161b22 !important;
+  border-bottom: 1px solid #30363d !important;
+  padding: 0.4rem 0.65rem !important;
+  font-size: 0.75rem !important;
+  color: #8b949e !important;
+  white-space: normal !important;
+}
+
+.uai-terminal-settings-panel .form-select,
+.uai-terminal-settings-panel .form-control {
+  background-color: #0d1117 !important;
+  color: #e6edf3 !important;
+  border: 1px solid #30363d !important;
+  font-size: 0.75rem !important;
+  padding: 0.15rem 0.45rem !important;
+}
+
+.uai-terminal-settings-panel .form-select:focus,
+.uai-terminal-settings-panel .form-control:focus {
+  border-color: #58a6ff !important;
+  box-shadow: 0 0 0 1px #58a6ff !important;
+}
+
+.uai-terminal-settings-panel .form-check-input {
+  background-color: #0d1117 !important;
+  border-color: #30363d !important;
+  width: 1.8em !important;
+  height: 1em !important;
+}
+
+.uai-terminal-settings-panel .form-check-input:checked {
+  background-color: #238636 !important;
+  border-color: #238636 !important;
+}
+
+.uai-terminal-body {
+  position: relative;
+  background-color: #000000 !important;
+  padding: 0 !important;
+}
+
+/* Высокая специфичность для терминального окна и поля ввода консоли (черный фон, белый полужирный моноширинный шрифт) */
+html body .uai-terminal-window textarea.uai-cmd-input,
+html body .uai-ready-tool-card textarea.uai-cmd-input,
+html body .uai-code-runner-box textarea.uai-cmd-input,
+html[data-theme] textarea.uai-cmd-input,
+html[data-bs-theme] textarea.uai-cmd-input,
+textarea.uai-cmd-input,
+.uai-cmd-input {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  border: none !important;
+  font-family: var(--font-mono, "Cascadia Code", "Consolas", "Courier New", monospace) !important;
+  font-size: 0.9rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.015em;
+  line-height: 1.45 !important;
+  border-radius: 0 !important;
+  padding: 0.6rem 0.8rem !important;
+  min-height: 48px !important;
+  height: auto;
+  width: 100% !important;
+  resize: vertical !important;
+  tab-size: 2;
+  box-sizing: border-box !important;
+  white-space: pre-wrap !important;
+}
+
+html body .uai-terminal-window textarea.uai-cmd-input:focus,
+html body .uai-ready-tool-card textarea.uai-cmd-input:focus,
+html body .uai-code-runner-box textarea.uai-cmd-input:focus,
+html[data-theme] textarea.uai-cmd-input:focus,
+html[data-bs-theme] textarea.uai-cmd-input:focus,
+textarea.uai-cmd-input:focus,
+.uai-cmd-input:focus {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  outline: none !important;
+  box-shadow: inset 0 0 0 1px #388bfd !important;
+}
+
+.uai-cmd-output-container {
+  margin-top: 0.35rem !important;
+  white-space: normal !important;
+}
+
+.uai-ready-tool-card .uai-cmd-output,
+.uai-code-runner-box .uai-cmd-output {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  border: 1px solid #30363d !important;
+  border-radius: 4px !important;
+  padding: 0.6rem 0.8rem !important;
+  font-family: var(--font-mono, "Cascadia Code", "Consolas", "Courier New", monospace) !important;
+  font-size: 0.88rem !important;
+  line-height: 1.45 !important;
+  max-height: 240px;
+  overflow-y: auto;
+  white-space: pre-wrap !important;
+  word-break: break-all;
+  margin: 0 !important;
+}
+
+.uai-cmd-hint {
+  font-size: 0.75rem !important;
+  color: var(--text-muted, #8b949e) !important;
+  margin-top: 0.2rem !important;
+}
+
+/* =============================================================================
+   СТИЛЬ МАТРИЦЫ (MATRIX REASONING THEME) ДЛЯ ХОДА РАССУЖДЕНИЙ И ЗОНДОВ ХОСТА
+   ============================================================================= */
+
+/* Корневой контейнер аккордеона / терминала рассуждений вслух */
+.uai-matrix-terminal,
+.uai-investigation-accordion,
+html body .uai-matrix-terminal,
+html body .uai-investigation-accordion {
+  background-color: #020603 !important;
+  border: 1px solid rgba(0, 255, 65, 0.45) !important;
+  border-radius: 6px !important;
+  box-shadow: 0 0 15px rgba(0, 255, 65, 0.15), inset 0 0 20px rgba(0, 255, 65, 0.05) !important;
+  margin: 0.75rem 0 !important;
+  overflow: hidden;
+  position: relative;
+  font-family: var(--font-mono, "Cascadia Code", "Consolas", "Courier New", monospace) !important;
+}
+
+/* Верхняя строка заголовка терминала рассуждений */
+.uai-matrix-header,
+.uai-investigation-accordion summary {
+  background-color: #040e06 !important;
+  border-bottom: 1px solid rgba(0, 255, 65, 0.3) !important;
+  padding: 0.5rem 0.85rem !important;
+  color: #00ff66 !important;
+  cursor: pointer;
+  user-select: none;
+  font-weight: 600;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  text-shadow: 0 0 6px rgba(0, 255, 102, 0.5);
+  letter-spacing: 0.02em;
+}
+
+.uai-matrix-header:hover,
+.uai-investigation-accordion summary:hover {
+  background-color: #06180a !important;
+  color: #33ff88 !important;
+}
+
+/* Пульсирующий зеленый матричный индикатор */
+.uai-matrix-indicator {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #00ff66;
+  box-shadow: 0 0 8px #00ff66;
+  animation: matrix-pulse 1.8s infinite ease-in-out;
+  flex-shrink: 0;
+}
+
+@keyframes matrix-pulse {
+  0% { transform: scale(0.9); opacity: 0.7; box-shadow: 0 0 4px #00ff66; }
+  50% { transform: scale(1.2); opacity: 1; box-shadow: 0 0 12px #00ff66; }
+  100% { transform: scale(0.9); opacity: 0.7; box-shadow: 0 0 4px #00ff66; }
+}
+
+/* Бейдж шагов расследования */
+.uai-matrix-steps-count {
+  background-color: rgba(0, 255, 65, 0.15) !important;
+  color: #00ff66 !important;
+  border: 1px solid rgba(0, 255, 65, 0.5) !important;
+  font-size: 0.72rem !important;
+  letter-spacing: 0.05em;
+  padding: 0.2rem 0.5rem !important;
+  text-shadow: 0 0 4px rgba(0, 255, 102, 0.5);
+}
+
+.uai-matrix-title {
+  color: #00ff66 !important;
+  font-size: 0.82rem !important;
+  letter-spacing: 0.02em;
+}
+
+.uai-matrix-toggle-hint {
+  color: rgba(0, 255, 102, 0.6) !important;
+  font-size: 0.68rem !important;
+  letter-spacing: 0.04em;
+}
+
+/* Тело терминала рассуждений */
+.uai-matrix-body,
+.uai-investigation-body {
+  background-color: #020603 !important;
+  padding: 0.65rem 0.85rem !important;
+  color: #5af78e !important;
+  font-family: var(--font-mono, "Cascadia Code", "Consolas", "Courier New", monospace) !important;
+  font-size: 0.84rem !important;
+  line-height: 1.55 !important;
+  max-height: 480px;
+  overflow-y: auto;
+}
+
+/* Отдельные шаги (шаги рассуждения вслух) */
+.uai-matrix-step,
+.uai-investigation-step {
+  padding: 0.35rem 0 !important;
+  border-bottom: 1px dashed rgba(0, 255, 65, 0.15) !important;
+  display: flex !important;
+  align-items: flex-start !important;
+  gap: 0.45rem;
+  color: #5af78e !important;
+  font-weight: 500;
+}
+
+.uai-matrix-step:last-child {
+  border-bottom: none !important;
+}
+
+/* Зеленый промпт командной строки терминала */
+.uai-matrix-prompt {
+  color: #00ff66 !important;
+  font-weight: 700;
+  text-shadow: 0 0 6px #00ff66;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+/* Бейджи типов операций матрицы */
+.uai-matrix-badge {
+  font-size: 0.7rem !important;
+  font-weight: 700 !important;
+  padding: 0.1rem 0.45rem !important;
+  border-radius: 3px !important;
+  letter-spacing: 0.03em;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.25rem;
+  flex-shrink: 0;
+  user-select: none;
+  font-family: var(--font-mono, monospace) !important;
+}
+
+.uai-mb-think {
+  background-color: rgba(0, 255, 65, 0.12) !important;
+  color: #00ff66 !important;
+  border: 1px solid rgba(0, 255, 65, 0.4) !important;
+  text-shadow: 0 0 5px rgba(0, 255, 65, 0.6);
+}
+
+.uai-mb-tool {
+  background-color: rgba(255, 170, 0, 0.15) !important;
+  color: #ffbb33 !important;
+  border: 1px solid rgba(255, 170, 0, 0.5) !important;
+  text-shadow: 0 0 5px rgba(255, 170, 0, 0.5);
+}
+
+.uai-mb-synth {
+  background-color: rgba(0, 212, 255, 0.15) !important;
+  color: #33ddff !important;
+  border: 1px solid rgba(0, 212, 255, 0.5) !important;
+  text-shadow: 0 0 5px rgba(0, 212, 255, 0.5);
+}
+
+.uai-mb-data {
+  background-color: rgba(0, 255, 136, 0.15) !important;
+  color: #00ff88 !important;
+  border: 1px solid rgba(0, 255, 136, 0.5) !important;
+  text-shadow: 0 0 5px rgba(0, 255, 136, 0.5);
+}
+
+.uai-mb-done {
+  background-color: rgba(46, 160, 67, 0.2) !important;
+  color: #3fb950 !important;
+  border: 1px solid rgba(46, 160, 67, 0.5) !important;
+}
+
+.uai-matrix-text {
+  color: #72f79f !important;
+  word-break: break-word;
+  line-height: 1.45;
+}
+
+.uai-matrix-text code {
+  background-color: rgba(0, 255, 65, 0.12) !important;
+  color: #00ff66 !important;
+  padding: 0.1rem 0.35rem !important;
+  border: 1px solid rgba(0, 255, 65, 0.3) !important;
+  border-radius: 3px !important;
+}
+
+.uai-matrix-text em {
+  color: #9affb8 !important;
+  font-style: normal;
+  font-weight: 600;
+}
+
+/* Окно данных телеметрии внутри шага расследования */
+.uai-data-preview,
+.uai-matrix-preview,
+pre.uai-data-preview {
+  background-color: #010401 !important;
+  color: #00ff66 !important;
+  border: 1px solid rgba(0, 255, 65, 0.3) !important;
+  border-radius: 4px !important;
+  padding: 0.5rem 0.75rem !important;
+  font-family: var(--font-mono, "Cascadia Code", "Consolas", monospace) !important;
+  font-size: 0.8rem !important;
+  font-weight: 600 !important;
+  line-height: 1.45 !important;
+  max-height: 180px;
+  overflow-y: auto;
+  white-space: pre-wrap !important;
+  word-break: break-all;
+  margin-top: 0.35rem !important;
+  margin-bottom: 0.35rem !important;
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.8) !important;
+}
+
+/* Мигающий курсор Матрицы */
+.uai-matrix-cursor {
+  display: inline-block;
+  color: #00ff66;
+  font-weight: 900;
+  animation: matrix-cursor-blink 0.9s infinite step-end;
+  text-shadow: 0 0 8px #00ff66;
+}
+
+@keyframes matrix-cursor-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* Секция и карточка советов разработчику и автоматизации */
+.uai-dev-card,
+.uai-dev-advice-box {
+  background-color: var(--surface-2);
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
+  border-radius: var(--radius-sm, 6px);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.uai-dev-card:hover,
+.uai-dev-advice-box:hover {
+  border-color: var(--nav-active);
+  box-shadow: var(--shadow-sm);
+}
+
+.uai-btn-toggle-dev {
+  border-color: var(--border-color);
+  color: var(--text-color);
+  background-color: var(--surface-2);
+  transition: all 0.2s ease;
+}
+
+.uai-btn-toggle-dev:hover {
+  border-color: var(--nav-active);
+  color: var(--nav-active);
+}
+
+
+
+
+
+
+/* =============================================================================
+   Переключатель режима ассистента: "Только модель" / "Модель + WikiLLM"
+   ============================================================================= */
+.uai-mode-toggle-group {
+  display: inline-flex;
+  background-color: var(--surface-2);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm, 6px);
+  padding: 2px;
+  gap: 2px;
+}
+
+.uai-mode-btn {
+  border: none !important;
+  background-color: transparent !important;
+  color: var(--text-muted, #94a3b8) !important;
+  font-size: 0.76rem !important;
+  font-weight: 600 !important;
+  padding: 0.2rem 0.6rem !important;
+  border-radius: var(--radius-xs, 4px) !important;
+  transition: all 0.2s ease-in-out !important;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.uai-mode-btn:hover {
+  color: var(--text-color) !important;
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.uai-mode-btn.active {
+  background-color: var(--nav-active, #0dcaf0) !important;
+  color: #c0c0c0 !important;
+  font-weight: 700 !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+}
+
+[data-theme="terminal"] .uai-mode-btn.active {
+  background-color: #00ff66 !important;
+  color: #020603 !important;
 }

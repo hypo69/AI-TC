@@ -14,7 +14,7 @@
 # Package: apps.windows
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-13 16:25:00
 # =============================================================================
 
 from __future__ import annotations
@@ -84,7 +84,7 @@ from apps.windows.telemetry.w64_collector import (
     stop_w64_collector,
 )
 from apps.windows.telemetry.w64_etw_collector import AIW64ETWCollector
-from apps.windows.telemetry.analytics.diagnostic_engine import DiagnosticEngine
+from apps.windows.analytics.diagnostic_engine import DiagnosticEngine
 
 # ИИ и Диагностика (Слой 6)
 from apps.windows.ai.diagnostician import WindowsAIDiagnostician

@@ -16,7 +16,7 @@
 # Package: apps.windows.sdk.modules.defender.core
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-20 14:06:00
 # =============================================================================
 
 from __future__ import annotations
@@ -33,10 +33,11 @@ import time
 import uuid
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 import psutil
 from logger import logger
 from apps.windows.sdk.modules.defender.core.event_correlator import EventCorrelator
+from apps.windows.sdk.modules.defender.core.wmi_client import DefenderWmiClient
 from apps.windows.sdk.modules.defender.core.models import (
     DefenderEventRecord,
     DefenderStatus,
@@ -65,6 +66,13 @@ class DefenderService:
         self._correlator: EventCorrelator = event_correlator or EventCorrelator()
         self._tasks: Dict[str, DefenderTaskInfo] = {}
         self._task_lock = threading.Lock()
+        self._cache: Dict[str, Tuple[float, Any]] = {}
+        self._cache_lock = threading.Lock()
+
+    def clear_cache(self) -> None:
+        """Сброс оперативного кэша результатов опроса Defender."""
+        with self._cache_lock:
+            self._cache.clear()
 
     def _locate_mpcmdrun(self) -> Optional[Path]:
         """Поиск исполняемого файла MpCmdRun.exe в системе.
@@ -86,16 +94,42 @@ class DefenderService:
         logger.debug('Файл MpCmdRun.exe не найден в стандартных путях')
         return None
 
-    def _run_powershell_json(self, command: str, timeout: int = 15) -> Optional[Union[Dict[str, Any], List[Any]]]:
-        """Выполнение команды PowerShell с преобразованием результата из JSON.
+    def _run_powershell_json(self, command: str, timeout: int = 15, ttl_sec: float = 30.0) -> Optional[Union[Dict[str, Any], List[Any]]]:
+        """Выполнение команды с кэшированием и быстрым прямым WMI-опросом.
 
         Args:
             command: Строка команды PowerShell.
             timeout: Таймаут выполнения в секундах.
+            ttl_sec: Время жизни кэша в секундах (по умолчанию 30 с).
 
         Returns:
             Optional[Union[Dict[str, Any], List[Any]]]: Распарсенный словарь/список JSON или None при ошибке/пустом выводе.
         """
+        clean_cmd = command.strip()
+
+        # 1. Проверяем оперативный кэш в памяти
+        with self._cache_lock:
+            if clean_cmd in self._cache:
+                cached_time, cached_val = self._cache[clean_cmd]
+                if time.time() - cached_time < ttl_sec:
+                    return cached_val
+
+        # 2. Прямой WMI-опрос (< 100 мс) вместо powershell.exe (2.5 с)
+        wmi_data: Optional[Union[Dict[str, Any], List[Any]]] = None
+        cmd_base = clean_cmd.split('|')[0].strip()
+        if cmd_base == 'Get-MpComputerStatus':
+            wmi_data = DefenderWmiClient.query_computer_status()
+        elif cmd_base == 'Get-MpPreference':
+            wmi_data = DefenderWmiClient.query_preference()
+        elif cmd_base.startswith('Get-MpThreatDetection'):
+            wmi_data = DefenderWmiClient.query_threats()
+
+        if wmi_data is not None:
+            with self._cache_lock:
+                self._cache[clean_cmd] = (time.time(), wmi_data)
+            return wmi_data
+
+        # 3. Fallback: выполнение через powershell.exe
         if platform.system() != 'Windows':
             return None
         full_cmd = f'powershell.exe -NoProfile -NonInteractive -Command "{command} | ConvertTo-Json -Depth 3 -Compress"'
@@ -104,6 +138,8 @@ class DefenderService:
             if res.returncode == 0 and res.stdout.strip():
                 try:
                     data = json.loads(res.stdout.strip())
+                    with self._cache_lock:
+                        self._cache[clean_cmd] = (time.time(), data)
                     return data
                 except json.JSONDecodeError as err:
                     logger.debug(f'Ошибка декодирования JSON из PowerShell: {err}')
@@ -162,6 +198,12 @@ class DefenderService:
                 if not val:
                     return None
                 if isinstance(val, str):
+                    if len(val) >= 14 and val[:14].isdigit():
+                        try:
+                            dt = datetime.strptime(val[:14], '%Y%m%d%H%M%S')
+                            return dt.strftime('%Y-%m-%d %H:%M:%S')
+                        except Exception:
+                            pass
                     if val.startswith('/Date(') and val.endswith(')/'):
                         try:
                             ts_ms = int(val[6:-2].split('+')[0].split('-')[0])

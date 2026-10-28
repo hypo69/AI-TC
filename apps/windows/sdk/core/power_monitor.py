@@ -19,7 +19,7 @@
 # Package: apps.windows.sdk.core
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-16 13:13:00
 # =============================================================================
 
 from __future__ import annotations
@@ -131,23 +131,25 @@ class PowerStateMonitor:
 
         if self.db_storage and hasattr(self.db_storage, 'execute_write'):
             try:
+                now_epoch = time.time()
                 query = """
-                    INSERT INTO power_events (
-                        event_id, provider, channel, timestamp, created_at,
-                        event_type, shutdown_type, details_json
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    INSERT INTO power_sessions (
+                        session_id, record_type, event_id, provider, channel,
+                        start_time, start_epoch, classification, details_json, created_at
+                    ) VALUES (?, 'event', ?, ?, ?, ?, ?, ?, ?, ?)
                 """
                 self.db_storage.execute_write(
                     query,
                     (
-                        int(time.time()),
+                        f"pwr_evt_{int(now_epoch * 1000)}",
+                        int(now_epoch),
                         "PowerStateMonitor",
                         "System",
                         now_utc,
-                        time.time(),
+                        now_epoch,
                         event_type,
-                        "PowerEvent",
                         json.dumps(event_data, ensure_ascii=False),
+                        now_epoch,
                     ),
                 )
             except Exception as err:
@@ -196,20 +198,25 @@ class PowerStateMonitor:
 
             if self.db_storage and hasattr(self.db_storage, 'execute_write'):
                 try:
+                    now_epoch = time.time()
                     query = """
-                        INSERT INTO telemetry_gaps (
-                            start_utc, end_utc, gap_type, duration_seconds, confidence, created_at
-                        ) VALUES (?, ?, ?, ?, ?, ?)
+                        INSERT INTO incidents (
+                            incident_id, timestamp, created_at, domain, trigger_type,
+                            severity, title, window_start, window_end, duration_sec, details_json
+                        ) VALUES (?, ?, ?, 'telemetry_gap', ?, 'INFO', ?, ?, ?, ?, ?)
                     """
                     self.db_storage.execute_write(
                         query,
                         (
+                            f"gap_{int(now_epoch * 1000)}",
+                            end_utc,
+                            now_epoch,
+                            gap_data['gap_type'],
+                            f"Разрыв сбора телеметрии ({confidence})",
                             start_utc,
                             end_utc,
-                            gap_data['gap_type'],
                             gap_data['duration_seconds'],
-                            confidence,
-                            time.time(),
+                            json.dumps(gap_data, ensure_ascii=False),
                         ),
                     )
                 except Exception as err:

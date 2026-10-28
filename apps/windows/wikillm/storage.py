@@ -16,7 +16,7 @@
 # Package: apps.windows.wikillm
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-15 01:20:00
 # =============================================================================
 
 from __future__ import annotations
@@ -165,8 +165,42 @@ class WikiStorage:
                     tags,
                     details
                 );
+
+                CREATE TABLE IF NOT EXISTS wikillm_procedural_tools (
+                    tool_id TEXT PRIMARY KEY,
+                    canonical_key TEXT NOT NULL UNIQUE,
+                    title TEXT NOT NULL,
+                    description TEXT NOT NULL,
+                    language TEXT NOT NULL DEFAULT 'python',
+                    entry_point TEXT NOT NULL DEFAULT 'run',
+                    input_schema_json TEXT NOT NULL DEFAULT '{}',
+                    code_payload TEXT NOT NULL,
+                    author_agent TEXT NOT NULL DEFAULT 'gemini',
+                    execution_count INTEGER NOT NULL DEFAULT 0,
+                    is_verified INTEGER NOT NULL DEFAULT 1,
+                    status TEXT NOT NULL DEFAULT 'active',
+                    version TEXT NOT NULL DEFAULT '1.0.0',
+                    compatibility_json TEXT NOT NULL DEFAULT '{}',
+                    execution_metrics_json TEXT NOT NULL DEFAULT '{}',
+                    tags_json TEXT NOT NULL DEFAULT '[]',
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL
+                );
+
+                CREATE INDEX IF NOT EXISTS idx_proc_tools_canon ON wikillm_procedural_tools(canonical_key);
                 """
             )
+            # Автоматическая миграция столбцов версионирования и метрик
+            for col_name, col_def in [
+                ("status", "TEXT NOT NULL DEFAULT 'active'"),
+                ("version", "TEXT NOT NULL DEFAULT '1.0.0'"),
+                ("compatibility_json", "TEXT NOT NULL DEFAULT '{}'"),
+                ("execution_metrics_json", "TEXT NOT NULL DEFAULT '{}'"),
+            ]:
+                try:
+                    conn.execute(f"ALTER TABLE wikillm_procedural_tools ADD COLUMN {col_name} {col_def}")
+                except sqlite3.OperationalError:
+                    pass  # Столбец уже существует
 
     def save_entity(self, entity: KnowledgeEntity) -> None:
         """Сохраняет или обновляет сущность базы знаний со всеми связями и FTS-индексом.
@@ -616,3 +650,310 @@ class WikiStorage:
                     results.append(ent)
 
         return results
+
+    def _row_to_procedural_tool(self, row: sqlite3.Row) -> dict:
+        """Преобразует строку БД в нормализованный словарь процедурного инструмента."""
+        d = dict(row)
+        try:
+            d["input_schema"] = json.loads(d.pop("input_schema_json", "{}"))
+        except Exception:
+            d["input_schema"] = {}
+        try:
+            d["tags"] = json.loads(d.pop("tags_json", "[]"))
+        except Exception:
+            d["tags"] = []
+        try:
+            d["compatibility"] = json.loads(d.pop("compatibility_json", "{}"))
+        except Exception:
+            d["compatibility"] = {}
+        try:
+            d["execution_metrics"] = json.loads(d.pop("execution_metrics_json", "{}"))
+        except Exception:
+            d["execution_metrics"] = {
+                "total_calls": d.get("execution_count", 0),
+                "success_rate": 1.0,
+                "avg_duration_ms": 0.0,
+                "consecutive_failures": 0,
+            }
+        d["status"] = d.get("status") or "active"
+        d["version"] = d.get("version") or "1.0.0"
+        d["is_verified"] = bool(d.get("is_verified", 1))
+        return d
+
+    def save_procedural_tool(self, tool_data: dict) -> dict:
+        """Сохраняет или обновляет процедурный инструмент в WikiLLM.
+
+        Args:
+            tool_data: Словарь с описанием и кодом инструмента.
+
+        Returns:
+            dict: Сохраненный инструмент с метаданными.
+        """
+        now = utc_now_iso()
+        tool_id = str(tool_data.get("tool_id") or f"tool_{uuid.uuid4().hex[:12]}")
+        canonical_key = str(tool_data.get("canonical_key") or f"procedural:{tool_id}")
+        title = str(tool_data.get("title") or tool_id)
+        description = str(tool_data.get("description") or "")
+        language = str(tool_data.get("language") or "python")
+        entry_point = str(tool_data.get("entry_point") or "run")
+        input_schema = tool_data.get("input_schema") or {}
+        input_schema_json = json.dumps(input_schema, ensure_ascii=False)
+        code_payload = str(tool_data.get("code_payload") or "")
+        author_agent = str(tool_data.get("author_agent") or "gemini")
+        execution_count = int(tool_data.get("execution_count") or 0)
+        is_verified = 1 if tool_data.get("is_verified", True) else 0
+        status = str(tool_data.get("status") or "active")
+        version = str(tool_data.get("version") or "1.0.0")
+        compatibility = tool_data.get("compatibility") or {}
+        compatibility_json = json.dumps(compatibility, ensure_ascii=False)
+        execution_metrics = tool_data.get("execution_metrics") or {
+            "total_calls": execution_count,
+            "success_rate": 1.0,
+            "avg_duration_ms": 0.0,
+            "consecutive_failures": 0,
+        }
+        execution_metrics_json = json.dumps(execution_metrics, ensure_ascii=False)
+        tags = tool_data.get("tags") or ["#procedural"]
+        tags_json = json.dumps(tags, ensure_ascii=False)
+
+        with self._connect() as conn:
+            conn.execute(
+                """
+                INSERT INTO wikillm_procedural_tools (
+                    tool_id, canonical_key, title, description, language, entry_point,
+                    input_schema_json, code_payload, author_agent, execution_count,
+                    is_verified, status, version, compatibility_json,
+                    execution_metrics_json, tags_json, created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(canonical_key) DO UPDATE SET
+                    title = excluded.title,
+                    description = excluded.description,
+                    language = excluded.language,
+                    entry_point = excluded.entry_point,
+                    input_schema_json = excluded.input_schema_json,
+                    code_payload = excluded.code_payload,
+                    author_agent = excluded.author_agent,
+                    is_verified = excluded.is_verified,
+                    status = excluded.status,
+                    version = excluded.version,
+                    compatibility_json = excluded.compatibility_json,
+                    execution_metrics_json = excluded.execution_metrics_json,
+                    tags_json = excluded.tags_json,
+                    updated_at = excluded.updated_at
+                """,
+                (
+                    tool_id,
+                    canonical_key,
+                    title,
+                    description,
+                    language,
+                    entry_point,
+                    input_schema_json,
+                    code_payload,
+                    author_agent,
+                    execution_count,
+                    is_verified,
+                    status,
+                    version,
+                    compatibility_json,
+                    execution_metrics_json,
+                    tags_json,
+                    now,
+                    now,
+                ),
+            )
+
+        saved = self.get_procedural_tool_by_key(canonical_key)
+        return saved or tool_data
+
+    def get_procedural_tool(self, tool_id: str) -> Optional[dict]:
+        """Возвращает процедурный инструмент по tool_id."""
+        with self._connect() as conn:
+            row = conn.execute(
+                "SELECT * FROM wikillm_procedural_tools WHERE tool_id = ?",
+                (tool_id,),
+            ).fetchone()
+            if row:
+                return self._row_to_procedural_tool(row)
+        return None
+
+    def get_procedural_tool_by_key(self, canonical_key: str) -> Optional[dict]:
+        """Возвращает процедурный инструмент по canonical_key."""
+        with self._connect() as conn:
+            row = conn.execute(
+                "SELECT * FROM wikillm_procedural_tools WHERE canonical_key = ?",
+                (canonical_key,),
+            ).fetchone()
+            if row:
+                return self._row_to_procedural_tool(row)
+        return None
+
+    def search_procedural_tools(
+        self,
+        query: Optional[str] = None,
+        tags: Optional[List[str]] = None,
+        limit: int = 50,
+    ) -> List[dict]:
+        """Поиск процедурных инструментов по тексту и/или списку тегов."""
+        with self._connect() as conn:
+            sql = "SELECT * FROM wikillm_procedural_tools WHERE 1=1"
+            params: list[Any] = []
+            if query:
+                q_clean = query.strip().lower()
+                sql += " AND (LOWER(title) LIKE ? OR LOWER(description) LIKE ? OR LOWER(canonical_key) LIKE ?)"
+                wild = f"%{q_clean}%"
+                params.extend([wild, wild, wild])
+
+            if tags:
+                for t in tags:
+                    tag_clean = t.strip()
+                    if tag_clean:
+                        sql += " AND tags_json LIKE ?"
+                        params.append(f"%{tag_clean}%")
+
+            sql += " ORDER BY execution_count DESC, updated_at DESC LIMIT ?"
+            params.append(limit)
+
+            rows = conn.execute(sql, params).fetchall()
+            return [self._row_to_procedural_tool(r) for r in rows]
+
+    def increment_procedural_tool_execution(self, tool_id: str) -> bool:
+        """Инкрементирует счетчик успешных выполнений инструмента."""
+        now = utc_now_iso()
+        with self._connect() as conn:
+            cur = conn.execute(
+                "UPDATE wikillm_procedural_tools SET execution_count = execution_count + 1, updated_at = ? WHERE tool_id = ? OR canonical_key = ?",
+                (now, tool_id, tool_id),
+            )
+            return cur.rowcount > 0
+
+    def list_procedural_tools(self, limit: int = 50, offset: int = 0) -> List[dict]:
+        """Возвращает список всех процедурных инструментов."""
+        with self._connect() as conn:
+            rows = conn.execute(
+                "SELECT * FROM wikillm_procedural_tools ORDER BY execution_count DESC, updated_at DESC LIMIT ? OFFSET ?",
+                (limit, offset),
+            ).fetchall()
+            return [self._row_to_procedural_tool(r) for r in rows]
+
+    def delete_procedural_tool(self, tool_id: str) -> bool:
+        """Удаляет процедурный инструмент по tool_id или canonical_key."""
+        with self._connect() as conn:
+            cur = conn.execute(
+                "DELETE FROM wikillm_procedural_tools WHERE tool_id = ? OR canonical_key = ?",
+                (tool_id, tool_id),
+            )
+            return cur.rowcount > 0
+
+    def update_procedural_tool_metrics(self, tool_id: str, success: bool, duration_ms: float = 0.0) -> bool:
+        """Обновляет телеметрические метрики исполнения и статус карантина (Quarantine).
+
+        Args:
+            tool_id: Идентификатор инструмента или canonical_key.
+            success: Успешность текущего запуска.
+            duration_ms: Время выполнения в миллисекундах.
+
+        Returns:
+            bool: True если метрики успешно обновлены.
+        """
+        tool = self.get_procedural_tool(tool_id) or self.get_procedural_tool_by_key(tool_id)
+        if not tool:
+            return False
+
+        metrics = tool.get("execution_metrics") or {}
+        total_calls = int(metrics.get("total_calls", tool.get("execution_count", 0))) + 1
+        prev_success_rate = float(metrics.get("success_rate", 1.0))
+        prev_avg_ms = float(metrics.get("avg_duration_ms", 0.0))
+        consecutive_failures = int(metrics.get("consecutive_failures", 0))
+
+        if success:
+            consecutive_failures = 0
+            successful_calls = round(prev_success_rate * (total_calls - 1)) + 1
+        else:
+            consecutive_failures += 1
+            successful_calls = round(prev_success_rate * (total_calls - 1))
+
+        new_success_rate = round(successful_calls / total_calls, 3)
+        new_avg_duration = round(((prev_avg_ms * (total_calls - 1)) + duration_ms) / total_calls, 2)
+
+        status = tool.get("status", "active")
+        # Если превышен порог ошибок (>2 неудачных запусков подряд) -> отправка в карантин
+        if consecutive_failures > 2:
+            status = "quarantined"
+            logger.warning(f"[WikiLLM Lifecycle] Инструмент {tool['tool_id']} помещен в карантин (>2 сбоев подряд).")
+        elif status == "quarantined" and success:
+            status = "active"
+
+        updated_metrics = {
+            "total_calls": total_calls,
+            "success_rate": new_success_rate,
+            "avg_duration_ms": new_avg_duration,
+            "consecutive_failures": consecutive_failures,
+        }
+
+        now = utc_now_iso()
+        exec_count = tool.get("execution_count", 0) + (1 if success else 0)
+
+        with self._connect() as conn:
+            cur = conn.execute(
+                """
+                UPDATE wikillm_procedural_tools
+                SET execution_metrics_json = ?,
+                    execution_count = ?,
+                    status = ?,
+                    updated_at = ?
+                WHERE tool_id = ? OR canonical_key = ?
+                """,
+                (
+                    json.dumps(updated_metrics, ensure_ascii=False),
+                    exec_count,
+                    status,
+                    now,
+                    tool["tool_id"],
+                    tool["tool_id"],
+                ),
+            )
+            return cur.rowcount > 0
+
+    def find_similar_procedural_tool(self, query: str, threshold: float = 0.92) -> Optional[dict]:
+        """Ищет похожий существующий активный инструмент для предотвращения дубликатов.
+
+        Args:
+            query: Текстовый запрос или предполагаемый canonical_key.
+            threshold: Порог семантического сходства (по умолчанию 0.92 / 92%).
+
+        Returns:
+            Optional[dict]: Найденный похожий инструмент или None.
+        """
+        import difflib
+
+        q_clean = (query or "").strip().lower()
+        if not q_clean:
+            return None
+
+        tools = self.list_procedural_tools(limit=100)
+        best_tool: Optional[dict] = None
+        best_score = 0.0
+
+        for t in tools:
+            # Сравниваем с title, canonical_key и intent-хэшем
+            targets = [
+                t.get("title", "").lower(),
+                t.get("canonical_key", "").lower().replace("procedural:", "").replace("_", " "),
+                t.get("canonical_key", "").lower(),
+            ]
+            for target in targets:
+                ratio = difflib.SequenceMatcher(None, q_clean, target).ratio()
+                if ratio > best_score:
+                    best_score = ratio
+                    best_tool = t
+
+        if best_score >= threshold and best_tool is not None:
+            logger.info(
+                f"[WikiLLM Deduplication] Найдено совпадение {best_tool['tool_id']} "
+                f"со сходством {best_score:.3f} >= {threshold}"
+            )
+            return best_tool
+
+        return None
+

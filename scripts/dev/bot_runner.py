@@ -16,7 +16,7 @@
 # Package: scripts.dev
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 22:28:45
+# Updated: 2026-10-22 13:30:00
 # =============================================================================
 
 from __future__ import annotations
@@ -52,7 +52,7 @@ async def _run_bot() -> None:
     from plugins import load_plugins
     model = None
     try:
-        prompt_file = __root__ / 'prompts' / 'chat' / 'system_instruction.md'
+        prompt_file = __root__ / 'apps' / 'windows' / 'prompts' / 'chat' / 'system_instruction.md'
         _system_instruction = read_text_file(prompt_file) if prompt_file.exists() else ''
         _api_key_names = [n.strip() for n in os.getenv('GEMINI_API_KEY_NAMES', '').split(',') if n.strip()]
         use_foundry = getattr(ai_cfg, 'use_foundry', False) if ai_cfg else False

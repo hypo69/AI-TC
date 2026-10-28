@@ -17,7 +17,7 @@
 # Package: apps.windows.sdk.modules.taskbar
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-13 18:05:00
 # =============================================================================
 
 from __future__ import annotations
@@ -196,6 +196,22 @@ async def get_window_details(hwnd: int) -> WindowItem:
             detail=f"Окно с HWND {hwnd} не найдено",
         )
     return win
+
+
+@router.get("/windows/{hwnd}/copilot")
+async def get_window_copilot(
+    hwnd: int,
+    title: Optional[str] = Query(None, description="Заголовок окна (опционально)"),
+    process_name: Optional[str] = Query(None, description="Имя процесса (опционально)"),
+    pid: Optional[int] = Query(None, description="PID процесса (опционально)"),
+) -> Dict[str, Any]:
+    """ИИ-Copilot разбор окна: оценка риска, легитимности и рекомендации (18.4)."""
+    win = await asyncio.to_thread(_controller.get_window, hwnd)
+    win_title = (win.title if win else "") or title or "Окно рабочего стола"
+    win_proc = (win.process_name if win else "") or process_name or "unknown.exe"
+    win_pid = (win.process_id if win else 0) or pid or 0
+    from roadmap.patches import explain_taskbar_window
+    return explain_taskbar_window(hwnd=hwnd, title=win_title, process_name=win_proc, pid=win_pid)
 
 
 @router.post("/windows/{hwnd}/activate")

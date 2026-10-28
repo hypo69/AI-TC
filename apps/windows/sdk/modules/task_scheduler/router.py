@@ -16,7 +16,7 @@
 # Package: apps.windows.sdk.modules.task_scheduler
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-15 19:05:00
 # =============================================================================
 
 from __future__ import annotations
@@ -30,6 +30,8 @@ from apps.windows.sdk.modules.task_scheduler.core.manager import TaskSchedulerMa
 from apps.windows.sdk.modules.task_scheduler.core.models import (
     ScheduledTaskItem,
     TaskActionRequest,
+    TaskHistoryStatusRequest,
+    TaskHistoryStatusResponse,
     TaskSchedulerReport,
 )
 
@@ -59,6 +61,20 @@ async def list_tasks(state: Optional[str] = Query(None, description='Ready, Runn
 async def execute_task_action(payload: TaskActionRequest) -> Dict[str, Any]:
     """Запуск, остановка, включение или удаление задания."""
     return await _manager.execute_task_action(payload)
+
+
+@router.get('/history-status', response_model=TaskHistoryStatusResponse)
+async def get_history_status() -> TaskHistoryStatusResponse:
+    """Получение статуса журнала истории задач (Operational)."""
+    res = await asyncio.to_thread(_manager.get_history_status)
+    return TaskHistoryStatusResponse(**res)
+
+
+@router.post('/history-status', response_model=TaskHistoryStatusResponse)
+async def set_history_status(payload: TaskHistoryStatusRequest) -> TaskHistoryStatusResponse:
+    """Включение или выключение журнала истории задач (Operational)."""
+    res = await asyncio.to_thread(_manager.set_history_status, payload.enabled)
+    return TaskHistoryStatusResponse(**res)
 
 
 def init_router() -> APIRouter:

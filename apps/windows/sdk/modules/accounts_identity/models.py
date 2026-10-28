@@ -17,7 +17,7 @@
 # Package: apps.windows.sdk.modules.accounts_identity
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-13 17:59:00
 # =============================================================================
 
 """Модели данных и схемы для подсистемы Accounts & Identity Windows."""
@@ -274,6 +274,7 @@ class Principal(BaseModel):
     processes: List[Dict[str, Any]] = Field(default_factory=list)
     profile: Optional[ProfileDetails] = None
     audit_events: List[AuditEventItem] = Field(default_factory=list)
+    ai_copilot: Optional[Dict[str, Any]] = None
 
 
 class IdentityGraphNode(BaseModel):

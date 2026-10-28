@@ -7,16 +7,16 @@
 #
 # Usage Examples:
 #   Python API:
-#     from apps.windows.telemetry.win32_ffi.ntdll import SYSTEM_INFO
+#     from apps.windows.sdk.win32_ffi.ntdll import SYSTEM_INFO
 #
 #     service = SYSTEM_INFO()
 #
 # File: ntdll.py
 # Project: ai-windows-admin
-# Package: apps.windows.telemetry.win32_ffi
+# Package: apps.windows.sdk.win32_ffi
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-13 16:25:00
 # =============================================================================
 
 """ntdll.dll wrapper for native NT API functions."""

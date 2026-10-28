@@ -18,7 +18,7 @@
 # Package: apps.windows.api.routers
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-12 08:12:00
+# Updated: 2026-10-20 15:50:00
 # =============================================================================
 
 from __future__ import annotations
@@ -65,8 +65,101 @@ class PanelSqlMetaResponse(BaseModel):
     sql: str = Field(description="SQL-шаблон запроса")
 
 
+DEPRECATED_PANEL_ALIAS_MAP: Dict[str, str] = {
+    "panel-about-platform-os": "about_system-platform_os",
+    "panel-about-security": "about_system-security_overview",
+    "panel-about-restore-points": "about_system-restore_points",
+    "panel-about-storage": "about_system-primary_storage",
+    "panel-about-system-4-iznos-nakopiteley-i-batarei": "about_system-disks_wear",
+    "panel-cpu": "system_inspector-cpu_load",
+    "panel-cpu-load": "system_inspector-cpu_load",
+    "cpu": "system_inspector-cpu_load",
+    "cpu-load": "system_inspector-cpu_load",
+    "panel-ram": "system_inspector-memory_ram",
+    "panel-memory-io": "system_inspector-memory_ram",
+    "ram": "system_inspector-memory_ram",
+    "memory-io": "system_inspector-memory_ram",
+    "panel-gpu": "system_inspector-gpu_vram",
+    "panel-gpu-load": "system_inspector-gpu_vram",
+    "gpu": "system_inspector-gpu_vram",
+    "gpu-load": "system_inspector-gpu_vram",
+    "disk_io": "system_inspector-disk_io",
+    "sensors": "hardware_monitor-summary_kpi",
+    "panel-accounts-identity-1": "accounts_identity-users_list",
+    "maintenance_recovery": "windows_backup-maintenance_recovery",
+    "maintenance-recovery": "windows_backup-maintenance_recovery",
+    "tab-maintenance-recovery": "windows_backup-maintenance_recovery",
+    "panel-windows-backup": "windows_backup-backup_restore",
+    "windows_admin-backup": "windows_backup-backup_restore",
+}
+
 # Словарь предопределённых SQL-запросов для панелей
 PANEL_SQL_REGISTRY: Dict[str, Dict[str, str]] = {
+    "tab-telemetry-research": {
+        "table": "sensor_polls",
+        "sql": "SELECT id, timestamp, sensor_name, value_numeric, status FROM sensor_polls ORDER BY id DESC LIMIT :limit;",
+    },
+    "panel-windows-backup": {
+        "table": "system_snapshots",
+        "sql": "SELECT id, timestamp, created_at, updates_json FROM system_snapshots ORDER BY id DESC LIMIT :limit;",
+    },
+    "windows_admin-backup": {
+        "table": "system_snapshots",
+        "sql": "SELECT id, timestamp, created_at, updates_json FROM system_snapshots ORDER BY id DESC LIMIT :limit;",
+    },
+    # 0. Нормализованные идентификаторы хабов ({tab_id}-{panel_id})
+    "about_system-platform_os": {
+        "table": "system_snapshots",
+        "sql": "SELECT id, timestamp, created_at, hostname, username, uptime_seconds, os_name, os_build, system_language, timezone, codepage FROM system_snapshots ORDER BY id DESC LIMIT :limit;",
+    },
+    "about_system-security_overview": {
+        "table": "system_snapshots",
+        "sql": "SELECT id, timestamp, created_at, alerts_json, listening_ports_json FROM system_snapshots ORDER BY id DESC LIMIT :limit;",
+    },
+    "about_system-restore_points": {
+        "table": "system_snapshots",
+        "sql": "SELECT id, timestamp, created_at, updates_json FROM system_snapshots ORDER BY id DESC LIMIT :limit;",
+    },
+    "about_system-primary_storage": {
+        "table": "system_snapshots",
+        "sql": "SELECT id, timestamp, created_at, disks_json, physical_disks_json FROM system_snapshots ORDER BY id DESC LIMIT :limit;",
+    },
+    "about_system-disks_wear": {
+        "table": "system_snapshots",
+        "sql": "SELECT id, timestamp, created_at, physical_disks_json, disks_json FROM system_snapshots ORDER BY id DESC LIMIT :limit;",
+    },
+    "system_inspector-cpu_load": {
+        "table": "system_snapshots",
+        "sql": "SELECT id, timestamp, created_at, cpu_total_percent, cpu_frequency_mhz FROM system_snapshots ORDER BY id DESC LIMIT :limit;",
+    },
+    "system_inspector-memory_ram": {
+        "table": "system_snapshots",
+        "sql": "SELECT id, timestamp, created_at, memory_total_gb, memory_used_gb, memory_percent, swap_percent, disk_read_bytes_sec, disk_write_bytes_sec FROM system_snapshots ORDER BY id DESC LIMIT :limit;",
+    },
+    "system_inspector-gpu_vram": {
+        "table": "system_snapshots",
+        "sql": "SELECT id, timestamp, created_at, gpu_load_percent, gpu_temp_c FROM system_snapshots ORDER BY id DESC LIMIT :limit;",
+    },
+    "system_inspector-disk_io": {
+        "table": "system_snapshots",
+        "sql": "SELECT id, timestamp, created_at, disk_read_bytes_sec, disk_write_bytes_sec, disk_read_count_sec, disk_write_count_sec FROM system_snapshots ORDER BY id DESC LIMIT :limit;",
+    },
+    "hardware_monitor-summary_kpi": {
+        "table": "sensor_polls",
+        "sql": "SELECT id, sensor_id, timestamp, created_at, hardware_name, hardware_type, sensor_type, sensor_name, value FROM sensor_polls ORDER BY id DESC LIMIT :limit;",
+    },
+    "accounts_identity-users_list": {
+        "table": "system_snapshots",
+        "sql": "SELECT id, username, hostname, system_language, user_locale, timezone, created_at FROM system_snapshots ORDER BY id DESC LIMIT :limit;",
+    },
+    "windows_backup-backup_restore": {
+        "table": "system_snapshots",
+        "sql": "SELECT id, timestamp, created_at, updates_json FROM system_snapshots ORDER BY id DESC LIMIT :limit;",
+    },
+    "windows_backup-maintenance_recovery": {
+        "table": "system_snapshots",
+        "sql": "SELECT id, timestamp, created_at, os_name, os_build, uptime_seconds FROM system_snapshots ORDER BY id DESC LIMIT :limit;",
+    },
     # 1. Процессор и нагрузка CPU
     "cpu": {
         "table": "system_snapshots",
@@ -166,18 +259,6 @@ PANEL_SQL_REGISTRY: Dict[str, Dict[str, str]] = {
         "table": "system_snapshots",
         "sql": "SELECT id, timestamp, created_at, physical_disks_json, disks_json FROM system_snapshots ORDER BY id DESC LIMIT :limit;",
     },
-    "panel-system-inspector-storage": {
-        "table": "system_snapshots",
-        "sql": "SELECT id, timestamp, created_at, physical_disks_json, disks_json FROM system_snapshots ORDER BY id DESC LIMIT :limit;",
-    },
-    "system-inspector-storage": {
-        "table": "system_snapshots",
-        "sql": "SELECT id, timestamp, created_at, physical_disks_json, disks_json FROM system_snapshots ORDER BY id DESC LIMIT :limit;",
-    },
-    "panel-system-inspector-zdorove-diskov-nvmessd": {
-        "table": "system_snapshots",
-        "sql": "SELECT id, timestamp, created_at, physical_disks_json, disks_json FROM system_snapshots ORDER BY id DESC LIMIT :limit;",
-    },
     "disks-wear": {
         "table": "system_snapshots",
         "sql": "SELECT id, timestamp, created_at, physical_disks_json, disks_json FROM system_snapshots ORDER BY id DESC LIMIT :limit;",
@@ -210,15 +291,7 @@ PANEL_SQL_REGISTRY: Dict[str, Dict[str, str]] = {
         "table": "sensor_polls",
         "sql": "SELECT id, sensor_id, timestamp, created_at, hardware_name, hardware_type, sensor_type, sensor_name, value FROM sensor_polls ORDER BY id DESC LIMIT :limit;",
     },
-    "hardware-sensors": {
-        "table": "sensor_polls",
-        "sql": "SELECT id, sensor_id, timestamp, created_at, hardware_name, hardware_type, sensor_type, sensor_name, value FROM sensor_polls ORDER BY id DESC LIMIT :limit;",
-    },
     "panel-sensors": {
-        "table": "sensor_polls",
-        "sql": "SELECT id, sensor_id, timestamp, created_at, hardware_name, hardware_type, sensor_type, sensor_name, value FROM sensor_polls ORDER BY id DESC LIMIT :limit;",
-    },
-    "panel-hardware-sensors": {
         "table": "sensor_polls",
         "sql": "SELECT id, sensor_id, timestamp, created_at, hardware_name, hardware_type, sensor_type, sensor_name, value FROM sensor_polls ORDER BY id DESC LIMIT :limit;",
     },
@@ -284,11 +357,11 @@ PANEL_SQL_REGISTRY: Dict[str, Dict[str, str]] = {
     },
     "panel-process-leaks": {
         "table": "process_snapshots",
-        "sql": "SELECT pid, process_name, executable_path, working_set_bytes, private_bytes, handle_count, cpu_percent, timestamp FROM process_snapshots ORDER BY working_set_bytes DESC LIMIT :limit;",
+        "sql": "SELECT pid, name AS process_name, executable AS executable_path, working_set_mb, private_mb, num_handles AS handle_count, cpu_percent, timestamp FROM process_snapshots ORDER BY working_set_mb DESC LIMIT :limit;",
     },
     "process-file-activity": {
         "table": "process_file_events",
-        "sql": "SELECT * FROM process_file_events ORDER BY id DESC LIMIT :limit;",
+        "sql": "SELECT * FROM process_file_events ORDER BY event_id DESC LIMIT :limit;",
     },
 
     # 9. Жизненный цикл питания (Power Lifecycle)
@@ -298,11 +371,11 @@ PANEL_SQL_REGISTRY: Dict[str, Dict[str, str]] = {
     },
     "power-sessions": {
         "table": "power_sessions",
-        "sql": "SELECT * FROM power_sessions ORDER BY id DESC LIMIT :limit;",
+        "sql": "SELECT * FROM power_sessions WHERE record_type = 'session' ORDER BY id DESC LIMIT :limit;",
     },
     "power-events": {
-        "table": "power_events",
-        "sql": "SELECT * FROM power_events ORDER BY id DESC LIMIT :limit;",
+        "table": "power_sessions",
+        "sql": "SELECT * FROM power_sessions WHERE record_type = 'event' ORDER BY id DESC LIMIT :limit;",
     },
     "panel-power-lifecycle": {
         "table": "power_sessions",
@@ -310,25 +383,25 @@ PANEL_SQL_REGISTRY: Dict[str, Dict[str, str]] = {
     },
     "panel-power-sessions": {
         "table": "power_sessions",
-        "sql": "SELECT * FROM power_sessions ORDER BY id DESC LIMIT :limit;",
+        "sql": "SELECT * FROM power_sessions WHERE record_type = 'session' ORDER BY id DESC LIMIT :limit;",
     },
     "panel-power-events": {
-        "table": "power_events",
-        "sql": "SELECT * FROM power_events ORDER BY id DESC LIMIT :limit;",
+        "table": "power_sessions",
+        "sql": "SELECT * FROM power_sessions WHERE record_type = 'event' ORDER BY id DESC LIMIT :limit;",
     },
 
     # 10. Системные логи и события
     "system-logs": {
-        "table": "etw_events",
-        "sql": "SELECT * FROM etw_events ORDER BY id DESC LIMIT :limit;",
+        "table": "incidents",
+        "sql": "SELECT * FROM incidents ORDER BY id DESC LIMIT :limit;",
     },
     "event-logs": {
-        "table": "etw_events",
-        "sql": "SELECT * FROM etw_events ORDER BY id DESC LIMIT :limit;",
+        "table": "incidents",
+        "sql": "SELECT * FROM incidents ORDER BY id DESC LIMIT :limit;",
     },
     "panel-system-logs": {
-        "table": "etw_events",
-        "sql": "SELECT * FROM etw_events ORDER BY id DESC LIMIT :limit;",
+        "table": "incidents",
+        "sql": "SELECT * FROM incidents ORDER BY id DESC LIMIT :limit;",
     },
     "incidents": {
         "table": "incidents",
@@ -339,12 +412,12 @@ PANEL_SQL_REGISTRY: Dict[str, Dict[str, str]] = {
         "sql": "SELECT * FROM incidents ORDER BY id DESC LIMIT :limit;",
     },
     "rollups": {
-        "table": "system_metrics_rollups",
-        "sql": "SELECT * FROM system_metrics_rollups ORDER BY id DESC LIMIT :limit;",
+        "table": "telemetry_rollups",
+        "sql": "SELECT * FROM telemetry_rollups ORDER BY id DESC LIMIT :limit;",
     },
     "panel-rollups": {
-        "table": "system_metrics_rollups",
-        "sql": "SELECT * FROM system_metrics_rollups ORDER BY id DESC LIMIT :limit;",
+        "table": "telemetry_rollups",
+        "sql": "SELECT * FROM telemetry_rollups ORDER BY id DESC LIMIT :limit;",
     },
 
     # 11. Windows Admin, Security & Software
@@ -357,28 +430,28 @@ PANEL_SQL_REGISTRY: Dict[str, Dict[str, str]] = {
         "sql": "SELECT username, hostname, system_language, user_locale, timezone, created_at FROM system_snapshots ORDER BY id DESC LIMIT :limit;",
     },
     "winadmin-security-events": {
-        "table": "security_events",
-        "sql": "SELECT * FROM security_events ORDER BY id DESC LIMIT :limit;",
+        "table": "incidents",
+        "sql": "SELECT * FROM incidents WHERE domain IN ('security_event', 'defender_threat') ORDER BY id DESC LIMIT :limit;",
     },
     "panel-winadmin-security-events": {
-        "table": "security_events",
-        "sql": "SELECT * FROM security_events ORDER BY id DESC LIMIT :limit;",
+        "table": "incidents",
+        "sql": "SELECT * FROM incidents WHERE domain IN ('security_event', 'defender_threat') ORDER BY id DESC LIMIT :limit;",
     },
     "panel-security-events": {
-        "table": "security_events",
-        "sql": "SELECT * FROM security_events ORDER BY id DESC LIMIT :limit;",
+        "table": "incidents",
+        "sql": "SELECT * FROM incidents WHERE domain IN ('security_event', 'defender_threat') ORDER BY id DESC LIMIT :limit;",
     },
     "software-inventory": {
-        "table": "software_inventory",
-        "sql": "SELECT * FROM software_inventory ORDER BY id DESC LIMIT :limit;",
+        "table": "inventory_state",
+        "sql": "SELECT * FROM inventory_state WHERE domain = 'software' ORDER BY updated_at DESC LIMIT :limit;",
     },
     "panel-software-inventory": {
-        "table": "software_inventory",
-        "sql": "SELECT * FROM software_inventory ORDER BY id DESC LIMIT :limit;",
+        "table": "inventory_state",
+        "sql": "SELECT * FROM inventory_state WHERE domain = 'software' ORDER BY updated_at DESC LIMIT :limit;",
     },
     "panel-software-audit": {
-        "table": "software_inventory",
-        "sql": "SELECT * FROM software_inventory ORDER BY id DESC LIMIT :limit;",
+        "table": "inventory_state",
+        "sql": "SELECT * FROM inventory_state WHERE domain = 'software_audit' ORDER BY updated_at DESC LIMIT :limit;",
     },
     "software-scanner": {
         "table": "system_snapshots",
@@ -433,7 +506,7 @@ def _get_sqlite_tables() -> Set[str]:
             _KNOWN_TABLES_CACHE = {row[0] for row in cursor.fetchall()}
             return _KNOWN_TABLES_CACHE
     except Exception:
-        return {"system_snapshots", "sensor_polls", "process_snapshots", "power_sessions", "etw_events"}
+        return {"system_snapshots", "sensor_polls", "process_snapshots", "power_sessions", "incidents"}
 
 
 def _resolve_panel_sql(panel_id: str) -> Dict[str, str]:
@@ -446,6 +519,8 @@ def _resolve_panel_sql(panel_id: str) -> Dict[str, str]:
         Dict[str, str]: Словарь с целевой таблицей и SQL-шаблоном.
     """
     clean_id = urllib.parse.unquote(panel_id).strip().lower()
+    if clean_id in DEPRECATED_PANEL_ALIAS_MAP:
+        clean_id = DEPRECATED_PANEL_ALIAS_MAP[clean_id]
     if clean_id in PANEL_SQL_REGISTRY:
         return PANEL_SQL_REGISTRY[clean_id]
 
@@ -458,6 +533,18 @@ def _resolve_panel_sql(panel_id: str) -> Dict[str, str]:
     hyphen_id = norm_id.replace("_", "-")
     if hyphen_id in PANEL_SQL_REGISTRY:
         return PANEL_SQL_REGISTRY[hyphen_id]
+
+    # Проверка панелей AI Assistant (Умная история файлов)
+    try:
+        from apps.ai_assistant.api.routers.router_panel import (
+            PANEL_SQL_REGISTRY as AI_PANEL_SQL_REGISTRY,
+            _resolve_panel_key as _resolve_ai_panel_key,
+        )
+        ai_key = _resolve_ai_panel_key(clean_id)
+        if ai_key in AI_PANEL_SQL_REGISTRY:
+            return AI_PANEL_SQL_REGISTRY[ai_key]
+    except Exception:
+        pass
 
     # Проверка, начинается ли идентификатор с известных доменов
     if norm_id.startswith("models") or norm_id.startswith("model"):
@@ -506,6 +593,7 @@ def init_router() -> APIRouter:
 
     @router.get("/api/v1/panel/{panel_id:path}/sql", response_model=PanelSqlMetaResponse)
     @router.get("/panel/{panel_id:path}/sql", response_model=PanelSqlMetaResponse, include_in_schema=False)
+    @router.get("/v1/panel/{panel_id:path}/sql", response_model=PanelSqlMetaResponse, include_in_schema=False)
     async def get_panel_sql(panel_id: str) -> PanelSqlMetaResponse:
         """Возвращает скомпилированный SQL-запрос для указанной панели."""
         meta = _resolve_panel_sql(panel_id)
@@ -517,6 +605,7 @@ def init_router() -> APIRouter:
 
     @router.get("/api/v1/panel/{panel_id:path}", response_model=PanelDataResponse)
     @router.get("/panel/{panel_id:path}", response_model=PanelDataResponse, include_in_schema=False)
+    @router.get("/v1/panel/{panel_id:path}", response_model=PanelDataResponse, include_in_schema=False)
     async def get_panel_data(
         panel_id: str,
         limit: int = Query(default=60, ge=1, le=5000, description="Максимальное количество возвращаемых строк"),
@@ -533,6 +622,29 @@ def init_router() -> APIRouter:
         meta = _resolve_panel_sql(panel_id)
         sql_template = meta.get("sql", "SELECT * FROM system_snapshots ORDER BY id DESC LIMIT :limit;")
         table_name = meta.get("table", "system_snapshots")
+
+        # Проверка и делегирование в панель AI Assistant (Умная история файлов)
+        try:
+            from apps.ai_assistant.api.routers.router_panel import (
+                PANEL_SQL_REGISTRY as AI_PANEL_SQL_REGISTRY,
+                _resolve_panel_key as _resolve_ai_panel_key,
+                get_panel_data as get_ai_panel_data,
+            )
+            ai_key = _resolve_ai_panel_key(panel_id)
+            if ai_key in AI_PANEL_SQL_REGISTRY or panel_id.startswith(("panel-timeline", "panel-commits", "panel-diff", "panel-wikillm", "panel-rag", "panel-verification", "panel-system-status", "panel-knowledge")):
+                ai_resp = await get_ai_panel_data(panel_id=panel_id, limit=limit)
+                return PanelDataResponse(
+                    status=ai_resp.status,
+                    panel_id=ai_resp.panel_id,
+                    query_type=ai_resp.query_type,
+                    table=ai_resp.table,
+                    sql=ai_resp.sql,
+                    count=ai_resp.count,
+                    timestamp=ai_resp.timestamp,
+                    data=ai_resp.data,
+                )
+        except Exception as ai_exc:
+            logger.debug(f"[Panel Router] Fallback с AI Assistant панели {panel_id}: {ai_exc}")
 
         storage = TelemetryStorage.get_instance(read_only=True)
         now_iso = datetime.now(timezone.utc).isoformat()

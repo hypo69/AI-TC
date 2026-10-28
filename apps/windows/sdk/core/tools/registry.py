@@ -16,7 +16,7 @@
 # Package: apps.windows.sdk.core.tools
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-17 00:58:00
 # =============================================================================
 
 from __future__ import annotations
@@ -69,7 +69,7 @@ class ToolRegistry:
         return False
 
     def get(self, tool_name: str) -> Optional[BaseTool]:
-        """Получение инструмента по имени.
+        """Получение инструмента по имени с поддержкой алиасов и нечувствительности к регистру.
 
         Args:
             tool_name: Имя инструмента.
@@ -77,7 +77,17 @@ class ToolRegistry:
         Returns:
             Optional[BaseTool]: Экземпляр инструмента или None.
         """
-        return self._tools.get(tool_name)
+        if not tool_name:
+            return None
+        if tool_name in self._tools:
+            return self._tools[tool_name]
+
+        target = tool_name.strip().lower().replace('_', '-')
+        for k, v in self._tools.items():
+            k_norm = k.strip().lower().replace('_', '-')
+            if k_norm == target or k_norm.replace('-', '') == target.replace('-', ''):
+                return v
+        return None
 
     def has(self, tool_name: str) -> bool:
         """Проверка наличия инструмента в реестре.
@@ -88,7 +98,7 @@ class ToolRegistry:
         Returns:
             bool: True если инструмент присутствует в реестре.
         """
-        return tool_name in self._tools
+        return self.get(tool_name) is not None
 
     def list_tools(self) -> List[BaseTool]:
         """Возвращает список всех зарегистрированных инструментов."""

@@ -19,7 +19,7 @@
 # Package: apps.windows.api.routers
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 20:33:00
+# Updated: 2026-10-16 20:57:00
 # =============================================================================
 
 import asyncio
@@ -120,15 +120,20 @@ def _perform_forensics_scan(storage: TelemetryStorage) -> ForensicsResponse:
         engine = DeepDiagnosticsEngine()
         rep = engine.collect_forensics_activity()
         snap_id = f"snap_forensics_{int(datetime.now(timezone.utc).timestamp())}"
-        storage.save_forensics_snapshot(snap_id, {
-            "foreground_window_title": rep.foreground_window.get("title", ""),
-            "foreground_process_name": rep.foreground_window.get("process_name", ""),
-            "foreground_pid": rep.foreground_window.get("pid", 0),
-            "user_idle_seconds": int(rep.user_idle_seconds),
-            "camera_active_apps": rep.camera_active_apps,
-            "microphone_active_apps": rep.microphone_active_apps,
-            "userassist_top_apps": rep.userassist_top_apps,
-        })
+        try:
+            write_store = TelemetryStorage.get_instance(read_only=False)
+            write_store.save_forensics_snapshot(snap_id, {
+                "foreground_window_title": rep.foreground_window.get("title", ""),
+                "foreground_process_name": rep.foreground_window.get("process_name", ""),
+                "foreground_pid": rep.foreground_window.get("pid", 0),
+                "user_idle_seconds": int(rep.user_idle_seconds),
+                "camera_active_apps": rep.camera_active_apps,
+                "microphone_active_apps": rep.microphone_active_apps,
+                "userassist_top_apps": rep.userassist_top_apps,
+            })
+        except Exception as write_err:
+            logger.debug(f"Не удалось записать снимок форензики в SQLite: {write_err}")
+
         d = storage.get_latest_forensics_snapshot()
         hist = storage.get_forensics_history(limit=50)
         if d:
@@ -164,10 +169,12 @@ def init_router(storage: Optional[TelemetryStorage] = None) -> APIRouter:
     store = storage or TelemetryStorage.get_instance(read_only=True)
 
     @router.get("/forensics", response_model=ForensicsResponse)
-    async def get_forensics() -> ForensicsResponse:
+    async def get_forensics(refresh: bool = Query(False, description="Принудительное живое сканирование")) -> ForensicsResponse:
         """Возвращает срез активности пользователя и форензики с историей из SQLite (< 5 мс)."""
+        if refresh:
+            return await asyncio.to_thread(_perform_forensics_scan, store)
         d = store.get_latest_forensics_snapshot()
-        if not d:
+        if not d or not d.get("userassist_top_apps"):
             return await asyncio.to_thread(_perform_forensics_scan, store)
         hist = store.get_forensics_history(limit=50)
         return _convert_snapshot_to_response(d, hist)
@@ -186,6 +193,26 @@ def init_router(storage: Optional[TelemetryStorage] = None) -> APIRouter:
     async def refresh_forensics() -> ForensicsResponse:
         """Принудительно пересканирует форензик-активность и обновляет срез в SQLite."""
         return await asyncio.to_thread(_perform_forensics_scan, store)
+
+    @router.get("/privacy-status")
+    @router.get("/forensics/privacy-status")
+    async def get_privacy_status():
+        """Возвращает текущий статус активности камеры и микрофона (Privacy Radar)."""
+        d = store.get_latest_forensics_snapshot()
+        if not d:
+            res = await asyncio.to_thread(_perform_forensics_scan, store)
+            return {
+                "camera_active_apps": [a.app_name for a in res.camera_active_apps],
+                "microphone_active_apps": [a.app_name for a in res.microphone_active_apps],
+                "user_idle_seconds": res.user_idle_seconds,
+            }
+        cam_apps = [a.get("app_name", "") for a in (d.get("camera_active_apps") or []) if a.get("app_name")]
+        mic_apps = [a.get("app_name", "") for a in (d.get("microphone_active_apps") or []) if a.get("app_name")]
+        return {
+            "camera_active_apps": cam_apps,
+            "microphone_active_apps": mic_apps,
+            "user_idle_seconds": d.get("user_idle_seconds", 0),
+        }
 
     return router
 

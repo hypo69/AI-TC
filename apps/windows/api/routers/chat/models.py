@@ -11,7 +11,7 @@
 # Package: apps.windows.api.routers.chat
 # Author: hypo69
 # Copyright: c 2026 hypo69
-# Updated: 2026-10-12 06:20:00
+# Updated: 2026-10-22 13:30:00
 # =============================================================================
 
 from __future__ import annotations
@@ -74,7 +74,7 @@ class ModelInstructionPayload(BaseModel):
     )
     save_to_disk: bool = Field(
         default=False,
-        description="Флаг сохранения системной инструкции в файл prompts/chat/system_instruction.md.",
+        description="Флаг сохранения системной инструкции в файл apps/windows/prompts/chat/system_instruction.md.",
     )
 
 ModelInstructionRequest = ModelInstructionPayload

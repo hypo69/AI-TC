@@ -1,0 +1,10 @@
+{
+  "id": "theme-high-contrast",
+  "name": "High Contrast (Высокая контрастность)",
+  "nameEn": "High Contrast",
+  "category": "dark",
+  "icon": "bi-eye-fill",
+  "iconColor": "text-light",
+  "description": "Максимально контрастная черно-белая тема для доступности",
+  "baseType": "dark"
+}

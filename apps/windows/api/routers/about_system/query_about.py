@@ -4,14 +4,14 @@
 # =============================================================================
 # Description:
 #   Запросы к telemetry.db для обзора и истории панели «О системе».
-#   Вынесено из router_about_system.py (этап 4 оптимизации).
+#   Исключительно чтение из базы данных telemetry.db без внешних опросов.
 #
 # File: query_about.py
 # Project: ai-windows-admin
 # Package: apps.windows.api.routers.about_system
 # Author: hypo69
-# Copyright: c 2026 hypo69
-# Updated: 2026-10-12 06:20:00
+# Copyright: © 2026 hypo69
+# Updated: 2026-10-16 19:14:00
 # =============================================================================
 
 from __future__ import annotations
@@ -27,13 +27,11 @@ from typing import (
     Optional,
 )
 
-import psutil
-
 from logger import logger
 from apps.windows.telemetry.sqlite import TelemetryStorage
 from .helpers import _format_uptime_human
 from .helpers import _get_cpu_brand_name
-from .helpers import get_windows_workgroup
+from .helpers import get_windows_workgroup, get_windows_install_date
 from .models import AboutSystemHistoryItem
 from .models import AboutSystemHistoryResponse
 from .models import AboutSystemPanelOverviewResponse
@@ -73,7 +71,7 @@ def query_about_system_from_db(storage: TelemetryStorage) -> AboutSystemPanelOve
             "disks_json, cpu_total_percent, cpu_frequency_mhz, memory_total_gb, "
             "memory_used_gb, memory_percent, swap_percent, gpu_load_percent, gpu_temp_c, "
             "disk_read_bytes_sec, disk_write_bytes_sec, disk_read_count_sec, disk_write_count_sec, "
-            "network_sent_bytes_sec, network_recv_bytes_sec "
+            "network_sent_bytes_sec, network_recv_bytes_sec, vss_snapshots_count "
             "FROM system_snapshots ORDER BY id DESC LIMIT 1;"
         )
         cursor.execute(sql_snap)
@@ -82,21 +80,33 @@ def query_about_system_from_db(storage: TelemetryStorage) -> AboutSystemPanelOve
             snap_row = dict(row)
         executed_queries.append(sql_snap)
 
-        # 2. Запрос расширенного аудита безопасности и точек восстановления
+        # 2. Запрос расширенного аудита безопасности и точек восстановления из inventory_state
         sql_audit = (
-            "SELECT vss_snapshots_count, raw_json, timestamp "
-            "FROM system_extended_audits ORDER BY id DESC LIMIT 1;"
+            "SELECT state_json AS raw_json, updated_at AS timestamp "
+            "FROM inventory_state WHERE domain = 'os_extended_audit' ORDER BY updated_at DESC LIMIT 1;"
         )
         cursor.execute(sql_audit)
         row_audit = cursor.fetchone()
         if row_audit:
             audit_row = dict(row_audit)
+            try:
+                parsed_aud = json.loads(audit_row.get("raw_json") or "{}")
+                if isinstance(parsed_aud, dict):
+                    audit_row["vss_snapshots_count"] = parsed_aud.get("vss_snapshots_count", 0)
+            except Exception:
+                audit_row["vss_snapshots_count"] = 0
+        elif snap_row and snap_row.get("vss_snapshots_count") is not None:
+            audit_row = {
+                "vss_snapshots_count": snap_row.get("vss_snapshots_count", 0),
+                "raw_json": "{}",
+                "timestamp": snap_row.get("timestamp"),
+            }
         executed_queries.append(sql_audit)
 
-        # 3. Запрос метрик очистки накопителя
+        # 3. Запрос метрик очистки накопителя из incidents (domain = 'app_poll')
         sql_clean = (
-            "SELECT value, details, timestamp FROM app_polls "
-            "WHERE metric_name IN ('cleanable_mb', 'clean_findings') "
+            "SELECT value, details_json AS details, timestamp FROM incidents "
+            "WHERE domain = 'app_poll' AND sensor_id IN ('cleanable_mb', 'clean_findings') "
             "ORDER BY id DESC LIMIT 1;"
         )
         cursor.execute(sql_clean)
@@ -119,24 +129,15 @@ def query_about_system_from_db(storage: TelemetryStorage) -> AboutSystemPanelOve
     # 1. Платформа & ОС
     os_name = (snap_row.get("os_name") if snap_row else None) or f"{platform.system()} {platform.release()}"
     os_build = str((snap_row.get("os_build") if snap_row else None) or platform.version() or "22631")
-    os_install_date = str((snap_row.get("os_install_date") if snap_row else None) or "")
+    os_install_date = str((snap_row.get("os_install_date") if snap_row else None) or "").strip()
     if not os_install_date:
-        try:
-            from apps.windows.telemetry import SystemCollector
-            os_install_date = str(SystemCollector().get_system_identity().get("os_install_date") or "")
-        except Exception:
-            pass
+        os_install_date = get_windows_install_date()
     arch = platform.machine() or "AMD64"
     hostname = (snap_row.get("hostname") if snap_row else None) or platform.node() or "Host"
     workgroup = str((snap_row.get("workgroup") if snap_row else None) or "")
     if not workgroup:
         workgroup = get_windows_workgroup()
     uptime_sec = float((snap_row.get("uptime_seconds") if snap_row else None) or 0.0)
-    if uptime_sec <= 0.0:
-        try:
-            uptime_sec = float(time.time() - psutil.boot_time())
-        except Exception:
-            uptime_sec = 0.0
     uptime_str = _format_uptime_human(uptime_sec)
     os_title = f"{os_name} ({arch})" if arch else os_name
 
@@ -258,16 +259,6 @@ def query_about_system_from_db(storage: TelemetryStorage) -> AboutSystemPanelOve
     used_gb = float((c_disk.get("used_gb") if isinstance(c_disk, dict) else getattr(c_disk, "used_gb", 0.0)) or 0.0) if c_disk else 0.0
     pct_used = float((c_disk.get("percent") if isinstance(c_disk, dict) else getattr(c_disk, "percent", 0.0)) or 0.0) if c_disk else 0.0
 
-    if tot_gb <= 0.0:
-        try:
-            usage = psutil.disk_usage("C:\\")
-            tot_gb = usage.total / (1024.0 ** 3)
-            free_gb = usage.free / (1024.0 ** 3)
-            used_gb = usage.used / (1024.0 ** 3)
-            pct_used = usage.percent
-        except Exception:
-            pass
-
     cleanable_mb = float(clean_row.get("value") or 0.0) if clean_row else 0.0
     clean_str = f"~{cleanable_mb:.0f} MB" if cleanable_mb < 1024 else f"~{cleanable_mb/1024:.1f} GB"
 
@@ -285,24 +276,14 @@ def query_about_system_from_db(storage: TelemetryStorage) -> AboutSystemPanelOve
     )
 
     # 5. CPU
-    cpu_pct = float((snap_row.get("cpu_total_percent") if snap_row else 0.0) or 0.0)
-    cpu_freq = float((snap_row.get("cpu_frequency_mhz") if snap_row else 0.0) or 0.0)
-    phys_cores = psutil.cpu_count(logical=False) or 6
-    log_cores = psutil.cpu_count(logical=True) or 12
-    cpu_model = (snap_row.get("cpu_model") if snap_row else None) or _get_cpu_brand_name()
+    full_snap = storage.get_latest_snapshot_full() or {}
+    cpu_data = full_snap.get("cpu") or {}
 
-    if cpu_freq <= 0.0:
-        try:
-            freq_obj = psutil.cpu_freq()
-            cpu_freq = float(freq_obj.current) if freq_obj and freq_obj.current else 2900.0
-        except Exception:
-            cpu_freq = 2900.0
-
-    if cpu_pct <= 0.0:
-        try:
-            cpu_pct = psutil.cpu_percent(interval=None)
-        except Exception:
-            cpu_pct = 0.0
+    cpu_pct = float((snap_row.get("cpu_total_percent") if snap_row else 0.0) or cpu_data.get("total_percent") or 0.0)
+    cpu_freq = float((snap_row.get("cpu_frequency_mhz") if snap_row else 0.0) or cpu_data.get("frequency_mhz") or 2900.0)
+    phys_cores = int(cpu_data.get("physical_cores") or 6)
+    log_cores = int(cpu_data.get("logical_cores") or 12)
+    cpu_model = (snap_row.get("cpu_model") if snap_row else None) or cpu_data.get("model") or _get_cpu_brand_name()
 
     freq_txt = f"{int(cpu_freq)} MHz" if cpu_freq > 0 else ""
 
@@ -323,13 +304,10 @@ def query_about_system_from_db(storage: TelemetryStorage) -> AboutSystemPanelOve
     mem_pct = float((snap_row.get("memory_percent") if snap_row else 0.0) or 0.0)
 
     if mem_total <= 0.0:
-        try:
-            vm = psutil.virtual_memory()
-            mem_total = vm.total / (1024.0 ** 3)
-            mem_used = vm.used / (1024.0 ** 3)
-            mem_pct = vm.percent
-        except Exception:
-            pass
+        mem_data = full_snap.get("memory") or {}
+        mem_total = float(mem_data.get("total_gb") or 16.0)
+        mem_used = float(mem_data.get("used_gb") or 8.0)
+        mem_pct = float(mem_data.get("percent") or 50.0)
 
     mem_avail = max(0.0, mem_total - mem_used)
 

@@ -1,0 +1,285 @@
+<!--
+=============================================================================
+Process Name: Windows Web Interface - Smart Restore Tab View
+=============================================================================
+Description:
+  Шаблон клиентского веб-интерфейса модуля умного восстановления Windows (RestorePointAdvisor).
+  Анализирует состояние системы, отвечает на 3 вопроса перед созданием контрольной точки,
+  дедуплицирует точки на основе отпечатков и контролирует условия восстановления VSS.
+
+Usage Examples:
+  Web Route:
+    /windows/api/webgui/tab_smart_restore/index.html
+
+File: index.html
+Project: ai-windows-admin
+Package: windows/api/webgui/tab_smart_restore
+Author: hypo69
+Copyright: © 2026 hypo69
+Updated: 2026-10-20 18:20:00
+=============================================================================
+-->
+
+<div class="container-fluid py-2 px-3">
+  <!-- Заголовок вкладки -->
+  <div class="tab-header d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+    <div class="d-flex align-items-center gap-2">
+      <span class="tab-header-icon fs-4 text-warning">🛡️</span>
+      <div>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+          <h3 class="tab-header-title panel-header mb-0">Умное восстановление системы (Smart Restore)</h3>
+          
+        </div>
+        <small class="tab-header-subtitle text-secondary">Автоматическое создание и откат снимков системы, защита критических конфигураций перед твиками</small>
+      </div>
+    </div>
+    
+  </div>
+
+  <!-- Верхний блок KPI-метрик -->
+  <div class="row g-2 mb-3">
+    <!-- Карточка 1: Итоговое решение Advisor -->
+    <div class="col-12 col-sm-6 col-lg-3">
+      <div class="card h-100 shadow-sm p-3 border" id="card-advisor-decision" style="background: var(--surface-1); border-color: var(--border-color) !important;">
+        <div class="text-muted small text-uppercase fw-semibold d-flex justify-content-between align-items-center">
+          <span>Решение Advisor</span>
+          <i class="bi bi-robot fs-5 text-primary"></i>
+        </div>
+        <div class="fs-4 fw-bold mt-2" id="kpi-advisor-decision">Оценка...</div>
+        <div class="small text-muted mt-1" id="kpi-advisor-decision-sub">Нажмите «Оценить состояние»</div>
+      </div>
+    </div>
+
+    <!-- Карточка 2: Вопрос 1 — Есть ли смысл? -->
+    <div class="col-12 col-sm-6 col-lg-3">
+      <div class="card h-100 shadow-sm p-3 border" id="card-advisor-q1" style="background: var(--surface-1); border-color: var(--border-color) !important;">
+        <div class="text-muted small text-uppercase fw-semibold d-flex justify-content-between align-items-center">
+          <span>1. Есть ли смысл?</span>
+          <i class="bi bi-question-circle fs-5 text-info"></i>
+        </div>
+        <div class="fs-4 fw-bold mt-2" id="kpi-advisor-q1">--</div>
+        <div class="small text-muted mt-1 text-truncate" id="kpi-advisor-q1-sub">Анализ системных изменений</div>
+      </div>
+    </div>
+
+    <!-- Карточка 3: Вопрос 2 — Дубликат? -->
+    <div class="col-12 col-sm-6 col-lg-3">
+      <div class="card h-100 shadow-sm p-3 border" id="card-advisor-q2" style="background: var(--surface-1); border-color: var(--border-color) !important;">
+        <div class="text-muted small text-uppercase fw-semibold d-flex justify-content-between align-items-center">
+          <span>2. Не дублирует ли?</span>
+          <i class="bi bi-fingerprint fs-5 text-warning"></i>
+        </div>
+        <div class="fs-4 fw-bold mt-2" id="kpi-advisor-q2">--</div>
+        <div class="small text-muted mt-1 text-truncate" id="kpi-advisor-q2-sub">Сравнение отпечатков (Fingerprint)</div>
+      </div>
+    </div>
+
+    <!-- Карточка 4: Вопрос 3 — Условия восстановления -->
+    <div class="col-12 col-sm-6 col-lg-3">
+      <div class="card h-100 shadow-sm p-3 border" id="card-advisor-q3" style="background: var(--surface-1); border-color: var(--border-color) !important;">
+        <div class="text-muted small text-uppercase fw-semibold d-flex justify-content-between align-items-center">
+          <span>3. Условия VSS / Защита</span>
+          <i class="bi bi-shield-check fs-5 text-success"></i>
+        </div>
+        <div class="fs-4 fw-bold mt-2" id="kpi-advisor-q3">--</div>
+        <div class="small text-muted mt-1 text-truncate" id="kpi-advisor-q3-sub">System Protection и диск C:</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Панель управления действиями и триггерами -->
+  <div class="card mb-3 border shadow-sm" style="background: var(--surface-1); border-color: var(--border-color) !important;">
+    <div class="card-body p-3">
+      <div class="row g-2 align-items-center">
+        <!-- Селектор триггера -->
+        <div class="col-12 col-md-3">
+          <label class="form-label small text-muted fw-semibold mb-1" for="smart-restore-trigger">Событие-триггер:</label>
+          <select class="form-select form-select-sm" id="smart-restore-trigger" style="background: var(--surface-2); color: var(--text-color); border-color: var(--border-color);">
+            <option value="USER_REQUEST" selected>Запрос пользователя (User Request)</option>
+            <option value="SOFTWARE_INSTALL">Установка / удаление ПО</option>
+            <option value="UPDATE">Обновление Windows Update</option>
+            <option value="DRIVER_CHANGE">Изменение / установка драйвера</option>
+            <option value="PERIODIC_AUDIT">Плановый аудит состояния</option>
+          </select>
+        </div>
+
+        <!-- Описание контрольной точки -->
+        <div class="col-12 col-md-4">
+          <label class="form-label small text-muted fw-semibold mb-1" for="smart-restore-title">Описание / Заголовок точки:</label>
+          <input type="text" class="form-control form-control-sm" id="smart-restore-title" placeholder="Автоматическое описание на основе изменений" style="background: var(--surface-2); color: var(--text-color); border-color: var(--border-color);">
+        </div>
+
+        <!-- Флаг Force -->
+        <div class="col-6 col-md-2 d-flex align-items-center pt-md-3">
+          <div class="form-check form-switch mb-0">
+            <input class="form-check-input" type="checkbox" id="smart-restore-force">
+            <label class="form-check-label small fw-semibold" for="smart-restore-force" title="Создать точку восстановления даже при вердикте SKIP">Принудительно (Force)</label>
+          </div>
+        </div>
+
+        <!-- Кнопки действий -->
+        <div class="col-12 col-md-3 d-flex gap-2 justify-content-md-end pt-md-3">
+          <button class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1.5" id="btn-smart-restore-evaluate" type="button">
+            <i class="bi bi-search"></i>
+            <span>Оценить</span>
+          </button>
+          <button class="btn btn-sm btn-primary d-flex align-items-center gap-1.5" id="btn-smart-restore-create" type="button">
+            <i class="bi bi-shield-plus"></i>
+            <span>Умное создание</span>
+          </button>
+          <button class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1.5" id="btn-smart-restore-explain" type="button" title="Получить подробное объяснение решения">
+            <i class="bi bi-chat-left-text"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Блок детальных ответов на три вопроса предварительной проверки -->
+  <div class="card mb-3 border shadow-sm" style="background: var(--surface-1); border-color: var(--border-color) !important;">
+    <div class="card-header py-2 px-3 d-flex align-items-center justify-content-between" style="background: var(--surface-2); border-color: var(--border-color) !important;">
+      <span class="fw-semibold small"><i class="bi bi-card-checklist text-primary me-2"></i>Предварительная проверка перед созданием точки восстановления</span>
+      <span class="badge rounded-pill" id="badge-composite-hash" style="background: var(--surface-3); color: var(--text-muted); font-family: monospace;">Fingerprint: --</span>
+    </div>
+    <div class="card-body p-3">
+      <div class="row g-3">
+        <!-- Вопрос 1 -->
+        <div class="col-12 col-md-4">
+          <div class="p-2.5 rounded border h-100" style="background: var(--surface-2); border-color: var(--border-color) !important;">
+            <div class="d-flex align-items-center justify-content-between mb-1">
+              <span class="fw-bold small text-primary">1. Есть ли смысл создавать?</span>
+              <span class="badge" id="badge-q1-verdict">--</span>
+            </div>
+            <div class="small text-muted" id="text-q1-explanation">Загрузка информации...</div>
+          </div>
+        </div>
+
+        <!-- Вопрос 2 -->
+        <div class="col-12 col-md-4">
+          <div class="p-2.5 rounded border h-100" style="background: var(--surface-2); border-color: var(--border-color) !important;">
+            <div class="d-flex align-items-center justify-content-between mb-1">
+              <span class="fw-bold small text-warning">2. Не дублирует ли предыдущую?</span>
+              <span class="badge" id="badge-q2-verdict">--</span>
+            </div>
+            <div class="small text-muted" id="text-q2-explanation">Загрузка информации...</div>
+          </div>
+        </div>
+
+        <!-- Вопрос 3 -->
+        <div class="col-12 col-md-4">
+          <div class="p-2.5 rounded border h-100" style="background: var(--surface-2); border-color: var(--border-color) !important;">
+            <div class="d-flex align-items-center justify-content-between mb-1">
+              <span class="fw-bold small text-success">3. Достаточно ли данных?</span>
+              <span class="badge" id="badge-q3-verdict">--</span>
+            </div>
+            <div class="small text-muted" id="text-q3-explanation">Загрузка информации...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Резюме и рекомендация -->
+      <div class="mt-3 p-2.5 rounded border d-flex align-items-start gap-2" id="box-advisor-summary" style="background: var(--surface-2); border-color: var(--border-color) !important;">
+        <i class="bi bi-info-circle-fill text-primary mt-0.5"></i>
+        <div class="small">
+          <span class="fw-semibold" id="text-advisor-summary">Оценка состояния системы...</span>
+          <div class="text-muted mt-1" id="text-advisor-recommendation"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Вкладки деталей: Категории / Дельты / Журнал состояний -->
+  <ul class="nav nav-pills mb-2 gap-2 border-bottom pb-2" id="smartRestoreSubTabs" role="tablist" style="border-color: var(--border-color) !important;">
+    <li class="nav-item" role="presentation">
+      <button class="nav-link active rounded-pill px-3 py-1 small fw-semibold" id="subtab-categories-btn" data-bs-toggle="pill" data-bs-target="#subpane-categories" type="button" role="tab">
+        <i class="bi bi-grid-3x3-gap me-1"></i>Отпечатки категорий (8)
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link rounded-pill px-3 py-1 small fw-semibold" id="subtab-deltas-btn" data-bs-toggle="pill" data-bs-target="#subpane-deltas" type="button" role="tab">
+        <i class="bi bi-clock-history me-1"></i>Журнал изменений (Дельты) <span class="badge bg-secondary ms-1" id="badge-deltas-count">0</span>
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link rounded-pill px-3 py-1 small fw-semibold" id="subtab-journal-btn" data-bs-toggle="pill" data-bs-target="#subpane-journal" type="button" role="tab">
+        <i class="bi bi-journal-text me-1"></i>История журнала точек (SQLite)
+      </button>
+    </li>
+  </ul>
+
+  <div class="tab-content" id="smartRestoreTabContent">
+    <!-- Суб-вкладка 1: Отпечатки категорий -->
+    <div class="tab-pane fade show active" id="subpane-categories" role="tabpanel">
+      <div class="card border shadow-sm" style="background: var(--surface-1); border-color: var(--border-color) !important;">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0 small" id="table-categories">
+            <thead>
+              <tr style="border-bottom: 1px solid var(--border-color); background: var(--surface-2);">
+                <th class="py-2 px-3 text-muted">Категория анализа</th>
+                <th class="py-2 px-3 text-muted">Значимость</th>
+                <th class="py-2 px-3 text-muted">Элементов</th>
+                <th class="py-2 px-3 text-muted">Отпечаток (SHA-256)</th>
+                <th class="py-2 px-3 text-muted">Статус дрейфа</th>
+                <th class="py-2 px-3 text-muted">Детализация</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-categories">
+              <tr>
+                <td colspan="6" class="text-center py-3 text-muted">Загрузка категорий анализа...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Суб-вкладка 2: Журнал дельт -->
+    <div class="tab-pane fade" id="subpane-deltas" role="tabpanel">
+      <div class="card border shadow-sm" style="background: var(--surface-1); border-color: var(--border-color) !important;">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0 small" id="table-deltas">
+            <thead>
+              <tr style="border-bottom: 1px solid var(--border-color); background: var(--surface-2);">
+                <th class="py-2 px-3 text-muted">Категория</th>
+                <th class="py-2 px-3 text-muted">Тип изменения</th>
+                <th class="py-2 px-3 text-muted">Объект</th>
+                <th class="py-2 px-3 text-muted">Значимость</th>
+                <th class="py-2 px-3 text-muted">Описание изменения</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-deltas">
+              <tr>
+                <td colspan="5" class="text-center py-3 text-muted">Нет зафиксированных изменений с момента предыдущей точки.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Суб-вкладка 3: История журнала состояний -->
+    <div class="tab-pane fade" id="subpane-journal" role="tabpanel">
+      <div class="card border shadow-sm" style="background: var(--surface-1); border-color: var(--border-color) !important;">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0 small" id="table-journal">
+            <thead>
+              <tr style="border-bottom: 1px solid var(--border-color); background: var(--surface-2);">
+                <th class="py-2 px-3 text-muted">Дата и время</th>
+                <th class="py-2 px-3 text-muted">Событие-триггер</th>
+                <th class="py-2 px-3 text-muted">Решение</th>
+                <th class="py-2 px-3 text-muted">Точка создана</th>
+                <th class="py-2 px-3 text-muted">Композитный отпечаток</th>
+                <th class="py-2 px-3 text-muted">Резюме проверки</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-journal">
+              <tr>
+                <td colspan="6" class="text-center py-3 text-muted">Загрузка журнала состояний...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

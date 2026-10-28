@@ -5,8 +5,7 @@
 # Description:
 #   GET /api/v1/panel/storage-load — детальные параметры и метрики всех дисков
 #   и накопителей (NVMe, SSD, HDD, USB) без жесткого кодирования (Zero-Hardcode):
-#   динамическое слияние Windows CIM/WMI (WindowsStorageSensor), LibreHardwareMonitor
-#   и системных разделов psutil.
+#   динамическое слияние Windows CIM/WMI (WindowsStorageSensor) и системных разделов psutil.
 #
 # Usage Examples:
 #   Python API:
@@ -18,13 +17,15 @@
 # Package: apps.windows.api.routers
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-20 10:45:00
 # =============================================================================
 
 from __future__ import annotations
 """Роутер панели «Параметры накопителей (Диски SSD/HDD/NVMe)»: метрики хранилища."""
 
+import os
 import re
+import time
 from typing import Any, Dict, List, Optional
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
@@ -35,9 +36,8 @@ except ImportError:
     psutil = None
 
 from logger import logger
-from apps.windows.sdk.modules.hardware.lhm_service import LhmService
 from apps.windows.sdk.modules.storage_manager.core.windows_storage_sensor import WindowsStorageSensor
-
+from apps.windows.api.routers.about_system.query_diagnostics import _resolve_disk_num_to_letters_map
 
 
 class DiskDriveMetric(BaseModel):
@@ -91,6 +91,8 @@ class StorageSummary(BaseModel):
     used_percent: float = Field(default=0.0, description="Общий процент занятого пространства, %")
     max_temperature_c: Optional[float] = Field(default=None, description="Максимальная температура среди дисков, °C")
     avg_temperature_c: Optional[float] = Field(default=None, description="Средняя температура дисков, °C")
+    drives_count: Optional[int] = Field(default=None, description="Количество физических дисков")
+    partitions_count: Optional[int] = Field(default=None, description="Количество разделов")
 
 
 class StorageLoadResponse(BaseModel):
@@ -100,6 +102,16 @@ class StorageLoadResponse(BaseModel):
     drives: List[DiskDriveMetric] = Field(default_factory=list, description="Физические накопители")
     partitions: List[DiskPartitionMetric] = Field(default_factory=list, description="Логические разделы")
     meta: Dict[str, Any] = Field(default_factory=dict, description="Метаданные ответа")
+
+
+def _get_val(obj: Any, key: str, default: Any = None) -> Any:
+    """Извлекает значение поля из словаря или атрибута объекта."""
+    if obj is None:
+        return default
+    if isinstance(obj, dict):
+        val = obj.get(key)
+        return val if val is not None else default
+    return getattr(obj, key, default)
 
 
 def _detect_media_type(name: str) -> str:
@@ -122,134 +134,175 @@ def _find_matching_key(drives_map: Dict[str, Dict[str, Any]], name: str) -> Opti
     return None
 
 
+def extract_smart_temperature(cd: Any) -> Optional[float]:
+    """Извлекает температуру накопителя из SMART-атрибутов 190 и 194.
+
+    Поддерживает диски TOSHIBA, WDC, Crucial и др., где температура
+    передается через Airflow Temperature (190) или Temperature Celsius (194).
+    """
+    if cd is None:
+        return None
+    # Проверка прямых полей объекта/словаря
+    for field in ("temperature_c", "temperature_celsius", "temp_c", "temperature"):
+        v = getattr(cd, field, None) if not isinstance(cd, dict) else cd.get(field)
+        if isinstance(v, (int, float)) and 5 < v <= 120:
+            return float(v)
+    # Проверка вложенных структур SMART
+    smart_sources = []
+    for key in ("smart_attributes", "smart_attrs", "smart_data", "raw_storage_data", "raw_smart"):
+        val = getattr(cd, key, None) if not isinstance(cd, dict) else cd.get(key)
+        if isinstance(val, dict):
+            smart_sources.append(val)
+        elif isinstance(val, list):
+            for item in val:
+                if isinstance(item, dict):
+                    smart_sources.append(item)
+    for s_dict in smart_sources:
+        for attr_id in (194, 190, "194", "190"):
+            if attr_id in s_dict:
+                item = s_dict[attr_id]
+                raw_val = None
+                if isinstance(item, dict):
+                    raw_val = item.get("raw") or item.get("raw_value") or item.get("val") or item.get("value")
+                elif isinstance(item, (int, float)):
+                    raw_val = item
+                if raw_val is not None:
+                    try:
+                        temp_num = float(int(raw_val) & 0xFF if isinstance(raw_val, int) else raw_val)
+                        if 5 < temp_num <= 120:
+                            return temp_num
+                    except (ValueError, TypeError):
+                        pass
+    return None
+
+
+_LAST_PERDISK_IO: Dict[str, Any] = {}
+_LAST_PERDISK_TIME: float = 0.0
+
+
+def _format_bytes_rate(bytes_sec: float) -> str:
+    """Форматирует скорость передачи данных в байт/с в человекочитаемый вид."""
+    if bytes_sec <= 0:
+        return "0 B/s"
+    if bytes_sec >= 1024 ** 3:
+        return f"{bytes_sec / (1024 ** 3):.2f} GB/s"
+    if bytes_sec >= 1024 ** 2:
+        return f"{bytes_sec / (1024 ** 2):.1f} MB/s"
+    if bytes_sec >= 1024:
+        return f"{bytes_sec / 1024:.0f} KB/s"
+    return f"{int(bytes_sec)} B/s"
+
+
 def build_storage_load(
     sensors: Optional[List[Dict[str, Any]]] = None,
     physical_disks: Optional[List[Any]] = None,
     partitions_data: Optional[List[Dict[str, Any]]] = None,
 ) -> StorageLoadResponse:
-    """Собирает структурированные данные о всех дисках и разделах без хардкода.
+    """Собирает структурированные данные о всех дисках и разделах.
 
-    Args:
-        sensors: Список показаний сенсоров LHM.
+    Параметры:
+        sensors: (оставлен для совместимости) список показаний аппаратных сенсоров. При отсутствии передаем пустой список.
         physical_disks: Список физических дисков из WindowsStorageSensor (CIM/WMI).
         partitions_data: Опциональный список готовых данных по разделам для тестов.
 
-    Returns:
+    Возвращает:
         StorageLoadResponse: Структура с физическими накопителями и разделами.
     """
+    if sensors is None:
+        sensors = []
+    if physical_disks is None:
+        physical_disks = []
+    if partitions_data is None:
+        partitions_data = None
+
     drives_map: Dict[str, Dict[str, Any]] = {}
 
-    # 1. Загрузка физических дисков из WindowsStorageSensor (CIM/WMI)
+    # 1. Загрузка физических дисков (из SQLite снимка или WindowsStorageSensor)
     if physical_disks:
-        for cd in physical_disks:
-            m = getattr(cd, "model", None) or getattr(cd, "friendly_name", None) or "Physical Drive"
-            dev_id = getattr(cd, "device_id", None) or f"Disk{len(drives_map)}"
-            media_type = getattr(cd, "media_type", None)
+        for idx, cd in enumerate(physical_disks):
+            m = _get_val(cd, "model") or _get_val(cd, "friendly_name") or _get_val(cd, "name") or f"Physical Drive {idx}"
+            dev_id = _get_val(cd, "device_id") or f"Disk{idx}"
+            media_type = _get_val(cd, "media_type")
             detected = _detect_media_type(m)
-            if not media_type or media_type.lower() in ("unspecified", "ssd") and detected == "NVMe":
+            if not media_type or (media_type.lower() in ("unspecified", "ssd") and detected == "NVMe"):
                 media_type = "NVMe"
             elif not media_type or media_type.lower() == "unspecified":
                 media_type = detected
 
-            temp = getattr(cd, "temperature_c", None)
+            temp = extract_smart_temperature(cd)
             if temp is None:
-                temp = getattr(cd, "temperature_celsius", None)
-            if temp is not None and (temp <= 5 or temp > 120):
-                temp = None
+                temp = _get_val(cd, "temperature_c") or _get_val(cd, "temperature_celsius")
+            if temp is not None:
+                try:
+                    temp = float(temp)
+                    if temp <= 5 or temp > 120:
+                        temp = None
+                except (ValueError, TypeError):
+                    temp = None
 
-            wear = getattr(cd, "wear_percentage", None)
+            wear = _get_val(cd, "wear_percentage")
             life = None
-            if wear is not None and wear >= 0:
-                life = max(0.0, 100.0 - float(wear))
+            if wear is not None:
+                try:
+                    w_num = float(wear)
+                    if w_num >= 0:
+                        life = max(0.0, 100.0 - w_num)
+                except (ValueError, TypeError):
+                    pass
 
-            lifetime_w_tb = getattr(cd, "lifetime_write_tb", None)
-            lifetime_r_tb = getattr(cd, "lifetime_read_tb", None)
-            lifetime_w_b = getattr(cd, "lifetime_write_bytes", None)
-            lifetime_r_b = getattr(cd, "lifetime_read_bytes", None)
+            lifetime_w_tb = _get_val(cd, "lifetime_write_tb")
+            lifetime_r_tb = _get_val(cd, "lifetime_read_tb")
+            lifetime_w_b = _get_val(cd, "lifetime_write_bytes")
+            lifetime_r_b = _get_val(cd, "lifetime_read_bytes")
 
-            drives_map[m] = {
+            raw_size = _get_val(cd, "size_gb")
+            total_gb = None
+            if raw_size is not None:
+                try:
+                    total_gb = round(float(raw_size), 1)
+                except (ValueError, TypeError):
+                    total_gb = None
+
+            poh = _get_val(cd, "power_on_hours")
+            power_on_hours = None
+            if poh is not None:
+                try:
+                    power_on_hours = round(float(poh), 0)
+                except (ValueError, TypeError):
+                    power_on_hours = None
+
+            drive_key = f"{dev_id}_{idx}"
+            drives_map[drive_key] = {
                 "id": dev_id,
                 "name": m,
                 "media_type": media_type,
-                "interface_type": getattr(cd, "interface_type", None) or ("NVMe" if media_type == "NVMe" else "SATA"),
-                "serial_number": getattr(cd, "serial_number", None),
-                "health_status": getattr(cd, "health_status", "Healthy") or "Healthy",
-                "total_gb": round(float(cd.size_gb), 1) if getattr(cd, "size_gb", None) else None,
+                "interface_type": _get_val(cd, "interface_type") or _get_val(cd, "bus_type") or ("NVMe" if media_type == "NVMe" else "SATA"),
+                "serial_number": _get_val(cd, "serial_number"),
+                "health_status": _get_val(cd, "health_status", "Healthy") or "Healthy",
+                "total_gb": total_gb,
                 "temperature_c": round(float(temp), 1) if temp is not None else None,
-                "power_on_hours": round(float(cd.power_on_hours), 0) if getattr(cd, "power_on_hours", None) else None,
+                "power_on_hours": power_on_hours,
                 "life_percent": life,
                 "data_written_gb": round(float(lifetime_w_tb) * 1024.0, 1) if lifetime_w_tb else None,
                 "data_read_gb": round(float(lifetime_r_tb) * 1024.0, 1) if lifetime_r_tb else None,
                 "write_bytes": int(lifetime_w_b) if lifetime_w_b else None,
                 "read_bytes": int(lifetime_r_b) if lifetime_r_b else None,
                 "partitions": [],
+                "used_gb": 0.0,
+                "free_gb": total_gb or 0.0,
+                "used_percent": 0.0,
             }
 
-    # 2. Обогащение и добавление из сенсоров LibreHardwareMonitor
-    if sensors:
-        for s in sensors:
-            htype = str(s.get("hardware_type", "")).lower()
-            if "storage" not in htype and "disk" not in htype and "hdd" not in htype:
-                continue
-
-            hname = s.get("hardware_name") or "Storage Drive"
-            matched_key = _find_matching_key(drives_map, hname)
-            if not matched_key:
-                matched_key = hname
-                drives_map[matched_key] = {
-                    "id": f"drive-{len(drives_map) + 1}",
-                    "name": hname,
-                    "media_type": _detect_media_type(hname),
-                    "partitions": [],
-                }
-
-            cat = str(s.get("sensor_category", "")).lower()
-            sname = str(s.get("sensor_name", "")).lower()
-            val_num = s.get("value_num") if s.get("value_num") is not None else s.get("value_numeric")
-            val_raw = s.get("value_raw")
-
-            if "temp" in cat:
-                if val_num is not None and val_num > 5:
-                    drives_map[matched_key]["temperature_c"] = round(float(val_num), 1)
-            elif "load" in cat:
-                if "used space" in sname and val_num is not None:
-                    drives_map[matched_key]["used_percent"] = round(float(val_num), 1)
-                elif "total activity" in sname and val_num is not None:
-                    drives_map[matched_key]["activity_percent"] = round(float(val_num), 1)
-                elif "read activity" in sname and val_num is not None:
-                    drives_map[matched_key]["read_activity_percent"] = round(float(val_num), 1)
-                elif "write activity" in sname and val_num is not None:
-                    drives_map[matched_key]["write_activity_percent"] = round(float(val_num), 1)
-            elif "data" in cat:
-                if "total space" in sname and val_num is not None:
-                    drives_map[matched_key]["total_gb"] = round(float(val_num), 1)
-                elif "free space" in sname and val_num is not None:
-                    drives_map[matched_key]["free_gb"] = round(float(val_num), 1)
-                elif "data written" in sname and val_num is not None:
-                    drives_map[matched_key]["data_written_gb"] = round(float(val_num), 1)
-                elif "data read" in sname and val_num is not None:
-                    drives_map[matched_key]["data_read_gb"] = round(float(val_num), 1)
-            elif "throughput" in cat:
-                if "read rate" in sname:
-                    drives_map[matched_key]["read_rate_raw"] = str(val_raw or "")
-                elif "write rate" in sname:
-                    drives_map[matched_key]["write_rate_raw"] = str(val_raw or "")
-            elif "levels" in cat:
-                if "life" in sname and val_num is not None:
-                    drives_map[matched_key]["life_percent"] = round(float(val_num), 1)
-            elif "factors" in cat:
-                if "power on hours" in sname and val_num is not None:
-                    drives_map[matched_key]["power_on_hours"] = round(float(val_num), 0)
-                elif "power on count" in sname and val_num is not None:
-                    drives_map[matched_key]["power_on_count"] = round(float(val_num), 0)
-
-    # 3. psutil disk_io_counters для операций и байтов чтения/записи
-    io_counters = {}
-    if psutil is not None:
+    # 2. Обогащение данными операций ввода/вывода (из psutil perdisk счетчиков)
+    global _LAST_PERDISK_IO, _LAST_PERDISK_TIME
+    now_io = time.time()
+    elapsed_io = max(0.1, now_io - _LAST_PERDISK_TIME) if _LAST_PERDISK_TIME > 0 else 0.0
+    io_counters: Dict[str, Any] = {}
+    if psutil is not None and hasattr(psutil, "disk_io_counters"):
         try:
             io_counters = psutil.disk_io_counters(perdisk=True) or {}
         except Exception as io_err:
-            logger.debug(f"[router_storage_load] Ошибка сбора psutil.disk_io_counters: {io_err}")
+            logger.debug(f"[router_storage_load] Ошибка сбора perdisk IO counters: {io_err}")
 
     for k, d in drives_map.items():
         dev_id = str(d.get("id", ""))
@@ -262,8 +315,22 @@ def build_storage_load(
                     d["read_bytes"] = io_stat.read_bytes
                 if d.get("write_bytes") is None or d.get("write_bytes") == 0:
                     d["write_bytes"] = io_stat.write_bytes
-                d["read_count"] = io_stat.read_count
-                d["write_count"] = io_stat.write_count
+                if d.get("read_count") is None or d.get("read_count") == 0:
+                    d["read_count"] = io_stat.read_count
+                if d.get("write_count") is None or d.get("write_count") == 0:
+                    d["write_count"] = io_stat.write_count
+
+                # Расчет скоростей чтения и записи
+                prev_stat = _LAST_PERDISK_IO.get(phys_key)
+                if prev_stat and elapsed_io > 0:
+                    r_rate = max(0.0, (io_stat.read_bytes - prev_stat.read_bytes) / elapsed_io)
+                    w_rate = max(0.0, (io_stat.write_bytes - prev_stat.write_bytes) / elapsed_io)
+                    d["read_rate_raw"] = _format_bytes_rate(r_rate)
+                    d["write_rate_raw"] = _format_bytes_rate(w_rate)
+                elif d.get("read_rate_raw") is None:
+                    d["read_rate_raw"] = "0 B/s"
+                if d.get("write_rate_raw") is None:
+                    d["write_rate_raw"] = "0 B/s"
 
         # Форматирование data_written_raw
         w_gb = d.get("data_written_gb")
@@ -297,7 +364,11 @@ def build_storage_load(
             else:
                 d["data_read_raw"] = f"{r_b / (1024**2):.1f} MB"
 
-    # 4. Сбор логических разделов
+    if io_counters:
+        _LAST_PERDISK_IO = io_counters
+        _LAST_PERDISK_TIME = now_io
+
+    # 3. Сбор логических разделов
     partitions_list: List[DiskPartitionMetric] = []
     if partitions_data is not None:
         for p in partitions_data:
@@ -322,62 +393,85 @@ def build_storage_load(
                 )
             elif isinstance(p, DiskPartitionMetric):
                 partitions_list.append(p)
-    elif psutil is not None:
-        try:
-            parts = psutil.disk_partitions(all=False)
-            for p in parts:
-                try:
-                    usage = psutil.disk_usage(p.mountpoint)
-                    tot_gb = round(usage.total / (1024 ** 3), 1)
-                    used_gb = round(usage.used / (1024 ** 3), 1)
-                    free_gb = round(usage.free / (1024 ** 3), 1)
-                    partitions_list.append(
-                        DiskPartitionMetric(
-                            device=p.device,
-                            mountpoint=p.mountpoint,
-                            fstype=p.fstype,
-                            total_gb=tot_gb,
-                            used_gb=used_gb,
-                            free_gb=free_gb,
-                            used_percent=round(usage.percent, 1),
-                        )
-                    )
-                except Exception:
-                    continue
-        except Exception as exc:
-            logger.debug(f"[router_storage_load] Ошибка сбора разделов через psutil: {exc}")
 
-    # 4. Довычисляем used_gb / used_percent для физических дисков
-    drives_list: List[DiskDriveMetric] = []
+    # 4. Привязка разделов к накопителям и вычисление емкости
+    # Карта номеров дисков -> ключи накопителей в drives_map
+    disk_num_to_keys: Dict[str, List[str]] = {}
+    for key, d in drives_map.items():
+        dev_id = str(d.get("id", ""))
+        digits = re.findall(r"\d+", dev_id)
+        if digits:
+            disk_num_to_keys.setdefault(digits[0], []).append(key)
+
+    # Карта привязки букв томов к номерам физических дисков через Win32 IOCTL
+    disk_letters_map, _ = _resolve_disk_num_to_letters_map()
+    letter_to_disk_num: Dict[str, str] = {}
+    for dn_str, letters in disk_letters_map.items():
+        for let in letters:
+            clean_let = let.upper().rstrip("\\")
+            letter_to_disk_num[clean_let] = dn_str
+
+    assigned_part_devices = set()
+
+    # 4.1. Привязка разделов по карте IOCTL
+    for part in partitions_list:
+        clean_dev = part.device.upper().rstrip("\\")
+        if not clean_dev.endswith(":"):
+            clean_dev = f"{clean_dev}:"
+        dn = letter_to_disk_num.get(clean_dev)
+        if dn and dn in disk_num_to_keys:
+            assigned_part_devices.add(part.device)
+            part_label = part.device.rstrip('\\') + '\\'
+            for k in disk_num_to_keys[dn]:
+                d = drives_map[k]
+                if part_label not in d["partitions"]:
+                    d["partitions"].append(part_label)
+                d["used_gb"] = round(d["used_gb"] + part.used_gb, 1)
+
+    # 4.2. Fallback для несопоставленных разделов (по размеру)
+    for part in partitions_list:
+        if part.device in assigned_part_devices:
+            continue
+        part_label = part.device.rstrip('\\') + '\\'
+        for d in drives_map.values():
+            tot = d.get("total_gb")
+            if tot is not None and abs(tot - part.total_gb) <= 5.0 and not d["partitions"]:
+                d["partitions"].append(part_label)
+                d["used_gb"] = round(d["used_gb"] + part.used_gb, 1)
+                assigned_part_devices.add(part.device)
+                break
+
+    # 4.3. Вычисление финальных free_gb и used_percent для каждого диска
     for d in drives_map.values():
         tot = d.get("total_gb")
-        free = d.get("free_gb")
-        if tot is not None and free is not None and "used_gb" not in d:
-            d["used_gb"] = round(max(tot - free, 0.0), 1)
-        if tot is not None and d.get("used_gb") is not None and d.get("used_percent") is None:
-            if tot > 0:
-                d["used_percent"] = round((d["used_gb"] / tot) * 100.0, 1)
+        used = d.get("used_gb", 0.0)
+        if tot is not None and tot > 0:
+            used_clamped = min(used, tot)
+            d["used_gb"] = round(used_clamped, 1)
+            d["free_gb"] = round(max(tot - used_clamped, 0.0), 1)
+            d["used_percent"] = round((used_clamped / tot) * 100.0, 1)
+        else:
+            d["used_gb"] = round(used, 1) if used > 0 else None
+            d["free_gb"] = None
+            d["used_percent"] = None
 
-        # Если диск не получил used_percent из LHM, ищем соответствующий раздел по объему
-        if d.get("used_percent") is None and tot is not None and partitions_list:
-            for part in partitions_list:
-                if abs(part.total_gb - tot) <= 5.0:  # совпадение объема раздела и диска
-                    d["used_percent"] = part.used_percent
-                    d["used_gb"] = part.used_gb
-                    d["free_gb"] = part.free_gb
-                    break
+    def _drive_sort_key(d: Dict[str, Any]) -> int:
+        digits = re.findall(r"\d+", str(d.get("id", "")))
+        return int(digits[0]) if digits else 999
 
-        drives_list.append(DiskDriveMetric(**d))
+    drives_list: List[DiskDriveMetric] = [
+        DiskDriveMetric(**d) for d in sorted(drives_map.values(), key=_drive_sort_key)
+    ]
 
     # 5. Расчет суммарной сводки по хранилищу
-    if partitions_list:
+    if drives_list and any(d.total_gb for d in drives_list):
+        sum_total = sum(d.total_gb for d in drives_list if d.total_gb is not None)
+        sum_used = sum(d.used_gb for d in drives_list if d.used_gb is not None)
+        sum_free = max(0.0, sum_total - sum_used)
+    elif partitions_list:
         sum_total = sum(p.total_gb for p in partitions_list)
         sum_used = sum(p.used_gb for p in partitions_list)
         sum_free = sum(p.free_gb for p in partitions_list)
-    elif drives_list:
-        sum_total = sum(d.total_gb for d in drives_list if d.total_gb is not None)
-        sum_used = sum(d.used_gb for d in drives_list if d.used_gb is not None)
-        sum_free = sum(d.free_gb for d in drives_list if d.free_gb is not None)
     else:
         sum_total = 0.0
         sum_used = 0.0
@@ -396,6 +490,8 @@ def build_storage_load(
         used_percent=sum_pct,
         max_temperature_c=max_temp,
         avg_temperature_c=avg_temp,
+        drives_count=len(drives_list),
+        partitions_count=len(partitions_list),
     )
 
     return StorageLoadResponse(
@@ -405,32 +501,29 @@ def build_storage_load(
         meta={
             "drives_count": len(drives_list),
             "partitions_count": len(partitions_list),
-            "source": "cim+lhm+psutil",
+            "source": "cim+psutil",
         },
     )
 
 
 def init_router(
-    lhm_service: Optional[LhmService] = None,
     storage_sensor: Optional[WindowsStorageSensor] = None,
 ) -> APIRouter:
     """Создаёт роутер /api/v1/panel/storage-load.
 
     Args:
-        lhm_service: Сервис LibreHardwareMonitor.
         storage_sensor: Сенсор дисков WindowsStorageSensor (CIM/WMI).
 
     Returns:
         APIRouter: Роутер с эндпоинтом GET /api/v1/panel/storage-load.
     """
     router = APIRouter(tags=["Storage Load Panel"])
-    lhm = lhm_service or LhmService()
 
     @router.get("/api/v1/panel/storage-load", response_model=StorageLoadResponse)
     async def get_panel_storage_load() -> StorageLoadResponse:
         """Возвращает детальную загрузку, температуру и емкость всех накопителей из телеметрии БД."""
         try:
-            sensors = lhm.get_flattened_sensors() if lhm.is_running() else []
+            sensors: List[Dict[str, Any]] = []
             physical_disks: List[Any] = []
             partitions_data: Optional[List[Dict[str, Any]]] = None
 
@@ -443,14 +536,29 @@ def init_router(
                     physical_disks = storage_data["physical_disks"]
                 if storage_data.get("partitions"):
                     partitions_data = storage_data["partitions"]
+
+                if not physical_disks:
+                    snap = storage.get_latest_snapshot_full() or {}
+                    if snap.get("physical_disks"):
+                        physical_disks = snap["physical_disks"]
+                    if not partitions_data and snap.get("disks"):
+                        partitions_data = snap["disks"]
             except Exception as db_err:
                 logger.debug(f"[router_storage_load] Не удалось прочитать накопители из SQLite: {db_err}")
 
-            # 2. Fallback при отсутствии снимков в базе данных (без живого вызова WMI/CIM в tc.ps1)
+            # 2. Если снимков еще нет — извлекаем инвентарь дисков из SQLite БД или живого WindowsStorageSensor
             if not physical_disks:
-                from apps.windows.telemetry.collector import SystemCollector
-                collector = SystemCollector()
-                physical_disks = collector.get_physical_disks_health(force=False)
+                try:
+                    physical_disks = storage.get_disk_inventory() or []
+                except Exception:
+                    physical_disks = []
+
+            if not physical_disks:
+                try:
+                    sensor = storage_sensor or WindowsStorageSensor()
+                    physical_disks = sensor.get_physical_disks() or []
+                except Exception as ex:
+                    logger.debug(f"[router_storage_load] Fallback WindowsStorageSensor error: {ex}")
 
             return build_storage_load(
                 sensors=sensors,
@@ -471,4 +579,7 @@ __all__ = [
     "DiskPartitionMetric",
     "StorageSummary",
     "StorageLoadResponse",
+    "_detect_media_type",
+    "_find_matching_key",
+    "extract_smart_temperature",
 ]

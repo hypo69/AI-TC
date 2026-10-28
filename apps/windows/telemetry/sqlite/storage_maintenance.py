@@ -18,7 +18,7 @@
 # Package: apps.windows.telemetry.sqlite
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-11 11:30:00
+# Updated: 2026-10-15 01:17:00
 # =============================================================================
 
 from __future__ import annotations
@@ -66,6 +66,14 @@ class TelemetryMaintenanceStorageMixin:
 
     def cleanup_old_records(self, retention_days: Optional[int] = None, vacuum_after: bool = False) -> int:
         return self._maintenance.cleanup_old_records(retention_days=retention_days, vacuum_after=vacuum_after)
+
+    def purge_live_stream_tables(self, vacuum: bool = True) -> Dict[str, int]:
+        """Очищает таблицы потокового режима live stream и сбрасывает кэш в памяти."""
+        if hasattr(self, '_buffer') and self._buffer is not None:
+            self._buffer.clear()
+        if hasattr(self, '_writer') and hasattr(self._writer, 'delta_tracker'):
+            self._writer.delta_tracker.reset()
+        return self._maintenance.purge_live_stream_tables(vacuum=vacuum)
 
     def enforce_size_limit(self, max_size_mb: Optional[float] = None, target_ratio: float = 0.85) -> Dict[str, Any]:
         return self._maintenance.enforce_size_limit(max_size_mb=max_size_mb, target_ratio=target_ratio)

@@ -19,7 +19,7 @@
 # Package: apps.windows.telemetry
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-20 09:15:00
 # =============================================================================
 
 from __future__ import annotations
@@ -44,6 +44,7 @@ except ImportError:
     logger = logging.getLogger(__name__)
 
 from .collector import SystemCollector
+from .incident_detector import IncidentDetector, TelemetryRingBuffer
 from .models import (
     CpuMetrics,
     GpuMetrics,
@@ -52,24 +53,26 @@ from .models import (
     ProcessMetrics,
     SystemSnapshot,
 )
+from .sampling_controller import SamplingController
 from .sqlite import TelemetryStorage
-from .telemetry_config import TelemetryConfigManager
-from .win32_ffi.nethelper import IPHelperAPI, NetworkSocketInfo
+from .telemetry_config import TelemetryConfigManager, get_telemetry_config_manager
+from apps.windows.sdk.win32_ffi.nethelper import IPHelperAPI, NetworkSocketInfo
 
 
 class DeadbandTracker:
-    """Трекер зон нечувствительности (Deadband) для адаптивной фильтрации сенсоров."""
+    """Трекер зон нечувствительности (Deadband) для адаптивной фильтрации сенсоров на базе конфигурации."""
 
     def __init__(
         self,
-        temp_threshold: float = 1.0,
-        cpu_load_threshold: float = 3.0,
-        freq_threshold_mhz: float = 50.0,
-        power_threshold_w: float = 2.0,
-        fan_threshold_rpm: float = 100.0,
-        heartbeat_interval_sec: float = 60.0,
+        temp_threshold: Optional[float] = None,
+        cpu_load_threshold: Optional[float] = None,
+        freq_threshold_mhz: Optional[float] = None,
+        power_threshold_w: Optional[float] = None,
+        fan_threshold_rpm: Optional[float] = None,
+        heartbeat_interval_sec: Optional[float] = None,
+        config_manager: Optional[TelemetryConfigManager] = None,
     ) -> None:
-        """Инициализирует пороги фильтрации.
+        """Инициализирует пороги фильтрации из конфигурации (config.json -> multi_rate_engine.deadband).
 
         Args:
             temp_threshold: Порог температуры (°C).
@@ -78,20 +81,29 @@ class DeadbandTracker:
             power_threshold_w: Порог мощности (Вт).
             fan_threshold_rpm: Порог скорости вентилятора (RPM).
             heartbeat_interval_sec: Интервал контрольного кадра Heartbeat (сек).
+            config_manager: Экземпляр TelemetryConfigManager.
         """
-        self.temp_threshold = temp_threshold
-        self.cpu_load_threshold = cpu_load_threshold
-        self.freq_threshold_mhz = freq_threshold_mhz
-        self.power_threshold_w = power_threshold_w
-        self.fan_threshold_rpm = fan_threshold_rpm
-        self.heartbeat_interval_sec = heartbeat_interval_sec
+        self._config_manager = config_manager or get_telemetry_config_manager()
+        db_cfg = self._config_manager.get_deadband_config()
+
+        self.temp_threshold = float(temp_threshold if temp_threshold is not None else db_cfg.get('temperature_c', 1.0))
+        self.cpu_load_threshold = float(cpu_load_threshold if cpu_load_threshold is not None else db_cfg.get('cpu_load_pct', 3.0))
+        self.freq_threshold_mhz = float(freq_threshold_mhz if freq_threshold_mhz is not None else db_cfg.get('freq_mhz', 50.0))
+        self.power_threshold_w = float(power_threshold_w if power_threshold_w is not None else db_cfg.get('power_w', 2.0))
+        self.fan_threshold_rpm = float(fan_threshold_rpm if fan_threshold_rpm is not None else db_cfg.get('fan_rpm', 100.0))
+        self.network_bytes_threshold = float(db_cfg.get('network_bytes', 10485760.0))
+        self.network_packets_threshold = float(db_cfg.get('network_packets', 10000.0))
+        self.disk_space_gb_threshold = float(db_cfg.get('disk_space_gb', 0.5))
+        self.default_threshold = float(db_cfg.get('default_threshold', 2.0))
+        self.heartbeat_interval_sec = float(heartbeat_interval_sec if heartbeat_interval_sec is not None else db_cfg.get('heartbeat_interval_seconds', 60.0))
+        self.ignore_cumulative_network_spikes = bool(db_cfg.get('ignore_cumulative_network_spikes', True))
 
         self._last_values: Dict[str, float] = {}
         self._last_saved_values: Dict[str, float] = {}
         self._last_saved_time: Dict[str, float] = {}
 
     def _get_threshold_for_sensor(self, sensor_id: str, category: str, unit: str) -> float:
-        """Определяет порог Deadband для конкретного сенсора."""
+        """Определяет порог Deadband для конкретного сенсора на основе конфигурации."""
         cat_lower = category.lower()
         unit_lower = unit.lower()
         sid_lower = sensor_id.lower()
@@ -106,10 +118,16 @@ class DeadbandTracker:
             return self.power_threshold_w
         if 'fan' in cat_lower or 'rpm' in unit_lower or 'fan' in sid_lower:
             return self.fan_threshold_rpm
-        return 2.0
+        if 'bytes' in sid_lower or unit_lower in ('b', 'b/s'):
+            return self.network_bytes_threshold
+        if 'packets' in sid_lower or unit_lower == 'pkts':
+            return self.network_packets_threshold
+        if unit_lower == 'gb' or 'free_gb' in sid_lower:
+            return self.disk_space_gb_threshold
+        return self.default_threshold
 
     def check_spike(self, readings: List[Dict[str, Any]]) -> bool:
-        """Проверяет, превысил ли хотя бы один параметр порог Deadband с прошлого замера.
+        """Проверяет, превысил ли хотя бы один физический датчик порог Deadband с прошлого замера.
 
         Args:
             readings: Список текущих показаний датчиков.
@@ -128,6 +146,14 @@ class DeadbandTracker:
             except (TypeError, ValueError):
                 continue
 
+            sid_lower = sid.lower()
+            cat_lower = str(r.get('sensor_category') or '').lower()
+            is_cumulative_net = (
+                self.ignore_cumulative_network_spikes
+                and cat_lower == 'network'
+                and ('_bytes_' in sid_lower or '_packets_' in sid_lower)
+            )
+
             prev_val = self._last_values.get(sid)
             threshold = self._get_threshold_for_sensor(
                 sid,
@@ -135,7 +161,7 @@ class DeadbandTracker:
                 str(r.get('unit') or ''),
             )
 
-            if prev_val is not None:
+            if prev_val is not None and not is_cumulative_net:
                 delta = abs(val - prev_val)
                 if delta >= threshold:
                     has_spike = True
@@ -217,11 +243,23 @@ class TelemetryEngine:
         self.static_inventory_loaded = False
         self.static_catalog: Dict[str, Any] = {}
 
-        self.deadband_tracker = DeadbandTracker()
+        mr_cfg = self.config_manager.get_multi_rate_config()
+        rb_cap = int(mr_cfg.get('ring_buffer_capacity', 600))
+        rb_max_mb = int(mr_cfg.get('ring_buffer_max_mb', 32))
+
+        self.deadband_tracker = DeadbandTracker(config_manager=self.config_manager)
+        self.sampling_controller = SamplingController(config_manager=self.config_manager)
+        self.ring_buffer = TelemetryRingBuffer(capacity=rb_cap, max_bytes=rb_max_mb * 1024 * 1024)
+        self.incident_detector = IncidentDetector(
+            sampling_controller=self.sampling_controller,
+            ring_buffer=self.ring_buffer,
+            storage=self.storage,
+            config_manager=self.config_manager,
+        )
         self.ip_helper = IPHelperAPI() if hasattr(IPHelperAPI, '__init__') else None
 
         self._tasks: List[asyncio.Task] = []
-        self._current_sensor_interval: float = 2.0
+        self._current_sensor_interval: float = float(mr_cfg.get('level2_adaptive_initial_interval_seconds', 2.0))
         self._cooldown_ticks: int = 0
         self._main_tick_count: int = 0
         self._last_snapshot: Optional[SystemSnapshot] = None
@@ -229,6 +267,7 @@ class TelemetryEngine:
         self._last_battery_scan_time: float = 0.0
         self._last_security_scan_time: float = 0.0
         self._last_scm_scan_time: float = 0.0
+        self._last_sockets_scan_time: float = 0.0
 
     async def start(self) -> None:
         """Единая асинхронная точка входа запуска службы телеметрии.
@@ -303,9 +342,9 @@ class TelemetryEngine:
         logger.info(f"[TelemetryEngine] Сервис остановлен. Выполнено главных тиков: {self._main_tick_count}")
 
     async def _main_realtime_tick_loop(self) -> None:
-        """Главный высокоприоритетный Real-Time контур (Level 3): PID, сокеты, файловый I/O.
+        """Главный высокоприоритетный Real-Time контур (Level 3): PID, системные счетчики, детектор инцидентов.
 
-        СТРОГОЕ ПРАВИЛО: Только нативные быстрые C-FFI вызовы (iphlpapi, ReadDirectoryChangesW, psutil).
+        СТРОГОЕ ПРАВИЛО: Только нативные быстрые C-FFI вызовы (psutil, GetPerformanceInfo).
         Никаких WMI, COM, heavy IOCTL или синхронных блокировок!
         """
         logger.info("[MainTick] ⚡ Главный Real-Time контур (Level 3) успешно запущен!")
@@ -316,13 +355,10 @@ class TelemetryEngine:
             self._main_tick_count += 1
 
             try:
-                # 1. Попроцессные метрики по PID (CPU, RAM, handles, threads)
+                # 1. Попроцессные метрики по PID (CPU, RAM, handles, threads) с кэшированием токенов
                 top_procs = await self._collect_pid_metrics_fast()
 
-                # 2. Сетевые сокеты и соединения по PID через iphlpapi.dll
-                sockets = await self._collect_network_sockets_fast()
-
-                # 3. Базовые системные метрики (CPU, RAM, Диск I/O, Сеть I/O)
+                # 2. Базовые системные метрики (CPU, RAM + Commit/Pool, Диск I/O + Latency, Сеть I/O)
                 cpu_m = self._get_fast_cpu_metrics()
                 mem_m = self.collector.get_memory_metrics()
                 parts, disk_io = self.collector.get_disk_metrics()
@@ -340,7 +376,14 @@ class TelemetryEngine:
                 )
                 self._last_snapshot = snapshot
 
-                # Сохраняем в буфер SQLite без блокирующего fsync
+                # 3. Запись в кольцевой буфер предыстории и проверка на инциденты (CPU spike, RAM pressure)
+                try:
+                    self.ring_buffer.append(snapshot.model_dump())
+                    self.incident_detector.evaluate_snapshot(snapshot)
+                except Exception as inc_err:
+                    logger.debug(f"[MainTick] Ошибка детектора инцидентов: {inc_err}")
+
+                # 4. Сохраняем в буфер SQLite без блокирующего fsync
                 self.storage.save_snapshot(snapshot, top_n=len(top_procs))
 
             except asyncio.CancelledError:
@@ -349,7 +392,10 @@ class TelemetryEngine:
                 logger.error(f"[MainTick] Ошибка в главном тике #{self._main_tick_count}: {e}", exc_info=True)
 
             dt = time.perf_counter() - t0
-            sleep_time = max(0.05, 1.0 - dt)
+            mr_cfg = self.config_manager.get_multi_rate_config()
+            base_rt = float(mr_cfg.get('level3_realtime_interval_seconds', 1.0))
+            target_interval = self.sampling_controller.get_effective_interval(base_interval=base_rt)
+            sleep_time = max(0.05, target_interval - dt)
             try:
                 await asyncio.sleep(sleep_time)
             except asyncio.CancelledError:
@@ -423,21 +469,29 @@ class TelemetryEngine:
         }
 
     async def _adaptive_sensors_loop(self) -> None:
-        """Адаптивный динамический контур (Level 2): опрос сенсоров от 500 мс до 30.0 с.
+        """Адаптивный динамический контур (Level 2): опрос сенсоров по параметрам из config.json.
 
-        Использует Deadband, Trigger-Up (500 мс при всплеске), Cooldown (10 тиков)
-        и Exponential Back-Off (* 1.5 при штиле).
+        Использует Deadband, Trigger-Up (min_interval при всплеске), Cooldown
+        и Exponential Back-Off (* backoff_multiplier при штиле до max_interval).
         """
+        mr_cfg = self.config_manager.get_multi_rate_config()
+        min_int = float(mr_cfg.get('level2_adaptive_min_interval_seconds', 0.5))
         try:
-            await asyncio.sleep(0.5)
+            await asyncio.sleep(min_int)
         except asyncio.CancelledError:
             return
 
-        self._current_sensor_interval = 2.0
+        self._current_sensor_interval = float(mr_cfg.get('level2_adaptive_initial_interval_seconds', 2.0))
         self._cooldown_ticks = 0
 
         while self.is_running:
             t0 = time.perf_counter()
+            mr_cfg = self.config_manager.get_multi_rate_config()
+            min_interval = float(mr_cfg.get('level2_adaptive_min_interval_seconds', 0.5))
+            max_interval = float(mr_cfg.get('level2_adaptive_max_interval_seconds', 30.0))
+            cooldown_limit = int(mr_cfg.get('level2_cooldown_ticks', 10))
+            backoff_mult = float(mr_cfg.get('level2_backoff_multiplier', 1.5))
+
             try:
                 loop = asyncio.get_running_loop()
                 readings = await loop.run_in_executor(None, self._poll_sensors_sync)
@@ -446,14 +500,14 @@ class TelemetryEngine:
                 has_spike = self.deadband_tracker.check_spike(readings)
 
                 if has_spike:
-                    self._current_sensor_interval = 0.5  # Мгновенный сброс (Trigger-Up)
-                    self._cooldown_ticks = 10           # 10 тиков удержания высокой частоты
+                    self._current_sensor_interval = min_interval
+                    self._cooldown_ticks = cooldown_limit
                 elif self._cooldown_ticks > 0:
-                    self._current_sensor_interval = 0.5  # Удержание режима остывания
+                    self._current_sensor_interval = min_interval
                     self._cooldown_ticks -= 1
                 else:
                     # Плавное замедление при штиле
-                    self._current_sensor_interval = min(30.0, self._current_sensor_interval * 1.5)
+                    self._current_sensor_interval = min(max_interval, self._current_sensor_interval * backoff_mult)
 
                 # Дедупликация и запись в SQLite (только изменения > Deadband или Heartbeat)
                 filtered_readings = self.deadband_tracker.filter_records_for_storage(readings)
@@ -494,34 +548,41 @@ class TelemetryEngine:
             return []
 
     async def _low_frequency_background_loop(self) -> None:
-        """Низкочастотный фоновый опрос (Level 1): SMART (12ч), Аккумулятор (15мин), Defender/Безопасность (1ч)."""
+        """Низкочастотный фоновый опрос (Level 1) с интервалами из config.json."""
+        mr_cfg = self.config_manager.get_multi_rate_config()
         try:
-            await asyncio.sleep(5.0)
+            await asyncio.sleep(float(mr_cfg.get('wal_flush_interval_seconds', 5.0)))
         except asyncio.CancelledError:
             return
 
         while self.is_running:
             now = time.time()
             loop = asyncio.get_running_loop()
+            mr_cfg = self.config_manager.get_multi_rate_config()
+            smart_interval = float(mr_cfg.get('level1_smart_interval_seconds', 43200.0))
+            battery_interval = float(mr_cfg.get('level1_battery_interval_seconds', 900.0))
+            security_interval = float(mr_cfg.get('level1_security_interval_seconds', 3600.0))
+            scm_interval = float(mr_cfg.get('level1_scm_interval_seconds', 1800.0))
+            sched_check_interval = float(mr_cfg.get('level1_schedule_check_interval_seconds', 60.0))
 
             try:
-                # 1. SMART SSD/NVMe (каждые 12 часов = 43200 с)
-                if now - self._last_smart_scan_time >= 43200.0:
+                # 1. SMART SSD/NVMe
+                if now - self._last_smart_scan_time >= smart_interval:
                     await loop.run_in_executor(None, self._poll_smart_sync)
                     self._last_smart_scan_time = now
 
-                # 2. Аккумулятор и профиль питания (каждые 15 минут = 900 с)
-                if now - self._last_battery_scan_time >= 900.0:
+                # 2. Аккумулятор и профиль питания
+                if now - self._last_battery_scan_time >= battery_interval:
                     await loop.run_in_executor(None, self._poll_battery_sync)
                     self._last_battery_scan_time = now
 
-                # 3. Аудит Defender и безопасности (каждый 1 час = 3600 с)
-                if now - self._last_security_scan_time >= 3600.0:
+                # 3. Аудит Defender и безопасности
+                if now - self._last_security_scan_time >= security_interval:
                     await loop.run_in_executor(None, self._poll_security_sync)
                     self._last_security_scan_time = now
 
-                # 4. Реестр служб SCM и задач планировщика (каждые 30 минут = 1800 с)
-                if now - self._last_scm_scan_time >= 1800.0:
+                # 4. Реестр служб SCM и задач планировщика
+                if now - self._last_scm_scan_time >= scm_interval:
                     await loop.run_in_executor(None, self._poll_scm_tasks_sync)
                     self._last_scm_scan_time = now
 
@@ -531,7 +592,7 @@ class TelemetryEngine:
                 logger.error(f"[LowFreq] Ошибка: {e}")
 
             try:
-                await asyncio.sleep(60.0)  # Проверка расписания каждую минуту
+                await asyncio.sleep(sched_check_interval)
             except asyncio.CancelledError:
                 break
 
@@ -568,10 +629,12 @@ class TelemetryEngine:
             logger.debug(f"[LowFreq] SCM/Tasks audit error: {ex}")
 
     async def _batch_wal_flusher_loop(self) -> None:
-        """Периодический сброс буфера в SQLite транзакцией каждые 5.0 с."""
+        """Периодический сброс буфера в SQLite транзакцией с интервалом из конфигурации."""
         while self.is_running:
             try:
-                await asyncio.sleep(5.0)
+                mr_cfg = self.config_manager.get_multi_rate_config()
+                flush_sec = float(mr_cfg.get('wal_flush_interval_seconds', self.config_manager.get_flush_interval_seconds()))
+                await asyncio.sleep(flush_sec)
                 self.storage.flush()
             except asyncio.CancelledError:
                 break
@@ -583,7 +646,8 @@ class TelemetryEngine:
         if not PSUTIL_AVAILABLE:
             return []
         loop = asyncio.get_running_loop()
-        return await loop.run_in_executor(None, self.collector.get_top_processes, 10, 'cpu')
+        top_n = self.config_manager.get_effective_process_limit()
+        return await loop.run_in_executor(None, self.collector.get_top_processes, top_n, 'cpu')
 
     async def _collect_network_sockets_fast(self) -> List[NetworkSocketInfo]:
         """Быстрый опрос сокетов через iphlpapi.dll."""

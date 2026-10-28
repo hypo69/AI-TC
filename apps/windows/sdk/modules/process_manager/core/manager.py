@@ -19,7 +19,7 @@
 # Package: apps.windows.sdk.modules.process_manager.core
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-15 16:16:00
 # =============================================================================
 
 from __future__ import annotations
@@ -51,23 +51,50 @@ class ProcessManager:
         """Получение списка всех активных процессов через psutil.
 
         Returns:
-            List[ProcessItem]: Список всех активных процессов.
+            List[ProcessItem]: Список всех активных процессов с метаданными запуска.
         """
         processes: List[ProcessItem] = []
-        for p in psutil.process_iter(['pid', 'name', 'username', 'cpu_percent', 'memory_info', 'num_threads', 'create_time', 'exe']):
+        raw_list = list(psutil.process_iter(['pid', 'ppid', 'name', 'username', 'cpu_percent', 'memory_info', 'num_threads', 'create_time', 'exe']))
+        pid_to_name = {p.info.get('pid'): p.info.get('name') for p in raw_list if p.info.get('pid')}
+
+        for p in raw_list:
             try:
                 p_info = p.info
+                pid = p_info.get('pid', 0)
+                name = p_info.get('name', 'Unknown') or 'Unknown'
+                ppid = p_info.get('ppid')
+                parent_name = pid_to_name.get(ppid) if ppid else None
+
                 mem_mb = round((p_info.get('memory_info').rss / (1024 ** 2)), 1) if p_info.get('memory_info') else 0.0
-                c_time = datetime.fromtimestamp(p_info.get('create_time', 0)).strftime('%Y-%m-%d %H:%M:%S') if p_info.get('create_time') else ''
+                create_ts = float(p_info.get('create_time') or 0.0)
+                c_time = datetime.fromtimestamp(create_ts).strftime('%Y-%m-%d %H:%M:%S') if create_ts else ''
+                uptime = self._classifier._format_uptime(create_ts)
+
+                cmd_str: Optional[str] = None
+                try:
+                    raw_cmd = p.cmdline()
+                    if raw_cmd:
+                        cmd_str = ' '.join(raw_cmd)
+                except Exception:
+                    pass
+
+                launch_sum = self._classifier._extract_launch_summary(name, cmd_str)
+
                 processes.append(ProcessItem(
-                    pid=p_info.get('pid', 0),
-                    name=p_info.get('name', 'Unknown') or 'Unknown',
+                    pid=pid,
+                    ppid=ppid,
+                    name=name,
                     username=p_info.get('username'),
                     cpu_percent=float(p_info.get('cpu_percent') or 0.0),
                     memory_mb=mem_mb,
                     num_threads=p_info.get('num_threads') or 1,
                     create_time=c_time,
-                    exe_path=p_info.get('exe')
+                    uptime_str=uptime,
+                    exe_path=p_info.get('exe'),
+                    command_line=cmd_str,
+                    launch_summary=launch_sum,
+                    parent_name=parent_name,
+                    real_parent=parent_name,
                 ))
             except (psutil.NoSuchProcess, psutil.AccessDenied):
                 continue

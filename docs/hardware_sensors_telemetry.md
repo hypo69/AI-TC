@@ -3,7 +3,7 @@
 ## Обзор
 
 Система собирает аппаратные метрики компьютера через **два независимых источника**:
-1. **LibreHardwareMonitor (LHM)** — через HTTP API (порт 8085) и WMI namespace
+1. **Hardware Monitor** — через HTTP API (порт 8085) и WMI namespace
 2. **Пользовательские сборщики** — через `nvidia-smi` CLI и прямой WMI доступ
 
 Это позволяет покрыть все возможные сенсоры и избежать потери данных.
@@ -16,7 +16,7 @@
 
 **Метод:** `get_hardware_sensors()` → 3 подисточника:
 - `_probe_nvidia_gpu_sensors()` — через `nvidia-smi` CLI
-- `_probe_libre_hardware_monitor_wmi()` — через WMI namespace `root\LibreHardwareMonitor`
+- `_probe_libre_hardware_monitor_wmi()` — через WMI namespace `root\Hardware Monitor`
 - `_probe_wmi_thermal_zones()` — через WMI `root\wmi\MSAcpi_ThermalZoneTemperature`
 
 **Колонки CSV:**
@@ -29,20 +29,20 @@ timestamp, sensor_name, sensor_type, value, unit, hardware_type
 |-----------|--------|---------|
 | **GPU (через NVIDIA SMI)** | Температура, Мощность (W), Обороты вентилятора (%) | GPU Core Temp, GPU Power (W), GPU Fan Speed (%) |
 | **ACPI Thermal Zones** | Температура термальных зон материнской платы | ACPI Thermal Zone 1 (°C) |
-| **LHM через WMI** | Температуры, обороты, напряжения | CPU Package, Fan RPM, Voltage |
+| **Hardware Sensors через WMI** | Температуры, обороты, напряжения | CPU Package, Fan RPM, Voltage |
 
 ---
 
-### 2. `_poll_librehardwaremonitor()` — `librehardwaremonitor_polls.csv`
+### 2. `_poll_hardware_sensors()` — `hardware_polls.csv`
 
-**Метод:** `LhmService.get_flattened_sensors()` → HTTP API (http://localhost:8085/data.json)
+**Метод:** `HardwareMonitor.get_snapshot()` → HTTP API (http://localhost:8085/data.json)
 
 **Колонки CSV:**
 ```
 timestamp, hardware, sensor_name, category, value, unit, raw_value
 ```
 
-**Категории сенсоров (из LHM):**
+**Категории сенсоров (из Hardware Sensors):**
 ```
 Temperatures, Load, Clocks, Voltages, Powers, Fans,
 Controls, Levels, Data, Throughput, Factors, Times
@@ -66,17 +66,17 @@ Controls, Levels, Data, Throughput, Factors, Times
 
 ### Дублирование НЕТ — каждый источник уникален:
 
-| Данные | `_poll_hardware_monitor()` | `_poll_librehardwaremonitor()` |
+| Данные | `_poll_hardware_monitor()` | `_poll_hardware_sensors()` |
 |--------|----------------------------|-------------------------------|
 | GPU Power (W) | ✅ Через `nvidia-smi` | ❌ Нет |
 | GPU Fan Speed (%) | ✅ Через `nvidia-smi` | ⚠️ Через WMI (менее надежно) |
-| GPU Core Clock (MHz) | ❌ Нет | ✅ Через LHM HTTP API |
-| CPU Core Voltage (V) | ❌ Нет | ✅ Через LHM HTTP API |
-| 3.3V/5V/12V | ❌ Нет | ✅ Через LHM HTTP API |
-| Fan Control (%) | ❌ Нет | ✅ Через LHM HTTP API |
-| RAM Used (GB) | ❌ Только общее | ✅ Через LHM HTTP API |
-| GPU Memory Used (GB) | ❌ Нет | ✅ Через LHM HTTP API |
-| Network Throughput (Mbps) | ❌ Только bytes/sec | ✅ Через LHM HTTP API |
+| GPU Core Clock (MHz) | ❌ Нет | ✅ Через Hardware Sensors HTTP API |
+| CPU Core Voltage (V) | ❌ Нет | ✅ Через Hardware Sensors HTTP API |
+| 3.3V/5V/12V | ❌ Нет | ✅ Через Hardware Sensors HTTP API |
+| Fan Control (%) | ❌ Нет | ✅ Через Hardware Sensors HTTP API |
+| RAM Used (GB) | ❌ Только общее | ✅ Через Hardware Sensors HTTP API |
+| GPU Memory Used (GB) | ❌ Нет | ✅ Через Hardware Sensors HTTP API |
+| Network Throughput (Mbps) | ❌ Только bytes/sec | ✅ Через Hardware Sensors HTTP API |
 | ACPI Thermal Zones | ✅ Через WMI | ❌ Нет |
 
 ---
@@ -120,12 +120,12 @@ def _has_value_changed(self, app_name: str, new_value: Any) -> bool:
         ┌───────────────────┴───────────────────┐
         ↓                                       ↓
 ┌───────────────────────┐           ┌───────────────────────┐
-│ _poll_hardware_monitor│           │ _poll_librehardwaremon│
-│ (get_hardware_sensors)│           │ (LhmService.get_flatt │
+│ _poll_hardware_monitor│           │ _poll_hardware_sensors│
+│ (get_hardware_sensors)│           │ (HardwareMonitor.get_flatt │
 └───────────────────────┘           │ ened_sensors())       │
         ↓                                       ↓
 ┌───────────────────────┐           ┌───────────────────────┐
-│ hardware_monitor_polls│           │ librehardwaremonitor_po│
+│ hardware_monitor_polls│           │ hardware_polls│
 │ .csv                  │           │ lls.csv               │
 │ timestamp, sensor_nam │           │ timestamp, hardware,   │
 │ e, sensor_type, value │           │ sensor_name, category, │
@@ -149,7 +149,7 @@ def _has_value_changed(self, app_name: str, new_value: Any) -> bool:
         "interval": "5 seconds",
         "enabled": true
       },
-      "librehardwaremonitor": {
+      "hardware_sensors": {
         "interval": "5 seconds",
         "enabled": true
       }
@@ -162,11 +162,11 @@ def _has_value_changed(self, app_name: str, new_value: Any) -> bool:
 
 ## Файлы CSV
 
-Все CSV файлы сохраняются в `%APPDATA%/AI-Windows-Admin/apps/logs/`:
+Все CSV файлы сохраняются в `%APPDATA%/ai-tc/apps/logs/`:
 
 - `hardware_monitor_polls.csv` — сенсоры через `get_hardware_sensors()`
-- `librehardwaremonitor_polls.csv` — сенсоры через LHM HTTP API
-- `lhm_sensor_polls.csv` — дополнительные сенсоры LHM (если есть)
+- `hardware_polls.csv` — сенсоры через Hardware Sensors HTTP API
+- `hardware_sensor_polls.csv` — дополнительные сенсоры Hardware Sensors (если есть)
 - `system_inspector_polls.csv` — базовая телеметрия (CPU, RAM, Disk, Net)
 - `software_audit.csv` — аудит ПО
 

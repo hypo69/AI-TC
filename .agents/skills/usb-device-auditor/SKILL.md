@@ -1,6 +1,7 @@
 ---
 name: usb-device-auditor
-description: Automated assistant skill for: Аудит подключенных и ранее использованных USB-устройств
+# Updated: 2026-10-25 18:35:00
+description: "Automated assistant skill for: Аудит подключенных и ранее использованных USB-устройств"
 ---
 
 # Аудитор USB-устройств

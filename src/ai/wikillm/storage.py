@@ -165,8 +165,43 @@ class WikiStorage:
                     tags,
                     details
                 );
+
+                CREATE TABLE IF NOT EXISTS wiki_llm_profiles (
+                    profile_name TEXT PRIMARY KEY,
+                    score_threshold REAL NOT NULL DEFAULT 0.7,
+                    top_k INTEGER NOT NULL DEFAULT 5,
+                    fetch_k INTEGER NOT NULL DEFAULT 20,
+                    reranker_enabled INTEGER NOT NULL DEFAULT 1,
+                    rerank_top_n INTEGER NOT NULL DEFAULT 5,
+                    max_context_tokens INTEGER NOT NULL DEFAULT 4096,
+                    temperature REAL NOT NULL DEFAULT 0.1,
+                    grounding_required INTEGER NOT NULL DEFAULT 1,
+                    is_default INTEGER NOT NULL DEFAULT 0,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL
+                );
                 """
             )
+
+            cur = conn.cursor()
+            cur.execute("SELECT COUNT(*) FROM wiki_llm_profiles")
+            if cur.fetchone()[0] == 0:
+                now_str = utc_now_iso()
+                defaults = [
+                    ('fast', 0.6, 3, 10, 0, 3, 2048, 0.2, 1, 0, now_str, now_str),
+                    ('balanced', 0.7, 5, 20, 1, 5, 4096, 0.1, 1, 1, now_str, now_str),
+                    ('precise', 0.82, 10, 50, 1, 8, 8192, 0.0, 1, 0, now_str, now_str),
+                ]
+                conn.executemany(
+                    """
+                    INSERT OR IGNORE INTO wiki_llm_profiles (
+                        profile_name, score_threshold, top_k, fetch_k, reranker_enabled,
+                        rerank_top_n, max_context_tokens, temperature, grounding_required,
+                        is_default, created_at, updated_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    defaults,
+                )
 
     def save_entity(self, entity: KnowledgeEntity) -> None:
         """Сохраняет или обновляет сущность базы знаний со всеми связями и FTS-индексом.

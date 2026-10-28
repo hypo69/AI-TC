@@ -11,7 +11,7 @@
 # Package: apps.windows.api.routers.chat
 # Author: hypo69
 # Copyright: c 2026 hypo69
-# Updated: 2026-10-12 06:20:00
+# Updated: 2026-10-15 11:27:00
 # =============================================================================
 
 from __future__ import annotations
@@ -162,6 +162,17 @@ def register_chat_endpoint(router: APIRouter, chat_model, narrator_model, plugin
                 chat_response = ""
                 async for chunk in stream_generator:
                     if chunk:
+                        # Защита: прерывание потока при обнаружении текста фатальной ошибки harness/SDK
+                        if any(marker in chunk for marker in (
+                            "Harness process exited unexpectedly",
+                            "Error Antigravity SDK",
+                            "Ошибка провайдера agy",
+                            "This model is currently experiencing high demand",
+                        )):
+                            logger.error(f"[Chat] Перехвачена критическая ошибка в потоке ответа: {chunk}")
+                            yield f"data: {json.dumps({'error': chunk.strip()})}\n\n"
+                            return
+
                         c = chunk.replace("[CHAT]", "").replace("[VOICE]", "")
                         if c:
                             chat_response += c

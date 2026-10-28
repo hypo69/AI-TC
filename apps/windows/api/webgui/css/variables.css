@@ -15,7 +15,7 @@
  * Package: windows/api/webgui/css
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-10 17:35:00
+ * Updated: 2026-10-20 19:02:00
  * =============================================================================
  */
 
@@ -24,31 +24,203 @@
    Дизайн-токены и CSS-переменные для всех тем оформления
    ═══════════════════════════════════════════════════════════════════════════ */
 
-/* ── 1. Светлая тема NightView (Комфортное чтение ночью / Warm Paper) ─────── */
+/* ── 1. Светлая тема Windows System Light (Нейтрально-серый Slate-200) ─────── */
 :root,
+[data-theme="light"],
+[data-theme="theme-light-enterprise"] {
+  /* Фоны (комфортный серый задний фон страницы и мягкие светло-серые поверхности карточек) */
+  --bg-color:        #e2e8f0;   /* мягкий нейтрально-серый задний фон страницы (Slate-200) */
+  --surface-1:       #eaedf2;   /* карточки, панели, мягкая матовая светло-серая поверхность */
+  --surface-2:       #dbe2ea;   /* хедеры карточек, тулбары, разделители */
+  --card-bg:         #eaedf2;
+  --card-text:       #0f172a;   /* четкий глубокий антрацитовый текст максимальной читаемости */
+  --nav-bg:          #e2e8f0;
+  --bs-body-bg:      #e2e8f0;
+  --bs-body-bg-rgb:  226, 232, 240;
+
+  /* Текст высокой четкости и контрастности для комфортного чтения */
+  --text-color:      #0f172a;   /* глубокий четкий темный текст */
+  --text-muted:      #475569;
+  --text-silver:           #e2e8f0;   /* единый серебряный/светло-серый цвет шрифта вместо белого */
+  --badge-info-solid-bg:   #0284c7;   /* темно-синий/инфо фон для сплошных бейджей bg-info */
+  --badge-info-solid-text: var(--text-silver); /* светло-серый серебряный шрифт */   /* темный нейтральный slate для высокой читаемости подписей и параметров */
+  --nav-text:        #1e293b;   /* контрастный текст навигации */
+  --nav-active:      #0284c7;   /* четкий сапфирово-синий акцент */
+  --nav-hover-bg:    #cbd5e1;
+
+  /* Линии и границы */
+  --border-color:    #cbd5e1;   /* четкий контур */
+  --border-strong:   #94a3b8;   /* выразительные активные границы */
+  --border-subtle:   #e2e8f0;   /* деликатные внутренние разделители */
+  --border-contrast: #64748b;   /* контрастные рамки */
+  --divider-color:   #cbd5e1;
+  --modal-border:    #cbd5e1;
+
+  /* Тени (мягкие) */
+  --shadow-xs:  0 1px 2px rgba(15, 23, 42, 0.05);
+  --shadow-sm:  0 1px 4px rgba(15, 23, 42, 0.08);
+  --shadow-md:  0 4px 12px rgba(15, 23, 42, 0.10);
+  --shadow-lg:  0 8px 24px rgba(15, 23, 42, 0.13);
+
+  /* Чат */
+  --chat-user-bg:    #0284c7;
+  --chat-user-text:  #f8fafc;
+  --chat-bot-bg:     #eaedf2;
+  --chat-bot-text:   #0f172a;
+
+  /* Скроллбар */
+  --scrollbar-track: #e2e8f0;
+  --scrollbar-thumb: #cbd5e1;
+
+  /* Модальные окна */
+  --modal-bg:        #eaedf2;
+  --modal-text:      #0f172a;
+
+  /* Алерты — светлая тема (выразительные тона с акцентированным красноватым в предупреждениях и сочным зеленым) */
+  --alert-success-bg:     #ecfdf5;
+  --alert-success-border: #86efac;
+  --alert-success-text:   #166534;
+  --alert-danger-bg:      #fee2e2;
+  --alert-danger-border:  #f87171;
+  --alert-danger-text:    #991b1b;
+  --alert-warning-bg:     #fff1f0;
+  --alert-warning-border: #fca5a5;
+  --alert-warning-text:   #b43418;
+  --alert-info-bg:        #e0f2fe;
+  --alert-info-border:    #7dd3fc;
+  --alert-info-text:      #0369a1;
+
+  /* Геометрия и радиусы */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+
+  /* Типографика */
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Courier New", monospace;
+  --badge-font-size: calc(0.75rem + 1pt);
+  --status-val-font-size: calc(1em + 1pt);
+
+  /* Токены командной строки и консоли терминала */
+  --terminal-bg:        #0d1117;
+  --terminal-text:      #f0f6fc;
+  --terminal-header-bg: #161b22;
+  --terminal-border:    #30363d;
+  --terminal-prompt:    #2ea043;
+
+  /* Каскадные токены KPI-карточек */
+  --kpi-bg:         var(--surface-1);
+  --kpi-border:     var(--border-color);
+  --kpi-accent:     var(--nav-active);
+  --kpi-min-height: 72px;
+  --kpi-padding:    0.65rem 0.9rem;
+  --kpi-val-size:   1.25rem;
+  --kpi-label-size: 0.72rem;
+  --kpi-sub-size:   0.72rem;
+
+  /* Каскадные токены панелей */
+  --panel-bg:        var(--surface-1);
+  --panel-border:    var(--border-color);
+  --panel-header-bg: var(--surface-2);
+  --panel-header-color: var(--text-color);
+  --panel-header-font-size: 1.75rem;
+  --panel-header-font-size-sm: 1rem;
+
+  /* Каскадные токены таблиц */
+  --table-bg:           var(--surface-1);
+  --table-row-bg:       var(--surface-1);
+  --table-color:        var(--text-color);
+  --table-border-color: var(--border-color);
+  --table-header-bg:    var(--surface-2);
+  --table-header-color: var(--text-muted);
+  --table-hover-bg:     var(--nav-hover-bg);
+
+  /* Каскадные токены заголовка вкладки (Tab Header) */
+  --tab-header-title-size: 1.35rem;
+  --tab-header-title-color: var(--text-color);
+  --tab-header-title-weight: 700;
+  --tab-header-subtitle-color: var(--text-muted);
+  --tab-header-subtitle-size: 0.82rem;
+  --tab-header-icon-size: 1.5rem;
+  --tab-header-gap: 0.5rem;
+  --tab-header-margin-bottom: 0.5rem;
+
+  /* Каскадные токены суб-навигации */
+  --subnav-btn-padding: 0.35rem 0.75rem;
+  --subnav-font-size:   0.82rem;
+
+  /* Каскадные токены заголовка модели оборудования (System Inspector / Сводка) */
+  --sys-metric-title-color:  #2b0d14; /* очень темное почти черное бордо */
+  --sys-metric-title-size:   1.05rem;
+  --sys-metric-title-shadow: 0 1px 2px rgba(43, 13, 20, 0.18);
+
+  /* Статусные цвета — светлая тема */
+  --status-success-bg:     #dcfce7;
+  --status-success-text:   #166534;
+  --status-success-border: #86efac;
+
+  --status-danger-bg:      #fee2e2;
+  --status-danger-text:    #b91c1c;
+  --status-danger-border:  #f87171;
+
+  --status-warning-bg:     #fff1f0;
+  --status-warning-text:   #b43418;
+  --status-warning-border: #fca5a5;
+
+  --status-info-bg:        #e0f2fe;
+  --status-info-text:      #0369a1;
+  --status-info-border:    #7dd3fc;
+}
+
+/* Переопределения типографики для светлой темы Windows System Light (увеличение бейджей на 1pt) */
 [data-theme="light"] {
+  --badge-font-size: calc(0.75rem + 1pt);
+  --status-val-font-size: calc(1em + 1pt);
+}
+
+/* ── 1b. Аутентичная светлая тема NightView (Тёплая бумага / Warm Paper) ───── */
+[data-theme="nightview"] {
   /* Фоны (мягкие теплые бежево-серые поверхности в стиле NightView / бумага) */
-  --bg-color:        #fbfbfb;   /* чистый светлый фон страницы */
-  --surface-1:       #f6f3ec;   /* карточки, панели, мягкая бумажная поверхность */
-  --surface-2:       #eee9e0;   /* хедеры карточек, тулбары, разделители */
-  --card-bg:         #f6f3ec;
+  --bg-color:        #f5f2eb;   /* мягкий комфортный светлый фон страницы (Warm Paper) */
+  --surface-1:       #f6f1e8;   /* мягкая теплая бумага (без белого) */
+  --surface-2:       #eee8dd;   /* хедеры карточек, тулбары, разделители */
+  --card-bg:         #f6f1e8;
   --card-text:       #18181b;   /* четкий глубокий антрацитовый текст максимальной читаемости */
-  --nav-bg:          #f6f3ec;
+  --nav-bg:          #f5f2eb;
+  --bs-body-bg:      #f5f2eb;
+  --bs-body-bg-rgb:  245, 242, 235;
+  --bs-info:         #0284c7;
+  --bs-info-rgb:     2, 132, 199;
+  --bs-primary:      #1d4ed8;
+  --bs-primary-rgb:  29, 78, 216;
+  --ui-bg-base:      #f5f2eb;
+  --ui-bg-surface:   #f6f1e8;
+  --ui-bg-surface-elevated: #eee8dd;
 
   /* Текст высокой четкости и контрастности для комфортного ночного чтения */
   --text-color:      #18181b;   /* глубокий четкий темный текст */
-  --text-muted:      #3f3f46;   /* темный нейтральный slate для высокой читаемости подписей и параметров */
-  --nav-text:        #27272a;   /* контрастный текст навигации */
+  --text-muted:      #4b5563;   /* четкий темный slate для высокой читаемости подписей и параметров */
+  --ui-text-primary: #18181b;
+  --ui-text-secondary: #4b5563;
+  --ui-text-muted:   #6b7280;
+  --text-silver:           #e2e8f0;   /* единый серебряный/светло-серый цвет шрифта вместо белого */
+  --badge-info-solid-bg:   #0284c7;   /* глубокий темно-синий фон бейджа bg-info */
+  --badge-info-solid-text: var(--text-silver); /* светло-серый серебряный шрифт на темно-синем бейдже */
+  --nav-text:        #18181b;   /* контрастный текст навигации */
   --nav-active:      #1d4ed8;   /* четкий сапфирово-синий акцент */
-  --nav-hover-bg:    #eae4d8;
+  --ui-accent:       #1d4ed8;
+  --ui-accent-hover: #1e40af;
+  --nav-hover-bg:    #eee8dd;
 
   /* Линии и границы */
-  --border-color:    #cfc6b8;   /* четкий теплый контур */
+  --border-color:    #ded7cb;   /* четкий теплый контур */
   --border-strong:   #9ca3af;   /* выразительные активные границы */
-  --border-subtle:   #ded7cb;   /* деликатные внутренние разделители */
+  --border-subtle:   #eae4d8;   /* деликатные внутренние разделители */
   --border-contrast: #71717a;   /* контрастные рамки */
-  --divider-color:   #cfc6b8;
-  --modal-border:    #cfc6b8;
+  --divider-color:   #ded7cb;
+  --modal-border:    #ded7cb;
+  --ui-border-color: #ded7cb;
 
   /* Тени (мягкие теплые) */
   --shadow-xs:  0 1px 2px rgba(50, 40, 30, 0.05);
@@ -67,68 +239,62 @@
   --scrollbar-thumb: #c6bcad;
 
   /* Модальные окна */
-  --modal-bg:        #f6f3ec;
-  --modal-text:      #2b2723;
+  --modal-bg:        #f6f1e8;
+  --modal-text:      #18181b;
 
   /* Алерты — светлая тема NightView (пастельные комфортные тона) */
-  --alert-success-bg:     #e7f2e9;
-  --alert-success-border: #98c9a0;
-  --alert-success-text:   #185223;
-  --alert-danger-bg:      #f6e6e6;
-  --alert-danger-border:  #e19f9d;
-  --alert-danger-text:    #7e1f1f;
-  --alert-warning-bg:     #f8f0dd;
-  --alert-warning-border: #dfc279;
-  --alert-warning-text:   #704705;
-  --alert-info-bg:        #e5eef7;
-  --alert-info-border:    #97bcdb;
-  --alert-info-text:      #184674;
-
-  /* Геометрия и радиусы */
-  --radius-xs: 4px;
-  --radius-sm: 6px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-
-  /* Типографика */
-  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Courier New", monospace;
-
-  /* Каскадные токены KPI-карточек */
-  --kpi-bg:         var(--surface-1);
-  --kpi-border:     var(--border-color);
-  --kpi-accent:     var(--nav-active);
-  --kpi-min-height: 72px;
-  --kpi-padding:    0.65rem 0.9rem;
-  --kpi-val-size:   1.25rem;
-  --kpi-label-size: 0.72rem;
-  --kpi-sub-size:   0.72rem;
-
-  /* Каскадные токены панелей */
-  --panel-bg:        var(--surface-1);
-  --panel-border:    var(--border-color);
-  --panel-header-bg: var(--surface-2);
-
-  /* Каскадные токены суб-навигации */
-  --subnav-btn-padding: 0.35rem 0.75rem;
-  --subnav-font-size:   0.82rem;
+  --alert-success-bg:     rgba(22, 163, 74, 0.12);
+  --alert-success-border: rgba(22, 163, 74, 0.28);
+  --alert-success-text:   #15803d;
+  --alert-danger-bg:      rgba(220, 38, 38, 0.12);
+  --alert-danger-border:  rgba(220, 38, 38, 0.28);
+  --alert-danger-text:    #dc2626;
+  --alert-warning-bg:     rgba(217, 119, 6, 0.12);
+  --alert-warning-border: rgba(217, 119, 6, 0.28);
+  --alert-warning-text:   #b45309;
+  --alert-info-bg:        rgba(2, 132, 199, 0.12);
+  --alert-info-border:    rgba(2, 132, 199, 0.28);
+  --alert-info-text:      #0284c7;
 
   /* Статусные цвета */
-  --status-success-bg:     #dbeee0;
-  --status-success-text:   #185223;
-  --status-success-border: #98c9a0;
+  --status-success-bg:     rgba(22, 163, 74, 0.12);
+  --status-success-text:   #15803d;
+  --status-success-border: rgba(22, 163, 74, 0.28);
+  --status-danger-bg:      rgba(220, 38, 38, 0.12);
+  --status-danger-text:    #dc2626;
+  --status-danger-border:  rgba(220, 38, 38, 0.28);
+  --status-warning-bg:     rgba(217, 119, 6, 0.12);
+  --status-warning-text:   #e65100;
+  --status-warning-border: rgba(230, 81, 0, 0.28);
+  --status-info-bg:        rgba(2, 132, 199, 0.12);
+  --status-info-text:      #0284c7;
+  --status-info-border:    rgba(2, 132, 199, 0.28);
+  --ui-success:            #16a34a;
+  --ui-warning:            #e65100;
+  --bs-warning:            #e65100;
+  --bs-warning-rgb:        230, 81, 0;
+  --badge-warning-bg:      #fef3c7;
+  --badge-warning-text:    #78350f;
+  --badge-warning-border:  #fcd34d;
+  --ui-danger:             #dc2626;
+  --ui-info:               #0284c7;
 
-  --status-danger-bg:      #f7dede;
-  --status-danger-text:    #7e1f1f;
-  --status-danger-border:  #e19f9d;
+  /* Токены таблиц NightView (Аутентичная тёплая бумага #f6f1e8) */
+  --table-bg:              #f6f1e8;
+  --table-row-bg:          #f6f1e8;
+  --table-header-bg:       #eee8dd;
+  --table-border-color:    #ded7cb;
+  --table-color:           #18181b;
 
-  --status-warning-bg:     #f7ecd0;
-  --status-warning-text:   #704705;
-  --status-warning-border: #dfc279;
+  --about-card-bg: var(--surface-1);
+  --badge-font-size: calc(0.75rem + 1pt);
+  --status-val-font-size: calc(1em + 1pt);
+  --status-val-font-size: calc(1em + 1pt);
 
-  --status-info-bg:        #dceaf6;
-  --status-info-text:      #184674;
-  --status-info-border:    #97bcdb;
+  /* Каскадные токены заголовка модели оборудования (System Inspector) */
+  --sys-metric-title-color:  #2b0d14; /* очень темное почти черное бордо на теплой бумаге */
+  --sys-metric-title-size:   1.05rem;
+  --sys-metric-title-shadow: 0 1px 2px rgba(43, 13, 20, 0.18);
 }
 
 /* ── 2. Светлая кирпичная тема (Brick / Terracotta) ────────────────────────── */
@@ -143,7 +309,10 @@
 
   /* Текст */
   --text-color:      #2c221e;   /* глубокий теплый антрацит */
-  --text-muted:      #7d6b63;   /* теплый приглушенный */
+  --text-muted:      #7d6b63;
+  --text-silver:           #ede8e3;
+  --badge-info-solid-bg:   #9a3412;
+  --badge-info-solid-text: var(--text-silver);   /* теплый приглушенный */
   --nav-text:        #59473f;
   --nav-active:      #b84228;   /* благородный терракотово-кирпичный */
   --nav-hover-bg:    #f7e6dc;
@@ -200,6 +369,13 @@
   --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Courier New", monospace;
 
+  /* Токены командной строки и консоли терминала */
+  --terminal-bg:        #120e0c;
+  --terminal-text:      #fdfaf6;
+  --terminal-header-bg: #1f1815;
+  --terminal-border:    #3d302a;
+  --terminal-prompt:    #b84228;
+
   /* Каскадные токены KPI-карточек */
   --kpi-bg:         var(--surface-1);
   --kpi-border:     var(--border-color);
@@ -214,10 +390,37 @@
   --panel-bg:        var(--surface-1);
   --panel-border:    var(--border-color);
   --panel-header-bg: var(--surface-2);
+  --panel-header-color: var(--text-color);
+  --panel-header-font-size: 1.75rem;
+  --panel-header-font-size-sm: 1rem;
+
+  /* Каскадные токены таблиц */
+  --table-bg:           var(--surface-1);
+  --table-row-bg:       var(--surface-1);
+  --table-color:        var(--text-color);
+  --table-border-color: var(--border-color);
+  --table-header-bg:    var(--surface-2);
+  --table-header-color: var(--text-muted);
+  --table-hover-bg:     var(--nav-hover-bg);
+
+  /* Каскадные токены заголовка вкладки (Tab Header) */
+  --tab-header-title-size: 1.35rem;
+  --tab-header-title-color: var(--text-color);
+  --tab-header-title-weight: 700;
+  --tab-header-subtitle-color: var(--text-muted);
+  --tab-header-subtitle-size: 0.82rem;
+  --tab-header-icon-size: 1.5rem;
+  --tab-header-gap: 0.5rem;
+  --tab-header-margin-bottom: 0.5rem;
 
   /* Каскадные токены суб-навигации */
   --subnav-btn-padding: 0.35rem 0.75rem;
   --subnav-font-size:   0.82rem;
+
+  /* Каскадные токены заголовка модели оборудования (System Inspector) */
+  --sys-metric-title-color:  #3b0a0a; /* темный клинкерный бордо */
+  --sys-metric-title-size:   1.05rem;
+  --sys-metric-title-shadow: 0 1px 2px rgba(59, 10, 10, 0.18);
 
   /* Статусные цвета */
   --status-success-bg:     #e2f3e8;
@@ -249,7 +452,10 @@
 
   /* Текст */
   --text-color:      #f3f6fa;   /* яркий текст высокой контрастности */
-  --text-muted:      #a3b1c2;   /* легко различимый вторичный текст */
+  --text-muted:      #a3b1c2;
+  --text-silver:           #e2e8f0;
+  --badge-info-solid-bg:   #1f6feb;
+  --badge-info-solid-text: var(--text-silver);   /* легко различимый вторичный текст */
   --nav-text:        #b0bdcc;
   --nav-active:      #58a6ff;   /* яркий синий активный акцент */
   --nav-hover-bg:    #222d3d;
@@ -306,6 +512,13 @@
   --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Courier New", monospace;
 
+  /* Токены командной строки и консоли терминала */
+  --terminal-bg:        #080c12;
+  --terminal-text:      #f3f6fa;
+  --terminal-header-bg: #131a24;
+  --terminal-border:    #2b3648;
+  --terminal-prompt:    #58a6ff;
+
   /* Каскадные токены KPI-карточек */
   --kpi-bg:         var(--surface-1);
   --kpi-border:     var(--border-color);
@@ -320,10 +533,37 @@
   --panel-bg:        var(--surface-1);
   --panel-border:    var(--border-color);
   --panel-header-bg: var(--surface-2);
+  --panel-header-color: var(--text-color);
+  --panel-header-font-size: 1.75rem;
+  --panel-header-font-size-sm: 1rem;
+
+  /* Каскадные токены таблиц */
+  --table-bg:           var(--surface-1);
+  --table-row-bg:       var(--surface-1);
+  --table-color:        var(--text-color);
+  --table-border-color: var(--border-color);
+  --table-header-bg:    var(--surface-2);
+  --table-header-color: var(--text-muted);
+  --table-hover-bg:     var(--nav-hover-bg);
+
+  /* Каскадные токены заголовка вкладки (Tab Header) */
+  --tab-header-title-size: 1.35rem;
+  --tab-header-title-color: var(--text-color);
+  --tab-header-title-weight: 700;
+  --tab-header-subtitle-color: var(--text-muted);
+  --tab-header-subtitle-size: 0.82rem;
+  --tab-header-icon-size: 1.5rem;
+  --tab-header-gap: 0.5rem;
+  --tab-header-margin-bottom: 0.5rem;
 
   /* Каскадные токены суб-навигации */
   --subnav-btn-padding: 0.35rem 0.75rem;
   --subnav-font-size:   0.82rem;
+
+  /* Каскадные токены заголовка модели оборудования (System Inspector) */
+  --sys-metric-title-color:  #fda4af; /* мягкий благородный пастельно-бордовый с высокой контрастностью */
+  --sys-metric-title-size:   1.05rem;
+  --sys-metric-title-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
 
   /* Статусные цвета */
   --status-success-bg:     #174828;
@@ -355,7 +595,10 @@
 
   /* Текст */
   --text-color:      #d8ffd8;   /* неоновый зеленый фосфорный текст */
-  --text-muted:      #599863;   /* приглушенный фосфор */
+  --text-muted:      #599863;
+  --text-silver:           #d1fae5;
+  --badge-info-solid-bg:   #0c2533;
+  --badge-info-solid-text: var(--text-silver);   /* приглушенный фосфор */
   --nav-text:        #6cb878;
   --nav-active:      #00ff66;   /* электрический неоново-зеленый */
   --nav-hover-bg:    #152618;
@@ -412,6 +655,13 @@
   --font-sans: "Consolas", "Cascadia Code", "Courier New", ui-monospace, monospace;
   --font-mono: "Consolas", "Cascadia Code", "Courier New", ui-monospace, monospace;
 
+  /* Токены командной строки и консоли терминала */
+  --terminal-bg:        #030603;
+  --terminal-text:      #d8ffd8;
+  --terminal-header-bg: #09130a;
+  --terminal-border:    #00ff66;
+  --terminal-prompt:    #00ff66;
+
   /* Каскадные токены KPI-карточек */
   --kpi-bg:         var(--surface-1);
   --kpi-border:     var(--border-color);
@@ -426,10 +676,37 @@
   --panel-bg:        var(--surface-1);
   --panel-border:    var(--border-color);
   --panel-header-bg: var(--surface-2);
+  --panel-header-color: var(--text-color);
+  --panel-header-font-size: 1.75rem;
+  --panel-header-font-size-sm: 1rem;
+
+  /* Каскадные токены таблиц */
+  --table-bg:           var(--surface-1);
+  --table-row-bg:       var(--surface-1);
+  --table-color:        var(--text-color);
+  --table-border-color: var(--border-color);
+  --table-header-bg:    var(--surface-2);
+  --table-header-color: var(--text-muted);
+  --table-hover-bg:     var(--nav-hover-bg);
+
+  /* Каскадные токены заголовка вкладки (Tab Header) */
+  --tab-header-title-size: 1.35rem;
+  --tab-header-title-color: var(--text-color);
+  --tab-header-title-weight: 700;
+  --tab-header-subtitle-color: var(--text-muted);
+  --tab-header-subtitle-size: 0.82rem;
+  --tab-header-icon-size: 1.5rem;
+  --tab-header-gap: 0.5rem;
+  --tab-header-margin-bottom: 0.5rem;
 
   /* Каскадные токены суб-навигации */
   --subnav-btn-padding: 0.35rem 0.75rem;
   --subnav-font-size:   0.82rem;
+
+  /* Каскадные токены заголовка модели оборудования (System Inspector) */
+  --sys-metric-title-color:  #d8ffd8;
+  --sys-metric-title-size:   1.05rem;
+  --sys-metric-title-shadow: 0 0 6px rgba(0, 255, 102, 0.35);
 
   /* Статусные цвета */
   --status-success-bg:     #0c2914;

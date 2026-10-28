@@ -17,7 +17,7 @@ python main.py
 
 **Windows:**
 ```
-C:\Users\<username>\AppData\Local\Temp\ai-windows-admin\
+C:\Users\<username>\AppData\Local\Temp\ai-tc\
 ├── logs/        (логи приложения)
 ├── backups/     (резервные копии)
 └── updates/     (история обновлений)
@@ -25,7 +25,7 @@ C:\Users\<username>\AppData\Local\Temp\ai-windows-admin\
 
 **Linux:**
 ```
-/tmp/ai-windows-admin/
+/tmp/ai-tc/
 ├── logs/        (логи приложения)
 ├── backups/     (резервные копии)
 └── updates/     (история обновлений)
@@ -33,7 +33,7 @@ C:\Users\<username>\AppData\Local\Temp\ai-windows-admin\
 
 **macOS:**
 ```
-/var/folders/XX/XXX...XXX/T/ai-windows-admin/
+/var/folders/XX/XXX...XXX/T/ai-tc/
 ├── logs/        (логи приложения)
 ├── backups/     (резервные копии)
 └── updates/     (история обновлений)
@@ -138,7 +138,7 @@ from core.version_manager import get_version_manager
 vm = get_version_manager()
 
 # Получить list резервных копий
-backup_dir = Path.home() / '.../ai-windows-admin/backups'
+backup_dir = Path.home() / '.../ai-tc/backups'
 backups = list(backup_dir.iterdir())
 
 if backups:
@@ -191,7 +191,7 @@ asyncio.run(check_and_update())
 1. Создать bat файл `update_app.bat`:
 ```batch
 @echo off
-cd C:\path\to\ai-windows-admin
+cd C:\path\to\ai-tc
 set AUTO_UPDATE=true
 python main.py --check-update
 ```
@@ -208,7 +208,7 @@ Register-ScheduledTask -TaskName "AI-Windows-Admin-Update" -Trigger $trigger -Ac
 Добавить в crontab:
 ```bash
 # Проверять обновления каждый день в 3:00 AM
-0 3 * * * cd /path/to/ai-windows-admin && AUTO_UPDATE=true python main.py --check-update >> /var/log/ai-windows-admin-update.log 2>&1
+0 3 * * * cd /path/to/ai-tc && AUTO_UPDATE=true python main.py --check-update >> /var/log/ai-tc-update.log 2>&1
 ```
 
 ### Docker
@@ -236,10 +236,10 @@ Error: Permission denied when writing to backup directory
 **Решение:** Проверить права доступа к системной temp папке:
 ```bash
 # Linux/macOS
-chmod 755 /tmp/ai-windows-admin/
+chmod 755 /tmp/ai-tc/
 
 # Windows (PowerShell as Admin)
-icacls "C:\Users\<user>\AppData\Local\Temp\ai-windows-admin" /grant:r "$env:USERNAME`:(OI)(CI)F"
+icacls "C:\Users\<user>\AppData\Local\Temp\ai-tc" /grant:r "$env:USERNAME`:(OI)(CI)F"
 ```
 
 ### Проблема: "Недостаточно дискового пространства"
@@ -311,15 +311,15 @@ backup_20260831_120530/
   "timestamp": "2026-08-31T12:05:30.123456",
   "from_version": "v1.0.0",
   "to_version": "v1.0.1",
-  "backup_path": "/tmp/ai-windows-admin/backups/backup_20260831_120530",
+  "backup_path": "/tmp/ai-tc/backups/backup_20260831_120530",
   "branch": "main",
   "status": "success"
 }
 ```
 
 Файлы находятся в:
-- Windows: `C:\Users\<user>\AppData\Local\Temp\ai-windows-admin\updates\`
-- Linux: `/tmp/ai-windows-admin/updates/`
+- Windows: `C:\Users\<user>\AppData\Local\Temp\ai-tc\updates\`
+- Linux: `/tmp/ai-tc/updates/`
 
 ## Мониторинг обновлений
 

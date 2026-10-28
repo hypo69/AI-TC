@@ -32,7 +32,7 @@
 # Package: root
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 22:28:45
+# Updated: 2026-10-16 21:07:00
 # =============================================================================
 
 from __future__ import annotations
@@ -95,6 +95,8 @@ Examples:
   py manage_tools.py db status                            # check SQLite migrations
   py manage_tools.py docs generate                        # generate documentation
   py manage_tools.py telemetry status                     # view telemetry status
+  py manage_tools.py investigate powershell               # investigate frequent PowerShell spawns
+  py manage_tools.py investigate solve "Find culprit"     # run universal LangChain agent with streaming
 '''
     )
     subparsers = parser.add_subparsers(dest='command', help='Commands')
@@ -131,7 +133,7 @@ Examples:
         return assist_cli.main()
 
     # Display help when no subcommand is provided for commands that require one
-    if not getattr(args, 'subcommand', ''):
+    if args.command != 'test' and not getattr(args, 'subcommand', ''):
         parser.print_help()
         return 0
 

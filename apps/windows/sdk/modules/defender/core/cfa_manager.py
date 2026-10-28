@@ -16,7 +16,7 @@
 # Package: apps.windows.sdk.modules.defender.core
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-13 15:50:00
 # =============================================================================
 
 from __future__ import annotations
@@ -56,3 +56,41 @@ class ControlledFolderAccessManager:
         if isinstance(allowed_apps, str):
             allowed_apps = [allowed_apps]
         return ControlledFolderAccessInfo(enabled=enabled, mode=mode, protected_folders=all_folders, allowed_applications=allowed_apps)
+
+    def add_allowed_application(self, app_path: str) -> bool:
+        """Добавляет исполняемый файл в список разрешенных приложений CFA.
+
+        Args:
+            app_path: Полный путь к доверенному файлу (.exe).
+
+        Returns:
+            bool: True при успешном добавлении.
+        """
+        clean_path = app_path.strip().strip('"').strip("'")
+        cmd = f'Add-MpPreference -ControlledFolderAccessAllowedApplications "{clean_path}"'
+        try:
+            self._service._run_powershell_raw(cmd)
+            logger.info(f"[CFAManager] Приложение добавлено в CFA: {clean_path}")
+            return True
+        except Exception as e:
+            logger.error(f"[CFAManager] Ошибка добавления приложения в CFA: {e}")
+            return False
+
+    def remove_allowed_application(self, app_path: str) -> bool:
+        """Удаляет исполняемый файл из списка разрешенных приложений CFA.
+
+        Args:
+            app_path: Полный путь к удаляемому приложению.
+
+        Returns:
+            bool: True при успешном удалении.
+        """
+        clean_path = app_path.strip().strip('"').strip("'")
+        cmd = f'Remove-MpPreference -ControlledFolderAccessAllowedApplications "{clean_path}"'
+        try:
+            self._service._run_powershell_raw(cmd)
+            logger.info(f"[CFAManager] Приложение удалено из CFA: {clean_path}")
+            return True
+        except Exception as e:
+            logger.error(f"[CFAManager] Ошибка удаления приложения из CFA: {e}")
+            return False

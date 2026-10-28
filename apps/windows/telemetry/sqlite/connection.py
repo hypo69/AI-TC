@@ -18,7 +18,7 @@
 # Package: apps.windows.telemetry.sqlite
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-13 20:08:00
 # =============================================================================
 
 from __future__ import annotations
@@ -69,31 +69,34 @@ class TelemetryConnectionManager:
         return self._lock
 
     def get_connection(self) -> sqlite3.Connection:
-        """Создает и настраивает соединение SQLite с необходимыми PRAGMA директивами.
+        """Создаёт и настраивает соединение SQLite.
 
-        Returns:
-            sqlite3.Connection: Настроенное соединение.
+        Для режима только чтения и записи используется общий RLock для
+        сериализации доступа и избежания конфликтов блокировки.
         """
-        if self.read_only:
-            db_uri = f"file:{self.db_path.as_posix()}?mode=ro"
-            try:
-                conn = sqlite3.connect(db_uri, uri=True, timeout=self.timeout, check_same_thread=False)
-            except sqlite3.OperationalError:
-                conn = sqlite3.connect(str(self.db_path), timeout=self.timeout, check_same_thread=False)
+        # Блокируем доступ к базе данных, чтобы гарантировать отсутствие
+        # конкурентных запросов, вызывающих "database is locked".
+        with self._lock:
+            if self.read_only:
+                db_uri = f"file:{self.db_path.as_posix()}?mode=ro"
                 try:
-                    conn.execute('PRAGMA query_only = ON;')
-                except Exception:
-                    pass
-        else:
-            conn = sqlite3.connect(str(self.db_path), timeout=self.timeout, check_same_thread=False)
-            conn.execute('PRAGMA journal_mode = WAL;')
-            conn.execute('PRAGMA synchronous = NORMAL;')
-            conn.execute('PRAGMA foreign_keys = ON;')
-            conn.execute('PRAGMA busy_timeout = 15000;')
-            conn.execute('PRAGMA cache_size = -64000;')
-            conn.execute('PRAGMA temp_store = MEMORY;')
-            conn.execute('PRAGMA mmap_size = 268435456;')
-            conn.execute('PRAGMA wal_autocheckpoint = 1000;')
-
-        conn.row_factory = sqlite3.Row
-        return conn
+                    conn = sqlite3.connect(db_uri, uri=True, timeout=self.timeout, check_same_thread=False)
+                except sqlite3.OperationalError:
+                    conn = sqlite3.connect(str(self.db_path), timeout=self.timeout, check_same_thread=False)
+                    try:
+                        conn.execute('PRAGMA query_only = ON;')
+                    except Exception:
+                        pass
+            else:
+                conn = sqlite3.connect(str(self.db_path), timeout=self.timeout, check_same_thread=False)
+                conn.execute('PRAGMA auto_vacuum = INCREMENTAL;')
+                conn.execute('PRAGMA journal_mode = WAL;')
+                conn.execute('PRAGMA synchronous = NORMAL;')
+                conn.execute('PRAGMA foreign_keys = ON;')
+                conn.execute('PRAGMA busy_timeout = 15000;')
+                conn.execute('PRAGMA cache_size = -64000;')
+                conn.execute('PRAGMA temp_store = MEMORY;')
+                conn.execute('PRAGMA mmap_size = 268435456;')
+                conn.execute('PRAGMA wal_autocheckpoint = 1000;')
+            conn.row_factory = sqlite3.Row
+            return conn

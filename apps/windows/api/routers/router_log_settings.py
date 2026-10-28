@@ -17,7 +17,7 @@
 # Package: apps.windows.api.routers
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 22:58:16
+# Updated: 2026-10-13 16:25:00
 # =============================================================================
 
 from __future__ import annotations
@@ -36,7 +36,7 @@ from fastapi import APIRouter, HTTPException, Query, status
 from pydantic import BaseModel, Field
 
 from logger import logger
-from apps.windows.telemetry.win32_ffi.wevtapi import WevtAPI, CHANNEL_DESCRIPTIONS
+from apps.windows.sdk.win32_ffi.wevtapi import WevtAPI, CHANNEL_DESCRIPTIONS
 from apps.windows.telemetry.security_collector import WindowsSecurityCollector
 from apps.windows.telemetry.sqlite import TelemetryStorage
 

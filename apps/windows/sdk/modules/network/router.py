@@ -16,7 +16,7 @@
 # Package: apps.windows.sdk.modules.network
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 22:28:45
+# Updated: 2026-10-20 18:35:00
 # =============================================================================
 
 from __future__ import annotations
@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import asyncio
 import os
+import socket
 import tempfile
 import time
 from typing import Any, Dict, List, Optional
@@ -73,7 +74,7 @@ async def get_status(request: Request) -> dict:
     state = get_state()
     state.evaluate_security()
     stats = state.compute_stats()
-    tshark_avail = TSharkWrapper().is_available()
+    tshark_avail = TSharkWrapper().is_available() if TSharkWrapper is not None else False
     conn_count = 0
     listen_count = 0
     try:
@@ -230,8 +231,8 @@ async def stop_capture(request: Request) -> dict:
 @router.post('/analyze/pcap')
 async def analyze_pcap(request: Request, file: UploadFile=File(...), max_packets: int=500) -> dict:
     """Analyze uploaded PCAP file via TSharkWrapper and AIDetector."""
-    wrapper = TSharkWrapper()
-    if not wrapper.is_available():
+    wrapper = TSharkWrapper() if TSharkWrapper is not None else None
+    if wrapper is None or not wrapper.is_available():
         return {'error': 'TShark is not installed on this system', 'stats': {'total_packets': 0, 'total_bytes': 0}, 'heuristics': ['TShark executable not available on host'], 'ai_report': {'health_score': 100, 'anomalies': []}, 'sample_packets': []}
     suffix = os.path.splitext(file.filename or 'sample.pcap')[1]
     with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
@@ -289,6 +290,44 @@ async def trigger_lan_scan(request: Request, subnet: Optional[str] = None) -> di
         'total': len(devices),
         'scan_timestamp': time.time(),
         'status': 'SUCCESS',
+    }
+
+@router.get('/devices/probe')
+async def probe_device(request: Request, ip: str) -> dict:
+    """Быстрая проверка доступности и стандартных портов хоста (SMB, RDP, HTTP, HTTPS, SSH, WinRM)."""
+    common_ports = [
+        {'port': 445, 'name': 'SMB', 'desc': 'Общие папки Windows'},
+        {'port': 3389, 'name': 'RDP', 'desc': 'Удалённый рабочий стол'},
+        {'port': 80, 'name': 'HTTP', 'desc': 'Веб-сервер'},
+        {'port': 443, 'name': 'HTTPS', 'desc': 'Защищенный веб'},
+        {'port': 22, 'name': 'SSH', 'desc': 'Удаленный терминал'},
+        {'port': 5985, 'name': 'WinRM', 'desc': 'Управление Windows'},
+        {'port': 5357, 'name': 'WSD', 'desc': 'Службы устройств WSD'},
+        {'port': 139, 'name': 'NetBIOS', 'desc': 'Сессия NetBIOS'},
+    ]
+
+    def check_ports() -> List[dict]:
+        results: List[dict] = []
+        for p in common_ports:
+            port = p['port']
+            is_open = False
+            try:
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                    s.settimeout(0.35)
+                    if s.connect_ex((ip, port)) == 0:
+                        is_open = True
+            except Exception:
+                pass
+            results.append({**p, 'is_open': is_open})
+        return results
+
+    port_status = await asyncio.to_thread(check_ports)
+    open_ports = [p['port'] for p in port_status if p['is_open']]
+    return {
+        'ip': ip,
+        'open_ports': open_ports,
+        'details': port_status,
+        'timestamp': time.time(),
     }
 
 def init_router() -> APIRouter:

@@ -7,16 +7,16 @@
 #
 # Usage Examples:
 #   Python API:
-#     from apps.windows.telemetry.win32_ffi.tasksched import TaskSchedulerAPI
+#     from apps.windows.sdk.win32_ffi.tasksched import TaskSchedulerAPI
 #
 #     service = TaskSchedulerAPI()
 #
 # File: tasksched.py
 # Project: ai-windows-admin
-# Package: apps.windows.telemetry.win32_ffi
+# Package: apps.windows.sdk.native
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-14 23:28:00
 # =============================================================================
 
 from __future__ import annotations
@@ -96,18 +96,27 @@ class TaskSchedulerAPI:
     def _connect(self) -> bool:
         """Подключение к локальной службе планировщика через COM."""
         try:
+            try:
+                import pythoncom
+                pythoncom.CoInitialize()
+            except Exception:
+                pass
             import win32com.client
             self._service = win32com.client.Dispatch('Schedule.Service')
             self._service.Connect()
+            self._is_available = True
             return True
         except Exception as ex:
             logger.debug(f'COM-интерфейс Schedule.Service недоступен: {ex}')
             self._service = None
+            self._is_available = False
             return False
 
     @property
     def is_available(self) -> bool:
         """Доступность нативного COM-интерфейса планировщика."""
+        if not self._is_available or self._service is None:
+            self._connect()
         return self._is_available and self._service is not None
 
     def get_all_tasks(self, max_tasks: int = 500) -> List[Dict[str, Any]]:
@@ -119,6 +128,12 @@ class TaskSchedulerAPI:
         Returns:
             List[Dict[str, Any]]: Список задач с путями, действиями и статусами.
         """
+        try:
+            import pythoncom
+            pythoncom.CoInitialize()
+        except Exception:
+            pass
+
         if not self.is_available or self._service is None:
             return []
         tasks: List[Dict[str, Any]] = []
@@ -126,7 +141,13 @@ class TaskSchedulerAPI:
             root_folder = self._service.GetFolder('\\')
             self._scan_folder(root_folder, tasks, max_tasks)
         except Exception as ex:
-            logger.debug(f'Ошибка при рекурсивном чтении задач планировщика COM: {ex}')
+            logger.debug(f'Ошибка при чтении COM задач планировщика, повторная попытка переподключения: {ex}')
+            if self._connect() and self._service is not None:
+                try:
+                    root_folder = self._service.GetFolder('\\')
+                    self._scan_folder(root_folder, tasks, max_tasks)
+                except Exception as retry_ex:
+                    logger.debug(f'Повторная ошибка при рекурсивном чтении задач: {retry_ex}')
         return tasks
 
     def _scan_folder(self, folder: Any, tasks: List[Dict[str, Any]], max_tasks: int) -> None:

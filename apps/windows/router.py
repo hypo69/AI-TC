@@ -16,7 +16,7 @@
 # Package: apps.windows
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 19:54:00
+# Updated: 2026-10-15 20:50:00
 # =============================================================================
 
 """Роутер диагностики, управления окнами, персонализации, идентификации и безопасности Windows."""
@@ -35,14 +35,12 @@ from apps.windows.sdk.core.models import ActionType, RemediationAction, RiskLeve
 from apps.windows.sdk.core.audits import CleanCollector, DriverCollector, EventLogCollector, IntegrityCollector, NetworkCollector, PerformanceCollector, PostInstallCollector, ProcessCollector, SecurityCollector, ServicesCollector, SoftwareCollector, StorageCollector, TasksCollector, UpdateCollector
 from apps.windows.sdk.core.root_cause_engine import RootCauseEngine
 from apps.windows.sdk.core.safe_executor import SafeExecutor
-from apps.windows.sdk.modules.window_control_plane.router import router as window_mgmt_router
 from apps.windows.sdk.modules.personalization.router import router as personalization_router
 from apps.windows.sdk.modules.accounts_identity.router import router as accounts_identity_router
 from apps.windows.sdk.core.tool_chains.router import router as toolchains_router
 from apps.windows.sdk.software_scanner.router import router as software_scanner_router
 
 router = APIRouter(prefix='/api/windows', tags=['windows-diagnostics'])
-router.include_router(window_mgmt_router, prefix='/window-management', tags=['Window Management'])
 router.include_router(personalization_router, prefix='/personalization', tags=['Personalization'])
 router.include_router(accounts_identity_router, tags=['Accounts & Identity'])
 router.include_router(toolchains_router, tags=['Tool Chains'])
@@ -426,7 +424,7 @@ async def get_process_telemetry_file_activity(limit: int=50) -> List[Dict[str, A
 @router.get('/reboots')
 async def get_reboots_report(limit: int = 20, hours: int = 720) -> Dict[str, Any]:
     """Сводный отчет анализа и корреляции причин перезагрузок и выключений ОС."""
-    from apps.windows.telemetry.analytics.reboot_analyzer import WindowsRebootAnalyzer
+    from apps.windows.analytics.reboot_analyzer import WindowsRebootAnalyzer
     analyzer = WindowsRebootAnalyzer()
     report = analyzer.collect_reboot_history(limit=limit, hours=hours, persist_to_storage=True)
     return report.model_dump()
@@ -434,7 +432,7 @@ async def get_reboots_report(limit: int = 20, hours: int = 720) -> Dict[str, Any
 @router.get('/reboots/latest')
 async def get_latest_reboot_info() -> Dict[str, Any]:
     """Детальная информация о последней перезагрузке текущей сессии."""
-    from apps.windows.telemetry.analytics.reboot_analyzer import WindowsRebootAnalyzer
+    from apps.windows.analytics.reboot_analyzer import WindowsRebootAnalyzer
     analyzer = WindowsRebootAnalyzer()
     session = analyzer.analyze_current_boot()
     if not session:
@@ -543,6 +541,232 @@ async def get_security_correlation(
     return [c.model_dump() for c in correlations]
 
 
+class TelemetryModeRequest(BaseModel):
+    mode: Optional[str] = None  # 'both', 'live_stream', 'streaming', 'audit'
+    pid: Optional[int] = None
+    interval_sec: Optional[float] = None
+    streaming: Optional[bool] = None
+    audit: Optional[bool] = None
+
+
+@router.get('/telemetry/mode')
+async def get_telemetry_mode_status() -> Dict[str, Any]:
+    """Получение текущего режима работы телеметрии: live_stream, audit или оба (both)."""
+    from apps.windows.telemetry.service import TelemetryLoggerService
+    svc = TelemetryLoggerService.get_instance()
+    cfg = svc.config_manager
+    return {
+        'mode': cfg.get_telemetry_mode(),
+        'is_audit_mode': cfg.is_audit_mode(),
+        'is_live_stream_mode': svc.is_streaming_active(),
+        'audit_enabled': cfg.is_audit_mode(),
+        'streaming_enabled': svc.is_streaming_active(),
+        'audit_target_pid': cfg.get_audit_target_pid(),
+        'audit_interval_sec': cfg.get_audit_interval_sec(),
+        'live_interval_sec': cfg.get_interval_seconds(),
+    }
+
+
+@router.post('/telemetry/mode')
+async def set_telemetry_mode(req: TelemetryModeRequest) -> Dict[str, Any]:
+    """Переключение режима работы телеметрии: live_stream, audit или оба (both)."""
+    from apps.windows.telemetry.service import TelemetryLoggerService
+    svc = TelemetryLoggerService.get_instance()
+
+    # 1. Если явно передан флаг streaming
+    if req.streaming is not None:
+        if req.streaming:
+            svc.activate_streaming_mode(interval_sec=req.interval_sec)
+        else:
+            svc.deactivate_streaming_mode()
+
+    # 2. Если передан режим mode
+    if req.mode:
+        clean_mode = req.mode.lower().strip()
+        if clean_mode in ('both', 'all', 'streaming_and_audit'):
+            svc.activate_both_mode(pid=req.pid, interval_sec=req.interval_sec)
+        elif clean_mode in ('audit', 'process_audit'):
+            if req.pid is not None:
+                svc.activate_audit_mode(pid=req.pid, interval_sec=req.interval_sec)
+            else:
+                svc.activate_audit_mode(interval_sec=req.interval_sec)
+            if req.streaming is None:
+                svc.deactivate_streaming_mode()
+        else:
+            # clean_mode in ('live_stream', 'streaming', 'live')
+            svc.activate_streaming_mode(interval_sec=req.interval_sec)
+    elif req.pid is not None:
+        svc.activate_audit_mode(pid=req.pid, interval_sec=req.interval_sec)
+
+    return {
+        'success': True,
+        'mode': svc.config_manager.get_telemetry_mode(),
+        'audit_enabled': svc.is_audit_active(),
+        'streaming_enabled': svc.is_streaming_active(),
+        'target_pid': svc.config_manager.get_audit_target_pid(),
+        'audit_interval_sec': svc.config_manager.get_audit_interval_sec(),
+    }
+
+
+@router.get('/telemetry/audit/{pid}')
+async def get_process_audit_now(pid: int) -> Dict[str, Any]:
+    """Моментальный глубокий аудит процесса по PID через Windows SDK."""
+    from apps.windows.sdk.modules.process_manager import ProcessAuditor
+    auditor = ProcessAuditor()
+    sample = auditor.audit_process(pid=pid)
+    if not sample:
+        raise HTTPException(status_code=404, detail=f"Процесс с PID {pid} не найден или завершился")
+    return sample.to_dict()
+
+
+@router.get('/telemetry/audit/{pid}/history')
+async def get_process_audit_history(pid: int, limit: int = 50) -> List[Dict[str, Any]]:
+    """История замеров глубокого аудита процесса по PID из базы данных SQLite."""
+    from apps.windows.telemetry.sqlite import TelemetryStorage
+    storage = TelemetryStorage.get_instance(read_only=True)
+    return storage.get_process_audit_history(pid=pid, limit=limit)
+
+
+@router.get('/telemetry/lifecycle/sessions')
+async def get_process_lifecycle_sessions(
+    app: Optional[str] = None,
+    user: Optional[str] = None,
+    parent: Optional[str] = None,
+    pid: Optional[int] = None,
+    is_alive: Optional[bool] = None,
+    limit: int = 100,
+) -> List[Dict[str, Any]]:
+    """Сессии жизненного цикла процессов: когда и кем запущен, когда завершился и сколько ресурсов использовал."""
+    from apps.windows.telemetry.sqlite import TelemetryStorage
+    storage = TelemetryStorage.get_instance(read_only=True)
+    return storage.get_process_lifecycle_sessions(
+        app_name=app,
+        username=user,
+        parent_name=parent,
+        pid=pid,
+        is_alive=is_alive,
+        limit=limit,
+    )
+
+
+@router.get('/telemetry/lifecycle/summary')
+async def get_app_summary_report(
+    app: Optional[str] = None,
+    user: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Агрегированная сводка по приложениям/пользователям/инициаторам (сколько раз запускался, сколько работал, что делал)."""
+    from apps.windows.telemetry.sqlite import TelemetryStorage
+    storage = TelemetryStorage.get_instance(read_only=True)
+    return storage.get_app_summary_report(app_name=app, username=user)
+
+
+@router.get('/telemetry/lifecycle/session/{instance_id}')
+async def get_process_session_by_id(instance_id: str) -> Dict[str, Any]:
+    """Детальная информация о конкретной сессии процесса по ее уникальному instance_id."""
+    from apps.windows.telemetry.sqlite import TelemetryStorage
+    storage = TelemetryStorage.get_instance(read_only=True)
+    session = storage.get_process_lifecycle_by_instance_id(instance_id=instance_id)
+    if not session:
+        raise HTTPException(status_code=404, detail=f"Сессия процесса {instance_id} не найдена")
+    return session
+
+
+@router.get('/telemetry/incident/{pid}')
+async def get_process_incident_timeline(pid: int, limit: int = 100) -> Dict[str, Any]:
+    """Сквозная хроника инцидента процесса: восстановление последовательности всплесков (CPU, RAM, Диск, Сеть)."""
+    from apps.windows.telemetry.sqlite import TelemetryStorage
+    from apps.windows.sdk.modules.process_manager import ProcessAuditor, IncidentTimelineBuilder
+    storage = TelemetryStorage.get_instance(read_only=True)
+    timeline = storage.get_process_incident_timeline(pid=pid, limit=limit)
+    if not timeline:
+        # On-the-fly сбор, если процесс активен в системе
+        auditor = ProcessAuditor()
+        sample = auditor.audit_process(pid=pid)
+        if sample:
+            builder = IncidentTimelineBuilder()
+            built = builder.build_timeline_from_samples([sample.to_dict()])
+            if built:
+                return built.to_dict()
+        raise HTTPException(status_code=404, detail=f"Хроника инцидента для процесса PID {pid} не найдена")
+    return timeline
+
+
+
+class LiveStreamStartRequest(BaseModel):
+    duration_seconds: Optional[float] = None
+
+
+@router.post('/telemetry/live-stream/start')
+@router.post('/telemetry/streaming/start')
+async def start_live_stream_api(req: Optional[LiveStreamStartRequest] = None) -> Dict[str, Any]:
+    """Активация сбора метрик в режиме live stream / стриминга по запросу (on-demand)."""
+    from apps.windows.telemetry.service import TelemetryLoggerService
+    svc = TelemetryLoggerService.get_instance()
+    dur = req.duration_seconds if req else None
+    sess_id = svc.start_live_stream(duration_seconds=dur, trigger_source='api')
+    svc.activate_streaming_mode()
+    return {
+        'status': 'started',
+        'streaming_enabled': True,
+        'audit_enabled': svc.is_audit_active(),
+        'session_id': sess_id,
+        'duration_seconds': dur,
+    }
+
+
+@router.post('/telemetry/live-stream/stop')
+@router.post('/telemetry/streaming/stop')
+async def stop_live_stream_api() -> Dict[str, Any]:
+    """Остановка live stream / стриминга, формирование компактного отчета ресурсопотребления и сжатие базы."""
+    from apps.windows.telemetry.service import TelemetryLoggerService
+    svc = TelemetryLoggerService.get_instance()
+    report = svc.stop_live_stream()
+    svc.deactivate_streaming_mode()
+    return {
+        'status': 'stopped',
+        'streaming_enabled': False,
+        'audit_enabled': svc.is_audit_active(),
+        'report': report,
+    }
+
+
+@router.get('/telemetry/live-stream/sessions')
+async def get_live_stream_sessions_api(limit: int = 50) -> List[Dict[str, Any]]:
+    """Получение сохраненных компактных профилей сессий ресурсопотребления live stream."""
+    from apps.windows.telemetry.sqlite import TelemetryStorage
+    storage = TelemetryStorage.get_instance(read_only=True)
+    return storage.get_live_stream_sessions(limit=limit)
+
+
+@router.get('/telemetry/live-stream/sessions/{session_id}')
+async def get_live_stream_session_detail_api(session_id: str) -> Dict[str, Any]:
+    """Получение детального отчета ресурсопотребления по конкретной сессии live stream."""
+    from apps.windows.telemetry.sqlite import TelemetryStorage
+    storage = TelemetryStorage.get_instance(read_only=True)
+    sess = storage.get_live_stream_session(session_id=session_id)
+    if not sess:
+        raise HTTPException(status_code=404, detail=f"Сессия live stream '{session_id}' не найдена")
+    return sess
+
+
+@router.get('/telemetry/hardware/changes')
+async def get_hardware_changes_api(component: Optional[str] = None, limit: int = 50) -> List[Dict[str, Any]]:
+    """История изменений конфигурации оборудования (как было и как стало - хранится всегда)."""
+    from apps.windows.telemetry.sqlite import TelemetryStorage
+    storage = TelemetryStorage.get_instance(read_only=True)
+    return storage.get_hardware_config_changes(component_type=component, limit=limit)
+
+
+@router.get('/telemetry/hardware/compare')
+async def get_hardware_compare_report_api(change_id: Optional[int] = None, component: Optional[str] = None) -> Dict[str, Any]:
+    """Сравнительный отчет производительности и ресурсопотребления оборудования «Было / Стало»."""
+    from apps.windows.telemetry.sqlite import TelemetryStorage
+    storage = TelemetryStorage.get_instance(read_only=True)
+    rep = storage.get_hardware_comparison_report(change_id=change_id, component_type=component)
+    if not rep:
+        raise HTTPException(status_code=404, detail="Недостаточно данных сессий live stream для формирования сравнительного отчета")
+    return rep
+
 def init_router(app: Optional[Any]=None, state: Optional[Any]=None) -> APIRouter:
     """Инициализация FastAPI роутера."""
     from apps.windows.sdk.core.software_transparency import init_software_transparency_router
@@ -560,6 +784,6 @@ def init_router(app: Optional[Any]=None, state: Optional[Any]=None) -> APIRouter
     except Exception as exc:
         logger.debug(f'Storage manager router not registered: {exc}')
     chat_prov = state.chat_model if state and hasattr(state, 'chat_model') else None
-    router.include_router(init_software_transparency_router(chat_provider=chat_prov))
+    router.include_router(init_software_transparency_router(chat_provider=chat_prov), prefix='/software-transparency', tags=['Software Transparency'])
     return router
 __all__ = ['init_router', 'router']

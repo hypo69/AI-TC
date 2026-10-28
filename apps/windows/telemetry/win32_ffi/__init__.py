@@ -1,34 +1,54 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Windows-Admin Apps Windows Telemetry Win32_Ffi -   Init  
+# Process Name: AI-Windows-Admin Telemetry Win32_FFI Compatibility Bridge
 # =============================================================================
 # Description:
-#   Модуль низкоуровневых биндингов Win32 FFI / ctypes.
-#
-# Usage Examples:
-#
+#   Мост обратной совместимости для импорта win32_ffi из apps.windows.telemetry.win32_ffi.
+#   Перенаправляет вызовы на apps.windows.sdk.win32_ffi.
 #
 # File: __init__.py
 # Project: ai-windows-admin
 # Package: apps.windows.telemetry.win32_ffi
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-13 17:39:00
 # =============================================================================
 
-"""Модуль низкоуровневых биндингов Win32 FFI / ctypes."""
+"""Мост обратной совместимости win32_ffi."""
 
-from .kernel32 import Kernel32API
-from .psapi import PsapiAPI
-from .advapi32 import Advapi32API
-from .ntdll import NtdllAPI
-from .etw import EtwAPI
-from .wevtapi import WevtAPI, ChannelMetadata, CHANNEL_DESCRIPTIONS
-from .scm import ServiceControlManager, ServiceInfo
-from .tasksched import TaskSchedulerAPI
-from .nethelper import IPHelperAPI, NetworkSocketInfo
-from .setupapi import SetupAPI, PnPDeviceInfo
-from .error_decoder import WindowsErrorDecoder, format_system_error, decode_bugcheck_code
+from apps.windows.sdk.win32_ffi import (
+    Kernel32API,
+    PsapiAPI,
+    Advapi32API,
+    NtdllAPI,
+    EtwAPI,
+    WevtAPI,
+    ChannelMetadata,
+    CHANNEL_DESCRIPTIONS,
+    ServiceControlManager,
+    ServiceInfo,
+    TaskSchedulerAPI,
+    IPHelperAPI,
+    NetworkSocketInfo,
+    SetupAPI,
+    PnPDeviceInfo,
+    WindowsErrorDecoder,
+    format_system_error,
+    decode_bugcheck_code,
+)
+from apps.windows.sdk.win32_ffi import (
+    advapi32,
+    error_decoder,
+    etw,
+    kernel32,
+    nethelper,
+    ntdll,
+    psapi,
+    scm,
+    setupapi,
+    tasksched,
+    wevtapi,
+)
 
 __all__ = [
     'Kernel32API',
@@ -49,4 +69,15 @@ __all__ = [
     'WindowsErrorDecoder',
     'format_system_error',
     'decode_bugcheck_code',
+    'advapi32',
+    'error_decoder',
+    'etw',
+    'kernel32',
+    'nethelper',
+    'ntdll',
+    'psapi',
+    'scm',
+    'setupapi',
+    'tasksched',
+    'wevtapi',
 ]

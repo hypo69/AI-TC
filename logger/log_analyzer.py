@@ -16,7 +16,7 @@
 # Package: logger
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-27 23:03:00
 # =============================================================================
 
 """Intelligent log analyzer with Gemini AI integration.
@@ -43,24 +43,41 @@ from concurrent.futures import ThreadPoolExecutor
 from src.ai import UnifiedChatModel
 from logger import logger
 from header import __root__
+import json
+
+
+def _get_app_name() -> str:
+    """Возвращает название приложения из окружения, конфигурации или 'AI-TC'."""
+    if os.environ.get('APP_NAME'):
+        return os.environ['APP_NAME']
+    try:
+        cfg = __root__ / 'config.json'
+        if cfg.exists():
+            with open(cfg, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                return data.get('app_name') or data.get('app', {}).get('app_name') or 'AI-TC'
+    except Exception:
+        pass
+    return 'AI-TC'
+
 
 def get_default_log_dir() -> Path:
     """Возвращает целевую директорию логов."""
-    env_dir = os.environ.get('AI_WINDOWS_ADMIN_LOGS_DIR') or os.environ.get('LOG_DIR')
+    env_dir = os.environ.get('AITC_LOGS_DIR') or os.environ.get('AI_TC_LOGS_DIR') or os.environ.get('AI_WINDOWS_ADMIN_LOGS_DIR') or os.environ.get('LOG_DIR')
     if env_dir:
         return Path(env_dir)
     appdata = os.environ.get('APPDATA') or os.environ.get('LOCALAPPDATA')
     base_dir = Path(appdata) if appdata and os.path.exists(appdata) else Path.home() / '.config'
-    return base_dir / 'AI-Windows-Admin' / 'logs'
+    return base_dir / _get_app_name() / 'logs'
 
 def get_default_reports_dir() -> Path:
     """Возвращает целевую директорию отчетов."""
-    env_dir = os.environ.get('AI_WINDOWS_ADMIN_REPORTS_DIR') or os.environ.get('REPORTS_DIR')
+    env_dir = os.environ.get('AITC_REPORTS_DIR') or os.environ.get('AI_TC_REPORTS_DIR') or os.environ.get('AI_WINDOWS_ADMIN_REPORTS_DIR') or os.environ.get('REPORTS_DIR')
     if env_dir:
         return Path(env_dir)
     appdata = os.environ.get('APPDATA') or os.environ.get('LOCALAPPDATA')
     base_dir = Path(appdata) if appdata and os.path.exists(appdata) else Path.home() / '.config'
-    return base_dir / 'AI-Windows-Admin' / 'reports'
+    return base_dir / _get_app_name() / 'reports'
 
 LOG_DIR: Path = get_default_log_dir()
 REPORTS_DIR: Path = get_default_reports_dir()

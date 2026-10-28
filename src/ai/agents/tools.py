@@ -17,7 +17,7 @@
 # Package: src.ai.agents
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 20:38:25
+# Updated: 2026-10-13 10:05:00
 # =============================================================================
 
 from __future__ import annotations
@@ -481,20 +481,6 @@ async def ifttt_trigger_event(event_name: str, value1: str='', value2: str='', v
         logger.error(f"[ifttt_tools] Error triggering IFTTT event '{event_name}': {e}")
         return json.dumps({'status': 'error', 'error': str(e), 'event': event_name}, ensure_ascii=False)
 
-@tool
-async def search_torrents(query: str) -> str:
-    """Устаревший инструмент (артефакт удален)."""
-    return json.dumps([], ensure_ascii=False)
-
-@tool
-async def get_movie_metadata(title: str) -> str:
-    """Устаревший инструмент (артефакт удален)."""
-    return json.dumps({}, ensure_ascii=False)
-
-@tool
-def get_streaming_sources(title: str) -> str:
-    """Устаревший инструмент (артефакт удален)."""
-    return json.dumps({}, ensure_ascii=False)
 
 @tool
 def mail_invoices_test_connection() -> str:

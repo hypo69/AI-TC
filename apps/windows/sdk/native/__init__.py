@@ -14,7 +14,7 @@
 # Package: apps.windows.sdk.native
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 22:58:16
+# Updated: 2026-10-13 16:25:00
 # =============================================================================
 
 from __future__ import annotations
@@ -27,7 +27,7 @@ from apps.windows.sdk.native.error import (
     BUGCHECK_CODES_MAP,
 )
 from apps.windows.sdk.native.pdh import PDHManager
-from apps.windows.telemetry.win32_ffi.wevtapi import WevtAPI as WindowsEventLogAPI
+from apps.windows.sdk.win32_ffi.wevtapi import WevtAPI as WindowsEventLogAPI
 from apps.windows.sdk.native.scm import ServiceManagerFFI
 from apps.windows.sdk.native.setupapi import SetupAPI
 from apps.windows.sdk.native.ntdll import NativeNT

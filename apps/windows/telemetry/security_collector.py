@@ -20,7 +20,7 @@
 # Package: apps.windows.telemetry
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-13 17:39:00
 # =============================================================================
 
 from __future__ import annotations
@@ -49,7 +49,7 @@ from .models import (
 )
 from .security_normalizer import SecurityEventNormalizer
 from .sqlite import TelemetryStorage
-from .win32_ffi.wevtapi import WevtAPI
+from apps.windows.sdk.win32_ffi.wevtapi import WevtAPI
 
 
 DEFAULT_SECURITY_EVENT_IDS: List[int] = [

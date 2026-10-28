@@ -16,6 +16,8 @@
 - `GET /api/task-scheduler/report` — сводный отчет о заданиях
 - `GET /api/task-scheduler/tasks` — список заданий (с фильтрацией `?state=Ready`)
 - `POST /api/task-scheduler/actions` — запуск или изменение состояния задания
+- `GET /api/task-scheduler/history-status` — проверка статуса журнала истории задач (`Microsoft-Windows-TaskScheduler/Operational`)
+- `POST /api/task-scheduler/history-status` — включение или выключение журнала истории задач (`{"enabled": true/false}`)
 
 ---
 

@@ -16,7 +16,7 @@
 # Package: apps.windows.sdk.core.audits
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-13 16:25:00
 # =============================================================================
 
 from __future__ import annotations
@@ -29,7 +29,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 from logger import logger
-from apps.windows.telemetry.win32_ffi.wevtapi import WevtAPI, ChannelMetadata
+from apps.windows.sdk.win32_ffi.wevtapi import WevtAPI, ChannelMetadata
 
 @dataclass
 class LogSource:

@@ -17,7 +17,7 @@
 # Package: apps.windows.sdk.modules.task_scheduler.core
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-15 19:05:00
 # =============================================================================
 
 from __future__ import annotations
@@ -52,7 +52,7 @@ class TaskSchedulerManager:
         """
         tasks: List[ScheduledTaskItem] = []
         try:
-            from apps.windows.telemetry.win32_ffi.tasksched import TaskSchedulerAPI
+            from apps.windows.sdk.win32_ffi.tasksched import TaskSchedulerAPI
             api = TaskSchedulerAPI()
             raw_tasks = api.get_all_tasks()
             for t in raw_tasks:
@@ -157,14 +157,99 @@ class TaskSchedulerManager:
         ready = sum(1 for t in tasks if 'ready' in t.state.lower() or 'готов' in t.state.lower())
         running = sum(1 for t in tasks if 'run' in t.state.lower() or 'работ' in t.state.lower() or 'выполн' in t.state.lower())
         disabled = sum(1 for t in tasks if 'disable' in t.state.lower() or 'отключ' in t.state.lower())
+        hist_status = self.get_history_status()
         return TaskSchedulerReport(
             total_tasks=len(tasks),
             ready_tasks=ready,
             running_tasks=running,
             disabled_tasks=disabled,
+            history_enabled=hist_status.get('enabled', False),
             tasks=tasks,
             timestamp=datetime.now().isoformat()
         )
+
+    def get_history_status(self) -> Dict[str, Any]:
+        """Получение статуса ведения журнала истории всех задач (Operational log).
+
+        Returns:
+            Dict[str, Any]: Словарь со статусом активности журнала.
+        """
+        channel = "Microsoft-Windows-TaskScheduler/Operational"
+        try:
+            res = subprocess.run(
+                ['wevtutil.exe', 'gl', channel],
+                capture_output=True,
+                text=True,
+                timeout=10,
+                encoding='utf-8',
+                errors='replace'
+            )
+            out = res.stdout or ''
+            enabled = False
+            for line in out.splitlines():
+                line_str = line.strip().lower()
+                if line_str.startswith('enabled:'):
+                    enabled = 'true' in line_str
+                    break
+
+            return {
+                'channel': channel,
+                'enabled': enabled,
+                'status': 'SUCCESS' if res.returncode == 0 else 'ERROR',
+                'message': 'Статус журнала успешно получен' if res.returncode == 0 else (res.stderr or '').strip()
+            }
+        except Exception as exc:
+            logger.error(f"[TaskSchedulerManager] Ошибка проверки статуса журнала {channel}: {exc}")
+            return {
+                'channel': channel,
+                'enabled': False,
+                'status': 'ERROR',
+                'message': str(exc)
+            }
+
+    def set_history_status(self, enabled: bool) -> Dict[str, Any]:
+        """Включение или выключение журнала истории задач (Operational log).
+
+        Args:
+            enabled: True для включения, False для выключения.
+
+        Returns:
+            Dict[str, Any]: Результат выполнения операции.
+        """
+        channel = "Microsoft-Windows-TaskScheduler/Operational"
+        flag = '/e:true' if enabled else '/e:false'
+        try:
+            res = subprocess.run(
+                ['wevtutil.exe', 'sl', channel, flag],
+                capture_output=True,
+                text=True,
+                timeout=15,
+                encoding='utf-8',
+                errors='replace'
+            )
+            success = res.returncode == 0
+            err_msg = (res.stderr or '').strip()
+            out_msg = (res.stdout or '').strip()
+
+            if success:
+                msg = f"Журнал истории задач {'включен' if enabled else 'выключен'}."
+            else:
+                msg = f"Ошибка изменения статуса журнала: {err_msg or out_msg or 'Код ошибки ' + str(res.returncode)}"
+
+            return {
+                'channel': channel,
+                'enabled': enabled if success else not enabled,
+                'status': 'SUCCESS' if success else 'ERROR',
+                'message': msg
+            }
+        except Exception as exc:
+            logger.error(f"[TaskSchedulerManager] Ошибка изменения статуса журнала {channel}: {exc}")
+            return {
+                'channel': channel,
+                'enabled': not enabled,
+                'status': 'ERROR',
+                'message': str(exc)
+            }
 
     async def execute_task_action(self, req: TaskActionRequest) -> Dict[str, Any]:
         """Выполнение действия с заданием планировщика Windows.

@@ -1,0 +1,287 @@
+<!--
+=============================================================================
+Process Name: Windows Web Interface - WikiLLM Knowledge Base Tab View
+=============================================================================
+Description:
+  Интерактивный UI-фильтр тегов и категорий WikiLLM (Задача №33).
+  Включает Category Filter Pills, Tag Cloud популярных тегов, поисковую строку,
+  адаптивную сетку карточек статей и переключение локализации RU/EN.
+
+Usage Examples:
+  Web Route:
+    /windows/api/webgui/templates/tabs/tab_wikillm.html
+    /html/templates/tabs/tab_wikillm.html
+
+  Tab Frame Integration:
+    <iframe src="/html/templates/tabs/tab_wikillm.html" class="w-100 h-100 border-0"></iframe>
+
+File: tab_wikillm.html
+Project: ai-windows-admin
+Package: windows/api/webgui/templates/tabs
+Author: hypo69
+Copyright: © 2026 hypo69
+Updated: 2026-10-20 09:37:00
+=============================================================================
+-->
+<!DOCTYPE html>
+<html lang="ru" data-bs-theme="dark">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>WikiLLM - База Знаний</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet"/>
+  <style>
+    :root {
+      --wikillm-bg-card: rgba(30, 41, 59, 0.7);
+      --wikillm-border: rgba(148, 163, 184, 0.2);
+    }
+    body {
+      background-color: #0f172a;
+      color: #f8fafc;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    }
+    .wikillm-card-container {
+      background: var(--wikillm-bg-card);
+      border: 1px solid var(--wikillm-border);
+      backdrop-filter: blur(8px);
+      border-radius: 0.75rem;
+    }
+    .wikillm-category-pill {
+      transition: all 0.2s ease-in-out;
+      font-weight: 500;
+    }
+    .wikillm-category-pill:hover {
+      transform: translateY(-1px);
+    }
+    .wikillm-tag-pill {
+      cursor: pointer;
+      transition: all 0.15s ease-in-out;
+      user-select: none;
+    }
+    .wikillm-tag-pill:hover {
+      transform: scale(1.05);
+    }
+    .wikillm-article-card {
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      background: rgba(15, 23, 42, 0.6) !important;
+      border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    }
+    .wikillm-article-card:hover {
+      border-color: rgba(56, 189, 248, 0.5) !important;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+    .badge.bg-purple-subtle {
+      background-color: rgba(168, 85, 247, 0.15) !important;
+      color: #c084fc !important;
+    }
+  </style>
+</head>
+<body class="p-3">
+  <div class="container-fluid" id="wikillm-container">
+    <!-- Header Block -->
+    <div class="wikillm-card-container p-3 mb-3 shadow-sm">
+      <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+        <div class="d-flex align-items-center gap-3">
+          <div class="fs-1 text-primary"><i class="bi bi-journal-bookmark-fill"></i></div>
+          <div>
+            <h3 class="panel-header mb-1 d-flex align-items-center gap-2">
+              <span id="wikillm-title-text">База знаний процессов и оптимизации WikiLLM</span>
+              <span class="badge bg-primary-subtle text-primary border border-primary-subtle fs-7">v23</span>
+            </h3>
+            <div class="text-secondary small" id="wikillm-subtitle-text">
+              Интерактивный фильтр категорий процессов, популярных тегов и рекомендаций
+            </div>
+          </div>
+        </div>
+
+        <div class="d-flex align-items-center gap-2">
+          <!-- Language Switcher Toggle -->
+          <button class="btn btn-outline-info btn-sm rounded-pill px-3 shadow-sm" id="wikillm-lang-toggle" title="Switch language / Сменить язык">
+            EN
+          </button>
+          <!-- Total Counter Badge -->
+          <span class="badge bg-dark border border-secondary text-info px-3 py-2 fs-6 rounded-pill" id="wikillm-total-counter">
+            Найдено статей: 0
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Controls Filter Card: Search, Categories, Tag Cloud -->
+    <div class="wikillm-card-container p-3 mb-4 shadow-sm">
+      <!-- 1. Search Query Input -->
+      <div class="row g-2 mb-3">
+        <div class="col-12 col-md-8 col-lg-6">
+          <div class="input-group input-group-sm">
+            <span class="input-group-text bg-dark text-secondary border-secondary">
+              <i class="bi bi-search"></i>
+            </span>
+            <input
+              type="text"
+              id="wikillm-search-input"
+              class="form-control bg-dark text-white border-secondary"
+              placeholder="Поиск по процессу, заголовку или паттерну..."
+              autocomplete="off"
+            />
+            <button
+              class="btn btn-outline-secondary"
+              type="button"
+              id="wikillm-search-clear"
+              style="display: none;"
+              title="Очистить"
+            >
+              <i class="bi bi-x-lg"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="col-12 col-md-4 col-lg-6 d-flex align-items-center justify-content-md-end gap-2">
+          <!-- Active Tag Badge Indicator -->
+          <span
+            class="badge bg-warning text-dark border border-warning rounded-pill px-3 py-1.5 align-items-center"
+            id="wikillm-active-tag-badge"
+            style="display: none; cursor: pointer;"
+            title="Нажмите для сброса тега"
+          >
+            <i class="bi bi-tag-fill me-1"></i>
+            <span class="active-tag-name"></span>
+            <i class="bi bi-x ms-1"></i>
+          </span>
+        </div>
+      </div>
+
+      <!-- 2. Category Filter Pills (Требование 1) -->
+      <div class="mb-3">
+        <div class="small text-secondary fw-semibold mb-2" id="wikillm-category-title-text">
+          Категории процессов:
+        </div>
+        <div class="d-flex flex-wrap gap-2" id="wikillm-categories-wrapper">
+          <button
+            type="button"
+            class="btn btn-primary btn-sm rounded-pill wikillm-category-pill active"
+            data-category="all"
+            title="Показать статьи всех категорий"
+          >
+            <span class="pill-text">Все</span>
+          </button>
+          <button
+            type="button"
+            class="btn btn-outline-primary btn-sm rounded-pill wikillm-category-pill"
+            data-category="browser"
+            title="Веб-браузеры и расширения (msedge.exe, chrome.exe)"
+          >
+            <span class="pill-text">🌐 Браузеры</span>
+          </button>
+          <button
+            type="button"
+            class="btn btn-outline-primary btn-sm rounded-pill wikillm-category-pill"
+            data-category="system_service"
+            title="Системные службы Windows и драйверы (svchost.exe, spoolsv.exe)"
+          >
+            <span class="pill-text">⚙️ Системные службы</span>
+          </button>
+          <button
+            type="button"
+            class="btn btn-outline-primary btn-sm rounded-pill wikillm-category-pill"
+            data-category="dev_tool"
+            title="Инструменты разработки и компиляторы (code.exe, git.exe)"
+          >
+            <span class="pill-text">🛠️ Инструменты разработчика</span>
+          </button>
+          <button
+            type="button"
+            class="btn btn-outline-primary btn-sm rounded-pill wikillm-category-pill"
+            data-category="background_agent"
+            title="Фоновые агенты и локальные ИИ (ollama.exe, searchindexer.exe)"
+          >
+            <span class="pill-text">🤖 Фоновые агенты</span>
+          </button>
+          <button
+            type="button"
+            class="btn btn-outline-primary btn-sm rounded-pill wikillm-category-pill"
+            data-category="user_app"
+            title="Пользовательское программное обеспечение (telegram.exe)"
+          >
+            <span class="pill-text">👤 Пользовательское ПО</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 3. Tag Cloud (Требование 2) -->
+      <div>
+        <div class="small text-secondary fw-semibold mb-2" id="wikillm-tags-title-text">
+          Облако популярных тегов:
+        </div>
+        <div class="d-flex flex-wrap gap-2 align-items-center" id="wikillm-tag-cloud">
+          <span
+            class="badge rounded-pill bg-dark-subtle text-secondary border border-secondary px-2.5 py-1.5 wikillm-tag-pill"
+            data-tag="memory_leak"
+            title="Фильтрация по утечкам оперативной памяти (RAM leak)"
+          >
+            <i class="bi bi-hash"></i>memory_leak
+          </span>
+          <span
+            class="badge rounded-pill bg-dark-subtle text-secondary border border-secondary px-2.5 py-1.5 wikillm-tag-pill"
+            data-tag="gpu_acceleration"
+            title="Фильтрация по видеопамяти и аппаратным проблемам GPU"
+          >
+            <i class="bi bi-hash"></i>gpu_acceleration
+          </span>
+          <span
+            class="badge rounded-pill bg-dark-subtle text-secondary border border-secondary px-2.5 py-1.5 wikillm-tag-pill"
+            data-tag="high_cpu"
+            title="Фильтрация по высокой утилизации процессора (High CPU)"
+          >
+            <i class="bi bi-hash"></i>high_cpu
+          </span>
+          <span
+            class="badge rounded-pill bg-dark-subtle text-secondary border border-secondary px-2.5 py-1.5 wikillm-tag-pill"
+            data-tag="untrusted_path"
+            title="Фильтрация по исполнению из временных и недоверенных папок"
+          >
+            <i class="bi bi-hash"></i>untrusted_path
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div id="wikillm-loading" class="text-center py-5" style="display: none;">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Загрузка...</span>
+      </div>
+      <div class="text-secondary mt-2 small">Загрузка базы знаний WikiLLM...</div>
+    </div>
+
+    <!-- Error State -->
+    <div id="wikillm-error" class="alert alert-danger shadow-sm" style="display: none;">
+      <div class="d-flex align-items-center justify-content-between">
+        <div>
+          <i class="bi bi-exclamation-triangle-fill me-2"></i>
+          <span class="wikillm-error-msg">Ошибка загрузки статей с сервера</span>
+        </div>
+        <button type="button" class="btn btn-sm btn-outline-danger" onclick="window.wikillmApp && window.wikillmApp.loadArticles()">
+          <i class="bi bi-arrow-clockwise me-1"></i>Повторить
+        </button>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div id="wikillm-empty" class="text-center py-5 wikillm-card-container mb-4" style="display: none;">
+      <div class="fs-1 text-secondary mb-2"><i class="bi bi-search"></i></div>
+      <h6 class="text-white fw-bold mb-1">Статей по выбранным критериям не найдено</h6>
+      <p class="text-secondary small mb-3">Попробуйте изменить категорию, сбросить выбранный тег или изменить строку поиска.</p>
+      <button class="btn btn-sm btn-outline-info rounded-pill px-3" id="wikillm-reset-btn">
+        <i class="bi bi-arrow-counterclockwise me-1"></i>Сбросить все фильтры
+      </button>
+    </div>
+
+    <!-- Articles Grid Output Container (Требование 3) -->
+    <div id="wikillm-articles-list"></div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="/static/js/wikillm_controller.js?v=20261013_v1"></script>
+</body>
+</html>

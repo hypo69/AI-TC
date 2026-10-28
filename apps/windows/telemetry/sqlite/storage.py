@@ -17,7 +17,7 @@
 # Package: apps.windows.telemetry.sqlite
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 20:33:00
+# Updated: 2026-10-28 04:40:00
 # =============================================================================
 
 from __future__ import annotations
@@ -88,7 +88,7 @@ class TelemetryStorage(TelemetrySnapshotStorageMixin, TelemetryInventoryStorageM
             if (ai_tel_dir / 'telemetry.db').is_file() or ai_tel_dir.is_dir():
                 target_dir = ai_tel_dir
             else:
-                target_dir = base_dir / 'AI-Windows-Admin' / 'apps' / 'windows' / 'telemetry' / 'logs'
+                target_dir = base_dir / 'ai-tc' / 'telemetry'
 
             if not self.read_only:
                 target_dir.mkdir(parents=True, exist_ok=True)

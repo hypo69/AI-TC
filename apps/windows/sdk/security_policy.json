@@ -1,0 +1,45 @@
+{
+  "allowed_imports": [
+    "tempfile",
+    "subprocess",
+    "json",
+    "re",
+    "pathlib",
+    "os.path",
+    "math",
+    "datetime",
+    "logger",
+    "ctypes",
+    "hashlib",
+    "asyncio",
+    "typing"
+  ],
+  "disallowed_functions": [
+    "eval",
+    "exec",
+    "__import__",
+    "compile",
+    "globals",
+    "locals",
+    "getattr",
+    "setattr",
+    "delattr"
+  ],
+  "disallowed_attributes": [
+    "__subclasses__",
+    "__bases__",
+    "__mro__",
+    "__code__",
+    "__closure__",
+    "__globals__",
+    "__builtins__"
+  ],
+  "dangerous_patterns": [
+    ";\\s*rm",
+    ";\\s*shutdown",
+    "\\|\\s*del",
+    "&&\\s*format",
+    "\\.\\./\\.\\.",
+    "\\.\\.\\\\.\\."
+  ]
+}

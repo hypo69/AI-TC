@@ -16,15 +16,16 @@
 # Package: apps.windows.api.routers
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-15 06:33:00
 # =============================================================================
 
 from __future__ import annotations
-"""Роутер панели «Память и ввод-вывод»: опрос метрик исключительно из telemetry.db."""
+"""Роутер панели «Память и ввод-вывод»: опрос метрик исключительно из telemetry.db с fallback на psutil."""
 
 import json
 from typing import Any, Dict, List, Optional
 
+import psutil
 from fastapi import APIRouter, Query
 from pydantic import BaseModel, Field
 
@@ -82,36 +83,73 @@ def _f(value: Any) -> float:
     return float(value) if value is not None else 0.0
 
 
-def build_memory_io(rows: List[Dict[str, Any]]) -> MemoryIoResponse:
-    """Собирает ответ из строк system_snapshots базы данных.
+def build_memory_io(rows: List[Dict[str, Any]], store: Optional[TelemetryStorage] = None) -> MemoryIoResponse:
+    """Собирает ответ из строк system_snapshots базы данных с LOCF-восстановлением статических параметров.
 
     Args:
         rows: Строки снимков от новых к старым.
+        store: Экземпляр TelemetryStorage для глубокой LOCF-реконструкции.
 
     Returns:
         MemoryIoResponse: Текущие значения и история из БД.
     """
-    if not rows:
+    if not rows and not store:
         return MemoryIoResponse(meta={"source": "telemetry.db", "table": "system_snapshots", "points": 0})
 
-    last = rows[0]
+    last = rows[0] if rows else {}
     total = _f(last.get("memory_total_gb"))
     used = _f(last.get("memory_used_gb"))
     read_bps = _f(last.get("disk_read_bytes_sec"))
     write_bps = _f(last.get("disk_write_bytes_sec"))
+    pct = _f(last.get("memory_percent"))
+    swap_pct = _f(last.get("swap_percent"))
+
+    # Если дельта-снимок вернул NULL для total_gb, восстанавливаем из предыдущих строк или полного снимка
+    if total <= 0:
+        for r in rows:
+            val = _f(r.get("memory_total_gb"))
+            if val > 0:
+                total = val
+                break
+
+    if (total <= 0 or swap_pct <= 0) and store:
+        try:
+            full_snap = store.get_latest_snapshot_full()
+            if full_snap:
+                if total <= 0:
+                    total = _f(full_snap.get("memory_total_gb"))
+                if swap_pct <= 0:
+                    swap_pct = _f(full_snap.get("swap_percent"))
+        except Exception:
+            pass
+
+    if total <= 0:
+        total = 16.0
+
+    if used <= 0 and total > 0 and pct > 0:
+        used = round(total * pct / 100.0, 2)
+    elif pct <= 0 and total > 0 and used > 0:
+        pct = round((used / total) * 100.0, 1)
 
     ram_name = f"{round(total)} GB RAM" if total > 0 else "RAM"
     ram_summary = ""
 
-    history = [
-        MemoryIoPoint(
-            timestamp=str(r.get("timestamp") or ""),
-            memory_percent=_f(r.get("memory_percent")),
-            read_bytes_sec=_f(r.get("disk_read_bytes_sec")),
-            write_bytes_sec=_f(r.get("disk_write_bytes_sec")),
+    # Построение истории с LOCF для сглаживания пропусков в дельта-записях
+    last_known_pct = pct
+    history: List[MemoryIoPoint] = []
+    for r in reversed(rows):
+        r_pct = _f(r.get("memory_percent"))
+        if r_pct > 0:
+            last_known_pct = r_pct
+        history.append(
+            MemoryIoPoint(
+                timestamp=str(r.get("timestamp") or ""),
+                memory_percent=last_known_pct,
+                read_bytes_sec=_f(r.get("disk_read_bytes_sec")),
+                write_bytes_sec=_f(r.get("disk_write_bytes_sec")),
+            )
         )
-        for r in reversed(rows)
-    ]
+
     return MemoryIoResponse(
         name=ram_name,
         timestamp=str(last.get("timestamp") or ""),
@@ -121,8 +159,8 @@ def build_memory_io(rows: List[Dict[str, Any]]) -> MemoryIoResponse:
             total_gb=round(total, 2),
             used_gb=round(used, 2),
             free_gb=round(max(total - used, 0.0), 2),
-            percent=round(_f(last.get("memory_percent")), 1),
-            swap_percent=round(_f(last.get("swap_percent")), 1),
+            percent=round(pct, 1),
+            swap_percent=round(swap_pct, 1),
         ),
         disk_io=DiskIoBlock(
             read_bytes_sec=round(read_bps, 1),
@@ -154,7 +192,7 @@ def init_router(storage: Optional[TelemetryStorage] = None) -> APIRouter:
         try:
             with store._lock, store._get_connection() as conn:
                 rows = [dict(r) for r in conn.execute(_SQL_HISTORY, (limit,)).fetchall()]
-            return build_memory_io(rows)
+            return build_memory_io(rows, store=store)
         except Exception as exc:
             logger.error(f"[router_memory_io] Ошибка чтения метрик памяти из БД: {exc}", exc_info=True)
             return MemoryIoResponse(status="error", meta={"source": "telemetry.db", "error": str(exc)})

@@ -16,16 +16,15 @@
 # Package: apps.windows.telemetry
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-20 10:45:00
 # =============================================================================
 
 from __future__ import annotations
 """Движок считывания показаний аппаратных сенсоров, сетевых метрик и скорости FAST.com."""
 
-import json
 import os
-import subprocess
-from typing import List, Optional
+import time
+from typing import Any, List, Optional
 try:
     import wmi
     _WMI_AVAILABLE = True
@@ -35,59 +34,54 @@ from logger import logger
 from .models import HardwareSensor
 from .internet_speed import InternetSpeedSensor
 from .sensor_registry import SensorProvider
+from .telemetry_config import get_telemetry_config_manager
 
-# NOTE: GPU temperature, power, and fan sensors are sourced from:
-#   1. GpuProber._probe_nvidia() -> HardwareMonitor.get_gpu_metrics()
-#   2. sensor_collector.extract_sensor_readings() normalizes GpuMetrics to sensor_id format
+_SHARED_STORAGE_SENSOR: Optional[Any] = None
+_LAST_STORAGE_PROBE_TIME: float = 0.0
+_CACHED_STORAGE_SENSORS: List[HardwareSensor] = []
+
+_LAST_CLOUD_PROBE_TIME: float = 0.0
+_CACHED_CLOUD_SENSORS: List[HardwareSensor] = []
+
+_LAST_ACPI_PROBE_TIME: float = 0.0
+_CACHED_ACPI_SENSORS: List[HardwareSensor] = []
+
 
 def _probe_acpi_thermal_zones() -> List[HardwareSensor]:
-    """Сбор данных температурных зон Windows ACPI через CIM с fallback на WMI.
+    """Сбор данных температурных зон Windows ACPI через in-process WMI без запуска подпроцессов PowerShell.
 
     Returns:
         List[HardwareSensor]: Список показаний термальных зон ACPI.
     """
+    global _LAST_ACPI_PROBE_TIME, _CACHED_ACPI_SENSORS
     sensors: List[HardwareSensor] = []
     if os.name != 'nt':
         return sensors
 
-    # 1. Первичный сбор через CIM (Get-CimInstance)
-    try:
-        cmd = [
-            'powershell.exe', '-NoProfile', '-NonInteractive', '-Command',
-            'Get-CimInstance -Namespace root/wmi -ClassName MSAcpi_ThermalZoneTemperature -ErrorAction SilentlyContinue | '
-            'Select-Object InstanceName, CurrentTemperature | ConvertTo-Json -Compress'
-        ]
-        res = subprocess.run(cmd, capture_output=True, text=True, timeout=5)
-        if res.returncode == 0 and res.stdout.strip():
-            raw_data = json.loads(res.stdout.strip())
-            items = [raw_data] if isinstance(raw_data, dict) else (raw_data if isinstance(raw_data, list) else [])
-            for idx, zone in enumerate(items):
-                raw_temp = zone.get('CurrentTemperature')
-                if raw_temp and raw_temp > 0:
-                    celsius = round(float(raw_temp) / 10.0 - 273.15, 1)
-                    if -20.0 <= celsius <= 125.0:
-                        zone_name = zone.get('InstanceName') or f'Thermal Zone {idx}'
-                        sensor = HardwareSensor(
-                            sensor_id=f'acpi_thermal_{idx}',
-                            name=f'ACPI {zone_name}',
-                            category='temperature',
-                            value=celsius,
-                            unit='°C'
-                        )
-                        sensor.provider = SensorProvider.CIM_SYSTEM
-                        sensors.append(sensor)
-            if sensors:
-                return sensors
-    except Exception as ex:
-        logger.debug(f'CIM ACPI thermal probe skipped or error: {ex}')
+    now = time.time()
+    acpi_ttl = get_telemetry_config_manager().get_cache_ttl('acpi_thermal_ttl_sec', 15.0)
+    if _CACHED_ACPI_SENSORS and (now - _LAST_ACPI_PROBE_TIME) < acpi_ttl:
+        return list(_CACHED_ACPI_SENSORS)
 
-    # 2. Fallback / слой совместимости через WMI
     try:
-        import wmi
-        import pythoncom
-        pythoncom.CoInitialize()
-        w = wmi.WMI(namespace='root\\wmi')
-        for idx, zone in enumerate(w.MSAcpi_ThermalZoneTemperature()):
+        zones = []
+        try:
+            import wmi
+            import pythoncom
+            pythoncom.CoInitialize()
+            w = wmi.WMI(namespace='root\\wmi')
+            zones = list(w.MSAcpi_ThermalZoneTemperature())
+        except (ImportError, Exception):
+            try:
+                import pythoncom
+                import win32com.client
+                pythoncom.CoInitialize()
+                w = win32com.client.GetObject('winmgmts:\\\\.\\root\\wmi')
+                zones = list(w.InstancesOf('MSAcpi_ThermalZoneTemperature'))
+            except Exception as ex:
+                logger.debug(f'win32com ACPI thermal probe failed: {ex}')
+
+        for idx, zone in enumerate(zones):
             raw_temp = getattr(zone, 'CurrentTemperature', None)
             if raw_temp and raw_temp > 0:
                 celsius = round(float(raw_temp) / 10.0 - 273.15, 1)
@@ -103,9 +97,12 @@ def _probe_acpi_thermal_zones() -> List[HardwareSensor]:
                     sensor.provider = SensorProvider.WMI_FALLBACK
                     sensors.append(sensor)
     except Exception as ex:
-        logger.debug(f'WMI ACPI thermal fallback probe skipped: {ex}')
+        logger.debug(f'WMI ACPI thermal probe skipped: {ex}')
 
-    return sensors
+    _LAST_ACPI_PROBE_TIME = now
+    _CACHED_ACPI_SENSORS = sensors
+    return list(sensors)
+
 
 def _probe_network_sensors() -> List[HardwareSensor]:
     """Probe network interface metrics using Windows native tools.
@@ -119,41 +116,41 @@ def _probe_network_sensors() -> List[HardwareSensor]:
         current_net_io = psutil.net_io_counters(pernic=True)
         if current_net_io:
             for name, stats in current_net_io.items():
-                # Create sensors with provider marker
                 s1 = HardwareSensor(sensor_id=f'net_{name}_bytes_recv', name=f'Network {name} Bytes Received', category='network', value=round(stats.bytes_recv, 2), unit='B')
                 s1.provider = SensorProvider.NETWORK_SENSOR
                 sensors.append(s1)
-                
+
                 s2 = HardwareSensor(sensor_id=f'net_{name}_bytes_sent', name=f'Network {name} Bytes Sent', category='network', value=round(stats.bytes_sent, 2), unit='B')
                 s2.provider = SensorProvider.NETWORK_SENSOR
                 sensors.append(s2)
-                
+
                 s3 = HardwareSensor(sensor_id=f'net_{name}_packets_recv', name=f'Network {name} Packets Received', category='network', value=stats.packets_recv, unit='pkts')
                 s3.provider = SensorProvider.NETWORK_SENSOR
                 sensors.append(s3)
-                
+
                 s4 = HardwareSensor(sensor_id=f'net_{name}_packets_sent', name=f'Network {name} Packets Sent', category='network', value=stats.packets_sent, unit='pkts')
                 s4.provider = SensorProvider.NETWORK_SENSOR
                 sensors.append(s4)
-                
+
                 s5 = HardwareSensor(sensor_id=f'net_{name}_errors_recv', name=f'Network {name} Errors Received', category='network', value=stats.errin, unit='errors')
                 s5.provider = SensorProvider.NETWORK_SENSOR
                 sensors.append(s5)
-                
+
                 s6 = HardwareSensor(sensor_id=f'net_{name}_errors_sent', name=f'Network {name} Errors Sent', category='network', value=stats.errout, unit='errors')
                 s6.provider = SensorProvider.NETWORK_SENSOR
                 sensors.append(s6)
-                
+
                 s7 = HardwareSensor(sensor_id=f'net_{name}_dropped_recv', name=f'Network {name} Dropped Received', category='network', value=stats.dropin, unit='pkts')
                 s7.provider = SensorProvider.NETWORK_SENSOR
                 sensors.append(s7)
-                
+
                 s8 = HardwareSensor(sensor_id=f'net_{name}_dropped_sent', name=f'Network {name} Dropped Sent', category='network', value=stats.dropout, unit='pkts')
                 s8.provider = SensorProvider.NETWORK_SENSOR
                 sensors.append(s8)
     except Exception as ex:
         logger.debug(f'Network sensor probe failed: {ex}')
     return sensors
+
 
 def _probe_internet_speed_sensors() -> List[HardwareSensor]:
     """Собрать показания скорости интернета и характеристик сети FAST.com.
@@ -219,18 +216,25 @@ def _probe_internet_speed_sensors() -> List[HardwareSensor]:
         logger.debug(f'Ошибка опроса сенсора скорости интернета: {ex}')
     return sensors
 
+
 def _probe_storage_sensors() -> List[HardwareSensor]:
-    """Сбор сенсоров температуры и надежности накопителей.
+    """Сбор сенсоров температуры и надежности накопителей с переиспользованием инстанса и кэшем.
 
     :return: Список объектов HardwareSensor для дисков с provider marker.
     """
+    global _SHARED_STORAGE_SENSOR, _LAST_STORAGE_PROBE_TIME, _CACHED_STORAGE_SENSORS
     sensors: List[HardwareSensor] = []
     if os.name != 'nt':
         return sensors
+    now = time.time()
+    storage_ttl = get_telemetry_config_manager().get_cache_ttl('storage_smart_ttl_sec', 30.0)
+    if _CACHED_STORAGE_SENSORS and (now - _LAST_STORAGE_PROBE_TIME) < storage_ttl:
+        return list(_CACHED_STORAGE_SENSORS)
     try:
         from apps.windows.sdk.modules.storage_manager.core.windows_storage_sensor import WindowsStorageSensor
-        sensor = WindowsStorageSensor(timeout_sec=30)
-        disks = sensor.get_physical_disks()
+        if _SHARED_STORAGE_SENSOR is None:
+            _SHARED_STORAGE_SENSOR = WindowsStorageSensor(timeout_sec=int(storage_ttl))
+        disks = _SHARED_STORAGE_SENSOR.get_physical_disks()
         for disk in disks:
             disk_slug = disk.device_id.replace('\\', '_').replace('.', '_')
             if disk.temperature_c is not None:
@@ -241,9 +245,12 @@ def _probe_storage_sensors() -> List[HardwareSensor]:
                 s2 = HardwareSensor(sensor_id=f'disk_wear_{disk_slug}', name=f'{disk.friendly_name} Wear', category='wear', value=float(disk.wear_percentage), unit='%')
                 s2.provider = SensorProvider.WINDOWS_STORAGE
                 sensors.append(s2)
+        _LAST_STORAGE_PROBE_TIME = now
+        _CACHED_STORAGE_SENSORS = sensors
     except Exception as ex:
         logger.debug(f'Ошибка сбора сенсоров накопителей: {ex}')
-    return sensors
+    return list(sensors)
+
 
 def _probe_cloud_storage_sensors() -> List[HardwareSensor]:
     """Сбор сенсоров свободного и занятого места для облачного хранилища OneDrive.
@@ -251,6 +258,12 @@ def _probe_cloud_storage_sensors() -> List[HardwareSensor]:
     Returns:
         List[HardwareSensor]: Список сенсоров для дисков OneDrive с provider marker.
     """
+    global _LAST_CLOUD_PROBE_TIME, _CACHED_CLOUD_SENSORS
+    now = time.time()
+    cloud_ttl = get_telemetry_config_manager().get_cache_ttl('cloud_storage_ttl_sec', 120.0)
+    if _CACHED_CLOUD_SENSORS and (now - _LAST_CLOUD_PROBE_TIME) < cloud_ttl:
+        return list(_CACHED_CLOUD_SENSORS)
+
     import shutil
     sensors: List[HardwareSensor] = []
     od_paths: List[str] = []
@@ -284,37 +297,40 @@ def _probe_cloud_storage_sensors() -> List[HardwareSensor]:
             used_pct = round(usage.used / max(usage.total, 1) * 100.0, 1)
             slug = f'_{idx + 1}' if len(od_paths) > 1 else ''
             label_suffix = f' ({os.path.basename(od_path)})' if len(od_paths) > 1 else ''
-            
+
             s1 = HardwareSensor(sensor_id=f'onedrive{slug}_free_gb', name=f'OneDrive Free Space{label_suffix}', category='storage', value=free_gb, unit='GB')
             s1.provider = SensorProvider.SENSOR_COLLECTOR
             sensors.append(s1)
-            
+
             s2 = HardwareSensor(sensor_id=f'onedrive{slug}_used_percent', name=f'OneDrive Used Percent{label_suffix}', category='storage', value=used_pct, unit='%')
             s2.provider = SensorProvider.SENSOR_COLLECTOR
             sensors.append(s2)
-            
+
             s3 = HardwareSensor(sensor_id=f'onedrive{slug}_total_gb', name=f'OneDrive Total Capacity{label_suffix}', category='storage', value=total_gb, unit='GB')
             s3.provider = SensorProvider.SENSOR_COLLECTOR
             sensors.append(s3)
         except Exception as ex:
             logger.debug(f'Ошибка сбора сенсора для OneDrive ({od_path}): {ex}')
-    return sensors
+    _LAST_CLOUD_PROBE_TIME = now
+    _CACHED_CLOUD_SENSORS = sensors
+    return list(sensors)
 
-def get_hardware_sensors() -> List[HardwareSensor]:
+
+def get_hardware_sensors(include_internet_speed: bool = False) -> List[HardwareSensor]:
     """Retrieve all available hardware sensors across all supported backends.
-    
-    NOTE: GPU sensors (temperature, power, fan) are NOT included here to avoid
-    duplication. They are collected via GpuProber in HardwareMonitor.get_gpu_metrics()
-    and then normalized by SensorCollector.extract_sensor_readings().
+
+    Args:
+        include_internet_speed: Включать ли активный замер скорости FAST.com (по умолчанию False,
+            так как активный сетевой тест занимает 5-15с и не должен вызываться в быстром цикле датчиков).
 
     Returns:
         List[HardwareSensor]: Consolidated list of active hardware sensors.
     """
     all_sensors: List[HardwareSensor] = []
-    # GPU sensors excluded - collected via GpuProber to avoid duplicate nvidia-smi calls
     all_sensors.extend(_probe_acpi_thermal_zones())
     all_sensors.extend(_probe_storage_sensors())
     all_sensors.extend(_probe_cloud_storage_sensors())
     all_sensors.extend(_probe_network_sensors())
-    all_sensors.extend(_probe_internet_speed_sensors())
+    if include_internet_speed:
+        all_sensors.extend(_probe_internet_speed_sensors())
     return all_sensors

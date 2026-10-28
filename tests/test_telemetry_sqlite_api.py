@@ -12,7 +12,7 @@
 # Package: tests
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-11 11:20:00
+# Updated: 2026-10-16 17:15:00
 # =============================================================================
 
 from __future__ import annotations
@@ -75,8 +75,8 @@ def test_writer_domains_write_rows(storage: TelemetryStorage) -> None:
         writer.insert_cpu_telemetry_sample(cur, {'total_percent': 12.5})
         writer.insert_disk_io_event(cur, {'device': 'C:', 'event_type': 'test'})
         conn.commit()
-        cpu_rows = conn.execute('SELECT COUNT(*) FROM cpu_telemetry_samples').fetchone()[0]
-        io_rows = conn.execute('SELECT COUNT(*) FROM disk_io_events').fetchone()[0]
+        cpu_rows = conn.execute('SELECT COUNT(*) FROM sensor_polls').fetchone()[0]
+        io_rows = conn.execute('SELECT COUNT(*) FROM process_file_events').fetchone()[0]
     assert cpu_rows == 1 and io_rows == 1
     assert writer.save_services_snapshot('snap-1', []) == 0
 
@@ -87,3 +87,33 @@ def test_reader_domains_read_empty_db(storage: TelemetryStorage) -> None:
     assert reader.get_disk_inventory() == []
     assert reader.get_reboot_history() == []
     assert reader.get_security_events() == []
+
+
+def test_incidents_insert_and_aggregation_spike_incident_id(storage: TelemetryStorage) -> None:
+    """Проверка генерации incident_id при фиксации всплесков агрегации и прямых вставках."""
+    writer = storage.writer
+    with storage.get_connection() as conn:
+        cur = conn.cursor()
+        writer.insert_event_row(cur, {"message": "test tel"})
+        writer.insert_app_event(cur, {"app": "test_app", "event_type": "crash"})
+        writer.insert_app_poll(cur, {"app": "test_app", "metric_name": "cpu", "value": 50.0})
+        writer.insert_telemetry_spike(
+            cur,
+            {
+                "sensor_id": "cpu_temp",
+                "value": 95.0,
+                "baseline_mean": 50.0,
+                "baseline_sigma": 5.0,
+                "deviation_factor": 9.0,
+            },
+        )
+        conn.commit()
+
+        rows = conn.execute("SELECT incident_id, domain FROM incidents").fetchall()
+        assert len(rows) == 4
+        for inc_id, _ in rows:
+            assert inc_id is not None and inc_id != ""
+
+    res = storage.run_aggregation_pipeline()
+    assert isinstance(res, dict)
+

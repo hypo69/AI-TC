@@ -16,7 +16,7 @@
 # Package: scripts.cli
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-27 23:01:00
 # =============================================================================
 
 """Cross-platform path management system.
@@ -42,16 +42,29 @@ class CrossPlatformPaths:
     - Linux/macOS: ~/.local/share, ~/.config, ~/.cache
     """
 
-    def __init__(self, app_name: str='AI-Windows-Admin', app_author: str='hypo69'):
+    def __init__(self, app_name: Optional[str] = None, app_author: str = 'hypo69'):
         """Initialize cross-platform paths.
         
         Args:
-            app_name: Application name.
+            app_name: Application name (defaults to APP_NAME env var or config.json 'app_name' or 'AI-TC').
             app_author: Application author.
         """
+        self._project_root = self._find_project_root()
+        if app_name is None:
+            app_name = os.environ.get('APP_NAME')
+            if not app_name:
+                try:
+                    cfg_path = self._project_root / 'config.json'
+                    if cfg_path.exists():
+                        import json
+                        with open(cfg_path, 'r', encoding='utf-8') as f:
+                            cfg_data = json.load(f)
+                            app_name = cfg_data.get('app_name') or cfg_data.get('app', {}).get('app_name')
+                except Exception:
+                    pass
+            app_name = app_name or 'ai-tc'
         self.app_name = app_name
         self.app_author = app_author
-        self._project_root = self._find_project_root()
         self._cache = {}
 
     @staticmethod
@@ -66,7 +79,7 @@ class CrossPlatformPaths:
             if (current / 'main.py').exists() or (current / 'config.json').exists():
                 return current
             current = current.parent
-        return Path(os.environ.get('AIWINDOWSADMIN_DIR', os.getcwd()))
+        return Path(os.environ.get('AITC_DIR', os.environ.get('AI_TC_DIR', os.environ.get('AIWINDOWSADMIN_DIR', os.getcwd()))))
 
     @property
     def project_root(self) -> Path:
@@ -77,14 +90,17 @@ class CrossPlatformPaths:
     def data_dir(self) -> Path:
         """Application data directory.
         
-        Windows: %LOCALAPPDATA%\\AI-Windows-Admin
-        Linux: ~/.local/share/AI-Windows-Admin
-        macOS: ~/Library/Application Support/AI-Windows-Admin
+        Windows: %LOCALAPPDATA%\\ai-tc
+        Linux: ~/.local/share/ai-tc
+        macOS: ~/Library/Application Support/ai-tc
         """
         if HAS_PLATFORMDIRS:
             return Path(platformdirs.user_data_dir(self.app_name, self.app_author))
         if sys.platform == 'win32':
             base = os.environ.get('LOCALAPPDATA', str(Path.home() / 'AppData' / 'Local'))
+            candidate = Path(base) / self.app_name / 'data'
+            if candidate.exists():
+                return candidate
             return Path(base) / self.app_name
         elif sys.platform == 'darwin':
             return Path.home() / 'Library' / 'Application Support' / self.app_name
@@ -95,9 +111,9 @@ class CrossPlatformPaths:
     def config_dir(self) -> Path:
         """Configuration directory.
         
-        Windows: %LOCALAPPDATA%\\AI-Windows-Admin\\config
-        Linux: ~/.config/AI-Windows-Admin
-        macOS: ~/Library/Preferences/AI-Windows-Admin
+        Windows: %LOCALAPPDATA%\\ai-tc\\config
+        Linux: ~/.config/ai-tc
+        macOS: ~/Library/Preferences/ai-tc
         """
         if HAS_PLATFORMDIRS:
             return Path(platformdirs.user_config_dir(self.app_name, self.app_author))
@@ -112,9 +128,9 @@ class CrossPlatformPaths:
     def cache_dir(self) -> Path:
         """Cache directory.
         
-        Windows: %LOCALAPPDATA%\\AI-Windows-Admin\\Cache
-        Linux: ~/.cache/AI-Windows-Admin
-        macOS: ~/Library/Caches/AI-Windows-Admin
+        Windows: %LOCALAPPDATA%\\ai-tc\\Cache
+        Linux: ~/.cache/ai-tc
+        macOS: ~/Library/Caches/ai-tc
         """
         if HAS_PLATFORMDIRS:
             return Path(platformdirs.user_cache_dir(self.app_name, self.app_author))
@@ -213,7 +229,7 @@ class CrossPlatformPaths:
         Returns:
             Dictionary of environment variables.
         """
-        return {'AIWINDOWSADMIN_DIR': str(self.project_root), 'ASSIST_DIR': str(self.project_root), 'PYTHONUTF8': '1', 'PYTHONPATH': f"{self.project_root}{os.pathsep}{os.environ.get('PYTHONPATH', '')}"}
+        return {'AITC_DIR': str(self.project_root), 'AIWINDOWSADMIN_DIR': str(self.project_root), 'ASSIST_DIR': str(self.project_root), 'PYTHONUTF8': '1', 'PYTHONPATH': f"{self.project_root}{os.pathsep}{os.environ.get('PYTHONPATH', '')}"}
 
     def setup_env(self) -> None:
         """Set environment variables."""

@@ -16,7 +16,7 @@
 # Package: apps.windows.sdk.modules.startup
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 22:29:02
+# Updated: 2026-10-20 15:58:00
 # =============================================================================
 
 from __future__ import annotations
@@ -85,7 +85,7 @@ def init_router() -> APIRouter:
 
         rep = auditor.run_audit()
         try:
-            from apps.windows.telemetry.analytics.startup_history_manager import StartupHistoryManager
+            from apps.windows.analytics.startup_history_manager import StartupHistoryManager
             archive_entry = StartupHistoryManager.archive_report(rep, previous_archive=None)
             storage.save_startup_archive(archive_entry)
         except Exception:
@@ -154,7 +154,23 @@ def init_router() -> APIRouter:
         """Возвращает историю изменений в автозапуске, зафиксированных телеметрией из SQLite."""
         try:
             changes_data = storage.get_startup_changes(limit=limit)
-            items = [StartupChangeItem.model_validate(c) if isinstance(c, dict) else c for c in changes_data]
+            items = []
+            for c in changes_data:
+                if isinstance(c, StartupChangeItem):
+                    items.append(c)
+                elif isinstance(c, dict):
+                    item_dict = dict(c)
+                    entry_id = str(item_dict.get('entry_id') or item_dict.get('item_name') or item_dict.get('entity_key') or '')
+                    name = str(item_dict.get('name') or item_dict.get('item_name') or entry_id)
+                    description = str(item_dict.get('description') or item_dict.get('summary') or f"Изменение элемента {name}")
+                    item_dict['entry_id'] = entry_id
+                    item_dict['name'] = name
+                    item_dict['description'] = description
+                    if not item_dict.get('change_type'):
+                        item_dict['change_type'] = 'modified'
+                    items.append(StartupChangeItem.model_validate(item_dict))
+                else:
+                    items.append(c)
             return {'success': True, 'changes': items}
         except Exception as e:
             logger.debug(f'Не удалось получить историю изменений автозапуска: {e}')
@@ -293,8 +309,8 @@ def _generate_heuristic_explanation(req: StartupExplainRequest) -> StartupExplai
         return StartupExplainResponse(summary='Ollama — локальный сервер и среда выполнения больших языковых моделей (LLM) с REST API на порту 11434.', developer='Ollama / Community', category='AI Runtime / Сервер LLM', security_verdict='Безопасный инструмент разработки и запуска локальных нейросетей.', boot_impact_analysis='Среднее — запускает локальный HTTP-демон в фоновом режиме.', startup_recommendation='Оставить включенным, если вы используете AI Windows Admin или локальные модели постоянно.', action_steps=['Оставьте активным для постоянной готовности AI-сервисов.', 'Отключите, если запускаете модели только время от времени.'])
     if 'lm studio' in name_lower or 'lm studio' in path_lower:
         return StartupExplainResponse(summary='LM Studio — графическая среда и локальный инференс-сервер для моделей GGUF и MLX.', developer='LM Studio Community', category='AI Runtime', security_verdict='Доверенная локальная среда для работы с открытыми моделями.', boot_impact_analysis='Среднее — стартует фоновый сервис моделирования.', startup_recommendation='Оставить включенным при постоянной работе с моделями или отключить для экономии системных ресурсов.', action_steps=['Управляйте состоянием в зависимости от регулярности использования LM Studio.'])
-    if 'qbittorrent' in name_lower or 'torrent' in name_lower:
-        return StartupExplainResponse(summary='qBittorrent — BitTorrent-клиент с открытым исходным кодом для загрузки и раздачи файлов по протоколу P2P.', developer='qBittorrent project', category='P2P Клиент', security_verdict='Проверенное безопасное ПО с открытым исходным кодом.', boot_impact_analysis='Высокое — при старте открывает сетевые сокеты, проверяет хэши недокачанных торрентов и создает нагрузку на диск и сеть.', startup_recommendation='Рекомендуется отключить из автозапуска и запускать только по необходимости, чтобы не замедлять старт Windows.', action_steps=['Отключите автозапуск в таблице для плавного старта Windows.', 'Запускайте торрент-клиент вручную перед началом закачек.'])
+    if 'p2p' in name_lower or 'downloader' in name_lower or 'download' in name_lower:
+        return StartupExplainResponse(summary='Файловый менеджер / загрузчик передачи данных по сетевым протоколам.', developer='Community / Developer', category='Файловый загрузчик', security_verdict='ПО сетевой передачи данных.', boot_impact_analysis='Высокое — при старте открывает сокеты и создает нагрузку на диск и сеть.', startup_recommendation='Рекомендуется отключить из автозапуска и запускать только по необходимости, чтобы не замедлять старт Windows.', action_steps=['Отключите автозапуск в таблице для плавного старта Windows.', 'Запускайте приложение вручную перед началом передачи.'])
     if 'keepass' in name_lower:
         return StartupExplainResponse(summary='KeePass Password Safe — защищенный менеджер паролей для безопасного локального хранения учетных записей.', developer='Dominik Reichl / KeePass', category='Безопасность / Менеджер паролей', security_verdict='Высоконадёжное безопасное приложение с открытым кодом и шифрованием базы.', boot_impact_analysis='Низкое — быстро загружает базу ключей в защищенную память.', startup_recommendation='Оставить включенным для мгновенного доступа к автозаполнению учетных записей.', action_steps=['Оставьте в автозагрузке для быстрого входа в аккаунты.'])
     if 'logi' in name_lower or 'logitech' in name_lower:

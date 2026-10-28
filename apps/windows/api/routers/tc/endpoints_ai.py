@@ -11,7 +11,7 @@
 # Package: apps.windows.api.routers.tc
 # Author: hypo69
 # Copyright: c 2026 hypo69
-# Updated: 2026-10-12 06:20:00
+# Updated: 2026-10-22 13:30:00
 # =============================================================================
 
 from __future__ import annotations
@@ -84,9 +84,9 @@ def register_ai_endpoints(router: APIRouter) -> None:
             except Exception as e:
                 logger.debug(f"[router_tc] Не удалось обновить user_settings: {e}")
 
-            # 2. Сохранение на диск по требованию (prompts/tc/system_instruction.md)
+            # 2. Сохранение на диск по требованию (apps/windows/prompts/tc/system_instruction.md)
             if req.save_to_disk:
-                tc_prompt_file = __root__ / "prompts" / "tc" / "system_instruction.md"
+                tc_prompt_file = __root__ / "apps" / "windows" / "prompts" / "tc" / "system_instruction.md"
                 tc_prompt_file.parent.mkdir(parents=True, exist_ok=True)
                 tc_prompt_file.write_text(raw_instruction, encoding="utf-8")
 

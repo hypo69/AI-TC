@@ -1,4 +1,4 @@
-/**
+﻿/**
  * =============================================================================
  * Process Name: Windows Admin - Main Script
  * =============================================================================
@@ -14,7 +14,7 @@
  * Package: windows/api/webgui/admin
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-12 08:20:00
+ * Updated: 2026-10-20 20:44:00
  * =============================================================================
  */
 
@@ -310,6 +310,9 @@ function onTabSwitched(targetId) {
   } else if (cleanId === 'tab-admin' && typeof window.initAdminTab === 'function') {
     console.log('[AdminInterface] Switching to admin tab...');
     window.initAdminTab();
+  } else if ((cleanId === 'tab-users' || cleanId === 'tab-windows-users' || cleanId === 'tab-accounts-identity') && typeof window.switchTab === 'function') {
+    console.log('[AdminInterface] Redirecting users / accounts tab to windows sysadmin & identity...');
+    window.switchTab('tab-windows-admin');
   } else if (cleanId === 'tab-users' && typeof window.initUsersTab === 'function') {
     console.log('[AdminInterface] Switching to users tab...');
     window.initUsersTab();
@@ -411,8 +414,80 @@ let currentActiveAdminTabId = null;
 
 function switchTab(targetId) {
   if (!targetId) return;
-  const cleanId = targetId.startsWith('#') ? targetId.slice(1) : targetId;
-  const tabId = cleanId.startsWith('tab-') ? cleanId : `tab-${cleanId}`;
+  let cleanId = targetId.startsWith('#') ? targetId.slice(1) : targetId;
+  let tabId = cleanId.startsWith('tab-') ? cleanId : `tab-${cleanId}`;
+
+  if (tabId === 'tab-servicing-integrity') {
+    tabId = 'tab-boot-recovery';
+    cleanId = 'boot-recovery';
+    setTimeout(() => {
+      const btn = document.getElementById('subtab-servicing-btn');
+      if (btn && window.bootstrap) {
+        new bootstrap.Tab(btn).show();
+      }
+    }, 60);
+  }
+
+  if (tabId === 'tab-firewall-manager' || tabId === 'tab-firewall' || tabId === 'firewall-manager') {
+    tabId = 'tab-defender-firewall';
+    cleanId = 'defender-firewall';
+    setTimeout(() => {
+      if (typeof window.switchDefenderSubTab === 'function') {
+        window.switchDefenderSubTab('firewall');
+      } else {
+        const btn = document.getElementById('subtab-firewall-btn');
+        if (btn && window.bootstrap) {
+          new bootstrap.Tab(btn).show();
+        }
+      }
+    }, 60);
+  } else if (tabId === 'tab-defender' || tabId === 'defender' || tabId === 'tab-defender-firewall' || tabId === 'defender-firewall') {
+    tabId = 'tab-defender-firewall';
+    cleanId = 'defender-firewall';
+    setTimeout(() => {
+      if (typeof window.switchDefenderSubTab === 'function') {
+        window.switchDefenderSubTab('defender');
+      } else {
+        const btn = document.getElementById('subtab-defender-btn');
+        if (btn && window.bootstrap) {
+          new bootstrap.Tab(btn).show();
+        }
+      }
+    }, 60);
+  }
+
+  if (tabId === 'tab-windows-backup' || tabId === 'windows-backup') {
+    tabId = 'tab-windows-admin';
+    cleanId = 'windows-admin';
+    setTimeout(() => {
+      const widget = document.getElementById('windows-backup-widget');
+      if (widget) {
+        widget.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        widget.classList.add('border-info');
+        setTimeout(() => widget.classList.remove('border-info'), 2500);
+      }
+    }, 120);
+  }
+
+  if (tabId === 'tab-accounts-identity' || tabId === 'accounts-identity') {
+    tabId = 'tab-windows-admin';
+    cleanId = 'windows-admin';
+  }
+
+  if (tabId === 'tab-security-acl' || tabId === 'security-acl') {
+    tabId = 'tab-windows-admin';
+    cleanId = 'windows-admin';
+    setTimeout(() => {
+      if (typeof window.switchWindowsAdminSubTab === 'function') {
+        window.switchWindowsAdminSubTab('acl');
+      } else {
+        const btn = document.getElementById('subtab-winadmin-acl-btn');
+        if (btn && window.bootstrap) {
+          new bootstrap.Tab(btn).show();
+        }
+      }
+    }, 70);
+  }
 
   // 0. Деактивация предыдущей вкладки
   if (currentActiveAdminTabId && currentActiveAdminTabId !== tabId) {
@@ -615,48 +690,48 @@ async function initInterface() {
 
   // Загрузка базовых вкладок администратора
   const coreTabLoads = [
-    loadTabContent('chat', `/html/chat/index.html?v=${cb}`, `/html/chat/main.js?v=${cb}`),
-    loadTabContent('plugins', `/html/plugins_tab/index.html?v=${cb}`, `/html/plugins_tab/main.js?v=${cb}`),
-    loadTabContent('admin', `/html/admin_tab/index.html?v=${cb}`, `/html/admin_tab/main.js?v=${cb}`),
-    loadTabContent('users', `/html/users_tab/index.html?v=${cb}`, `/html/users_tab/main.js?v=${cb}`),
-    loadTabContent('windows-users', `/html/windows_users_tab/index.html?v=${cb}`, `/html/windows_users_tab/main.js?v=${cb}`),
-    loadTabContent('user-directories', `/html/user_directories_tab/index.html?v=${cb}`, `/html/user_directories_tab/main.js?v=${cb}`),
-    loadTabContent('google-accounts', `/html/google_accounts_tab/index.html?v=${cb}`, `/html/google_accounts_tab/main.js?v=${cb}`),
-    loadTabContent('instructions', `/html/instructions_tab/index.html?v=${cb}`, `/html/instructions_tab/main.js?v=${cb}`),
-    loadTabContent('rag', `/html/rag_tab/index.html?v=${cb}`, `/html/rag_tab/main.js?v=${cb}`),
-    loadTabContent('pixelrag', `/html/pixelrag_tab/index.html?v=${cb}`, `/html/pixelrag_tab/main.js?v=${cb}`),
-    loadTabContent('telegram-rag', `/html/telegram_rag_tab/index.html?v=${cb}`, `/html/telegram_rag_tab/main.js?v=${cb}`),
-    loadTabContent('voice', `/html/voice_tab/index.html?v=${cb}`, `/html/voice_tab/main.js?v=${cb}`),
-    loadTabContent('models', `/html/models_tab/index.html?v=${cb}`, `/html/models_tab/main.js?v=${cb}`),
-    loadTabContent('agents', `/html/agents_tab/index.html?v=${cb}`, `/html/agents_tab/main.js?v=${cb}`),
-    loadTabContent('search', `/html/search_tab/index.html?v=${cb}`, `/html/search_tab/main.js?v=${cb}`),
-    loadTabContent('tts', `/html/tts_tab/index.html?v=${cb}`, `/html/tts_tab/main.js?v=${cb}`),
-    loadTabContent('sources', `/html/sources_tab/index.html?v=${cb}`, `/html/sources_tab/main.js?v=${cb}`),
-    loadTabContent('skills', `/html/skills_tab/index.html?v=${cb}`, `/html/skills_tab/main.js?v=${cb}`),
-    loadTabContent('mcp', `/html/mcp_tab/index.html?v=${cb}`, `/html/mcp_tab/main.js?v=${cb}`),
-    loadTabContent('observability', `/html/system_inspector_tab/index.html?v=${cb}`, `/html/system_inspector_tab/main.js?v=${cb}`),
-    loadTabContent('news', `/html/news_tab/index.html?v=${cb}`, `/html/news_tab/main.js?v=${cb}`),
+    loadTabContent('chat', `/html/tab_chat/index.html?v=${cb}`, `/html/tab_chat/main.js?v=${cb}`),
+    loadTabContent('plugins', `/html/tab_plugins/index.html?v=${cb}`, `/html/tab_plugins/main.js?v=${cb}`),
+    loadTabContent('admin', `/html/tab_admin/index.html?v=${cb}`, `/html/tab_admin/main.js?v=${cb}`),
+    loadTabContent('users', `/html/tab_users/index.html?v=${cb}`, `/html/tab_users/main.js?v=${cb}`),
+    loadTabContent('windows-users', `/html/tab_windows_users/index.html?v=${cb}`, `/html/tab_windows_users/main.js?v=${cb}`),
+    loadTabContent('user-directories', `/html/tab_user_directories/index.html?v=${cb}`, `/html/tab_user_directories/main.js?v=${cb}`),
+    loadTabContent('google-accounts', `/html/tab_google_accounts/index.html?v=${cb}`, `/html/tab_google_accounts/main.js?v=${cb}`),
+    loadTabContent('instructions', `/html/tab_instructions/index.html?v=${cb}`, `/html/tab_instructions/main.js?v=${cb}`),
+    loadTabContent('rag', `/html/tab_rag/index.html?v=${cb}`, `/html/tab_rag/main.js?v=${cb}`),
+    loadTabContent('pixelrag', `/html/tab_pixelrag/index.html?v=${cb}`, `/html/tab_pixelrag/main.js?v=${cb}`),
+    loadTabContent('telegram-rag', `/html/tab_telegram_rag/index.html?v=${cb}`, `/html/tab_telegram_rag/main.js?v=${cb}`),
+    loadTabContent('voice', `/html/tab_voice/index.html?v=${cb}`, `/html/tab_voice/main.js?v=${cb}`),
+    loadTabContent('models', `/html/tab_models/index.html?v=${cb}`, `/html/tab_models/main.js?v=${cb}`),
+    loadTabContent('agents', `/html/tab_agents/index.html?v=${cb}`, `/html/tab_agents/main.js?v=${cb}`),
+    loadTabContent('search', `/html/tab_search/index.html?v=${cb}`, `/html/tab_search/main.js?v=${cb}`),
+    loadTabContent('tts', `/html/tab_tts/index.html?v=${cb}`, `/html/tab_tts/main.js?v=${cb}`),
+    loadTabContent('sources', `/html/tab_sources/index.html?v=${cb}`, `/html/tab_sources/main.js?v=${cb}`),
+    loadTabContent('skills', `/html/tab_skills/index.html?v=${cb}`, `/html/tab_skills/main.js?v=${cb}`),
+    loadTabContent('mcp', `/html/tab_mcp/index.html?v=${cb}`, `/html/tab_mcp/main.js?v=${cb}`),
+    loadTabContent('observability', `/html/tab_system_inspector/index.html?v=${cb}`, `/html/tab_system_inspector/main.js?v=${cb}`),
+    loadTabContent('news', `/html/tab_news/index.html?v=${cb}`, `/html/tab_news/main.js?v=${cb}`),
     loadTabContent('logs', `/html/logs/index.html?v=${cb}`, `/html/logs/main.js?v=${cb}`),
     loadTabContent('help', `/html/help/index.html?v=${cb}`, `/html/help/main.js?v=${cb}`),
   ];
 
   // Определение и фильтрация вкладок микроприложений (/apps)
   const appTabDefs = [
-    { id: 'about_system', tab: 'about-system', html: '/html/about_system_tab/index.html?v=20261012_v1', js: '/html/about_system_tab/main.js?v=20261012_v1' },
-    { id: 'network_terminal', tab: 'network', html: '/html/network_tab/index.html', js: '/html/network_tab/main.js' },
-    { id: 'system_inspector', tab: 'hardware-load-inspector', html: '/html/system_inspector_tab/index.html?v=20261008_v16', js: '/html/system_inspector_tab/main.js?v=20261008_v16' },
-    { id: 'processes_load_inspector', tab: 'processes-load-inspector', html: '/html/processes_load_inspector_tab/index.html?v=20261008_v1', js: '/html/processes_load_inspector_tab/main.js?v=20261008_v1' },
-    { id: 'chat', tab: 'chat', html: '/html/chat/index.html', js: '/html/chat/main.js' },
-    { id: 'scenarios', tab: 'scenarios', html: '/html/scenarios_tab/index.html', js: '/html/scenarios_tab/main.js' },
-    { id: 'user_assistant', tab: 'user-assistant', html: '/html/user_assistant_tab/index.html', js: '/html/user_assistant_tab/main.js' },
-    { id: 'gcloud_monitor', tab: 'gcloud', html: '/html/gcloud_tab/index.html', js: '/html/gcloud_tab/main.js' },
-    { id: 'website_monitor', tab: 'website-monitor', html: '/html/website_monitor_tab/index.html', js: '/html/website_monitor_tab/main.js' },
-    { id: 'cloudflared_monitor', tab: 'cloudflared', html: '/html/cloudflared_tab/index.html', js: '/html/cloudflared_tab/main.js' },
-    { id: 'process_leaks', tab: 'process-leaks', html: '/html/process_leaks_tab/index.html?v=20260924_v1', js: '/html/process_leaks_tab/main.js?v=20260924_v1' },
-    { id: 'forensics', tab: 'forensics', html: '/html/forensics_tab/index.html?v=20260924_v1', js: '/html/forensics_tab/main.js?v=20260924_v1' },
-    { id: 'throttling', tab: 'throttling', html: '/html/throttling_tab/index.html?v=20260924_v1', js: '/html/throttling_tab/main.js?v=20260924_v1' },
-    { id: 'storage_wear', tab: 'storage-wear', html: '/html/storage_wear_tab/index.html?v=20260924_v1', js: '/html/storage_wear_tab/main.js?v=20260924_v1' },
-    { id: 'peripherals', tab: 'peripherals', html: '/html/peripherals_tab/index.html?v=20260924_v1', js: '/html/peripherals_tab/main.js?v=20260924_v1' },
+    { id: 'about_system', tab: 'about-system', html: '/html/tab_about_system/index.html?v=20261020_v10', js: '/html/tab_about_system/main.js?v=20261020_v10' },
+    { id: 'network_terminal', tab: 'network', html: '/html/tab_network/index.html', js: '/html/tab_network/main.js' },
+    { id: 'system_inspector', tab: 'hardware-load-inspector', html: '/html/tab_system_inspector/index.html?v=20261020_v4', js: '/html/tab_system_inspector/main.js?v=20261020_v4' },
+    { id: 'processes_load_inspector', tab: 'processes-load-inspector', html: '/html/tab_processes_load_inspector/index.html?v=20261020_v2', js: '/html/tab_processes_load_inspector/main.js?v=20261020_v2' },
+    { id: 'chat', tab: 'chat', html: '/html/tab_chat/index.html', js: '/html/tab_chat/main.js' },
+    { id: 'scenarios', tab: 'scenarios', html: '/html/tab_scenarios/index.html', js: '/html/tab_scenarios/main.js' },
+    { id: 'user_assistant', tab: 'user-assistant', html: '/html/tab_user_assistant/index.html', js: '/html/tab_user_assistant/main.js' },
+    { id: 'gcloud_monitor', tab: 'gcloud', html: '/html/tab_gcloud/index.html', js: '/html/tab_gcloud/main.js' },
+    { id: 'website_monitor', tab: 'website-monitor', html: '/html/tab_website_monitor/index.html', js: '/html/tab_website_monitor/main.js' },
+    { id: 'cloudflared_monitor', tab: 'cloudflared', html: '/html/tab_cloudflared/index.html', js: '/html/tab_cloudflared/main.js' },
+    { id: 'process_leaks', tab: 'process-leaks', html: '/html/tab_process_leaks/index.html?v=20260924_v1', js: '/html/tab_process_leaks/main.js?v=20260924_v1' },
+    { id: 'forensics', tab: 'forensics', html: '/html/tab_forensics/index.html?v=20260924_v1', js: '/html/tab_forensics/main.js?v=20260924_v1' },
+    { id: 'throttling', tab: 'throttling', html: '/html/tab_throttling/index.html?v=20260924_v1', js: '/html/tab_throttling/main.js?v=20260924_v1' },
+    { id: 'storage_wear', tab: 'storage-wear', html: '/html/tab_storage_wear/index.html?v=20261015_v1', js: '/html/tab_storage_wear/main.js?v=20261015_v1' },
+    { id: 'peripherals', tab: 'peripherals', html: '/html/tab_peripherals/index.html?v=20261016_v2', js: '/html/tab_peripherals/main.js?v=20261016_v2' },
   ];
 
   const appTabLoads = appTabDefs
@@ -807,9 +882,7 @@ async function loadTabContent(tabName, url, jsOverrideSrc) {
     
     await new Promise((resolve) => {
       const script = document.createElement('script');
-      if (tabName === 'instructions' || tabName === 'rag') {
-        script.type = 'module';
-      }
+      script.type = 'module';
       script.src = scriptSrc;
       script.onload = () => {
         console.log(`[Admin] Loaded JS for ${tabName}`);

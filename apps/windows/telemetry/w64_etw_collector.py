@@ -16,7 +16,7 @@
 # Package: apps.windows.telemetry
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-13 19:15:00
 # =============================================================================
 
 from __future__ import annotations
@@ -33,7 +33,7 @@ from typing import Any, Callable, Dict, List, Optional
 from logger import logger
 from .models import ETWTraceEvent, ProcessLifecycleEvent, W64CollectorStatus
 from .sqlite import TelemetryStorage
-from .win32_ffi.wevtapi import WevtAPI
+from apps.windows.sdk.win32_ffi.wevtapi import WevtAPI
 
 
 class AIW64ETWCollector:
@@ -41,10 +41,10 @@ class AIW64ETWCollector:
 
     def __init__(
         self,
-        enable_process_trace: bool = True,
-        enable_disk_trace: bool = True,
-        enable_network_trace: bool = True,
-        enable_registry_trace: bool = True,
+        enable_process_trace: bool = False,
+        enable_disk_trace: bool = False,
+        enable_network_trace: bool = False,
+        enable_registry_trace: bool = False,
         poll_interval_sec: float = 5.0,
         storage: Optional[TelemetryStorage] = None,
         on_event_callback: Optional[Callable[[Dict[str, Any]], None]] = None,
@@ -145,8 +145,8 @@ class AIW64ETWCollector:
             event_type: Название типа события для логирования.
             max_events: Максимальное количество событий в выборке.
         """
-        if not self.wevt_api or not self.wevt_api.is_available():
-            return
+        # Сбор журналов событий в телеметрию отключен: события читаются через веб-интерфейс
+        return
 
         try:
             raw_events = self.wevt_api.read_events(

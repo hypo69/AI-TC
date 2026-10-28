@@ -1,0 +1,94 @@
+# -*- coding: utf-8 -*-
+# =============================================================================
+# Process Name: AI-Windows-Admin Common WebGUI Static Files Handler
+# =============================================================================
+# Description:
+#   Универсальный статический обработчик FastAPI для объединения нескольких
+#   каталогов WebGUI с поддержкой динамического приоритета по Referer
+#   и каскадного поиска в общем репозитории apps/common/webgui.
+#
+# File: static_files.py
+# Project: ai-windows-admin
+# Package: apps.common.webgui
+# Author: hypo69
+# Copyright: © 2026 hypo69
+# Updated: 2026-10-20 18:15:00
+# =============================================================================
+
+from __future__ import annotations
+
+import os
+from contextvars import ContextVar
+from pathlib import Path
+from typing import Any, Optional, Sequence
+from fastapi.staticfiles import StaticFiles
+from starlette.responses import Response
+
+_current_dirs_context: ContextVar[Optional[list[Path]]] = ContextVar("_current_dirs_context", default=None)
+
+
+class SmartMultiDirStaticFiles(StaticFiles):
+    """Статический файловый обработчик с объединением каталогов и динамическим приоритетом.
+
+    Позволяет прозрачно раздавать статические ассеты из каталога конкретного
+    приложения с автоматическим fallback на общий каталог apps/common/webgui.
+    """
+
+    def __init__(self, *directories: Path | str, **kwargs: Any) -> None:
+        """Инициализация обработчика со списком директорий.
+
+        Args:
+            *directories: Пути к директориям в порядке приоритета.
+            **kwargs: Дополнительные параметры для Starlette StaticFiles.
+        """
+        valid_dirs = [Path(d).resolve() for d in directories if d]
+        first_dir = valid_dirs[0] if valid_dirs else Path(".")
+        super().__init__(directory=str(first_dir), **kwargs)
+        self.directories: list[Path] = valid_dirs
+
+    def lookup_path(self, path: str) -> tuple[str, Optional[os.stat_result]]:
+        """Поиск файла по цепочке директорий в заданном порядке.
+
+        Args:
+            path: Относительный путь к запрашиваемому файлу.
+
+        Returns:
+            tuple[str, Optional[os.stat_result]]: Полный путь к файлу и его stat,
+            либо пустая строка и None в случае отсутствия файла.
+        """
+        target_dirs = _current_dirs_context.get() or self.directories
+        for directory in target_dirs:
+            if not directory.exists():
+                continue
+            full_path = os.path.realpath(os.path.join(directory, path))
+            if os.path.commonpath([full_path, str(directory)]) == str(directory):
+                try:
+                    return full_path, os.stat(full_path)
+                except (FileNotFoundError, NotADirectoryError):
+                    continue
+        return "", None
+
+    async def get_response(self, path: str, scope: Any) -> Response:
+        """Формирует HTTP-ответ с учетом динамического приоритета по Referer.
+
+        Args:
+            path: Запрашиваемый путь к файлу.
+            scope: ASGI scope запроса.
+
+        Returns:
+            Response: Ответ со статическим файлом.
+        """
+        headers = dict(scope.get("headers", []))
+        referer = headers.get(b"referer", b"").decode("utf-8", errors="ignore").lower()
+
+        # Если запрос пришел из контекста ai_assistant, приоритизируем соответствующий каталог безопасно для конкурентных запросов
+        if "ai_assistant" in referer or "ai-assistant" in referer or "smart-history" in referer:
+            ai_dirs = [d for d in self.directories if "ai_assistant" in str(d).lower()]
+            other_dirs = [d for d in self.directories if "ai_assistant" not in str(d).lower()]
+            token = _current_dirs_context.set(ai_dirs + other_dirs)
+            try:
+                return await super().get_response(path, scope)
+            finally:
+                _current_dirs_context.reset(token)
+
+        return await super().get_response(path, scope)

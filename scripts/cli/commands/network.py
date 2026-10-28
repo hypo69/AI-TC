@@ -16,7 +16,7 @@
 # Package: scripts.cli.commands
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 22:22:44
+# Updated: 2026-10-20 13:24:00
 # =============================================================================
 
 from __future__ import annotations

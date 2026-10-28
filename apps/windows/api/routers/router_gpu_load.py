@@ -6,7 +6,7 @@
 #   GET /api/v1/panel/gpu-load — метрики графического ускорителя (GPU):
 #   загрузка GPU Core, подсистем (Memory Controller, Video Engine, Bus, D3D),
 #   температуры (Core, Hot Spot), видеопамять VRAM, энергопотребление,
-#   паспортные данные GPU (Specs), датчики и история замеров из LHM и telemetry.db.
+#   паспортные данные GPU (Specs), датчики и история замеров из telemetry.db.
 #
 # Usage Examples:
 #   Python API:
@@ -18,7 +18,7 @@
 # Package: apps.windows.api.routers
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 18:07:00
+# Updated: 2026-10-20 20:42:00
 # =============================================================================
 
 from __future__ import annotations
@@ -814,6 +814,36 @@ def _discover_system_gpus(storage: Optional[TelemetryStorage] = None) -> List[Di
             "vram_gb": 0.0,
             "pci_bus_id": "PCIe x16",
         })
+
+    # 5. Дедупликация и стабильная нормализация списка видеокарт
+    unique_gpus: List[Dict[str, Any]] = []
+    seen_gpu_keys: set = set()
+    for g in gpus:
+        raw_n = str(g.get("name") or "").strip()
+        v = str(g.get("vendor") or "").strip()
+        norm_n = re.sub(r"\((r|tm)\)", "", raw_n, flags=re.IGNORECASE).lower().strip()
+        if v.lower() and v.lower() not in norm_n:
+            norm_n = f"{v.lower()} {norm_n}"
+        k = re.sub(r"[^a-z0-9]+", "_", norm_n).strip("_")
+
+        is_dup = False
+        for prev_k in seen_gpu_keys:
+            if prev_k == k or (len(k) > 6 and (k in prev_k or prev_k in k)):
+                is_dup = True
+                break
+
+        if not is_dup and k:
+            seen_gpu_keys.add(k)
+            unique_gpus.append(g)
+
+    if unique_gpus:
+        unique_gpus.sort(key=lambda x: (
+            0 if any(b in (str(x.get("vendor", "")) + str(x.get("name", ""))).upper() for b in ("NVIDIA", "GEFORCE", "AMD", "RADEON")) else 1,
+            int(x.get("index") or 0)
+        ))
+        for i, g in enumerate(unique_gpus):
+            g["index"] = i
+        return unique_gpus
 
     return gpus
 

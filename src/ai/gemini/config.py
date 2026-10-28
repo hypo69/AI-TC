@@ -16,7 +16,7 @@
 # Package: src.ai.gemini
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-15 09:18:00
 # =============================================================================
 
 
@@ -251,9 +251,11 @@ class GoogleGenerativeAIConfigMixin:
         try:
             extra_str = f" | Extra: {json.dumps(extra, ensure_ascii=False)}" if extra else ""
             formatted_resp = response_text if isinstance(response_text, str) else json.dumps(response_text, ensure_ascii=False, indent=2, default=str)
-            logger.info(
+            log_msg = (
                 f"Gemini Response [{method}] <- Model: \"{model}\" (attempt {attempt}){extra_str}:\n"
                 f"{formatted_resp}"
             )
+            logger.info(log_msg)
+            logger.console(log_msg)
         except Exception as log_ex:
             logger.debug(f"Gemini: Failed to log response details: {log_ex}")

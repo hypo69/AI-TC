@@ -14,7 +14,7 @@ Project: ai-windows-admin
 Package: windows/api/webgui
 Author: hypo69
 Copyright: © 2026 hypo69
-Updated: 2026-10-10 17:35:00
+Updated: 2026-10-15 17:05:00
 =============================================================================
 -->
 
@@ -71,9 +71,11 @@ apps/windows/api/webgui/
 │       ├── status-manager.js← Мониторинг статусов приложений и бейджа модели
 │       └── init-interface.js← Инициализация тем, API и языков
 │
-└── <name>_tab/              ← Каждая вкладка — изолированная папка
+├── tab_sitemap/             ← Интерактивная карта сайта (реестр всех вкладок с описанием, статусом и переходом)
+└── tab_<tab_id>/            ← Каждая вкладка — строго по шаблону tab_<tab_id> (например: tab_about_system, tab_chat)
     ├── index.html           ← Только HTML-разметка вкладки (без тегов <script>)
-    └── main.js              ← Логика вкладки: window.init<Name>Tab() и registerTabPoller()
+    ├── main.js              ← Логика вкладки: window.init<Name>Tab() и registerTabPoller()
+    └── README.md            ← Документация вкладки на русском языке
 ```
 
 ---
@@ -131,7 +133,7 @@ switchTab('tab-system-inspector');
 switchTab('system-inspector');  // префикс tab- добавляется автоматически
 
 // Загрузить HTML+JS вкладки по требованию (Lazy Load)
-await loadTab('system-inspector', '/html/system_inspector_tab/index.html?v=20261008_v1', '/html/system_inspector_tab/main.js?v=20261008_v1');
+await loadTab('system-inspector', '/html/tab_system_inspector/index.html?v=20261008_v1', '/html/tab_system_inspector/main.js?v=20261008_v1');
 
 // Повесить обработчик кликов (вызывается один раз при инициализации оболочки)
 setupTabClicks();
@@ -291,3 +293,4 @@ window.switchTab('tab-system-inspector');     // Должно переключи
 document.getElementById('tab-system-inspector'); // Должен вернуть DOM-контейнер вкладки
 document.querySelector('[data-tab="tab-system-inspector"]'); // Должен вернуть кнопку вызова
 ```
+

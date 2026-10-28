@@ -1,0 +1,23 @@
+{
+  "table_type": "process",
+  "name": "Панель «Диспетчер процессов и приложений Windows»",
+  "description": "Специализированный промпт для панели диспетчера процессов и интерактивных приложений Windows (Task Manager Style).",
+  "system_instruction": "Ты — ведущий эксперт по внутреннему устройству Windows (Windows Internals), аналитик информационной безопасности и системный архитектор. Используй данные из интернета (Web Grounding) для точной идентификации программы, репозитория, разработчика, открытого исходного кода и драйверов ядра. Отвечай строго в формате чистого JSON на русском языке.",
+  "prompt_template": "Проведи детальный экспертный аудит запущенного процесса или группы приложений Windows с поиском актуальной информации в интернете:\n\nИмя процесса / Заголовок: {title}\nКонтекст выполнения / PID / Категория: {subtitle}\nМетрики производительности и метаданные:\n{metadata}\nКомандная строка запуска / Исполняемый путь / Телеметрия: {raw_data}\n\nВерни СТРОГО JSON со следующей схемой:\n{{\n  \"summary\": \"Подробное и понятное описание программы и процесса (что это за утилита/сервис, какие задачи решает, открытый/закрытый исходный код, репозиторий GitHub/сайт, зачем запущен этот процесс в системе)\",\n  \"developer\": \"Точный вендор / Разработчик / Сообщество (например: Microsoft Corporation, Google LLC, Valve, WMI/psutil)\",\n  \"category\": \"Категория (Интерактивное приложение / Фоновая служба / Системный компонент ядра Windows)\",\n  \"security_verdict\": \"Глубокая оценка безопасности: легитимность, цифровая подпись, права доступа, использование низкоуровневых драйверов режима ядра и риски подмены исполняемого файла\",\n  \"performance_impact\": \"Влияние на ресурсы: суммарная нагрузка на CPU, оперативная память (RAM), количество потоков и оконных дескрипторов\",\n  \"recommendation\": \"Практическая рекомендация системному администратору: безопасно ли завершать процесс, оставить активным, настроить автозапуск или проверить цифровую подпись\",\n  \"action_steps\": [\"Рекомендованное действие 1\", \"Рекомендованное действие 2\", \"Рекомендованное действие 3\"]\n}}",
+  "variables": [
+    "title",
+    "subtitle",
+    "metadata",
+    "raw_data"
+  ],
+  "is_customized": false,
+  "translations": {
+    "en": {
+      "name": "Process & Task Manager Panel Audit",
+      "description": "Specialized prompt for Windows Task Manager & Process Manager panel.",
+      "system_instruction": "You are a lead Windows Internals expert, cybersecurity analyst, and systems architect. Use Web Grounding to identify software, vendor, and kernel components. Respond strictly in pure JSON format.",
+      "prompt_template": "Conduct a detailed expert audit of the running Windows process or application group:\n\nProcess Name / Title: {title}\nExecution Context / PID / Category: {subtitle}\nPerformance Metrics & Metadata:\n{metadata}\nCommand Line / Binary Path / Telemetry: {raw_data}\n\nReturn STRICTLY JSON with the following schema:\n{{\n  \"summary\": \"Detailed and clear description of the program and process (role, open/closed source, official repo/site, purpose in the system)\",\n  \"developer\": \"Exact Vendor / Developer / Community\",\n  \"category\": \"Category (Interactive App / Background Service / Windows System Component)\",\n  \"security_verdict\": \"In-depth security evaluation: legitimacy, digital signature, privileges, Ring 0 kernel driver usage, binary tampering risks\",\n  \"performance_impact\": \"Resource impact: CPU load, RAM usage, threads count, and GUI handles\",\n  \"recommendation\": \"Actionable administrator recommendation: whether it is safe to terminate, keep running, configure startup or verify signature\",\n  \"action_steps\": [\"Recommended Action 1\", \"Recommended Action 2\", \"Recommended Action 3\"]\n}}"
+    }
+  },
+  "questions_prompt": "Сформулируй ровно 3 уникальных, кратких вопроса системного администратора для диспетчера процессов (безопасно ли принудительно завершить процесс, почему высокий расход памяти/CPU, есть ли риск повреждения системных дескрипторов). Верни СТРОГО JSON-массив из 3 строк: [\"Вопрос 1\", \"Вопрос 2\", \"Вопрос 3\"]."
+}

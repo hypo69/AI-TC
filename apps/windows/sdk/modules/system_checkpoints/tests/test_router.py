@@ -16,7 +16,7 @@
 # Package: apps.windows.sdk.modules.system_checkpoints.tests
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-16 22:20:00
 # =============================================================================
 
 """Тесты FastAPI REST API для приложения контрольных точек Windows."""
@@ -98,3 +98,49 @@ def test_get_images_endpoint():
         res = client.get("/api/v1/windows-checkpoints/images")
         assert res.status_code == 200
         assert res.json() == []
+
+
+def test_advisor_evaluate_endpoint():
+    """Проверка эндпоинта /api/v1/windows-checkpoints/advisor/evaluate."""
+    mock_eval = MagicMock()
+    mock_eval.to_dict.return_value = {
+        "decision": "CREATE",
+        "questions": {
+            "q1": {"verdict": "Да"},
+            "q2": {"verdict": "Уникальна"},
+            "q3": {"verdict": "Достаточно"},
+        },
+        "summary": "Рекомендуется создать точку",
+    }
+    with patch("apps.windows.system_checkpoints.router._advisor.evaluate", return_value=mock_eval):
+        res = client.get("/api/v1/windows-checkpoints/advisor/evaluate?trigger=USER_REQUEST")
+        assert res.status_code == 200
+        data = res.json()
+        assert data["decision"] == "CREATE"
+        assert data["questions"]["q1"]["verdict"] == "Да"
+
+
+def test_advisor_readiness_endpoint():
+    """Проверка эндпоинта /api/v1/windows-checkpoints/advisor/readiness."""
+    with patch(
+        "apps.windows.system_checkpoints.router._advisor.check_readiness",
+        return_value={"can_restore": True, "protection_enabled": True},
+    ):
+        res = client.get("/api/v1/windows-checkpoints/advisor/readiness")
+        assert res.status_code == 200
+        data = res.json()
+        assert data["can_restore"] is True
+
+
+def test_advisor_journal_endpoint():
+    """Проверка эндпоинта /api/v1/windows-checkpoints/advisor/journal."""
+    with patch(
+        "apps.windows.system_checkpoints.router._advisor.journal.get_recent_snapshots",
+        return_value=[{"id": 1, "decision": "CREATE"}],
+    ):
+        res = client.get("/api/v1/windows-checkpoints/advisor/journal")
+        assert res.status_code == 200
+        data = res.json()
+        assert len(data) == 1
+        assert data[0]["decision"] == "CREATE"
+

@@ -16,14 +16,14 @@
 # Package: apps.windows.wikillm.tests
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-12 23:44:00
 # =============================================================================
 
 from __future__ import annotations
 """Тесты для CLI интерфейса и конфигуратора WikiLLM."""
 
 import argparse
-from unittest.mock import AsyncMock, patch
+from unittest.mock import patch
 import pytest
 from apps.windows.wikillm.cli import _async_cli_main
 from apps.windows.wikillm.config import WikiLLMConfig, load_config
@@ -40,21 +40,24 @@ def test_config_defaults() -> None:
 @pytest.mark.asyncio
 async def test_cli_search_and_stats(capsys: pytest.CaptureFixture) -> None:
     """Проверка команд search и stats в CLI."""
-    args_stats = argparse.Namespace(command="stats")
-    await _async_cli_main(args_stats)
-    captured = capsys.readouterr()
-    assert "lookup_stats" in captured.out
+    with patch("apps.windows.wikillm.cli.logger.console", side_effect=lambda msg, *a, **k: print(msg, *a)):
+        args_stats = argparse.Namespace(command="stats")
+        await _async_cli_main(args_stats)
+        captured = capsys.readouterr()
+        assert "lookup_stats" in captured.out
 
-    args_search = argparse.Namespace(command="search", query="test", limit=5)
-    await _async_cli_main(args_search)
-    captured = capsys.readouterr()
-    assert "Найдено результатов" in captured.out
+        args_search = argparse.Namespace(command="search", query="test", limit=5)
+        await _async_cli_main(args_search)
+        captured = capsys.readouterr()
+        assert "Найдено результатов" in captured.out
 
 
 @pytest.mark.asyncio
 async def test_cli_index_code(capsys: pytest.CaptureFixture) -> None:
     """Проверка команды index-code в CLI."""
-    args = argparse.Namespace(command="index-code", path="apps/windows/wikillm")
-    await _async_cli_main(args)
-    captured = capsys.readouterr()
-    assert "Успешно проиндексировано" in captured.out
+    with patch("apps.windows.wikillm.cli.logger.console", side_effect=lambda msg, *a, **k: print(msg, *a)):
+        args = argparse.Namespace(command="index-code", path="apps/windows/wikillm")
+        await _async_cli_main(args)
+        captured = capsys.readouterr()
+        assert "Успешно проиндексировано" in captured.out
+

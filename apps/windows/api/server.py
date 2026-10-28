@@ -14,7 +14,7 @@
 # Package: apps.windows.api
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-22 14:40:00
 # =============================================================================
 
 from __future__ import annotations
@@ -33,6 +33,7 @@ from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
 from logger import logger
+from apps.common.webgui import SmartMultiDirStaticFiles, COMMON_WEBGUI_DIR
 from apps.windows.api.config_helper import save_ai_config, resolve_active_config_path
 
 # Пути к статике и конфигурации
@@ -41,6 +42,10 @@ _CONFIG_PATH = _MODULE_DIR / "config.json"
 _WEBGUI_DIR = _MODULE_DIR / "webgui"
 _TC_INDEX = _WEBGUI_DIR / "apps" / "index.html"
 _PROJECT_ROOT = _MODULE_DIR.parents[2]
+_AI_ASSISTANT_DIR = _PROJECT_ROOT / "apps" / "ai_assistant"
+_AI_ASSISTANT_WEBGUI = _AI_ASSISTANT_DIR / "api" / "webgui"
+_AI_ASSISTANT_INDEX = _AI_ASSISTANT_WEBGUI / "index.html"
+_COMMON_WEBGUI_DIR = COMMON_WEBGUI_DIR
 
 
 def load_config() -> Dict[str, Any]:
@@ -65,16 +70,12 @@ def load_tc_config(profile: Optional[str] = None) -> Dict[str, Any]:
     """
     candidates: List[Path] = []
 
-    if profile:
-        candidates.append(_PROJECT_ROOT / "config" / f"{profile}.json")
-
     env_cfg = os.getenv("AIWINDOWSADMIN_CONFIG") or os.getenv("CONFIG_FILE")
     if env_cfg:
         p = Path(env_cfg)
         candidates.append(p if p.is_absolute() else _PROJECT_ROOT / p)
 
     candidates.extend([
-        _PROJECT_ROOT / "config" / "tc.json",
         _PROJECT_ROOT / "config_tc.json",
         _MODULE_DIR.parent / "config.json",
         _CONFIG_PATH,
@@ -94,39 +95,109 @@ def load_tc_config(profile: Optional[str] = None) -> Dict[str, Any]:
     return {}
 
 
-def discover_and_register_routers(app: FastAPI, package_path: str = "apps.windows") -> None:
-    """Динамическое сканирование и подсоединение REST API роутеров."""
+def safe_include_router(app: FastAPI, router: APIRouter) -> bool:
+    """Безопасно регистрирует роутер, предотвращая дублирование одинаковых маршрутов (метод, путь).
+
+    Args:
+        app: Экземпляр FastAPI приложения.
+        router: APIRouter для подключения.
+
+    Returns:
+        bool: True, если роутер был успешно подключен, False если все маршруты уже присутствуют.
+    """
+    if not hasattr(app.state, "registered_route_keys"):
+        app.state.registered_route_keys = set()
+    app_registered: set[tuple[str, str]] = app.state.registered_route_keys
+
+    router_keys: list[tuple[str, str]] = []
+    has_new_routes = False
+
+    for route in router.routes:
+        path = getattr(route, "path", None)
+        if not path:
+            continue
+        methods = getattr(route, "methods", None) or {"*"}
+        for m in methods:
+            key = (m.upper(), path)
+            router_keys.append(key)
+            if key not in app_registered:
+                has_new_routes = True
+
+    # Если роутер пустой или все его маршруты уже зарегистрированы в приложении
+    if not has_new_routes and router_keys:
+        return False
+
+    app.include_router(router)
+    for key in router_keys:
+        app_registered.add(key)
+    return True
+
+
+def discover_and_register_routers(
+    app: FastAPI,
+    package_path: str = "apps.windows",
+    exclude_modules: Optional[set[str]] = None,
+) -> int:
+    """Динамическое сканирование и подсоединение дополнительных REST API роутеров.
+
+    Args:
+        app: Экземпляр FastAPI приложения.
+        package_path: Базовый пакет для поиска роутеров.
+        exclude_modules: Опциональный набор модулей, которые уже зарегистрированы.
+
+    Returns:
+        int: Количество успешно обнаруженных и зарегистрированных новых роутеров.
+    """
+    excluded = set(exclude_modules or ())
     try:
         package = importlib.import_module(package_path)
     except Exception as err:
         logger.error(f"[AutoDiscovery] Не удалось импортировать базовый пакет {package_path}: {err}")
-        return
+        return 0
 
     if not hasattr(package, "__path__"):
-        return
+        return 0
 
+    registered_count = 0
     for _, module_name, _ in pkgutil.walk_packages(package.__path__, package.__name__ + "."):
-        if (
+        if not (
             module_name.endswith(".router")
             or "routers.router_" in module_name
             or module_name.endswith(".router_capabilities")
             or module_name.endswith(".system_inspector_router")
             or module_name.endswith(".router_process_activity")
         ):
-            try:
-                mod = importlib.import_module(module_name)
-                router = getattr(mod, "router", None)
-                if router is None and hasattr(mod, "init_router"):
-                    try:
-                        router = mod.init_router()
-                    except Exception:
-                        pass
-                if isinstance(router, APIRouter):
-                    if router not in app.routes:
-                        app.include_router(router)
-                        logger.debug(f"[AutoDiscovery] Успешно зарегистрирован роутер: {module_name}")
-            except Exception as router_err:
-                logger.warning(f"[AutoDiscovery] Пропуск роутера {module_name} из-за ошибки: {router_err}")
+            continue
+
+        # Пропуск, если модуль уже зарегистрирован напрямую или через псевдоним
+        if module_name in excluded:
+            continue
+        alt_module = (
+            module_name.replace("apps.windows.sdk.modules.", "apps.windows.")
+            if "apps.windows.sdk.modules." in module_name
+            else module_name.replace("apps.windows.", "apps.windows.sdk.modules.")
+        )
+        if alt_module in excluded:
+            continue
+
+        try:
+            mod = importlib.import_module(module_name)
+            router = getattr(mod, "router", None)
+            if router is None and hasattr(mod, "init_router"):
+                try:
+                    router = mod.init_router()
+                except Exception:
+                    pass
+            if isinstance(router, APIRouter):
+                if safe_include_router(app, router):
+                    excluded.add(module_name)
+                    excluded.add(alt_module)
+                    registered_count += 1
+                    logger.debug(f"[AutoDiscovery] Зарегистрирован дополнительный роутер: {module_name}")
+        except Exception as router_err:
+            logger.warning(f"[AutoDiscovery] Пропуск роутера {module_name} из-за ошибки: {router_err}")
+
+    return registered_count
 
 
 def create_app() -> FastAPI:
@@ -206,16 +277,40 @@ def create_app() -> FastAPI:
 
         try:
             mod = importlib.import_module(module_path)
-            factory = getattr(mod, factory_name)
-            router = factory(**kwargs)
+            factory = getattr(mod, factory_name, None)
+            if factory and callable(factory):
+                router = factory(**kwargs)
+            else:
+                router = getattr(mod, "router", None)
             if isinstance(router, APIRouter):
-                app.include_router(router)
+                safe_include_router(app, router)
                 registered_modules.add(module_path)
+                if module_path.startswith("apps.windows.sdk.modules."):
+                    registered_modules.add(module_path.replace("apps.windows.sdk.modules.", "apps.windows."))
+                elif module_path.startswith("apps.windows.") and ".sdk.modules." not in module_path:
+                    sub = module_path[len("apps.windows."):]
+                    registered_modules.add(f"apps.windows.sdk.modules.{sub}")
         except Exception as exc:
             logger.warning(f"[API Server] Ошибка регистрации роутера {module_path}: {exc}")
 
-    # 2. Затем выполняем динамическое обнаружение (Auto-Discovery) для всех модулей apps.windows
-    discover_and_register_routers(app, "apps.windows")
+    # 2. Затем выполняем динамическое обнаружение (Auto-Discovery) только для новых модулей, не вошедших в config.json
+    discover_and_register_routers(app, "apps.windows", exclude_modules=registered_modules)
+
+    # -------------------------------------------------------------------------
+    # Мост к REST API приложению Умная история файлов (apps/ai_assistant)
+    # -------------------------------------------------------------------------
+    try:
+        from apps.ai_assistant.api.routers.router_file_history import router as ai_history_router
+        from apps.ai_assistant.api.routers.router_git_wikillm import router as ai_wikillm_router
+        from apps.ai_assistant.api.routers.router_knowledge import router as ai_knowledge_router
+        from apps.ai_assistant.api.routers.router_models import router as ai_models_router
+        from apps.ai_assistant.router import router as ai_version_history_router
+
+        for ai_r in (ai_history_router, ai_wikillm_router, ai_knowledge_router, ai_models_router, ai_version_history_router):
+            safe_include_router(app, ai_r)
+        logger.info("[Bridge] Роутеры API AI Assistant (Умная история файлов) успешно подключены")
+    except Exception as exc:
+        logger.warning(f"[Bridge] Ошибка подключения роутеров AI Assistant: {exc}")
 
     # -------------------------------------------------------------------------
     # Системные и UI точки входа
@@ -252,6 +347,47 @@ def create_app() -> FastAPI:
                 },
             )
         return HTMLResponse("<h1>TC WebGUI (apps/index.html) not found</h1>", status_code=404)
+
+    # AI Assistant UI точки входа (Умная история файлов)
+    @app.get("/ai_assistant", response_class=HTMLResponse, include_in_schema=False)
+    @app.get("/ai_assistant/", response_class=HTMLResponse, include_in_schema=False)
+    @app.get("/ai-assistant", response_class=HTMLResponse, include_in_schema=False)
+    @app.get("/ai-assistant/", response_class=HTMLResponse, include_in_schema=False)
+    @app.get("/smart-history", response_class=HTMLResponse, include_in_schema=False)
+    @app.get("/smart-history/", response_class=HTMLResponse, include_in_schema=False)
+    async def ai_assistant_index() -> Response:
+        """Возвращает веб-интерфейс приложения Умная история файлов (apps/ai_assistant)."""
+        if _AI_ASSISTANT_INDEX.exists():
+            return FileResponse(
+                _AI_ASSISTANT_INDEX,
+                headers={
+                    "Cache-Control": "no-cache, no-store, must-revalidate",
+                    "Pragma": "no-cache",
+                    "Expires": "0",
+                },
+            )
+        return HTMLResponse("<h1>AI Assistant WebGUI index.html not found</h1>", status_code=404)
+
+    @app.get("/api/v1/bridge/status", tags=["bridge"])
+    @app.get("/api/bridge/status", tags=["bridge"])
+    async def get_bridge_status() -> Dict[str, Any]:
+        """Возвращает статус моста между приложениями Windows API и AI Assistant."""
+        return {
+            "status": "ok",
+            "service": "ai-windows-admin-bridge",
+            "apps": {
+                "windows": {
+                    "name": "AI Windows Admin (TC)",
+                    "url": "/tc",
+                    "webgui_exists": _TC_INDEX.exists(),
+                },
+                "ai_assistant": {
+                    "name": "Умная история файлов",
+                    "url": "/ai_assistant",
+                    "webgui_exists": _AI_ASSISTANT_INDEX.exists(),
+                },
+            },
+        }
 
     # Health-check
     @app.get("/health", tags=["system"])
@@ -408,9 +544,9 @@ def create_app() -> FastAPI:
                 return {"status": "success", "content": settings.get("system_instruction") or settings.get("tc_system_instruction")}
         except Exception:
             pass
-        prompt_file = _PROJECT_ROOT / "prompts" / "tc" / "system_instruction.md"
+        prompt_file = _PROJECT_ROOT / "apps" / "windows" / "prompts" / "tc" / "system_instruction.md"
         if not prompt_file.exists():
-            prompt_file = _PROJECT_ROOT / "prompts" / "chat" / "system_instruction.md"
+            prompt_file = _PROJECT_ROOT / "apps" / "windows" / "prompts" / "chat" / "system_instruction.md"
         if prompt_file.exists():
             try:
                 return {"status": "success", "content": prompt_file.read_text(encoding="utf-8", errors="replace")}
@@ -432,19 +568,70 @@ def create_app() -> FastAPI:
                     user_manager.update_user_settings(1, system_instruction=content, tc_system_instruction=content)
                 except Exception:
                     pass
-                prompt_file = _PROJECT_ROOT / "prompts" / "tc" / "system_instruction.md"
+                prompt_file = _PROJECT_ROOT / "apps" / "windows" / "prompts" / "tc" / "system_instruction.md"
                 prompt_file.parent.mkdir(parents=True, exist_ok=True)
                 prompt_file.write_text(content, encoding="utf-8")
             return {"status": "success", "content": content}
         except Exception as exc:
             return {"status": "error", "message": str(exc)}
 
-    # Статические файлы TC
+    @app.get("/terminal/config.json", tags=["terminal"])
+    async def get_terminal_config() -> Dict[str, Any]:
+        """Возвращает конфигурацию сетевого веб-терминала."""
+        term_cfg_path = _WEBGUI_DIR / "terminal" / "config.json"
+        if term_cfg_path.is_file():
+            try:
+                with open(term_cfg_path, "r", encoding="utf-8") as f:
+                    return json.load(f)
+            except Exception as ex:
+                logger.debug(f"[API Server] Ошибка чтения config.json терминала: {ex}")
+        return {
+            "theme": {
+                "background": "var(--bs-body-bg, #0c1017)",
+                "foreground": "var(--bs-body-color, #e6edf3)",
+                "cursor": "#38bdf8",
+                "selectionBackground": "rgba(56, 189, 248, 0.3)"
+            },
+            "fontFamily": "Cascadia Code, Consolas, monospace",
+            "fontSize": 14,
+            "cursorBlink": True,
+            "scrollback": 5000
+        }
+
+    @app.get("/api/themes", tags=["themes"])
+    @app.get("/api/v1/themes", tags=["themes"])
+    async def get_themes_catalog() -> Dict[str, Any]:
+        """Возвращает каталог тем оформления, сканируя директории apps/windows/api/webgui/themes."""
+        themes_dir = _WEBGUI_DIR / "themes"
+        catalog_file = themes_dir / "themes_catalog.json"
+        if catalog_file.is_file():
+            try:
+                with open(catalog_file, "r", encoding="utf-8") as f:
+                    return {"status": "ok", "themes": json.load(f)}
+            except Exception:
+                pass
+        try:
+            from apps.windows.api.webgui.themes.generate_themes_catalog import scan_themes_directory
+            themes = scan_themes_directory(themes_dir)
+            return {"status": "ok", "themes": themes}
+        except Exception as exc:
+            return {"status": "error", "message": str(exc), "themes": []}
+
+    # Статические файлы TC и AI Assistant
     if _WEBGUI_DIR.exists():
-        app.mount("/webinterface", StaticFiles(directory=_WEBGUI_DIR), name="tc-webinterface")
-        app.mount("/html", StaticFiles(directory=_WEBGUI_DIR), name="tc-html")
+        if _AI_ASSISTANT_WEBGUI.exists():
+            app.mount("/webinterface", SmartMultiDirStaticFiles(_WEBGUI_DIR, _AI_ASSISTANT_WEBGUI, _COMMON_WEBGUI_DIR), name="tc-webinterface")
+            app.mount("/html", SmartMultiDirStaticFiles(_WEBGUI_DIR, _AI_ASSISTANT_WEBGUI, _COMMON_WEBGUI_DIR), name="tc-html")
+            app.mount("/ai_assistant/html", StaticFiles(directory=str(_AI_ASSISTANT_WEBGUI)), name="ai-html")
+            app.mount("/ai_assistant/static", StaticFiles(directory=str(_AI_ASSISTANT_WEBGUI)), name="ai-static")
+        else:
+            app.mount("/webinterface", SmartMultiDirStaticFiles(_WEBGUI_DIR, _COMMON_WEBGUI_DIR), name="tc-webinterface")
+            app.mount("/html", SmartMultiDirStaticFiles(_WEBGUI_DIR, _COMMON_WEBGUI_DIR), name="tc-html")
+
         if (_WEBGUI_DIR / "apps").exists():
             app.mount("/apps/static", StaticFiles(directory=_WEBGUI_DIR / "apps"), name="tc-apps-static")
+        if (_WEBGUI_DIR / "static").exists():
+            app.mount("/static", StaticFiles(directory=_WEBGUI_DIR / "static"), name="tc-static")
 
     return app
 
@@ -452,10 +639,32 @@ def create_app() -> FastAPI:
 # Алиас для совместимости
 create_internal_app = create_app
 
+# Ленивый синглтон приложения для Uvicorn и точки входа
+_app: Optional[FastAPI] = None
+
+
+def get_app() -> FastAPI:
+    """Возвращает singleton экземпляр FastAPI приложения (ленивая инициализация)."""
+    global _app
+    if _app is None:
+        _app = create_app()
+    return _app
+
+
+def __getattr__(name: str) -> Any:
+    """Ленивое предоставление app для uvicorn без сайд-эффектов при импорте модуля."""
+    if name == "app":
+        return get_app()
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
 __all__ = [
+    "app",
+    "get_app",
     "create_app",
     "create_internal_app",
     "discover_and_register_routers",
     "load_config",
     "load_tc_config",
 ]
+

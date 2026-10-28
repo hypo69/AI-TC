@@ -3,7 +3,7 @@
 # Process Name: AI-Windows-Admin Apps Windows - Window Management Control Plane Router
 # =============================================================================
 # Description:
-#   FastAPI REST API роутер для Windows Window Management Control Plane (/api/v1/window-management).
+#   FastAPI REST API роутер для Windows User Environment Settings (/api/v1/user-environment-settings).
 #   Предоставляет доступ к 295 системным настройкам управления окнами, DWM, панели задач,
 #   мониторов и политик оболочки с поддержкой живой телеметрии, Dry-Run и отката изменений.
 #
@@ -18,11 +18,11 @@
 # Package: apps.windows.sdk.modules.window_control_plane
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-15 20:50:00
 # =============================================================================
 
 from __future__ import annotations
-"""FastAPI REST API роутер для Window Management Control Plane."""
+"""FastAPI REST API роутер для User Environment Settings."""
 
 from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, HTTPException, Query, Path as FPath
@@ -47,7 +47,7 @@ from apps.windows.sdk.modules.window_control_plane.models import (
     WindowSettingDefinition,
 )
 
-router = APIRouter(prefix="/api/v1/window-management", tags=["Windows Window Management Control Plane"])
+router = APIRouter(prefix="/api/v1/user-environment-settings", tags=["User Environment Settings"])
 _plane: WindowManagementControlPlane = get_window_control_plane()
 
 
@@ -69,9 +69,11 @@ async def get_control_plane_summary() -> ControlPlaneSummaryResponse:
     return _plane.get_summary()
 
 
-@router.get("/categories")
-async def get_categories_overview() -> Dict[str, Any]:
-    """Список всех 15 системных категорий с детальным распределением параметров."""
+@router.get("", summary="Get User Environment Settings")
+@router.get("/", summary="Get User Environment Settings", include_in_schema=False)
+@router.get("/categories", include_in_schema=False)
+async def get_user_environment_settings() -> Dict[str, Any]:
+    """Список всех настроек пользовательского окружения."""
     overview = _plane.get_categories_overview()
     return {
         "total_categories": len(overview),

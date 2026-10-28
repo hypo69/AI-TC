@@ -1,12 +1,12 @@
 {
-  "version": "20260920_v2",
+  "version": "20261016_v4",
   "menu": {
     "topButtons": [
       {
         "id": "about_system",
         "label": "О Системе",
         "i18n": "tabs.aboutSystem",
-        "icon": "ℹ️",
+        "icon": "bi-info-circle",
         "tab": "tab-about-system",
         "order": 1,
         "visible": true
@@ -37,11 +37,19 @@
         "visible": true
       },
       {
-        "id": "windows_defender",
-        "label": "Defender Security",
-        "icon": "bi-shield-lock",
-        "tab": "tab-defender",
+        "id": "software_monitor",
+        "label": "Установленные программы",
+        "icon": "bi-box-seam",
+        "tab": "tab-software-monitor",
         "order": 5,
+        "visible": true
+      },
+      {
+        "id": "windows_defender",
+        "label": "Defender & Firewall",
+        "icon": "bi-shield-lock",
+        "tab": "tab-defender-firewall",
+        "order": 6,
         "visible": true
       },
       {
@@ -49,456 +57,290 @@
         "label": "Windows Sysadmin",
         "icon": "bi-server",
         "tab": "tab-windows-admin",
-        "order": 6,
+        "order": 7,
         "visible": true
       },
       {
         "id": "scenarios",
         "label": "Чат и сценарии",
         "i18n": "tabs.scenarios",
-        "icon": "💬",
+        "icon": "bi-chat-dots",
         "tab": "tab-scenarios",
-        "order": 7,
-        "visible": true
-      },
-      {
-        "id": "accounts_identity",
-        "label": "Пользователи",
-        "icon": "bi-people-fill",
-        "tab": "tab-accounts-identity",
         "order": 8,
         "visible": true
       }
     ],
     "sidebarItems": [
       {
-        "id": "google_user_desktop",
-        "label": "Google User Desktop",
-        "icon": "🌐",
-        "tab": "tab-google-desktop",
-        "order": 1,
-        "visible": false
-      },
-      {
-        "id": "process_leaks",
-        "label": "1. Утечки и микрофризы",
-        "icon": "🔍",
-        "tab": "tab-process-leaks",
-        "order": 2,
-        "visible": true
-      },
-      {
-        "id": "forensics",
-        "label": "2. Поведенческая форензика",
-        "icon": "⏱️",
-        "tab": "tab-forensics",
-        "order": 3,
-        "visible": true
-      },
-      {
-        "id": "throttling",
-        "label": "3. Качество ядра и Троттлинг",
-        "icon": "⚡",
-        "tab": "tab-throttling",
-        "order": 4,
-        "visible": true
-      },
-      {
         "id": "registry_viewer",
         "label": "Registry Viewer",
-        "icon": "🗝️",
+        "icon": "bi-key",
         "tab": "tab-registry-viewer",
-        "order": 5,
+        "order": 1,
         "visible": true
       },
       {
         "id": "peripherals",
         "label": "5. Сеть и периферия",
-        "icon": "🔌",
+        "icon": "bi-plug",
         "tab": "tab-peripherals",
-        "order": 6,
+        "order": 2,
+        "visible": true
+      },
+      {
+        "id": "sound_settings",
+        "label": "Звук и громкость",
+        "icon": "bi-volume-up",
+        "tab": "tab-sound-settings",
+        "order": 3,
         "visible": true
       },
       {
         "id": "network_terminal",
         "label": "Сетевой терминал",
         "i18n": "tabs.network",
-        "icon": "🌐",
+        "icon": "bi-globe2",
         "tab": "tab-network",
-        "order": 7,
+        "order": 3,
         "visible": true
       },
       {
         "id": "windows_startup_auditor",
         "label": "Автозапуск программ",
         "i18n": "tabs.startupAuditor",
-        "icon": "🚀",
+        "icon": "bi-rocket-takeoff",
         "tab": "tab-startup-auditor",
-        "order": 8,
-        "visible": true
-      },
-      {
-        "id": "cloudflared_monitor",
-        "label": "Cloudflared",
-        "icon": "☁️",
-        "tab": "tab-cloudflared",
-        "order": 9,
+        "order": 4,
         "visible": false
-      },
-      {
-        "id": "gcloud_monitor",
-        "label": "Google Cloud",
-        "icon": "☁️",
-        "tab": "tab-gcloud",
-        "order": 10,
-        "visible": false
-      },
-      {
-        "id": "website_monitor",
-        "label": "Website Intelligence",
-        "icon": "📊",
-        "tab": "tab-website-monitor",
-        "order": 11,
-        "visible": false
-      },
-      {
-        "id": "user_assistant",
-        "label": "User Assistant",
-        "icon": "🗓️",
-        "tab": "tab-user-assistant",
-        "order": 12,
-        "visible": false
-      },
-      {
-        "id": "helpdesk",
-        "label": "Helpdesk",
-        "i18n": "tabs.helpdesk",
-        "icon": "🎧",
-        "tab": "tab-helpdesk",
-        "order": 13,
-        "visible": false
-      },
-      {
-        "id": "wikipedia_research",
-        "label": "Wikipedia Lab",
-        "icon": "🌐",
-        "tab": "tab-wikipedia-research",
-        "order": 14,
-        "visible": false
-      },
-      {
-        "id": "windows_backup_manager",
-        "label": "Windows Backup",
-        "icon": "💾",
-        "tab": "tab-windows-backup",
-        "order": 15,
-        "visible": true
-      },
-      {
-        "id": "hardware_monitor",
-        "label": "Логи сенсоров",
-        "i18n": "tabs.sensorLogs",
-        "icon": "⚡",
-        "tab": "tab-hardware-monitor",
-        "order": 16,
-        "visible": true
-      },
-      {
-        "id": "autolog_manager",
-        "label": "Телеметрия и логи",
-        "icon": "⚡",
-        "tab": "tab-autolog",
-        "order": 17,
-        "visible": true
-      },
-      {
-        "id": "telemetry_research",
-        "label": "Исследования телеметрии",
-        "icon": "🔬",
-        "tab": "tab-telemetry-research",
-        "order": 18,
-        "visible": true
-      },
-      {
-        "id": "software_transparency_scanner",
-        "label": "Прозрачность ПО",
-        "i18n": "tabs.softwareTransparency",
-        "icon": "🔍",
-        "tab": "tab-software-transparency",
-        "order": 19,
-        "visible": true
-      },
-      {
-        "id": "software_scanner",
-        "label": "Глубокий аудит ПО (Dormant)",
-        "icon": "🕵️",
-        "tab": "tab-software-scanner",
-        "order": 20,
-        "visible": true
       },
       {
         "id": "user_directories",
         "label": "Директории пользователей",
         "i18n": "tabs.userDirectories",
-        "icon": "📁",
+        "icon": "bi-folder2",
         "tab": "tab-user-directories",
-        "order": 21,
-        "visible": true
-      },
-      {
-        "id": "ninite_updater",
-        "label": "Установить Ninite",
-        "icon": "⚡",
-        "tab": "tab-ninite-updater",
-        "order": 22,
-        "visible": true
-      },
-      {
-        "id": "file_recovery",
-        "label": "Восстановить удаленные файлы",
-        "i18n": "tabs.fileRecovery",
-        "icon": "🗂️",
-        "tab": "tab-file-recovery",
-        "order": 23,
+        "order": 5,
         "visible": true
       },
       {
         "id": "rag",
         "label": "RAG",
         "i18n": "tabs.rag",
-        "icon": "🧠",
+        "icon": "bi-cpu",
         "tab": "tab-rag",
-        "order": 24,
+        "order": 6,
         "visible": false
       },
       {
         "id": "pixelrag",
         "label": "PixelRAG",
-        "icon": "🖼️",
+        "icon": "bi-image",
         "tab": "tab-pixelrag",
-        "order": 25,
-        "visible": false
-      },
-      {
-        "id": "agents",
-        "label": "Агенты ИИ",
-        "i18n": "tabs.agents",
-        "icon": "🧩",
-        "tab": "tab-agents",
-        "order": 26,
-        "visible": false
-      },
-      {
-        "id": "skills",
-        "label": "Навыки",
-        "i18n": "tabs.skills",
-        "icon": "⚡",
-        "tab": "tab-skills",
-        "order": 27,
-        "visible": false
-      },
-      {
-        "id": "mcp",
-        "label": "MCP Серверы",
-        "i18n": "tabs.mcp",
-        "icon": "🔌",
-        "tab": "tab-mcp",
-        "order": 28,
-        "visible": false
-      },
-      {
-        "id": "ai_benchmark",
-        "label": "AI Benchmark",
-        "icon": "🏎️",
-        "tab": "tab-ai-benchmark",
-        "order": 29,
-        "visible": false
-      },
-      {
-        "id": "google_user_desktop",
-        "label": "Google User Desktop",
-        "icon": "🌐",
-        "tab": "tab-google-desktop",
-        "order": 30,
+        "order": 7,
         "visible": false
       },
       {
         "id": "file_history_ai_search",
         "label": "Поиск истории файлов AI",
         "i18n": "tabs.fileHistorySearch",
-        "icon": "🔍",
+        "icon": "bi-search",
         "tab": "tab-file-history-search",
-        "order": 31,
+        "order": 8,
         "visible": false
       },
       {
-        "id": "models",
-        "label": "Модели и API",
-        "i18n": "tabs.models",
-        "icon": "🤖",
-        "tab": "tab-models",
-        "order": 32,
+        "id": "storage_management",
+        "label": "Накопители и Ресурс Дисков",
+        "icon": "bi-hdd",
+        "tab": "tab-storage-management",
+        "order": 9,
         "visible": false
       },
       {
-        "id": "storage_wear",
-        "label": "4. Износ дисков и батареи",
-        "icon": "💽",
-        "tab": "tab-storage-wear",
-        "order": 33,
+        "id": "software_transparency_scanner",
+        "label": "Прозрачность ПО",
+        "i18n": "tabs.softwareTransparency",
+        "icon": "bi-eye",
+        "tab": "tab-software-transparency",
+        "order": 10,
         "visible": false
       },
       {
-        "id": "storage_manager",
-        "label": "Диски и тома (Storage)",
-        "icon": "💽",
-        "tab": "tab-storage-manager",
-        "order": 34,
+        "id": "software_monitor",
+        "label": "Установленные программы",
+        "icon": "bi-box-seam",
+        "tab": "tab-software-monitor",
+        "order": 11,
         "visible": false
-      },
-      {
-        "id": "boot_recovery",
-        "label": "Загрузка и WinRE (Boot)",
-        "icon": "🚀",
-        "tab": "tab-boot-recovery",
-        "order": 35,
-        "visible": true
-      },
-      {
-        "id": "servicing_integrity",
-        "label": "Обслуживание SFC/DISM",
-        "icon": "🩺",
-        "tab": "tab-servicing-integrity",
-        "order": 36,
-        "visible": true
-      },
-      {
-        "id": "services_manager",
-        "label": "Службы Windows (Services)",
-        "icon": "⚙️",
-        "tab": "tab-services-manager",
-        "order": 37,
-        "visible": true
-      },
-      {
-        "id": "task_scheduler",
-        "label": "Планировщик задач (Tasks)",
-        "icon": "📅",
-        "tab": "tab-task-scheduler",
-        "order": 38,
-        "visible": true
-      },
-      {
-        "id": "process_manager",
-        "label": "Диспетчер процессов (Processes)",
-        "icon": "⚡",
-        "tab": "tab-process-manager",
-        "order": 39,
-        "visible": true
-      },
-      {
-        "id": "firewall_manager",
-        "label": "Брандмауэр Windows (Firewall)",
-        "icon": "🛡️",
-        "tab": "tab-firewall-manager",
-        "order": 40,
-        "visible": true
-      },
-      {
-        "id": "security_acl",
-        "label": "Права доступа и ACL (icacls)",
-        "icon": "🗝️",
-        "tab": "tab-security-acl",
-        "order": 41,
-        "visible": true
-      },
-      {
-        "id": "performance_tracing",
-        "label": "Трассировка ETW (logman)",
-        "icon": "📊",
-        "tab": "tab-performance-tracing",
-        "order": 42,
-        "visible": true
-      },
-      {
-        "id": "log_settings",
-        "label": "Параметры и настройка журналов",
-        "icon": "bi-sliders",
-        "tab": "tab-log-settings",
-        "order": 43,
-        "visible": true
       },
       {
         "id": "software_manager",
         "label": "Пакетный менеджер (Winget)",
-        "icon": "📦",
+        "icon": "bi-box-seam",
         "tab": "tab-software-manager",
-        "order": 44,
-        "visible": true
+        "order": 12,
+        "visible": false
       },
       {
-        "id": "post_install_wizard",
-        "label": "Post-Install Wizard",
-        "icon": "⚡",
-        "tab": "tab-post-install-wizard",
-        "order": 45,
-        "visible": true
-      },
-      {
-        "id": "maintenance_recovery",
-        "label": "Maintenance & Recovery",
-        "icon": "🛠️",
-        "tab": "tab-maintenance-recovery",
-        "order": 46,
-        "visible": true
-      },
-      {
-        "id": "taskbar_controller",
-        "label": "Панель задач и Окна (Taskbar)",
-        "icon": "📌",
-        "tab": "tab-taskbar",
-        "order": 47,
-        "visible": true
-      },
-      {
-        "id": "accounts_identity",
-        "label": "Учетные записи (Users & Identity)",
-        "icon": "👥",
-        "tab": "tab-accounts-identity",
-        "order": 48,
-        "visible": true
+        "id": "power_lifecycle",
+        "label": "Сессии питания",
+        "icon": "bi-power",
+        "tab": "tab-power-lifecycle",
+        "order": 13,
+        "visible": false
       },
       {
         "id": "system32_commands",
         "label": "Команды System32",
         "i18n": "tabs.system32Commands",
-        "icon": "🛠️",
+        "icon": "bi-tools",
         "tab": "tab-system32-commands",
-        "order": 49,
+        "order": 14,
+        "visible": false
+      },
+      {
+        "id": "telemetry_research",
+        "label": "Исследования телеметрии",
+        "icon": "bi-binoculars",
+        "tab": "tab-telemetry-research",
+        "order": 15,
+        "visible": false
+      },
+      {
+        "id": "process_leaks",
+        "label": "1. Утечки и микрофризы",
+        "icon": "bi-search",
+        "tab": "tab-process-leaks",
+        "order": 16,
+        "visible": false
+      },
+      {
+        "id": "smart_restore",
+        "label": "Умное восстановление (Advisor)",
+        "icon": "bi-shield-check",
+        "tab": "tab-smart-restore",
+        "order": 17,
         "visible": true
       },
       {
-        "id": "power_lifecycle",
-        "label": "Сессии питания",
-        "icon": "⚡",
-        "tab": "tab-power-lifecycle",
-        "order": 50,
+        "id": "boot_and_servicing",
+        "label": "Загрузка, WinRE и обслуживание SFC/DISM",
+        "icon": "bi-rocket-takeoff",
+        "tab": "tab-boot-recovery",
+        "order": 18,
         "visible": true
       },
       {
-        "id": "app_logs",
-        "label": "Логи программы (%APPDATA%)",
-        "icon": "bi-journal-code",
-        "tab": "tab-app-logs",
-        "order": 51,
+        "id": "services_manager",
+        "label": "Службы Windows (Services)",
+        "icon": "bi-gear",
+        "tab": "tab-services-manager",
+        "order": 19,
         "visible": true
       },
       {
-        "id": "software_scanner",
-        "label": "Аудит ПО (Dormant)",
-        "icon": "🕵️",
-        "tab": "tab-software-scanner",
-        "order": 52,
+        "id": "task_scheduler",
+        "label": "Планировщик задач (Tasks)",
+        "icon": "bi-calendar3",
+        "tab": "tab-task-scheduler",
+        "order": 20,
+        "visible": true
+      },
+      {
+        "id": "taskbar_controller",
+        "label": "Панель задач и Окна (Taskbar)",
+        "icon": "bi-pin-angle",
+        "tab": "tab-taskbar",
+        "order": 21,
+        "visible": true
+      },
+      {
+        "id": "process_manager",
+        "label": "Диспетчер процессов (Processes)",
+        "icon": "bi-cpu",
+        "tab": "tab-processes-load-inspector#manager",
+        "order": 22,
+        "visible": false
+      },
+      {
+        "id": "theme_editor",
+        "label": "Редактор тем (Theme Editor)",
+        "icon": "bi-palette2",
+        "tab": "tab-theme-editor",
+        "order": 23,
+        "visible": false
+      },
+      {
+        "id": "forensics",
+        "label": "2. Поведенческая форензика",
+        "icon": "bi-stopwatch",
+        "tab": "tab-forensics",
+        "order": 24,
+        "visible": false
+      },
+      {
+        "id": "throttling",
+        "label": "3. Качество ядра и Троттлинг",
+        "icon": "bi-lightning-charge",
+        "tab": "tab-throttling",
+        "order": 25,
+        "visible": false
+      },
+      {
+        "id": "file_recovery",
+        "label": "Восстановить удаленные файлы",
+        "i18n": "tabs.fileRecovery",
+        "icon": "bi-archive",
+        "tab": "tab-file-recovery",
+        "order": 26,
+        "visible": true
+      },
+      {
+        "id": "post_install_wizard",
+        "label": "Post-Install Wizard",
+        "icon": "bi-magic",
+        "tab": "tab-post-install-wizard",
+        "order": 27,
+        "visible": true
+      },
+      {
+        "id": "ninite_updater",
+        "label": "Установить Ninite",
+        "icon": "bi-cloud-arrow-down",
+        "tab": "tab-ninite-updater",
+        "order": 28,
+        "visible": true
+      },
+      {
+        "id": "app_internals",
+        "label": "Внутренняя кухня (App Internals)",
+        "icon": "bi-code-square",
+        "tab": "tab-app-internals",
+        "order": 29,
+        "visible": true
+      },
+      {
+        "id": "sitemap",
+        "label": "Карта сайта (Sitemap)",
+        "icon": "bi-diagram-3-fill",
+        "tab": "tab-sitemap",
+        "order": 30,
+        "visible": true
+      },
+      {
+        "id": "ai_assistant",
+        "label": "Умная история файлов (Smart File History)",
+        "icon": "bi-clock-history",
+        "tab": "tab-ai-assistant",
+        "order": 31,
+        "visible": true
+      },
+      {
+        "id": "ai_ecosystem",
+        "label": "Экосистема ИИ (Агенты, Навыки, MCP)",
+        "icon": "bi-robot",
+        "tab": "tab-ai-ecosystem",
+        "order": 32,
         "visible": true
       }
     ]

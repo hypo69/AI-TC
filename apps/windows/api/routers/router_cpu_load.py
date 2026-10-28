@@ -6,7 +6,7 @@
 #   GET /api/v1/panel/cpu-load — иерархические метрики процессора:
 #   физические ядра -> логические потоки -> показатели потоков/ядер ->
 #   общие показатели CPU и история загрузки/температур/мощности.
-#   Запросы к базе данных производятся на уровне телеметрии.
+#   Все данные читаются строго из базы данных telemetry.db (сбором занимается только телеметрия).
 #
 # Usage Examples:
 #   Python API:
@@ -18,15 +18,14 @@
 # Package: apps.windows.api.routers
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-20 10:45:00
 # =============================================================================
 
 from __future__ import annotations
 
-"""Роутер панели «Загрузка CPU»: иерархия CPU -> ядра -> потоки -> сенсоры из telemetry.db и LHM."""
+"""Роутер панели «Загрузка CPU»: иерархия CPU -> ядра -> потоки -> сенсоры строго из базы данных telemetry.db."""
 
 import json
-import platform
 import re
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
@@ -35,7 +34,6 @@ from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
 from logger import logger
-from apps.windows.sdk.modules.hardware.lhm_service import LhmService
 from apps.windows.telemetry.sqlite import TelemetryStorage
 
 _CORE_THREAD_RE = re.compile(r"core[\s_#]*(\d+)\s+thread[\s_#]*(\d+)", re.IGNORECASE)
@@ -163,7 +161,7 @@ def _normalize_sensor_name(sid: str, name: str, cat: str) -> str:
     if not raw or raw.lower() in ("unknown", "sensor"):
         return f"Sensor #{sid}" if sid else "System Sensor"
 
-    # Приводим частые LHM имена к аккуратному виду
+    # Нормализация системных названий датчиков к аккуратному виду
     cat_l = cat.lower()
     raw_l = raw.lower()
 
@@ -220,26 +218,45 @@ def build_cpu_load(
     seen_sensor_keys = set()
 
     # Извлечение базовой информации из инвентаря/снимка
-    if inventory and inventory.get("model_name"):
-        cpu_name = str(inventory["model_name"]).strip()
+    inv_data_dict: Dict[str, Any] = {}
+    if inventory:
+        if isinstance(inventory, list):
+            inv_data_dict = inventory[0] if inventory and isinstance(inventory[0], dict) else {}
+        elif isinstance(inventory, dict):
+            inv_data_dict = inventory
+
+    if inv_data_dict.get("name"):
+        cpu_name = str(inv_data_dict["name"]).strip()
+    elif inv_data_dict.get("model_name"):
+        cpu_name = str(inv_data_dict["model_name"]).strip()
 
     if snapshot:
-        raw_str = snapshot.get("raw_json")
-        if raw_str:
-            try:
-                raw_dict = json.loads(raw_str) if isinstance(raw_str, str) else raw_str
-                cpu_dict = raw_dict.get("cpu", {})
-                if cpu_name == "CPU" and cpu_dict.get("model"):
-                    cpu_name = str(cpu_dict["model"]).strip()
-                if total_load is None and cpu_dict.get("total_percent") is not None:
-                    total_load = round(float(cpu_dict["total_percent"]), 1)
-                
-                # Обработка плоского массива per_core из psutil если нет LHM потоков
-                cores_usage = cpu_dict.get("cores_usage") or []
-                for idx, c_val in enumerate(cores_usage):
-                    flat_thread_loads[idx + 1] = round(float(c_val), 1)
-            except Exception:
-                pass
+        # Извлечение из объекта snapshot (прямой dict либо через raw_json)
+        cpu_dict = snapshot.get("cpu") if isinstance(snapshot.get("cpu"), dict) else {}
+        if not cpu_dict:
+            raw_str = snapshot.get("raw_json")
+            if raw_str:
+                try:
+                    raw_dict = json.loads(raw_str) if isinstance(raw_str, str) else raw_str
+                    cpu_dict = raw_dict.get("cpu", {}) if isinstance(raw_dict, dict) else {}
+                except Exception:
+                    cpu_dict = {}
+
+        if cpu_name == "CPU" and cpu_dict.get("model"):
+            cpu_name = str(cpu_dict["model"]).strip()
+        if total_load is None or total_load == 0.0:
+            if cpu_dict.get("total_percent") is not None and float(cpu_dict["total_percent"]) > 0.0:
+                total_load = round(float(cpu_dict["total_percent"]), 1)
+            elif snapshot.get("cpu_total_percent") is not None and float(snapshot["cpu_total_percent"]) > 0.0:
+                total_load = round(float(snapshot["cpu_total_percent"]), 1)
+
+        # Обработка per_core_percent / cores_usage
+        cores_usage = cpu_dict.get("cores_usage") or cpu_dict.get("per_core_percent") or []
+        for idx, c_val in enumerate(cores_usage):
+            flat_thread_loads[idx + 1] = round(float(c_val), 1)
+
+    cpu_freq_val: Optional[float] = None
+    fallback_temp: Optional[float] = None
 
     # Разбор сенсоров
     for row in sensors:
@@ -275,12 +292,18 @@ def build_cpu_load(
 
         # 1. Суммарная загрузка и температура Package
         if sname in ("CPU Total", "cpu_util_total") or sid == "cpu_util_total":
-            total_load = round(val_f, 1)
+            if val_f > 0.0 or total_load is None:
+                total_load = round(val_f, 1)
             continue
         if ("package" in sname_l or sid == "cpu_package_temp") and is_temp:
             pkg_temp = round(val_f, 1)
+        elif is_temp and fallback_temp is None and 10.0 <= val_f <= 115.0:
+            fallback_temp = round(val_f, 1)
+
         if ("package" in sname_l or sid == "cpu_package_power") and is_power:
             pkg_power = round(val_f, 1)
+        if is_clock and ("current" in sid or "cpu" in sname_l or "freq" in sid):
+            cpu_freq_val = val_f
 
         # 2. Потоки конкретного ядра (например: "CPU Core #1 Thread #2" или "Core #1 Thread #1")
         m_ct = _CORE_THREAD_RE.search(sname)
@@ -346,35 +369,48 @@ def build_cpu_load(
                 )
             )
 
-    # 5. Построение иерархии: Физические ядра и их логические потоки
-    all_core_indices = sorted(set(list(thread_loads_by_core.keys()) + list(core_temps.keys()) + list(core_clocks.keys()) + list(core_loads.keys())))
+    # Применяем fallback-температуру (например ACPI) если Package temp не был найден
+    if pkg_temp is None and fallback_temp is not None:
+        pkg_temp = fallback_temp
+
+    # 5. Построение иерархии: Физические ядра и их логические потоки (строго из БД)
+    snap_cpu_dict = snapshot.get("cpu", {}) if (snapshot and isinstance(snapshot.get("cpu"), dict)) else {}
+    inv_phys = int(inv_data_dict.get("physical_cores") or snap_cpu_dict.get("physical_cores") or 0)
+    inv_log = int(inv_data_dict.get("logical_cores") or snap_cpu_dict.get("logical_cores") or 0)
+
+    # Проверяем: если core_loads содержит 0-indexed потоки (psutil percpu), переносим их в flat_thread_loads
+    if (inv_phys > 0 and len(core_loads) > inv_phys) or (0 in core_loads):
+        for c_idx_raw, load_val in core_loads.items():
+            t_num = c_idx_raw + 1 if 0 in core_loads else c_idx_raw
+            if t_num not in flat_thread_loads:
+                flat_thread_loads[t_num] = load_val
+        core_loads.clear()
+
+    phys_count = inv_phys or (len(flat_thread_loads) // 2 if len(flat_thread_loads) > 1 else len(flat_thread_loads)) or 1
+    log_count = inv_log or len(flat_thread_loads) or (phys_count * 2 if phys_count > 1 else 1)
+    threads_per_core = max(1, log_count // phys_count)
+
+    all_core_indices = list(range(1, phys_count + 1))
     
-    # Если индексов ядер не было в LHM, но есть flat_thread_loads из psutil (например 12 потоков)
-    if not all_core_indices and flat_thread_loads:
-        total_th = len(flat_thread_loads)
-        # Стандарт: 2 потока на ядро при HT, либо 1 поток
-        threads_per_core = 2 if total_th in (4, 8, 12, 16, 20, 24, 32, 64) else 1
-        num_physical = max(1, total_th // threads_per_core)
-        all_core_indices = list(range(1, num_physical + 1))
-        for c_idx in all_core_indices:
-            for t_idx in range(1, threads_per_core + 1):
-                g_idx = (c_idx - 1) * threads_per_core + t_idx
-                if g_idx in flat_thread_loads:
-                    thread_loads_by_core.setdefault(c_idx, {})[t_idx] = flat_thread_loads[g_idx]
+    for c_idx in all_core_indices:
+        for t_pos in range(1, threads_per_core + 1):
+            g_idx = (c_idx - 1) * threads_per_core + t_pos
+            if g_idx in flat_thread_loads and (c_idx not in thread_loads_by_core or t_pos not in thread_loads_by_core[c_idx]):
+                thread_loads_by_core.setdefault(c_idx, {})[t_pos] = flat_thread_loads[g_idx]
 
     cores_result: List[CpuCoreMetric] = []
     flat_threads_result: List[CpuThreadMetric] = []
     global_thread_counter = 1
+    default_freq = cpu_freq_val or float(inv_data_dict.get("base_frequency_mhz") or 0.0) or None
 
-    for c_idx in (all_core_indices or [1]):
+    for c_idx in all_core_indices:
         core_threads_dict = thread_loads_by_core.get(c_idx, {})
         core_thread_metrics: List[CpuThreadMetric] = []
 
-        # Если потоков для ядра нет явно, создаем хотя бы 1-2
+        # Если потоков для ядра нет явно, создаем хотя бы threads_per_core
         if not core_threads_dict:
-            # Fallback
             th_load = core_loads.get(c_idx, total_load or 0.0)
-            core_threads_dict = {1: th_load, 2: th_load}
+            core_threads_dict = {i + 1: th_load for i in range(threads_per_core)}
 
         for t_local_idx in sorted(core_threads_dict.keys()):
             th_val = core_threads_dict[t_local_idx]
@@ -390,12 +426,12 @@ def build_cpu_load(
             flat_threads_result.append(th_item)
             global_thread_counter += 1
 
-        # Нагрузка ядра
+        # Нагрузка ядра: среднее по его потокам или прямое значение
         c_load = core_loads.get(c_idx)
         if c_load is None and core_thread_metrics:
             c_load = round(sum(t.load_percent for t in core_thread_metrics) / len(core_thread_metrics), 1)
 
-        c_freq = core_clocks.get(c_idx)
+        c_freq = core_clocks.get(c_idx) or default_freq
         cores_result.append(
             CpuCoreMetric(
                 index=c_idx,
@@ -412,12 +448,69 @@ def build_cpu_load(
         )
 
     # 6. Расчет общего процента загрузки если не был задан
-    if total_load is None:
-        if cores_result:
+    if total_load is None or total_load == 0.0:
+        if flat_threads_result:
+            valid_th = [t.load_percent for t in flat_threads_result if t.load_percent is not None]
+            if valid_th:
+                total_load = round(sum(valid_th) / len(valid_th), 1)
+            else:
+                total_load = 0.0
+        elif cores_result:
             valid_loads = [c.load_percent for c in cores_result if c.load_percent is not None]
             total_load = round(sum(valid_loads) / len(valid_loads), 1) if valid_loads else 0.0
         else:
             total_load = 0.0
+
+    # 7. Дополняем general_sensors_list базовыми датчиками CPU если их еще нет
+    if not any(s.category.lower() == "load" and "total" in s.name.lower() for s in general_sensors_list):
+        general_sensors_list.insert(
+            0,
+            CpuSensorMetric(
+                id="cpu_total_load",
+                name="CPU Total Load",
+                category="Load",
+                unit="%",
+                value=round(total_load, 1),
+                value_raw=f"{total_load:.1f}%",
+                status=_calculate_sensor_status("Load", total_load),
+            ),
+        )
+    if default_freq and not any("freq" in s.name.lower() or "clock" in s.category.lower() for s in general_sensors_list):
+        general_sensors_list.append(
+            CpuSensorMetric(
+                id="cpu_freq",
+                name="CPU Frequency",
+                category="Clocks",
+                unit="MHz",
+                value=round(default_freq, 1),
+                value_raw=_format_frequency(default_freq),
+                status="normal",
+            )
+        )
+    if pkg_temp is not None and not any("temp" in s.category.lower() for s in general_sensors_list):
+        general_sensors_list.append(
+            CpuSensorMetric(
+                id="cpu_package_temp",
+                name="CPU Package Temp",
+                category="Temperatures",
+                unit="°C",
+                value=round(pkg_temp, 1),
+                value_raw=f"{pkg_temp:.1f} °C",
+                status=_calculate_sensor_status("Temperatures", pkg_temp),
+            )
+        )
+    if pkg_power is not None and not any("power" in s.category.lower() for s in general_sensors_list):
+        general_sensors_list.append(
+            CpuSensorMetric(
+                id="cpu_package_power",
+                name="CPU Package Power",
+                category="Powers",
+                unit="W",
+                value=round(pkg_power, 1),
+                value_raw=f"{pkg_power:.1f} W",
+                status="normal",
+            )
+        )
 
     # 7. Формирование истории точек для графиков
     history_points: List[CpuHistoryPoint] = []
@@ -471,8 +564,8 @@ def build_cpu_load(
         l3_str = f"{(s_l3 / 1024.0):.1f} MB" if (s_l3 and s_l3 >= 1024) else (f"{s_l3} KB" if s_l3 else "--")
         cache_comb = f"{l2_str} / {l3_str}" if (s_l2 or s_l3) else "--"
 
-        raw_processor_desc = platform.processor() or "Intel64 Family 6 Model 165 Stepping 3, GenuineIntel"
-        full_cpu_desc = f"{raw_processor_desc} ({s_l_cores} logical cores)"
+        raw_processor_desc = str(inv_data.get("name") or snap_cpu_dict.get("model") or cpu_name).strip()
+        full_cpu_desc = str(inv_data.get("description") or f"{raw_processor_desc} ({s_l_cores} logical cores)").strip()
 
         specs_obj = CpuSpecsInfo(
             name=s_name,
@@ -496,10 +589,10 @@ def build_cpu_load(
             raw_descriptor=raw_processor_desc,
         )
 
-    raw_processor_desc = platform.processor() or "Intel64 Family 6 Model 165 Stepping 3, GenuineIntel"
-    total_l_cores = len(flat_threads_result) or 12
-    total_p_cores = len(cores_result) or 6
-    full_cpu_desc = f"{raw_processor_desc} ({total_l_cores} logical cores)"
+    raw_processor_desc = str(inv_data.get("name") or snap_cpu_dict.get("model") or cpu_name).strip()
+    total_l_cores = len(flat_threads_result) or (specs_obj.logical_cores if specs_obj else 1) or 1
+    total_p_cores = len(cores_result) or (specs_obj.physical_cores if specs_obj else 1) or 1
+    full_cpu_desc = str(inv_data.get("description") or f"{raw_processor_desc} ({total_l_cores} logical cores)").strip()
 
     cpus_list = [
         {
@@ -528,7 +621,7 @@ def build_cpu_load(
         sensors=general_sensors_list,
         history=history_points,
         meta={
-            "source": "telemetry.db/lhm_hierarchy",
+            "source": "telemetry.db/cpu_hierarchy",
             "cores_count": len(cores_result),
             "threads_count": len(flat_threads_result),
             "sensors_count": len(general_sensors_list),
@@ -538,24 +631,21 @@ def build_cpu_load(
 
 def init_router(
     storage: Optional[TelemetryStorage] = None,
-    lhm_service: Optional[LhmService] = None,
 ) -> APIRouter:
     """Создаёт роутер /api/v1/panel/cpu-load с полной поддержкой иерархии CPU.
 
     Args:
         storage: Хранилище телеметрии SQLite.
-        lhm_service: Сервис LibreHardwareMonitor.
 
     Returns:
         APIRouter: Роутер с эндпоинтом GET /api/v1/panel/cpu-load.
     """
     router = APIRouter(tags=["CPU Load Panel"])
     store = storage or TelemetryStorage.get_instance(read_only=True)
-    lhm = lhm_service if lhm_service is not None else (LhmService() if storage is None else None)
 
     @router.get("/api/v1/panel/cpu-load", response_model=CpuLoadResponse)
     async def get_panel_cpu_load() -> CpuLoadResponse:
-        """Возвращает структурированные иерархические данные CPU из телеметрии и LHM."""
+        """Возвращает структурированные иерархические данные CPU строго из базы данных telemetry.db."""
         try:
             # 1. Запрос к базе данных телеметрии для извлечения истории и сохраненных метрик
             db_data = store.get_cpu_hierarchy_metrics()
@@ -564,56 +654,13 @@ def init_router(
             db_inv = db_data.get("inventory")
             db_history = db_data.get("history", [])
 
-            # 2. Если запущен LHM — дополняем живыми данными сенсоров
-            if lhm and lhm.is_running():
-                lhm_sensors = lhm.get_flattened_sensors()
-                if lhm_sensors:
-                    resp = build_cpu_load(
-                        sensors=lhm_sensors,
-                        snapshot=db_snapshot,
-                        history_rows=db_history,
-                        inventory=db_inv,
-                    )
-                    resp.meta = {
-                        "source": "lhm_live+telemetry.db",
-                        "cores_count": len(resp.cores),
-                        "threads_count": len(resp.threads),
-                    }
-                    return resp
-
-            # 3. Ответ на основе данных БД телеметрии
+            # 2. Ответ на основе данных БД телеметрии
             resp = build_cpu_load(
                 sensors=db_sensors,
                 snapshot=db_snapshot,
                 history_rows=db_history,
                 inventory=db_inv,
             )
-
-            # 4. Если данных в БД недостаточно (пустая база) — дополняем через HardwareMonitor
-            if not resp.cores and storage is None:
-                from apps.windows.sdk.modules.hardware.hardware_monitor import HardwareMonitor
-                hw = HardwareMonitor()
-                cpu_m = hw.get_cpu_metrics()
-                flat_th: Dict[int, float] = {}
-                for idx, c_val in enumerate(cpu_m.per_core_pct):
-                    flat_th[idx + 1] = float(c_val)
-
-                live_snap = {
-                    "raw_json": json.dumps({
-                        "cpu": {
-                            "model": cpu_m.model_name,
-                            "total_percent": cpu_m.utilization_pct,
-                            "cores_usage": cpu_m.per_core_pct,
-                        }
-                    })
-                }
-                resp = build_cpu_load(
-                    sensors=db_sensors,
-                    snapshot=live_snap,
-                    history_rows=db_history,
-                    inventory=db_inv,
-                )
-                resp.meta["source"] = "hardware_monitor_live+telemetry.db"
 
             return resp
 

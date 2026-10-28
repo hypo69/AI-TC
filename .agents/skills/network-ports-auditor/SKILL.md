@@ -1,6 +1,7 @@
 ---
 name: network-ports-auditor
-description: Automated assistant skill for: Проверка активных сетевых адаптеров, прослушиваемых портов TCP/UDP и соединений.
+# Updated: 2026-10-25 18:35:00
+description: "Automated assistant skill for: Проверка активных сетевых адаптеров, прослушиваемых портов TCP/UDP и соединений."
 ---
 
 # Аудит сетевых интерфейсов и портов (Network Ports Auditor)

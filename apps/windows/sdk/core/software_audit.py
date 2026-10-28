@@ -16,7 +16,7 @@
 # Package: apps.windows.sdk.core
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-16 17:52:00
 # =============================================================================
 
 from __future__ import annotations
@@ -343,8 +343,12 @@ class SoftwareAuditEngine:
                 return AppExecutionInfo(last_run_time=prefetch_history[cand], run_count=1, focus_time_seconds=0, source_artifact='Prefetch', raw_path=cand)
         return None
 
-    def generate_audit_report(self) -> SoftwareAuditReport:
+    def generate_audit_report(self, save_to_db: bool = False) -> SoftwareAuditReport:
         """Сформировать аналитический отчет по установленному программному обеспечению.
+
+        Args:
+            save_to_db: Флаг сохранения отчета в базу данных телеметрии (по умолчанию False,
+                        результаты аудита хранятся только в кэше браузера).
 
         Returns:
             SoftwareAuditReport: Сводный аналитический отчет аудита.
@@ -371,15 +375,34 @@ class SoftwareAuditEngine:
         top_launched = sorted([a for a in active_apps if a.execution_info and a.execution_info.run_count > 0], key=lambda a: a.execution_info.run_count if a.execution_info else 0, reverse=True)
         recently_launched = sorted(active_apps, key=lambda a: a.execution_info.last_run_time if a.execution_info and a.execution_info.last_run_time else datetime.min.replace(tzinfo=timezone.utc), reverse=True)
         report = SoftwareAuditReport(timestamp=datetime.now(), total_apps=total_apps, active_apps_count=len(active_apps), unused_apps_count=len(never_launched_or_dormant), categories_breakdown=categories_breakdown, recently_launched=recently_launched[:15], top_launched=top_launched[:15], never_launched_or_dormant=never_launched_or_dormant, apps=apps)
-        self._save_to_csv(report)
+        if save_to_db:
+            self._save_to_database(report)
         return report
 
-    def _save_to_csv(self, report: SoftwareAuditReport):
-        """Сохранить отчет в CSV файл в %APPDATA%/AI-Windows-Admin/apps/logs."""
+    def _save_to_database(self, report: SoftwareAuditReport) -> bool:
+        """Сохранить отчет аудита ПО и инвентарь приложений в SQLite базу данных телеметрии.
+
+        Args:
+            report: Сформированный отчет аудита ПО.
+
+        Returns:
+            bool: True в случае успешного сохранения, False при ошибке.
+        """
+        try:
+            from apps.windows.telemetry.sqlite import TelemetryStorage
+            storage = TelemetryStorage.get_instance(read_only=False)
+            storage.save_software_audit_report(report)
+            return True
+        except Exception as e:
+            logger.debug(f'Не удалось сохранить отчет аудита ПО в базу данных телеметрии: {e}')
+            return False
+
+    def _save_to_csv(self, report: SoftwareAuditReport) -> Optional[Path]:
+        """Экспортировать отчет в CSV файл в %APPDATA%/AI-Windows-Admin/apps/logs при явном запросе."""
         appdata = os.environ.get('APPDATA')
         if not appdata:
-            logger.warning('Переменная среды APPDATA не найдена, логирование отменено.')
-            return
+            logger.warning('Переменная среды APPDATA не найдена, экспорт в CSV отменен.')
+            return None
         log_dir = Path(appdata) / 'AI-Windows-Admin' / 'apps' / 'logs'
         log_dir.mkdir(parents=True, exist_ok=True)
         log_file = log_dir / 'software_audit.csv'
@@ -389,9 +412,107 @@ class SoftwareAuditEngine:
                 writer.writerow(['Name', 'Version', 'Publisher', 'InstallDate'])
                 for app in report.apps:
                     writer.writerow([app.display_name, app.version, app.publisher, app.install_date])
-            logger.info(f'Отчет аудита автоматически сохранен в: {log_file}')
+            return log_file
         except Exception as e:
             logger.error(f'Не удалось сохранить отчет аудита в CSV: {e}')
-        'Генерация реалистичных демонстрационных данных для не-Windows окружения или тестов.'
+            return None
+
+    def _get_fallback_mock_data(self) -> List[InstalledAppInfo]:
+        """Генерация реалистичных демонстрационных данных для не-Windows окружения или тестов."""
         now = datetime.now()
-        return [InstalledAppInfo(name='Google Chrome', display_name='Google Chrome', version='125.0.6422.142', publisher='Google LLC', install_date=(now - timedelta(days=120)).strftime('%Y-%m-%d'), install_location='C:\\Program Files\\Google\\Chrome\\Application', uninstall_string='C:\\Program Files\\Google\\Chrome\\Application\\installer.exe --uninstall', size_bytes=380 * 1024 * 1024, architecture='x64', category=AppCategory.BROWSER, purpose_description='Веб-браузер Google Chrome для навигации в сети Интернет.', execution_info=AppExecutionInfo(last_run_time=now - timedelta(minutes=15), run_count=342, focus_time_seconds=18400, source_artifact='UserAssist', raw_path='C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe')), InstalledAppInfo(name='Visual Studio Code', display_name='Visual Studio Code', version='1.89.1', publisher='Microsoft Corporation', install_date=(now - timedelta(days=95)).strftime('%Y-%m-%d'), install_location='C:\\Users\\User\\AppData\\Local\\Programs\\Microsoft VS Code', uninstall_string='C:\\Users\\User\\AppData\\Local\\Programs\\Microsoft VS Code\\unins000.exe', size_bytes=420 * 1024 * 1024, architecture='x64', category=AppCategory.DEVELOPMENT, purpose_description='Редактор исходного кода Visual Studio Code от Microsoft.', execution_info=AppExecutionInfo(last_run_time=now - timedelta(minutes=5), run_count=520, focus_time_seconds=45000, source_artifact='UserAssist', raw_path='C:\\Users\\User\\AppData\\Local\\Programs\\Microsoft VS Code\\Code.exe')), InstalledAppInfo(name='7-Zip', display_name='7-Zip 23.01 (x64)', version='23.01', publisher='Igor Pavlov', install_date=(now - timedelta(days=200)).strftime('%Y-%m-%d'), install_location='C:\\Program Files\\7-Zip', uninstall_string='C:\\Program Files\\7-Zip\\Uninstall.exe', size_bytes=5 * 1024 * 1024, architecture='x64', category=AppCategory.UTILITIES, purpose_description='Архиватор файлов 7-Zip с высокой степенью сжатия.', execution_info=AppExecutionInfo(last_run_time=now - timedelta(days=2), run_count=45, focus_time_seconds=320, source_artifact='UserAssist', raw_path='C:\\Program Files\\7-Zip\\7zFM.exe')), InstalledAppInfo(name='Telegram Desktop', display_name='Telegram Desktop', version='4.16.8', publisher='Telegram FZ-LLC', install_date=(now - timedelta(days=80)).strftime('%Y-%m-%d'), install_location='C:\\Users\\User\\AppData\\Roaming\\Telegram Desktop', uninstall_string='C:\\Users\\User\\AppData\\Roaming\\Telegram Desktop\\unins000.exe', size_bytes=110 * 1024 * 1024, architecture='x64', category=AppCategory.COMMUNICATION, purpose_description='Мессенджер Telegram для мгновенного обмена сообщениями и файлами.', execution_info=AppExecutionInfo(last_run_time=now - timedelta(minutes=30), run_count=210, focus_time_seconds=12400, source_artifact='UserAssist', raw_path='C:\\Users\\User\\AppData\\Roaming\\Telegram Desktop\\Telegram.exe')), InstalledAppInfo(name='Legacy Tool Setup', display_name='Legacy Tool Setup 2020', version='1.0.0', publisher='Old Software Corp', install_date=(now - timedelta(days=500)).strftime('%Y-%m-%d'), install_location='C:\\Program Files (x86)\\LegacyTool', uninstall_string='C:\\Program Files (x86)\\LegacyTool\\uninstall.exe', size_bytes=85 * 1024 * 1024, architecture='x86', category=AppCategory.OTHER, purpose_description='Прикладное программное обеспечение (Legacy Tool Setup 2020).', execution_info=None)]
+        return [
+            InstalledAppInfo(
+                name='Google Chrome',
+                display_name='Google Chrome',
+                version='125.0.6422.142',
+                publisher='Google LLC',
+                install_date=(now - timedelta(days=120)).strftime('%Y-%m-%d'),
+                install_location='C:\\Program Files\\Google\\Chrome\\Application',
+                uninstall_string='C:\\Program Files\\Google\\Chrome\\Application\\installer.exe --uninstall',
+                size_bytes=380 * 1024 * 1024,
+                architecture='x64',
+                category=AppCategory.BROWSER,
+                purpose_description='Веб-браузер Google Chrome для навигации в сети Интернет.',
+                execution_info=AppExecutionInfo(
+                    last_run_time=now - timedelta(minutes=15),
+                    run_count=342,
+                    focus_time_seconds=18400,
+                    source_artifact='UserAssist',
+                    raw_path='C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
+                )
+            ),
+            InstalledAppInfo(
+                name='Visual Studio Code',
+                display_name='Visual Studio Code',
+                version='1.89.1',
+                publisher='Microsoft Corporation',
+                install_date=(now - timedelta(days=95)).strftime('%Y-%m-%d'),
+                install_location='C:\\Users\\User\\AppData\\Local\\Programs\\Microsoft VS Code',
+                uninstall_string='C:\\Users\\User\\AppData\\Local\\Programs\\Microsoft VS Code\\unins000.exe',
+                size_bytes=420 * 1024 * 1024,
+                architecture='x64',
+                category=AppCategory.DEVELOPMENT,
+                purpose_description='Редактор исходного кода Visual Studio Code от Microsoft.',
+                execution_info=AppExecutionInfo(
+                    last_run_time=now - timedelta(minutes=5),
+                    run_count=520,
+                    focus_time_seconds=45000,
+                    source_artifact='UserAssist',
+                    raw_path='C:\\Users\\User\\AppData\\Local\\Programs\\Microsoft VS Code\\Code.exe'
+                )
+            ),
+            InstalledAppInfo(
+                name='7-Zip',
+                display_name='7-Zip 23.01 (x64)',
+                version='23.01',
+                publisher='Igor Pavlov',
+                install_date=(now - timedelta(days=200)).strftime('%Y-%m-%d'),
+                install_location='C:\\Program Files\\7-Zip',
+                uninstall_string='C:\\Program Files\\7-Zip\\Uninstall.exe',
+                size_bytes=5 * 1024 * 1024,
+                architecture='x64',
+                category=AppCategory.UTILITIES,
+                purpose_description='Архиватор файлов 7-Zip с высокой степенью сжатия.',
+                execution_info=AppExecutionInfo(
+                    last_run_time=now - timedelta(days=2),
+                    run_count=45,
+                    focus_time_seconds=320,
+                    source_artifact='UserAssist',
+                    raw_path='C:\\Program Files\\7-Zip\\7zFM.exe'
+                )
+            ),
+            InstalledAppInfo(
+                name='Telegram Desktop',
+                display_name='Telegram Desktop',
+                version='4.16.8',
+                publisher='Telegram FZ-LLC',
+                install_date=(now - timedelta(days=80)).strftime('%Y-%m-%d'),
+                install_location='C:\\Users\\User\\AppData\\Roaming\\Telegram Desktop',
+                uninstall_string='C:\\Users\\User\\AppData\\Roaming\\Telegram Desktop\\unins000.exe',
+                size_bytes=110 * 1024 * 1024,
+                architecture='x64',
+                category=AppCategory.COMMUNICATION,
+                purpose_description='Мессенджер Telegram для мгновенного обмена сообщениями и файлами.',
+                execution_info=AppExecutionInfo(
+                    last_run_time=now - timedelta(minutes=30),
+                    run_count=210,
+                    focus_time_seconds=12400,
+                    source_artifact='UserAssist',
+                    raw_path='C:\\Users\\User\\AppData\\Roaming\\Telegram Desktop\\Telegram.exe'
+                )
+            ),
+            InstalledAppInfo(
+                name='Legacy Tool Setup',
+                display_name='Legacy Tool Setup 2020',
+                version='1.0.0',
+                publisher='Old Software Corp',
+                install_date=(now - timedelta(days=500)).strftime('%Y-%m-%d'),
+                install_location='C:\\Program Files (x86)\\LegacyTool',
+                uninstall_string='C:\\Program Files (x86)\\LegacyTool\\uninstall.exe',
+                size_bytes=85 * 1024 * 1024,
+                architecture='x86',
+                category=AppCategory.OTHER,
+                purpose_description='Прикладное программное обеспечение (Legacy Tool Setup 2020).',
+                execution_info=None
+            )
+        ]

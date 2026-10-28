@@ -14,11 +14,18 @@
 # Package: apps.windows.telemetry
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-15 08:00:00
 # =============================================================================
 
 from __future__ import annotations
 """Единый слой телеметрии Windows (Слой 3) платформы AI-Windows-Admin."""
+
+# Регистрация алиасов обратной совместимости для win32_ffi и analytics
+try:
+    from roadmap.patches.package_structure_refactoring import setup_package_aliases
+    setup_package_aliases()
+except Exception:
+    pass
 
 # Импорт перечислений из слоя apps.windows.contracts
 from apps.windows.contracts import (
@@ -108,6 +115,7 @@ from apps.windows.telemetry.sensors import get_hardware_sensors
 from apps.windows.telemetry.collector import SystemCollector
 from apps.windows.telemetry.service import TelemetryLoggerService
 from apps.windows.telemetry.telemetry_engine import TelemetryEngine, DeadbandTracker
+from apps.windows.telemetry.telemetry_buffer_manager import TelemetryBufferManager
 from apps.windows.telemetry.telemetry_config import TelemetryConfigManager, get_default_telemetry_config_path
 from apps.windows.telemetry.json_logger import TelemetryJsonLogger
 from apps.windows.telemetry.file_collector import FileCollector
@@ -123,18 +131,19 @@ from apps.windows.telemetry.w64_collector import (
 from apps.windows.telemetry.w64_etw_collector import AIW64ETWCollector
 from apps.windows.telemetry.security_collector import WindowsSecurityCollector
 from apps.windows.telemetry.security_normalizer import SecurityEventNormalizer
+from apps.windows.telemetry.hardware_collector import HardwareCollector
 
 # Аналитический контур (прямой импорт без lazy __getattr__)
-from apps.windows.telemetry.analytics.aggregator import TelemetryAggregator
-from apps.windows.telemetry.analytics.analyzer import TelemetryAnalyzer
-from apps.windows.telemetry.analytics.compactor import TelemetryCompactor
-from apps.windows.telemetry.analytics.diagnostic_engine import DiagnosticEngine, SystemDiagnosticEngine
-from apps.windows.telemetry.analytics.grouped_telemetry import GroupedTelemetryBuilder
-from apps.windows.telemetry.analytics.incident_detector import IncidentDetector
-from apps.windows.telemetry.analytics.reboot_analyzer import WindowsRebootAnalyzer, RebootAnalyzer
-from apps.windows.telemetry.analytics.hardware_auditor import HardwareAuditor
-from apps.windows.telemetry.analytics.deep_diagnostics import DeepDiagnosticsEngine
-from apps.windows.telemetry.analytics.hardware_history_manager import HardwareHistoryManager
+from apps.windows.analytics.aggregator import TelemetryAggregator
+from apps.windows.analytics.analyzer import TelemetryAnalyzer
+from apps.windows.analytics.compactor import TelemetryCompactor
+from apps.windows.analytics.diagnostic_engine import DiagnosticEngine, SystemDiagnosticEngine
+from apps.windows.analytics.grouped_telemetry import GroupedTelemetryBuilder
+from apps.windows.analytics.incident_detector import IncidentDetector
+from apps.windows.analytics.reboot_analyzer import WindowsRebootAnalyzer, RebootAnalyzer
+from apps.windows.analytics.hardware_auditor import HardwareAuditor
+from apps.windows.analytics.deep_diagnostics import DeepDiagnosticsEngine
+from apps.windows.analytics.hardware_history_manager import HardwareHistoryManager
 
 # Каталог событий
 from apps.windows.telemetry.catalog.event_catalog import WindowsEventCatalog
@@ -190,6 +199,7 @@ __all__ = [
     "SecurityEventRaw",
     # Коллекторы
     "SystemCollector",
+    "HardwareCollector",
     "SensorCollector",
     "FileCollector",
     "WindowsSecurityCollector",
@@ -205,6 +215,7 @@ __all__ = [
     "DeviceTransitionEvent",
     # Хранилище
     "TelemetryRingBuffer",
+    "TelemetryBufferManager",
     "init_telemetry_db",
     "init_telemetry_database",
     "get_default_telemetry_db_path",

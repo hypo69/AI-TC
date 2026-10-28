@@ -16,7 +16,7 @@
 # Package: apps.windows.telemetry
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-13 17:39:00
 # =============================================================================
 
 from __future__ import annotations
@@ -29,7 +29,7 @@ from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from typing import Any, Callable, Dict, List, Optional, Set
 from logger import logger
-from .win32_ffi.setupapi import PnPDeviceInfo, SetupAPI
+from apps.windows.sdk.win32_ffi.setupapi import PnPDeviceInfo, SetupAPI
 from .sqlite import TelemetryStorage
 
 @dataclass

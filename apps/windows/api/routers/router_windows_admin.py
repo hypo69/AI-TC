@@ -16,7 +16,7 @@
 # Package: apps.windows.api.routers
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-20 16:15:00
 # =============================================================================
 
 from __future__ import annotations
@@ -293,12 +293,56 @@ def init_router(chat_model: Optional[Any] = None) -> APIRouter:
         category: Optional[str] = Query(default=None, description="Filter by software category"),
         unused_only: bool = Query(default=False, description="Filter only unused or dormant applications"),
         limit: int = Query(default=50, ge=1, le=500, description="Max applications count"),
+        force_refresh: bool = Query(default=False, description="Force re-scan installed software"),
     ) -> List[InstalledAppDTO]:
         """Retrieve list of installed software applications with execution history and purpose."""
         try:
+            if not force_refresh:
+                try:
+                    from apps.windows.telemetry.sqlite import TelemetryStorage
+                    storage = TelemetryStorage.get_instance()
+                    db_apps = storage.get_software_inventory_from_db(limit=limit)
+                    if db_apps:
+                        items: List[InstalledAppDTO] = []
+                        for a in db_apps:
+                            exec_info = a.get("execution_info")
+                            exec_dto = None
+                            if exec_info and isinstance(exec_info, dict):
+                                exec_dto = AppExecutionDTO(
+                                    last_run_time=exec_info.get("last_run_time"),
+                                    run_count=int(exec_info.get("run_count") or 0),
+                                    focus_time_seconds=int(exec_info.get("focus_time_seconds") or 0),
+                                    source_artifact=exec_info.get("source_artifact"),
+                                    raw_path=exec_info.get("raw_path"),
+                                )
+                            items.append(InstalledAppDTO(
+                                name=a.get("app_id") or a.get("name") or "",
+                                display_name=a.get("display_name") or a.get("name") or "",
+                                version=a.get("version") or "",
+                                publisher=a.get("publisher") or "",
+                                install_date=a.get("install_date"),
+                                install_location=a.get("install_location"),
+                                uninstall_string=a.get("uninstall_string"),
+                                size_mb=round(float(a.get("size_bytes") or 0) / (1024 * 1024), 2),
+                                architecture=a.get("architecture") or "x64",
+                                category=str(a.get("category") or "Прочее"),
+                                purpose_description=str(a.get("purpose_description") or ""),
+                                is_system_component=bool(a.get("is_system_component", False)),
+                                execution_info=exec_dto,
+                            ))
+                        if category:
+                            c_lower = category.lower()
+                            items = [it for it in items if c_lower in it.category.lower()]
+                        if unused_only:
+                            items = [it for it in items if not it.execution_info or it.execution_info.run_count == 0]
+                        if items:
+                            return items[:limit]
+                except Exception as db_err:
+                    logger.debug(f"Чтение инвентаря ПО из SQLite телеметрии: {db_err}")
+
             from apps.windows.sdk.core.software_audit import SoftwareAuditEngine
             engine = SoftwareAuditEngine()
-            apps = engine.get_installed_applications()
+            apps = await asyncio.to_thread(engine.get_installed_applications)
             
             if category:
                 c_lower = category.lower()
@@ -335,12 +379,31 @@ def init_router(chat_model: Optional[Any] = None) -> APIRouter:
             return []
 
     @router.get("/software/audit", response_model=SoftwareAuditReportDTO)
-    async def get_software_audit_report() -> SoftwareAuditReportDTO:
+    async def get_software_audit_report(force_refresh: bool = Query(default=False, description="Force re-audit software")) -> SoftwareAuditReportDTO:
         """Retrieve comprehensive software audit report with usage analytics."""
         try:
+            if not force_refresh:
+                try:
+                    from apps.windows.telemetry.sqlite import TelemetryStorage
+                    storage = TelemetryStorage.get_instance()
+                    latest = storage.get_latest_software_audit_report()
+                    if latest:
+                        return SoftwareAuditReportDTO(
+                            timestamp=str(latest.get("timestamp") or datetime.now().isoformat()),
+                            total_apps=int(latest.get("total_apps") or 0),
+                            active_apps_count=int(latest.get("active_apps_count") or 0),
+                            unused_apps_count=int(latest.get("unused_apps_count") or 0),
+                            categories_breakdown=latest.get("categories_breakdown") or {},
+                            recently_launched=[],
+                            top_launched=[],
+                            never_launched_or_dormant_count=int(latest.get("unused_apps_count") or 0),
+                        )
+                except Exception as db_err:
+                    logger.debug(f"Чтение отчета аудита ПО из SQLite телеметрии: {db_err}")
+
             from apps.windows.sdk.core.software_audit import SoftwareAuditEngine
             engine = SoftwareAuditEngine()
-            report = engine.generate_audit_report()
+            report = await asyncio.to_thread(engine.generate_audit_report, True)
             
             def _to_dto(a):
                 return InstalledAppDTO(
@@ -430,6 +493,129 @@ def init_router(chat_model: Optional[Any] = None) -> APIRouter:
         except Exception as e:
             logger.error(f"WebSocket error: {e}")
             await websocket.close(code=1000)
+
+    # -------------------------------------------------------------------------
+    # Управление ACL, шаблоны прав и авто-бэкап (01_FRONTEND.md § 3)
+    # -------------------------------------------------------------------------
+    @router.post("/acl/reset")
+    async def reset_acl_endpoint(payload: Dict[str, Any]) -> Dict[str, Any]:
+        """Сброс ACL по умолчанию с предварительным созданием дампа в apps/logs/acl_backups/."""
+        target_path = payload.get("path") or "C:\\Windows\\System32"
+        backup_dir = Path("apps/logs/acl_backups")
+        backup_dir.mkdir(parents=True, exist_ok=True)
+
+        stem = Path(target_path).name or "root"
+        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+        backup_file = backup_dir / f"{stem}_{ts}.acl"
+
+        # 1. Авто-бэкап через icacls /save
+        try:
+            subprocess.run(
+                ["icacls", target_path, "/save", str(backup_file), "/t", "/c"],
+                capture_output=True,
+                text=True,
+                timeout=5.0,
+                check=False
+            )
+        except Exception as e:
+            logger.warning(f"Ошибка создания бэкапа ACL: {e}")
+
+        # 2. Сброс прав по умолчанию
+        try:
+            res = subprocess.run(
+                ["icacls", target_path, "/reset", "/t", "/c"],
+                capture_output=True,
+                text=True,
+                timeout=5.0,
+                check=False
+            )
+            output = res.stdout.strip()
+        except Exception as e:
+            output = str(e)
+
+        return {
+            "status": "success",
+            "message": f"ACL для '{target_path}' сброшен к исходным системным значениям.",
+            "backup_file": str(backup_file),
+            "output": output
+        }
+
+    @router.post("/acl/template")
+    async def apply_acl_template_endpoint(payload: Dict[str, Any]) -> Dict[str, Any]:
+        """Применение предустановленных шаблонов прав (readonly, isolated, full_control)."""
+        target_path = payload.get("path") or "C:\\Windows\\System32"
+        tmpl = payload.get("template", "readonly").lower()
+
+        backup_dir = Path("apps/logs/acl_backups")
+        backup_dir.mkdir(parents=True, exist_ok=True)
+        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+        backup_file = backup_dir / f"template_{tmpl}_{ts}.acl"
+
+        # Бэкап
+        try:
+            subprocess.run(["icacls", target_path, "/save", str(backup_file)], capture_output=True, timeout=5.0)
+        except Exception:
+            pass
+
+        # Применение шаблона
+        cmds = []
+        if tmpl == "readonly":
+            cmds = ["icacls", target_path, "/grant:r", "Users:(OI)(CI)R", "/c"]
+        elif tmpl == "isolated":
+            cmds = ["icacls", target_path, "/inheritance:r", "/grant:r", "SYSTEM:(OI)(CI)F", "Administrators:(OI)(CI)F", "/c"]
+        elif tmpl == "full_control":
+            cmds = ["icacls", target_path, "/grant", "Everyone:(OI)(CI)F", "/c"]
+
+        output = ""
+        if cmds:
+            try:
+                res = subprocess.run(cmds, capture_output=True, text=True, timeout=5.0)
+                output = res.stdout.strip()
+            except Exception as e:
+                output = str(e)
+
+        return {
+            "status": "success",
+            "template": tmpl,
+            "path": target_path,
+            "backup_file": str(backup_file),
+            "output": output
+        }
+
+    @router.post("/acl/restore")
+    async def restore_acl_endpoint(payload: Dict[str, Any]) -> Dict[str, Any]:
+        """Откат прав ACL из последнего сохраненного бэкапа."""
+        target_path = payload.get("path") or "C:\\Windows\\System32"
+        backup_dir = Path("apps/logs/acl_backups")
+        backup_file_str = payload.get("backup_file")
+
+        if not backup_file_str:
+            if backup_dir.exists():
+                backups = sorted(backup_dir.glob("*.acl"), key=os.path.getmtime, reverse=True)
+                if backups:
+                    backup_file_str = str(backups[0])
+
+        if not backup_file_str or not Path(backup_file_str).exists():
+            return {"status": "error", "message": "Резервные копии ACL не найдены в apps/logs/acl_backups/"}
+
+        parent_dir = str(Path(target_path).parent)
+        try:
+            res = subprocess.run(
+                ["icacls", parent_dir, "/restore", backup_file_str],
+                capture_output=True,
+                text=True,
+                timeout=5.0
+            )
+            out = res.stdout.strip()
+        except Exception as e:
+            out = str(e)
+
+        return {
+            "status": "success",
+            "message": f"Права успешно восстановлены из {Path(backup_file_str).name}",
+            "backup_file": backup_file_str,
+            "output": out
+        }
 
     return router
 

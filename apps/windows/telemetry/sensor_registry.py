@@ -16,7 +16,7 @@
 # Package: apps.windows.telemetry
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-15 07:22:00
 # =============================================================================
 
 from __future__ import annotations
@@ -41,7 +41,7 @@ class SensorProvider(Enum):
     - SENSOR_COLLECTOR (30): Базовый коллектор системных метрик
     - WMI_FALLBACK (30): WMI слой совместимости / fallback при недоступности CIM
     - NETWORK_SENSOR (25): Сетевые интерфейсы psutil
-    - LHM_ENRICHED (20): Обогащение отсутствующими в CIM/WMI сенсорами из LibreHardwareMonitor
+    - SENSOR_ENRICHED (20): Обогащение отсутствующими в CIM/WMI сенсорами из нативных провайдеров
     - NVIDIA_SMI_DIRECT (10): Прямой вызов утилит
     """
     INTERNET_SPEED = 55         # InternetSpeedSensor - приоритет для speedtest метрик
@@ -53,7 +53,7 @@ class SensorProvider(Enum):
     SENSOR_COLLECTOR = 30       # SensorCollector.extract_sensor_readings()
     WMI_FALLBACK = 30           # WMI слой совместимости
     NETWORK_SENSOR = 25         # Network sensors через psutil
-    LHM_ENRICHED = 20           # Обогащение детальными датчиками из LibreHardwareMonitor
+    SENSOR_ENRICHED = 20        # Обогащение детальными датчиками из системных провайдеров
     NVIDIA_SMI_DIRECT = 10      # Прямой вызов nvidia-smi (legacy)
 
 

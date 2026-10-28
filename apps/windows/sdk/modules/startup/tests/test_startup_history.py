@@ -15,7 +15,7 @@
 # Package: apps.windows.sdk.modules.startup.tests
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-13 16:25:00
 # =============================================================================
 
 """Модульные тесты менеджера истории и расчета диффов автозапуска."""
@@ -24,7 +24,7 @@ import tempfile
 import shutil
 from pathlib import Path
 from apps.windows.sdk.modules.startup.core.models import StartupEntry, AuditReport, AuditSummary
-from apps.windows.telemetry.analytics.startup_history_manager import StartupHistoryManager
+from apps.windows.analytics.startup_history_manager import StartupHistoryManager
 
 def test_startup_history_diff_detection() -> None:
     """Проверка корректного обнаружения добавления, удаления и изменения записей."""

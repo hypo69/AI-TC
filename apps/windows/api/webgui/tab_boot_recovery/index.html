@@ -1,0 +1,539 @@
+<!--
+=============================================================================
+Process Name: Windows Web Interface - Index View
+=============================================================================
+Description:
+  Шаблон клиентского веб-интерфейса index.
+
+Usage Examples:
+    Web Route:
+      /windows/api/webgui/tab_boot_recovery/index.html
+
+    Tab Frame Integration:
+      <iframe src="/windows/api/webgui/tab_boot_recovery/index.html" class="w-100 h-100 border-0"></iframe>
+
+File: index.html
+Project: ai-windows-admin
+Package: windows/api/webgui/tab_boot_recovery
+# Author: hypo69
+# Copyright: © 2026 hypo69
+Updated: 2026-10-20 18:20:00
+=============================================================================
+-->
+<!-- Boot & Recovery Management Tab -->
+<div class="container-fluid py-2 px-3">
+  <!-- Заголовок вкладки -->
+  <div class="tab-header d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+    <div class="d-flex align-items-center gap-2">
+      <span class="tab-header-icon fs-4 text-warning">🔄</span>
+      <div>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+          <h3 class="tab-header-title panel-header mb-0">Загрузка и восстановление Windows</h3>
+          
+        </div>
+        <small class="tab-header-subtitle text-secondary">Конфигурация BCD, параметры безопасного режима, среда WinRE, точки восстановления и гибернация</small>
+      </div>
+    </div>
+    
+  </div>
+
+<!-- Subtab Navigation -->
+<ul class="nav nav-pills mb-3 gap-2 border-bottom border-secondary border-opacity-25 pb-2" id="boot-servicing-subtabs" role="tablist">
+  <li class="nav-item" role="presentation">
+    <button class="nav-link active rounded-pill px-3 py-1.5 fw-semibold" id="subtab-boot-btn" data-bs-toggle="pill" data-bs-target="#subpane-boot" type="button" role="tab">
+      🚀 Параметры загрузки и WinRE
+    </button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link rounded-pill px-3 py-1.5 fw-semibold" id="subtab-servicing-btn" data-bs-toggle="pill" data-bs-target="#subpane-servicing" type="button" role="tab">
+      🩺 Проверка целостности SFC / DISM
+    </button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link rounded-pill px-3 py-1.5 fw-semibold" id="subtab-smart-restore-btn" data-bs-toggle="pill" data-bs-target="#subpane-smart-restore" type="button" role="tab">
+      🛡️ Умное восстановление (Advisor)
+    </button>
+  </li>
+</ul>
+
+<div class="tab-content" id="boot-servicing-tabContent">
+  <!-- Вкладка 1: Параметры загрузки и WinRE -->
+  <div class="tab-pane fade show active" id="subpane-boot" role="tabpanel">
+<!-- Top Stat Cards -->
+<div class="row g-2 mb-3">
+<div class="col-6 col-md-3">
+<div class="card bg-dark text-white border-secondary h-100 shadow-sm p-3" data-panel-id="panel-boot-recovery-1" id="panel-boot-recovery-1">
+<div class="text-muted small text-uppercase fw-semibold">Среда восстановления WinRE 🛡️</div>
+<div class="fs-4 fw-bold mt-1 text-success" id="br-winre-status">--</div>
+<div class="small text-muted mt-1" id="br-winre-sub">reagentc.exe</div>
+</div>
+</div>
+<div class="col-6 col-md-3">
+<div class="card bg-dark text-white border-secondary h-100 shadow-sm p-3" data-panel-id="panel-boot-recovery-2" id="panel-boot-recovery-2">
+<div class="text-muted small text-uppercase fw-semibold">Таймаут меню BCD ⏱️</div>
+<div class="fs-4 fw-bold mt-1 text-info" id="br-bcd-timeout">-- сек</div>
+<div class="small text-muted mt-1" id="br-bcd-sub">bcdedit /timeout</div>
+</div>
+</div>
+<div class="col-6 col-md-3">
+<div class="card bg-dark text-white border-secondary h-100 shadow-sm p-3" data-panel-id="panel-boot-recovery-3" id="panel-boot-recovery-3">
+<div class="text-muted small text-uppercase fw-semibold">Текущий загрузчик 🚀</div>
+<div class="fs-4 fw-bold mt-1 text-primary" id="br-current-loader">--</div>
+<div class="small text-muted mt-1" id="br-loader-sub">Windows Boot Manager</div>
+</div>
+</div>
+<div class="col-6 col-md-3">
+<div class="card bg-dark text-white border-secondary h-100 shadow-sm p-3" data-panel-id="panel-boot-recovery-4" id="panel-boot-recovery-4">
+<div class="text-muted small text-uppercase fw-semibold">Целостность Boot Sector 🔍</div>
+<div class="fs-4 fw-bold mt-1 text-warning" id="br-boot-status">OK</div>
+<div class="small text-muted mt-1" id="br-boot-sub">bootrec / bcdboot</div>
+</div>
+</div>
+</div>
+<!-- Action Bar -->
+<div class="d-flex align-items-center justify-content-between mb-3 p-2 bg-dark rounded border border-secondary flex-wrap gap-2">
+<div class="d-flex align-items-center gap-2">
+<button class="btn btn-sm btn-primary d-flex align-items-center gap-1.5" id="br-refresh-btn">
+<i class="bi bi-arrow-clockwise"></i>
+<span>Обновить BCD</span>
+</button>
+<button class="btn btn-sm btn-outline-success d-flex align-items-center gap-1.5" id="br-winre-enable-btn">
+<i class="bi bi-shield-check"></i>
+<span>Включить WinRE</span>
+</button>
+<button class="btn btn-sm btn-outline-info d-flex align-items-center gap-1.5" id="br-winre-info-btn">
+<i class="bi bi-info-circle"></i>
+<span>Инфо WinRE</span>
+</button>
+</div>
+</div>
+<!-- Main Details & Tools Grid -->
+<div class="row g-3">
+<div class="col-12 col-lg-7">
+<div class="card bg-dark text-white border-secondary shadow-sm" data-panel-id="panel-boot-recovery-zapisi-khranilishcha-bcd" id="panel-boot-recovery-zapisi-khranilishcha-bcd">
+<div class="card-header border-secondary d-flex align-items-center justify-content-between py-2 px-3">
+<span class="fw-semibold"><i class="bi bi-list-columns text-primary me-2"></i>Записи хранилища BCD</span>
+<span class="badge bg-secondary" id="br-entries-badge">0 записей</span>
+</div>
+<div class="card-body p-0 table-responsive" style="max-height: 420px; overflow-y: auto;">
+<table class="table table-dark table-hover table-striped align-middle mb-0 small" id="br-entries-table">
+<thead>
+<tr class="text-secondary">
+<th>Идентификатор (GUID)</th>
+<th>Описание</th>
+<th>Устройство</th>
+<th>Путь</th>
+<th class="text-end">Действия</th>
+</tr>
+</thead>
+<tbody id="br-entries-tbody">
+<tr><td class="text-center text-muted py-3" colspan="5">Опрос записей загрузчика BCD...</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="col-12 col-lg-5">
+<div class="card bg-dark text-white border-secondary shadow-sm mb-3" data-panel-id="panel-boot-recovery-instrumenty-vosstanovleniya" id="panel-boot-recovery-instrumenty-vosstanovleniya">
+<div class="card-header border-secondary d-flex align-items-center justify-content-between py-2 px-3">
+<span class="fw-semibold"><i class="bi bi-wrench-adjustable text-warning me-2"></i>Инструменты восстановления</span>
+</div>
+<div class="card-body p-3">
+<div class="mb-3">
+<label class="form-label small text-muted">Команда восстановления:</label>
+<select class="form-select form-select-sm bg-dark text-white border-secondary" id="br-action-select">
+<option value="reagentc_info">Проверить состояние WinRE (reagentc /info)</option>
+<option value="reagentc_enable">Активировать WinRE (reagentc /enable)</option>
+<option value="bcdedit_enum">Перечислить все записи (bcdedit /enum all)</option>
+<option value="bcdboot_repair">Обновить системные файлы загрузки (bcdboot C:\Windows)</option>
+</select>
+</div>
+<div class="d-flex align-items-center justify-content-between">
+<div class="form-check form-switch">
+<input checked="" class="form-check-input" id="br-dry-run-switch" type="checkbox"/>
+<label class="form-check-label small text-muted" for="br-dry-run-switch">Безопасный режим (Dry Run)</label>
+</div>
+<button class="btn btn-sm btn-success px-3" id="br-execute-btn">
+<i class="bi bi-play-fill"></i> Выполнить
+            </button>
+</div>
+</div>
+</div>
+<!-- Action Log Output -->
+<div class="card bg-dark text-white border-secondary shadow-sm" data-panel-id="panel-boot-recovery-konsolnyy-vyvod" id="panel-boot-recovery-konsolnyy-vyvod">
+<div class="card-header border-secondary py-2 px-3 d-flex align-items-center justify-content-between">
+<span class="small fw-semibold text-muted"><i class="bi bi-terminal me-1"></i>Консольный вывод</span>
+<button class="btn btn-link btn-sm text-decoration-none text-muted p-0" id="br-clear-log-btn">Очистить</button>
+</div>
+<div class="card-body p-2">
+<pre class="mb-0 small bg-black text-light p-2 rounded" id="br-console-output" style="max-height: 180px; overflow-y: auto; font-family: Consolas, monospace; font-size: 0.78rem;">Среда BCD и WinRE готова к операциям.</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- /subpane-boot -->
+
+<!-- Вкладка 2: Проверка целостности SFC / DISM -->
+<div class="tab-pane fade" id="subpane-servicing" role="tabpanel">
+  <!-- Top Stat Cards (SFC/DISM) -->
+  <div class="row g-2 mb-3">
+    <div class="col-6 col-md-3">
+      <div class="card bg-dark text-white border-secondary h-100 shadow-sm p-3" data-panel-id="panel-servicing-integrity-1" id="panel-servicing-integrity-1">
+        <div class="text-muted small text-uppercase fw-semibold">Хранилище компонентов WinSxS 📦</div>
+        <div class="fs-4 fw-bold mt-1 text-info" id="si-winsxs-size">--</div>
+        <div class="small text-muted mt-1" id="si-winsxs-sub">DISM AnalyzeComponentStore</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card bg-dark text-white border-secondary h-100 shadow-sm p-3" data-panel-id="panel-servicing-integrity-2" id="panel-servicing-integrity-2">
+        <div class="text-muted small text-uppercase fw-semibold">Рекомендуется очистка 🧹</div>
+        <div class="fs-4 fw-bold mt-1 text-warning" id="si-cleanup-recommended">--</div>
+        <div class="small text-muted mt-1" id="si-cleanup-sub">StartComponentCleanup</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card bg-dark text-white border-secondary h-100 shadow-sm p-3" data-panel-id="panel-servicing-integrity-3" id="panel-servicing-integrity-3">
+        <div class="text-muted small text-uppercase fw-semibold">Целостность файлов SFC 🛡️</div>
+        <div class="fs-4 fw-bold mt-1 text-success" id="si-sfc-status">OK</div>
+        <div class="small text-muted mt-1" id="si-sfc-sub">sfc /scannow</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card bg-dark text-white border-secondary h-100 shadow-sm p-3" data-panel-id="panel-servicing-integrity-4" id="panel-servicing-integrity-4">
+        <div class="text-muted small text-uppercase fw-semibold">Состояние образа DISM 🩺</div>
+        <div class="fs-4 fw-bold mt-1 text-primary" id="si-dism-status">Healthy</div>
+        <div class="small text-muted mt-1" id="si-dism-sub">CheckHealth / ScanHealth</div>
+      </div>
+    </div>
+  </div>
+  <!-- Action Bar -->
+  <div class="d-flex align-items-center justify-content-between mb-3 p-2 bg-dark rounded border border-secondary flex-wrap gap-2">
+    <div class="d-flex align-items-center gap-2">
+      <button class="btn btn-sm btn-primary d-flex align-items-center gap-1.5" id="si-refresh-btn">
+        <i class="bi bi-arrow-clockwise"></i>
+        <span>Обновить состояние</span>
+      </button>
+      <button class="btn btn-sm btn-outline-info d-flex align-items-center gap-1.5" id="si-dism-check-btn">
+        <i class="bi bi-heart-pulse"></i>
+        <span>DISM CheckHealth</span>
+      </button>
+      <button class="btn btn-sm btn-outline-warning d-flex align-items-center gap-1.5" id="si-sfc-scan-btn">
+        <i class="bi bi-shield-check"></i>
+        <span>SFC Scannow</span>
+      </button>
+      <button class="btn btn-sm btn-outline-danger d-flex align-items-center gap-1.5" id="si-winsxs-clean-btn">
+        <i class="bi bi-trash"></i>
+        <span>Очистить WinSxS</span>
+      </button>
+    </div>
+  </div>
+  <!-- Main Grid -->
+  <div class="row g-3">
+    <div class="col-12 col-lg-6">
+      <div class="card bg-dark text-white border-secondary shadow-sm mb-3" data-panel-id="panel-servicing-integrity-parametry-obsluzhivaniya-obraza" id="panel-servicing-integrity-parametry-obsluzhivaniya-obraza">
+        <div class="card-header border-secondary d-flex align-items-center justify-content-between py-2 px-3">
+          <span class="fw-semibold"><i class="bi bi-tools text-primary me-2"></i>Параметры обслуживания образа</span>
+        </div>
+        <div class="card-body p-3">
+          <div class="mb-3">
+            <label class="form-label small text-muted">Выберите операцию обслуживания:</label>
+            <select class="form-select form-select-sm bg-dark text-white border-secondary" id="si-action-select">
+              <option value="dism_check_health">DISM: Быстрая проверка повреждений (/CheckHealth)</option>
+              <option value="dism_scan_health">DISM: Полное сканирование целостности (/ScanHealth)</option>
+              <option value="dism_restore_health">DISM: Восстановление поврежденного образа (/RestoreHealth)</option>
+              <option value="dism_analyze_component_store">DISM: Анализ размера хранилища WinSxS (/AnalyzeComponentStore)</option>
+              <option value="dism_start_component_cleanup">DISM: Очистка старых версий компонентов (/StartComponentCleanup)</option>
+              <option value="dism_reset_base">DISM: Фиксация базы обновлений (/ResetBase)</option>
+              <option value="sfc_scannow">SFC: Проверка и восстановление системных файлов (sfc /scannow)</option>
+              <option value="sfc_verifyonly">SFC: Только проверка без восстановления (sfc /verifyonly)</option>
+            </select>
+          </div>
+          <div class="d-flex align-items-center justify-content-between">
+            <div class="form-check form-switch">
+              <input checked="" class="form-check-input" id="si-dry-run-switch" type="checkbox"/>
+              <label class="form-check-label small text-muted" for="si-dry-run-switch">Безопасный режим (Dry Run)</label>
+            </div>
+            <button class="btn btn-sm btn-success px-3" id="si-execute-btn">
+              <i class="bi bi-play-fill"></i> Запустить операцию
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="card bg-dark text-white border-secondary shadow-sm" data-panel-id="panel-servicing-integrity-spravochnaya-informatsiya" id="panel-servicing-integrity-spravochnaya-informatsiya">
+        <div class="card-header border-secondary py-2 px-3">
+          <span class="small fw-semibold text-info"><i class="bi bi-info-circle me-1"></i>Справочная информация</span>
+        </div>
+        <div class="card-body p-3 small text-muted">
+          <p class="mb-2"><strong class="text-light">DISM</strong> (Deployment Image Servicing and Management) обслуживает компоненты Windows и исправит ошибки хранилища манифестов.</p>
+          <p class="mb-0"><strong class="text-light">SFC</strong> (System File Checker) сверяет контрольные суммы системных dll и exe файлов с резервными копиями в WinSxS.</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-lg-6">
+      <div class="card bg-dark text-white border-secondary shadow-sm h-100" data-panel-id="panel-servicing-integrity-zhurnal-vypolneniya-obsluzhivaniya" id="panel-servicing-integrity-zhurnal-vypolneniya-obsluzhivaniya">
+        <div class="card-header border-secondary py-2 px-3 d-flex align-items-center justify-content-between">
+          <span class="small fw-semibold text-muted"><i class="bi bi-terminal me-1"></i>Журнал выполнения обслуживания</span>
+          <button class="btn btn-link btn-sm text-decoration-none text-muted p-0" id="si-clear-log-btn">Очистить</button>
+        </div>
+        <div class="card-body p-2 d-flex flex-column">
+          <pre class="mb-0 small bg-black text-light p-2 rounded flex-grow-1" id="si-console-output" style="min-height: 280px; max-height: 480px; overflow-y: auto; font-family: Consolas, monospace; font-size: 0.78rem;">Готов к диагностике компонентов.</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- /subpane-servicing -->
+
+<!-- Вкладка 3: Умное восстановление и контрольные точки (RestorePointAdvisor) -->
+<div class="tab-pane fade" id="subpane-smart-restore" role="tabpanel">
+  <!-- Верхний блок KPI-метрик -->
+  <div class="row g-2 mb-3">
+    <!-- Карточка 1: Итоговое решение Advisor -->
+    <div class="col-12 col-sm-6 col-lg-3">
+      <div class="card h-100 shadow-sm p-3 border" id="card-advisor-decision" style="background: var(--surface-1); border-color: var(--border-color) !important;">
+        <div class="text-muted small text-uppercase fw-semibold d-flex justify-content-between align-items-center">
+          <span>Решение Advisor</span>
+          <i class="bi bi-robot fs-5 text-primary"></i>
+        </div>
+        <div class="fs-4 fw-bold mt-2" id="kpi-advisor-decision">Оценка...</div>
+        <div class="small text-muted mt-1" id="kpi-advisor-decision-sub">Нажмите «Оценить состояние»</div>
+      </div>
+    </div>
+
+    <!-- Карточка 2: Вопрос 1 — Есть ли смысл? -->
+    <div class="col-12 col-sm-6 col-lg-3">
+      <div class="card h-100 shadow-sm p-3 border" id="card-advisor-q1" style="background: var(--surface-1); border-color: var(--border-color) !important;">
+        <div class="text-muted small text-uppercase fw-semibold d-flex justify-content-between align-items-center">
+          <span>1. Есть ли смысл?</span>
+          <i class="bi bi-question-circle fs-5 text-info"></i>
+        </div>
+        <div class="fs-4 fw-bold mt-2" id="kpi-advisor-q1">--</div>
+        <div class="small text-muted mt-1 text-truncate" id="kpi-advisor-q1-sub">Анализ системных изменений</div>
+      </div>
+    </div>
+
+    <!-- Карточка 3: Вопрос 2 — Дубликат? -->
+    <div class="col-12 col-sm-6 col-lg-3">
+      <div class="card h-100 shadow-sm p-3 border" id="card-advisor-q2" style="background: var(--surface-1); border-color: var(--border-color) !important;">
+        <div class="text-muted small text-uppercase fw-semibold d-flex justify-content-between align-items-center">
+          <span>2. Не дублирует ли?</span>
+          <i class="bi bi-fingerprint fs-5 text-warning"></i>
+        </div>
+        <div class="fs-4 fw-bold mt-2" id="kpi-advisor-q2">--</div>
+        <div class="small text-muted mt-1 text-truncate" id="kpi-advisor-q2-sub">Сравнение отпечатков (Fingerprint)</div>
+      </div>
+    </div>
+
+    <!-- Карточка 4: Вопрос 3 — Условия восстановления -->
+    <div class="col-12 col-sm-6 col-lg-3">
+      <div class="card h-100 shadow-sm p-3 border" id="card-advisor-q3" style="background: var(--surface-1); border-color: var(--border-color) !important;">
+        <div class="text-muted small text-uppercase fw-semibold d-flex justify-content-between align-items-center">
+          <span>3. Условия VSS / Защита</span>
+          <i class="bi bi-shield-check fs-5 text-success"></i>
+        </div>
+        <div class="fs-4 fw-bold mt-2" id="kpi-advisor-q3">--</div>
+        <div class="small text-muted mt-1 text-truncate" id="kpi-advisor-q3-sub">System Protection и диск C:</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Панель управления действиями и триггерами -->
+  <div class="card mb-3 border shadow-sm" style="background: var(--surface-1); border-color: var(--border-color) !important;">
+    <div class="card-body p-3">
+      <div class="row g-2 align-items-center">
+        <!-- Селектор триггера -->
+        <div class="col-12 col-md-3">
+          <label class="form-label small text-muted fw-semibold mb-1" for="smart-restore-trigger">Событие-триггер:</label>
+          <select class="form-select form-select-sm" id="smart-restore-trigger" style="background: var(--surface-2); color: var(--text-color); border-color: var(--border-color);">
+            <option value="USER_REQUEST" selected>Запрос пользователя (User Request)</option>
+            <option value="SOFTWARE_INSTALL">Установка / удаление ПО</option>
+            <option value="UPDATE">Обновление Windows Update</option>
+            <option value="DRIVER_CHANGE">Изменение / установка драйвера</option>
+            <option value="PERIODIC_AUDIT">Плановый аудит состояния</option>
+          </select>
+        </div>
+
+        <!-- Описание контрольной точки -->
+        <div class="col-12 col-md-4">
+          <label class="form-label small text-muted fw-semibold mb-1" for="smart-restore-title">Описание / Заголовок точки:</label>
+          <input type="text" class="form-control form-control-sm" id="smart-restore-title" placeholder="Автоматическое описание на основе изменений" style="background: var(--surface-2); color: var(--text-color); border-color: var(--border-color);">
+        </div>
+
+        <!-- Флаг Force -->
+        <div class="col-6 col-md-2 d-flex align-items-center pt-md-3">
+          <div class="form-check form-switch mb-0">
+            <input class="form-check-input" type="checkbox" id="smart-restore-force">
+            <label class="form-check-label small fw-semibold" for="smart-restore-force" title="Создать точку восстановления даже при вердикте SKIP">Принудительно (Force)</label>
+          </div>
+        </div>
+
+        <!-- Кнопки действий -->
+        <div class="col-12 col-md-3 d-flex gap-2 justify-content-md-end pt-md-3">
+          <button class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1.5" id="btn-smart-restore-evaluate" type="button">
+            <i class="bi bi-search"></i>
+            <span>Оценить</span>
+          </button>
+          <button class="btn btn-sm btn-primary d-flex align-items-center gap-1.5" id="btn-smart-restore-create" type="button">
+            <i class="bi bi-shield-plus"></i>
+            <span>Умное создание</span>
+          </button>
+          <button class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1.5" id="btn-smart-restore-explain" type="button" title="Получить подробное объяснение решения">
+            <i class="bi bi-chat-left-text"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Блок детальных ответов на три вопроса предварительной проверки -->
+  <div class="card mb-3 border shadow-sm" style="background: var(--surface-1); border-color: var(--border-color) !important;">
+    <div class="card-header py-2 px-3 d-flex align-items-center justify-content-between" style="background: var(--surface-2); border-color: var(--border-color) !important;">
+      <span class="fw-semibold small"><i class="bi bi-card-checklist text-primary me-2"></i>Предварительная проверка перед созданием точки восстановления</span>
+      <span class="badge rounded-pill" id="badge-composite-hash" style="background: var(--surface-3); color: var(--text-muted); font-family: monospace;">Fingerprint: --</span>
+    </div>
+    <div class="card-body p-3">
+      <div class="row g-3">
+        <!-- Вопрос 1 -->
+        <div class="col-12 col-md-4">
+          <div class="p-2.5 rounded border h-100" style="background: var(--surface-2); border-color: var(--border-color) !important;">
+            <div class="d-flex align-items-center justify-content-between mb-1">
+              <span class="fw-bold small text-primary">1. Есть ли смысл создавать?</span>
+              <span class="badge" id="badge-q1-verdict">--</span>
+            </div>
+            <div class="small text-muted" id="text-q1-explanation">Загрузка информации...</div>
+          </div>
+        </div>
+
+        <!-- Вопрос 2 -->
+        <div class="col-12 col-md-4">
+          <div class="p-2.5 rounded border h-100" style="background: var(--surface-2); border-color: var(--border-color) !important;">
+            <div class="d-flex align-items-center justify-content-between mb-1">
+              <span class="fw-bold small text-warning">2. Не дублирует ли предыдущую?</span>
+              <span class="badge" id="badge-q2-verdict">--</span>
+            </div>
+            <div class="small text-muted" id="text-q2-explanation">Загрузка информации...</div>
+          </div>
+        </div>
+
+        <!-- Вопрос 3 -->
+        <div class="col-12 col-md-4">
+          <div class="p-2.5 rounded border h-100" style="background: var(--surface-2); border-color: var(--border-color) !important;">
+            <div class="d-flex align-items-center justify-content-between mb-1">
+              <span class="fw-bold small text-success">3. Достаточно ли данных?</span>
+              <span class="badge" id="badge-q3-verdict">--</span>
+            </div>
+            <div class="small text-muted" id="text-q3-explanation">Загрузка информации...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Резюме и рекомендация -->
+      <div class="mt-3 p-2.5 rounded border d-flex align-items-start gap-2" id="box-advisor-summary" style="background: var(--surface-2); border-color: var(--border-color) !important;">
+        <i class="bi bi-info-circle-fill text-primary mt-0.5"></i>
+        <div class="small">
+          <span class="fw-semibold" id="text-advisor-summary">Оценка состояния системы...</span>
+          <div class="text-muted mt-1" id="text-advisor-recommendation"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Вкладки деталей: Категории / Дельты / Журнал состояний -->
+  <ul class="nav nav-pills mb-2 gap-2 border-bottom pb-2" id="smartRestoreSubTabs" role="tablist" style="border-color: var(--border-color) !important;">
+    <li class="nav-item" role="presentation">
+      <button class="nav-link active rounded-pill px-3 py-1 small fw-semibold" id="subtab-categories-btn" data-bs-toggle="pill" data-bs-target="#subpane-categories" type="button" role="tab">
+        <i class="bi bi-grid-3x3-gap me-1"></i>Отпечатки категорий (8)
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link rounded-pill px-3 py-1 small fw-semibold" id="subtab-deltas-btn" data-bs-toggle="pill" data-bs-target="#subpane-deltas" type="button" role="tab">
+        <i class="bi bi-clock-history me-1"></i>Журнал изменений (Дельты) <span class="badge bg-secondary ms-1" id="badge-deltas-count">0</span>
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link rounded-pill px-3 py-1 small fw-semibold" id="subtab-journal-btn" data-bs-toggle="pill" data-bs-target="#subpane-journal" type="button" role="tab">
+        <i class="bi bi-journal-text me-1"></i>История журнала точек (SQLite)
+      </button>
+    </li>
+  </ul>
+
+  <div class="tab-content" id="smartRestoreTabContent">
+    <!-- Суб-вкладка 1: Отпечатки категорий -->
+    <div class="tab-pane fade show active" id="subpane-categories" role="tabpanel">
+      <div class="card border shadow-sm" style="background: var(--surface-1); border-color: var(--border-color) !important;">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0 small" id="table-categories">
+            <thead>
+              <tr style="border-bottom: 1px solid var(--border-color); background: var(--surface-2);">
+                <th class="py-2 px-3 text-muted">Категория анализа</th>
+                <th class="py-2 px-3 text-muted">Значимость</th>
+                <th class="py-2 px-3 text-muted">Элементов</th>
+                <th class="py-2 px-3 text-muted">Отпечаток (SHA-256)</th>
+                <th class="py-2 px-3 text-muted">Статус дрейфа</th>
+                <th class="py-2 px-3 text-muted">Детализация</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-categories">
+              <tr>
+                <td colspan="6" class="text-center py-3 text-muted">Загрузка категорий анализа...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Суб-вкладка 2: Журнал дельт -->
+    <div class="tab-pane fade" id="subpane-deltas" role="tabpanel">
+      <div class="card border shadow-sm" style="background: var(--surface-1); border-color: var(--border-color) !important;">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0 small" id="table-deltas">
+            <thead>
+              <tr style="border-bottom: 1px solid var(--border-color); background: var(--surface-2);">
+                <th class="py-2 px-3 text-muted">Категория</th>
+                <th class="py-2 px-3 text-muted">Тип изменения</th>
+                <th class="py-2 px-3 text-muted">Объект</th>
+                <th class="py-2 px-3 text-muted">Значимость</th>
+                <th class="py-2 px-3 text-muted">Описание изменения</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-deltas">
+              <tr>
+                <td colspan="5" class="text-center py-3 text-muted">Нет зафиксированных изменений с момента предыдущей точки.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Суб-вкладка 3: История журнала состояний -->
+    <div class="tab-pane fade" id="subpane-journal" role="tabpanel">
+      <div class="card border shadow-sm" style="background: var(--surface-1); border-color: var(--border-color) !important;">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0 small" id="table-journal">
+            <thead>
+              <tr style="border-bottom: 1px solid var(--border-color); background: var(--surface-2);">
+                <th class="py-2 px-3 text-muted">Дата и время</th>
+                <th class="py-2 px-3 text-muted">Событие-триггер</th>
+                <th class="py-2 px-3 text-muted">Решение</th>
+                <th class="py-2 px-3 text-muted">Точка создана</th>
+                <th class="py-2 px-3 text-muted">Композитный отпечаток</th>
+                <th class="py-2 px-3 text-muted">Резюме проверки</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-journal">
+              <tr>
+                <td colspan="6" class="text-center py-3 text-muted">Загрузка журнала состояний...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- /subpane-smart-restore -->
+</div>
+</div>

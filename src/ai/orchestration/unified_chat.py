@@ -18,7 +18,7 @@
 # Package: src.ai.orchestration
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-15 11:27:00
 # =============================================================================
 
 """Transparent routing wrapper across all configured AI providers."""
@@ -286,7 +286,7 @@ class UnifiedChatModel:
         try:
             res = await model_instance.chat(**call_kwargs)
             logger.info(f"[UnifiedChatModel] chat success: response={(repr(res[:100]) if res else 'None')}...")
-            if is_debug_mode() and res and any(res.startswith(p) for p in ('Model error:', 'Error:', 'Chat error:')):
+            if res and any(res.startswith(p) for p in ('Model error:', 'Error:', 'Chat error:', 'Error Antigravity SDK', 'Ошибка провайдера agy', 'Harness process exited')):
                 raise RuntimeError(f'[UnifiedChatModel] Ошибка в ответе модели {active_name}: {res}')
             return res
         except Exception as ex:
@@ -301,7 +301,7 @@ class UnifiedChatModel:
         try:
             res = await model_instance.ask(**call_kwargs)
             logger.info(f"[UnifiedChatModel] ask success: response={(repr(res[:100]) if res else 'None')}...")
-            if is_debug_mode() and res and any(res.startswith(p) for p in ('Model error:', 'Error:', 'Chat error:')):
+            if res and any(res.startswith(p) for p in ('Model error:', 'Error:', 'Chat error:', 'Error Antigravity SDK', 'Ошибка провайдера agy', 'Harness process exited')):
                 raise RuntimeError(f'[UnifiedChatModel] Ошибка в ответе модели {active_name}: {res}')
             return res
         except Exception as ex:

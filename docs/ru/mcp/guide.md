@@ -30,17 +30,17 @@ py .mcp/config_helper.py --json
 ```json
 {
   "mcpServers": {
-    "ai-windows-admin-fastapi": {
+    "aitc-fastapi": {
       "command": "py",
-      "args": ["C:/Users/onela/AppData/Local/AI-Windows-Admin/.mcp/fastapi_mcp_server.py"]
+      "args": ["C:/Users/onela/AppData/Local/AI-TC/.mcp/fastapi_mcp_server.py"]
     },
-    "ai-windows-admin-gemini": {
+    "aitc-gemini": {
       "command": "py",
-      "args": ["C:/Users/onela/AppData/Local/AI-Windows-Admin/.mcp/gemini_search_mcp_server.py"]
+      "args": ["C:/Users/onela/AppData/Local/AI-TC/.mcp/gemini_search_mcp_server.py"]
     },
-    "ai-windows-admin-langchain": {
+    "aitc-langchain": {
       "command": "py",
-      "args": ["C:/Users/onela/AppData/Local/AI-Windows-Admin/.mcp/langchain_mcp_server.py"]
+      "args": ["C:/Users/onela/AppData/Local/AI-TC/.mcp/langchain_mcp_server.py"]
     }
   }
 }

@@ -14,7 +14,7 @@
 # Package: logger
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-27 23:02:00
 # =============================================================================
 
 """Module for project root path determination and meta information initialization.
@@ -83,7 +83,7 @@ def _load_project_documentation() -> str:
     return doc_str
 settings: Dict[str, str] = _load_project_settings()
 doc_str: str = _load_project_documentation()
-__project_name__: str = settings.get('project_name', 'ai-windows-admin') if settings else 'ai-windows-admin'
+__project_name__: str = settings.get('app_name') or settings.get('project_name', 'ai-tc') if settings else 'ai-tc'
 'Название проекта'
 __version__: str = settings.get('version', '1.0.0') if settings else '1.0.0'
 'Версия проекта'

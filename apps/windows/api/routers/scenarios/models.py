@@ -11,7 +11,7 @@
 # Package: apps.windows.api.routers.scenarios
 # Author: hypo69
 # Copyright: c 2026 hypo69
-# Updated: 2026-10-12 06:20:00
+# Updated: 2026-10-15 01:20:00
 # =============================================================================
 
 from __future__ import annotations
@@ -186,3 +186,20 @@ class ScenarioChatResponse(BaseModel):
     agents_used: List[Dict[str, Any]] = Field(default_factory=list, description="Список задействованных агентов и модулей")
     knowledge_used: List[Dict[str, Any]] = Field(default_factory=list, description="Список задействованных источников знаний и артефактов")
     status: str = Field(default="ok", description="Статус обработки: 'ok', 'warn', 'error'")
+
+
+class DAGStartRequest(BaseModel):
+    """Запрос на запуск автономного сценария с графом выполнения (DAG)."""
+    scenario_id: str = Field(description="Идентификатор сценария")
+    title: Optional[str] = Field(default=None, description="Пользовательский заголовок сценария")
+    probe_desc: Optional[str] = Field(default="Опрос телеметрии и поиск навыков в WikiLLM", description="Описание шага PROBE")
+    action_desc: Optional[str] = Field(default="Применение исправлений конфигурации хоста", description="Описание шага ACTION")
+    requires_confirmation: bool = Field(default=True, description="Требовать паузу и подтверждение администратора")
+    confirmation_msg: Optional[str] = Field(default=None, description="Текст подтверждения для администратора")
+    context_data: Optional[Dict[str, Any]] = Field(default_factory=dict, description="Контекст сессии")
+
+
+class DAGConfirmRequest(BaseModel):
+    """Запрос на подтверждение действия администратором (Human-in-the-loop)."""
+    action: str = Field(description="Действие администратора: 'approve' (разрешить) или 'reject' (отклонить)")
+

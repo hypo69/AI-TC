@@ -16,7 +16,7 @@
 # Package: apps.windows.sdk.modules.firewall_manager.tests
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-13 14:28:00
 # =============================================================================
 
 from __future__ import annotations
@@ -48,6 +48,9 @@ def test_firewall_report(manager: FirewallManager):
     assert report is not None
     assert len(report.profiles) == 3
     assert report.total_rules > 0
+    assert report.domain_profile in ('ON', 'OFF')
+    assert report.private_profile in ('ON', 'OFF')
+    assert report.public_profile in ('ON', 'OFF')
 
 
 @pytest.mark.asyncio
@@ -64,13 +67,29 @@ async def test_firewall_rule_simulation(manager: FirewallManager):
     assert res['status'] == 'DRY_RUN_SUCCESS'
 
 
+@pytest.mark.asyncio
+async def test_firewall_rule_action_confirmed(manager: FirewallManager):
+    """Проверка выполнения подтвержденного действия с правилом."""
+    req = FirewallRuleActionRequest(
+        rule_name='AI-Windows-Admin Test Rule',
+        action='disable_rule',
+        dry_run=False,
+        confirmed_by_user=True,
+    )
+    res = await manager.execute_rule_action(req)
+    assert res['status'] == 'SUCCESS'
+
+
 def test_firewall_endpoints(client: TestClient):
     """Проверка REST эндпоинтов firewall_manager."""
-    resp = client.get('/api/firewall-manager/report')
+    resp = client.get('/api/firewall-manager/summary')
     assert resp.status_code == 200
     data = resp.json()
     assert 'profiles' in data
     assert 'rules' in data
+    assert 'domain_profile' in data
+    assert 'private_profile' in data
+    assert 'public_profile' in data
 
     resp_profiles = client.get('/api/firewall-manager/profiles')
     assert resp_profiles.status_code == 200
@@ -84,6 +103,7 @@ def test_firewall_sqlite_data_first_and_refresh(client: TestClient):
     data = resp_refresh.json()
     assert len(data['profiles']) == 3
     assert data['total_rules'] > 0
+    assert data['domain_profile'] in ('ON', 'OFF')
 
     resp_rules = client.get('/api/firewall-manager/rules?direction=In')
     assert resp_rules.status_code == 200

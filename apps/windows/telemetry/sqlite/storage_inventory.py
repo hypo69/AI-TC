@@ -18,7 +18,7 @@
 # Package: apps.windows.telemetry.sqlite
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-11 11:30:00
+# Updated: 2026-10-20 09:38:00
 # =============================================================================
 
 from __future__ import annotations
@@ -235,3 +235,115 @@ class TelemetryInventoryStorageMixin:
     ) -> List[Dict[str, Any]]:
         """Извлечь сэмплы показателей сетевых адаптеров."""
         return self._reader.get_network_adapter_samples(adapter_name=adapter_name, limit=limit, since_epoch=since_epoch)
+
+    def get_monitor_inventory(self) -> List[Dict[str, Any]]:
+        """Извлечь паспортные данные подключенных мониторов и дисплеев."""
+        return self._reader.get_monitor_inventory()
+
+    def get_hardware_components(
+        self,
+        include_removed: bool = True,
+        only_present: bool = False,
+    ) -> List[Dict[str, Any]]:
+        """Извлечь зарегистрированные аппаратные компоненты с флагами присутствия."""
+        return self._reader.get_hardware_components(include_removed=include_removed, only_present=only_present)
+
+    def get_pending_hardware_components(self, limit: int = 20) -> List[Dict[str, Any]]:
+        """Извлечь компоненты оборудования, ожидающие AI-обогащения ссылками."""
+        return self._reader.get_pending_hardware_components(limit=limit)
+
+    def get_hardware_component_by_key(self, component_key: str) -> Optional[Dict[str, Any]]:
+        """Извлечь аппаратный компонент по ключу."""
+        return self._reader.get_hardware_component_by_key(component_key)
+
+    def get_hardware_component_history(self, component_key: str) -> List[Dict[str, Any]]:
+        """Извлечь историю событий установки/переустановки/удаления компонента."""
+        return self._reader.get_hardware_component_history(component_key)
+
+    def save_hardware_component(self, comp_data: Dict[str, Any]) -> int:
+        """Сохранить или обновить паспорт аппаратного компонента."""
+        with self._cm.lock, self._cm.get_connection() as conn:
+            row_id = self._writer.upsert_hardware_component(conn.cursor(), comp_data)
+            conn.commit()
+            return row_id
+
+    def sync_hardware_components_lifecycle(
+        self,
+        components: List[Dict[str, Any]],
+        categories: Optional[List[str]] = None,
+    ) -> Dict[str, Any]:
+        """Синхронизирует текущий срез оборудования с базой данных, отслеживая подключение и отключение компонентов.
+
+        Args:
+            components: Список собранных компонентов текущего сканирования.
+            categories: Список категорий, охваченных текущим сбором (для обнаружения удаленных).
+
+        Returns:
+            Dict[str, Any]: Сводка синхронизации {'saved_count': ..., 'removed_keys': [...]}.
+        """
+        active_keys: List[str] = []
+        with self._cm.lock, self._cm.get_connection() as conn:
+            cursor = conn.cursor()
+            for comp in components:
+                key = comp.get("component_key")
+                if key:
+                    active_keys.append(key)
+                self._writer.upsert_hardware_component(cursor, comp)
+
+            # Вычисляем просканированные категории, если не переданы явно
+            cat_list = categories or list({c.get("category") for c in components if c.get("category")})
+            removed_keys = self._writer.mark_missing_hardware_components_removed(
+                cursor=cursor,
+                active_keys=active_keys,
+                categories=cat_list,
+            )
+            conn.commit()
+            return {
+                "saved_count": len(components),
+                "removed_count": len(removed_keys),
+                "removed_keys": removed_keys,
+            }
+
+    def record_hardware_component_event(
+        self,
+        component_key: str,
+        event_type: str,
+        details: Optional[Dict[str, Any]] = None,
+        timestamp: Optional[str] = None,
+    ) -> int:
+        """Записать событие жизненного цикла компонента (installed, removed, reinstalled)."""
+        return self._writer.record_hardware_component_event(
+            component_key=component_key,
+            event_type=event_type,
+            details=details,
+            timestamp=timestamp,
+        )
+
+    def update_hardware_component_links(
+        self,
+        component_key: str,
+        vendor_url: Optional[str] = None,
+        status: str = "completed",
+    ) -> bool:
+        """Обновить ссылки на сайт производителя и изображение компонента."""
+        return self._writer.update_hardware_component_links(
+            component_key=component_key,
+            vendor_url=vendor_url,
+            status=status,
+        )
+
+    def update_hardware_component_production_date(
+        self,
+        component_key: str,
+        production_date: Optional[str] = None,
+        source: Optional[str] = None,
+        status: str = "completed",
+    ) -> bool:
+        """Обновить дату производства компонента."""
+        return self._writer.update_hardware_component_production_date(
+            component_key=component_key,
+            production_date=production_date,
+            source=source,
+            status=status,
+        )
+

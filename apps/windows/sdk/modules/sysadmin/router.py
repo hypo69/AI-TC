@@ -16,7 +16,7 @@
 # Package: apps.windows.sdk.modules.sysadmin
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 22:28:45
+# Updated: 2026-10-13 14:15:00
 # =============================================================================
 
 from __future__ import annotations
@@ -96,6 +96,9 @@ def _get_configured_watch_dirs() -> List[str]:
                 custom_paths = data.get('watch_directories')
                 if isinstance(custom_paths, list) and custom_paths:
                     valid_paths = [p for p in custom_paths if isinstance(p, str) and os.path.isdir(p)]
+                    cwd_str = str(Path.cwd().resolve())
+                    if cwd_str not in valid_paths:
+                        valid_paths.insert(0, cwd_str)
                     if valid_paths:
                         return valid_paths
                 single_path = data.get('watch_directory', '').strip()
@@ -395,8 +398,8 @@ async def toggle_watcher_exclusions(payload: ToggleExclusionsRequest) -> dict:
 
 @file_audit_router.get('/live-events')
 async def get_live_file_events(limit: int = Query(50, ge=1, le=200)) -> dict:
-    """Получить события файловой системы в реальном времени (из SQLite телеметрии или активного watcher)."""
-    watcher = get_directory_watcher(auto_start=False)
+    """Получить события файловой системы в реальном времени (из активного watcher или SQLite телеметрии)."""
+    watcher = get_directory_watcher(auto_start=True)
     live_events: List[Dict[str, Any]] = []
 
     if watcher._is_running and watcher.events_history:
@@ -484,6 +487,7 @@ router.include_router(file_audit_router)
 
 def init_router() -> APIRouter:
     """Инициализация FastAPI роутера для Windows System Administrator & File Auditing."""
+    get_directory_watcher(auto_start=True)
     return router
 
 __all__ = ['init_router', 'router', 'sysadmin_router', 'file_audit_router']

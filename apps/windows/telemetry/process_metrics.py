@@ -17,7 +17,7 @@
 # Package: apps.windows.telemetry
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-11 05:00:00
+# Updated: 2026-10-19 00:12:00
 # =============================================================================
 
 from __future__ import annotations
@@ -26,7 +26,7 @@ from __future__ import annotations
 import os
 import time
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 try:
     import psutil
@@ -35,12 +35,20 @@ except ImportError:
     psutil = None
     PSUTIL_AVAILABLE = False
 
-from .models import ProcessMetrics
+from .models import ProcessMetrics, ProcessTokenInfo
 from .process_token_collector import ProcessTokenCollector
 
 
 class ProcessMetricsCollector:
     """Сборщик метрик активных процессов: рейтинг по ресурсам, токены, классификация запуска."""
+
+    def __init__(self) -> None:
+        """Инициализирует коллектор метрик процессов с in-memory кэшем по (pid, create_time)."""
+        self._token_collector = ProcessTokenCollector()
+        self._token_cache: Dict[Tuple[int, int], ProcessTokenInfo] = {}
+        self._static_meta_cache: Dict[Tuple[int, int], Dict[str, Any]] = {}
+        self._proc_handles_cache: Dict[int, Any] = {}
+        self._classifier = None
 
     @staticmethod
     def _classify_launch_reason(
@@ -78,6 +86,17 @@ class ProcessMetricsCollector:
             return f'spawned_by_{clean_parent}'
         return 'unknown'
 
+    def _get_cached_token(self, pid: int, create_time_int: int, name: str) -> Optional[ProcessTokenInfo]:
+        """Возвращает сведения о токене безопасности из кэша или опрашивает Win32 API один раз за жизнь процесса."""
+        key = (pid, create_time_int)
+        cached = self._token_cache.get(key)
+        if cached is not None:
+            return cached
+        info = self._token_collector.get_process_token_info(pid, name)
+        if info is not None:
+            self._token_cache[key] = info
+        return info
+
     def get_top_processes(self, limit: Any = 25, sort_by: str = 'cpu') -> List[ProcessMetrics]:
         """Retrieve active processes sorted by resource consumption, with token and provenance info.
 
@@ -88,27 +107,56 @@ class ProcessMetricsCollector:
             List[ProcessMetrics]: Ranked process metrics, including provenance, integrity_level and elevation.
         """
         limit_val = limit.default if hasattr(limit, "default") else (int(limit) if isinstance(limit, (int, float, str)) and str(limit).isdigit() else 25)
-        # Collect token information for all processes
-        token_collector = ProcessTokenCollector()
-        token_info_map = {info.pid: info for info in token_collector.collect()}
 
         # Классификация оконных процессов
         from apps.windows.sdk.modules.process_manager.core.classifier import (
             ProcessClassifier,
             WINDOWS_SYSTEM_PROCESS_NAMES,
         )
-        classifier = ProcessClassifier()
+        if self._classifier is None:
+            self._classifier = ProcessClassifier()
+        classifier = self._classifier
         windowed_pids, titles_map = classifier.get_windowed_pids_and_titles()
 
         procs: List[ProcessMetrics] = []
         if PSUTIL_AVAILABLE:
             handle_attr = 'num_handles' if os.name == 'nt' else 'num_fds'
             proc_dict: Dict[int, Dict[str, Any]] = {}
-            for p in psutil.process_iter(attrs=['pid', 'ppid', 'name', 'cpu_percent', 'memory_info', 'memory_percent', 'num_threads', 'username', 'create_time', 'exe', 'cpu_times', 'io_counters', handle_attr]):
+            alive_keys = set()
+            alive_pids = set()
+
+            for p in psutil.process_iter(attrs=['pid', 'ppid', 'name', 'cpu_percent', 'memory_info', 'memory_percent', 'num_threads', 'create_time', 'cpu_times', 'io_counters', handle_attr]):
                 try:
-                    proc_dict[p.info['pid']] = p.info
+                    info = p.info
+                    pid = info['pid']
+                    alive_pids.add(pid)
+                    ct_int = int(info.get('create_time') or 0)
+                    alive_keys.add((pid, ct_int))
+
+                    # Если cpu_percent равен 0.0 и есть сохраненный объект процесса, берем дельту
+                    cached_proc = self._proc_handles_cache.get(pid)
+                    if cached_proc is not None:
+                        try:
+                            if int(cached_proc.create_time() or 0) == ct_int:
+                                info['cpu_percent'] = cached_proc.cpu_percent(interval=None)
+                            else:
+                                self._proc_handles_cache[pid] = p
+                        except Exception:
+                            self._proc_handles_cache[pid] = p
+                    else:
+                        self._proc_handles_cache[pid] = p
+
+                    proc_dict[pid] = info
                 except (psutil.NoSuchProcess, psutil.AccessDenied):
                     continue
+
+            # Очистка устаревших записей кэша завершенных процессов
+            if len(self._token_cache) > len(alive_keys) + 50:
+                self._token_cache = {k: v for k, v in self._token_cache.items() if k in alive_keys}
+            if len(self._static_meta_cache) > len(alive_keys) + 50:
+                self._static_meta_cache = {k: v for k, v in self._static_meta_cache.items() if k in alive_keys}
+            if len(self._proc_handles_cache) > len(alive_pids) + 50:
+                self._proc_handles_cache = {k: v for k, v in self._proc_handles_cache.items() if k in alive_pids}
 
             name_to_windowed = {
                 (info.get('name') or '').lower(): True
@@ -134,7 +182,55 @@ class ProcessMetricsCollector:
                 try:
                     p_name = info.get('name') or 'unknown'
                     low_name = p_name.lower()
-                    exe_low = (info.get('exe') or '').lower()
+                    create_time_val = info.get('create_time') or 0.0
+                    ct_int = int(create_time_val)
+                    cache_key = (pid, ct_int)
+
+                    # Статические атрибуты процесса (exe, username, cmdline) кэшируются по (pid, create_time)
+                    static_meta = self._static_meta_cache.get(cache_key)
+                    proc_handle = self._proc_handles_cache.get(pid)
+                    if static_meta is None:
+                        exe_path = info.get('exe')
+                        username_val = info.get('username')
+                        cmdline_str = None
+                        try:
+                            if proc_handle is None:
+                                proc_handle = psutil.Process(pid)
+                            if not exe_path:
+                                try:
+                                    exe_path = proc_handle.exe()
+                                except (psutil.AccessDenied, psutil.NoSuchProcess):
+                                    exe_path = None
+                            if not username_val:
+                                try:
+                                    username_val = proc_handle.username()
+                                except (psutil.AccessDenied, psutil.NoSuchProcess):
+                                    username_val = None
+                            try:
+                                raw_cmd = proc_handle.cmdline()
+                                cmdline_str = ' '.join(raw_cmd) if isinstance(raw_cmd, list) else (str(raw_cmd) if raw_cmd else None)
+                            except (psutil.AccessDenied, psutil.NoSuchProcess):
+                                cmdline_str = None
+                        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+                            pass
+                        static_meta = {
+                            'exe': exe_path,
+                            'username': username_val,
+                            'cmdline': cmdline_str,
+                        }
+                        self._static_meta_cache[cache_key] = static_meta
+
+                    exe_val = static_meta.get('exe')
+                    exe_low = (exe_val or '').lower()
+                    username_val = static_meta.get('username')
+                    cmdline_str = static_meta.get('cmdline')
+
+                    proc_status = 'running'
+                    if proc_handle is not None:
+                        try:
+                            proc_status = proc_handle.status() or 'running'
+                        except Exception:
+                            proc_status = 'running'
 
                     mem_info = info.get('memory_info')
                     rss_bytes = int(mem_info.rss) if mem_info and hasattr(mem_info, 'rss') else 0
@@ -154,7 +250,9 @@ class ProcessMetricsCollector:
 
                     cpu_p = round(info.get('cpu_percent') or 0.0, 1)
                     num_h = info.get(handle_attr) or 0
-                    token = token_info_map.get(pid)
+
+                    # Запрос токена только для выбранного процесса (с кэшированием по (pid, create_time))
+                    token = self._get_cached_token(pid, ct_int, p_name)
                     integrity = token.integrity_level if token else None
                     elevation = token.elevation if token else None
                     sid = token.sid if token else None
@@ -176,18 +274,8 @@ class ProcessMetricsCollector:
                     ancestors.reverse()
                     ancestor_chain = ' → '.join(ancestors)
 
-                    create_time_val = info.get('create_time') or 0.0
                     creation_time_str = datetime.fromtimestamp(create_time_val, tz=timezone.utc).isoformat() if create_time_val > 0 else None
-                    process_guid = f'proc_{pid}_{int(create_time_val)}'
-
-                    try:
-                        proc_handle = psutil.Process(pid)
-                        raw_cmdline = proc_handle.cmdline()
-                        proc_status = proc_handle.status() or 'running'
-                    except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
-                        raw_cmdline = None
-                        proc_status = 'running'
-                    cmdline_str = ' '.join(raw_cmdline) if isinstance(raw_cmdline, list) else (str(raw_cmdline) if raw_cmdline else None)
+                    process_guid = f'proc_{pid}_{ct_int}'
                     launch_reason = self._classify_launch_reason(parent_name, p_name, session_id, cmdline_str)
 
                     # Классификация категории
@@ -213,12 +301,13 @@ class ProcessMetricsCollector:
                         memory_percent=round(info.get('memory_percent') or 0.0, 1),
                         num_threads=info.get('num_threads') or 1,
                         num_handles=num_h,
-                        username=info.get('username'),
+                        username=username_val,
+                        cmdline=cmdline_str,
                         integrity_level=integrity,
                         elevation=elevation,
                         ppid=ppid,
                         parent_name=parent_name,
-                        executable_path=info.get('exe'),
+                        executable_path=exe_val,
                         sid=sid,
                         session_id=session_id,
                         creation_time=creation_time_str,
@@ -244,8 +333,9 @@ class ProcessMetricsCollector:
         else:
             # Fallback for non‑psutil environments
             now_iso = datetime.now(timezone.utc).isoformat()
+            cur_pid = os.getpid()
             p = ProcessMetrics(
-                pid=os.getpid(),
+                pid=cur_pid,
                 name='python.exe',
                 status='running',
                 cpu_percent=1.5,
@@ -260,14 +350,14 @@ class ProcessMetricsCollector:
                 sid='S-1-5-21-mock-sid',
                 session_id=1,
                 creation_time=now_iso,
-                process_guid=f'proc_{os.getpid()}_{int(time.time())}',
+                process_guid=f'proc_{cur_pid}_{int(time.time())}',
                 ancestor_chain='cmd.exe → python.exe',
                 launch_reason='terminal_cli',
                 category='background',
                 is_app=False,
                 friendly_name='Python',
             )
-            token = token_info_map.get(p.pid)
+            token = self._get_cached_token(cur_pid, 0, 'python.exe')
             if token:
                 p.integrity_level = token.integrity_level
                 p.elevation = token.elevation
@@ -287,3 +377,4 @@ class ProcessMetricsCollector:
         if limit_val is None or limit_val <= 0:
             return procs
         return procs[:limit_val]
+

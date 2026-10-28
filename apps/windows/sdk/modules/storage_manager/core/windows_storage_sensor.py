@@ -20,7 +20,7 @@
 # Package: apps.windows.sdk.modules.storage_manager.core
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-12 08:11:00
+# Updated: 2026-10-18 08:14:00
 # =============================================================================
 
 from __future__ import annotations
@@ -267,17 +267,17 @@ def parse_smart_vendor_data(raw_b64: str) -> Dict[int, Dict[str, Any]]:
         return {}
 
 
-def _enrich_disks_with_lhm(disks: List[StorageDiskHealthInfo], sensors: List[Dict[str, Any]]) -> None:
-    """Обогащает объекты StorageDiskHealthInfo данными SMART/LHM (наработка, температура, износ, запись).
+def _enrich_disks_with_sensors(disks: List[StorageDiskHealthInfo], sensors: List[Dict[str, Any]]) -> None:
+    """Обогащает объекты StorageDiskHealthInfo данными SMART/системных сенсоров (наработка, температура, износ, запись).
 
     Args:
         disks: Список дисков для обогащения.
-        sensors: Плоский список сенсоров из LibreHardwareMonitor.
+        sensors: Плоский список сенсоров из телеметрии.
     """
     if not disks or not sensors:
         return
 
-    lhm_by_hardware: Dict[str, Dict[str, Any]] = {}
+    sensors_by_hardware: Dict[str, Dict[str, Any]] = {}
     for s in sensors:
         htype = str(s.get("hardware_type", "")).lower()
         if not any(k in htype for k in ("storage", "disk", "hdd", "ssd", "nvme")):
@@ -285,8 +285,8 @@ def _enrich_disks_with_lhm(disks: List[StorageDiskHealthInfo], sensors: List[Dic
         hname = str(s.get("hardware_name", "")).strip()
         if not hname:
             continue
-        if hname not in lhm_by_hardware:
-            lhm_by_hardware[hname] = {
+        if hname not in sensors_by_hardware:
+            sensors_by_hardware[hname] = {
                 "power_on_hours": None,
                 "power_on_count": None,
                 "temperature_c": None,
@@ -305,30 +305,30 @@ def _enrich_disks_with_lhm(disks: List[StorageDiskHealthInfo], sensors: List[Dic
 
         if "factor" in cat:
             if "power on hours" in sname:
-                lhm_by_hardware[hname]["power_on_hours"] = int(v_num)
+                sensors_by_hardware[hname]["power_on_hours"] = int(v_num)
             elif "power on count" in sname:
-                lhm_by_hardware[hname]["power_on_count"] = int(v_num)
+                sensors_by_hardware[hname]["power_on_count"] = int(v_num)
         elif "temp" in cat:
             if 5 < v_num < 120:
-                lhm_by_hardware[hname]["temperature_c"] = float(v_num)
+                sensors_by_hardware[hname]["temperature_c"] = float(v_num)
         elif "level" in cat:
             if "life" in sname or "remaining" in sname:
-                lhm_by_hardware[hname]["life_pct"] = float(v_num)
-                lhm_by_hardware[hname]["wear_pct"] = max(0.0, min(100.0, 100.0 - float(v_num)))
+                sensors_by_hardware[hname]["life_pct"] = float(v_num)
+                sensors_by_hardware[hname]["wear_pct"] = max(0.0, min(100.0, 100.0 - float(v_num)))
             elif "wear" in sname:
-                lhm_by_hardware[hname]["wear_pct"] = float(v_num)
+                sensors_by_hardware[hname]["wear_pct"] = float(v_num)
         elif "data" in cat:
             if "data written" in sname:
-                lhm_by_hardware[hname]["data_written_gb"] = float(v_num)
+                sensors_by_hardware[hname]["data_written_gb"] = float(v_num)
             elif "data read" in sname:
-                lhm_by_hardware[hname]["data_read_gb"] = float(v_num)
+                sensors_by_hardware[hname]["data_read_gb"] = float(v_num)
             elif "total space" in sname:
-                lhm_by_hardware[hname]["total_space_gb"] = float(v_num)
+                sensors_by_hardware[hname]["total_space_gb"] = float(v_num)
 
-    if not lhm_by_hardware:
+    if not sensors_by_hardware:
         return
 
-    matched_lhm_names: set[str] = set()
+    matched_sensor_names: set[str] = set()
 
     for d in disks:
         m_lower = (d.model or "").lower().strip()
@@ -337,7 +337,7 @@ def _enrich_disks_with_lhm(disks: List[StorageDiskHealthInfo], sensors: List[Dic
         best_name: Optional[str] = None
 
         # 1. Прямой поиск по подстроке имени/модели
-        for hname, metrics in lhm_by_hardware.items():
+        for hname, metrics in sensors_by_hardware.items():
             h_lower = hname.lower().strip()
             if (h_lower in m_lower) or (m_lower and m_lower in h_lower) or (h_lower in fn_lower) or (fn_lower and fn_lower in h_lower):
                 matched_data = metrics
@@ -347,7 +347,7 @@ def _enrich_disks_with_lhm(disks: List[StorageDiskHealthInfo], sensors: List[Dic
         # 2. Поиск по ключевым словам модели
         if not matched_data:
             m_words = [w for w in re.split(r"[\s\-_/]+", f"{m_lower} {fn_lower}") if len(w) >= 4 and w not in ("disk", "drive", "generic", "storage", "device")]
-            for hname, metrics in lhm_by_hardware.items():
+            for hname, metrics in sensors_by_hardware.items():
                 h_lower = hname.lower().strip()
                 if any(w in h_lower for w in m_words):
                     matched_data = metrics
@@ -356,8 +356,8 @@ def _enrich_disks_with_lhm(disks: List[StorageDiskHealthInfo], sensors: List[Dic
 
         # 3. Fallback: сопоставление по близкому объему для внешних накопителей (USB bridges), если остался неиспользованный
         if not matched_data and d.size_gb > 0:
-            for hname, metrics in lhm_by_hardware.items():
-                if hname in matched_lhm_names:
+            for hname, metrics in sensors_by_hardware.items():
+                if hname in matched_sensor_names:
                     continue
                 tot_gb = metrics.get("total_space_gb")
                 if tot_gb and abs(tot_gb - d.size_gb) / max(d.size_gb, 1.0) < 0.15:
@@ -366,7 +366,7 @@ def _enrich_disks_with_lhm(disks: List[StorageDiskHealthInfo], sensors: List[Dic
                     break
 
         if matched_data and best_name:
-            matched_lhm_names.add(best_name)
+            matched_sensor_names.add(best_name)
             # Обогащаем отсутствующие или нулевые метрики
             if (d.power_on_hours is None or d.power_on_hours == 0) and matched_data.get("power_on_hours") is not None:
                 d.power_on_hours = matched_data["power_on_hours"]
@@ -386,11 +386,108 @@ def _enrich_disks_with_lhm(disks: List[StorageDiskHealthInfo], sensors: List[Dic
                 d.lifetime_read_tb = round(matched_data["data_read_gb"] / 1024.0, 2)
 
 
+def _enrich_disks_with_raw_smart(disks: List[StorageDiskHealthInfo]) -> None:
+    """Обогащает метрики накопителей через прямой Win32 IOCTL SMART опрос оборудования.
+
+    Опрашивает SATA/RAID/NVMe накопители через SAT ATA Pass-Through и NVMe Health Log,
+    что гарантирует получение часов наработки, температуры и износа без внешних сервисов.
+
+    Args:
+        disks: Список дисков для прямого обогащения метриками наработки и SMART.
+    """
+    if not disks or os.name != 'nt':
+        return
+
+    try:
+        from apps.windows.sdk.modules.storage_manager.core.raw_disk_io import WindowsRawDiskIO
+        raw_io = WindowsRawDiskIO()
+    except Exception as exc:
+        logger.debug(f"[WindowsStorageSensor] Ошибка загрузки WindowsRawDiskIO: {exc}")
+        return
+
+    for d in disks:
+        dev_digits = ''.join(filter(str.isdigit, str(d.device_id or '')))
+        if not dev_digits:
+            continue
+        try:
+            disk_idx = int(dev_digits)
+            smart = raw_io.query_smart_health(disk_idx, d.bus_type)
+            poh = smart.get('power_on_hours')
+            if poh and (d.power_on_hours is None or d.power_on_hours == 0):
+                d.power_on_hours = int(poh)
+
+            temp = smart.get('temperature_c')
+            if temp and (d.temperature_c is None or d.temperature_c <= 5.0):
+                d.temperature_c = float(temp)
+
+            wear = smart.get('percentage_used')
+            if wear is not None and (d.wear_percentage is None or d.wear_percentage == 0.0):
+                d.wear_percentage = float(wear)
+
+            errs = smart.get('reallocated_sectors')
+            if errs is not None and (d.read_errors_total is None or d.read_errors_total == 0):
+                d.read_errors_total = int(errs)
+
+            # Обогащение объемов записи и чтения через NVMe Health Log и SMART атрибуты
+            if smart.get('data_units_written_tb') is not None and (d.lifetime_write_bytes is None or d.lifetime_write_bytes == 0):
+                d.lifetime_write_tb = float(smart['data_units_written_tb'])
+                d.lifetime_write_bytes = int(d.lifetime_write_tb * (10 ** 12))
+            if smart.get('data_units_read_tb') is not None and (d.lifetime_read_bytes is None or d.lifetime_read_bytes == 0):
+                d.lifetime_read_tb = float(smart['data_units_read_tb'])
+                d.lifetime_read_bytes = int(d.lifetime_read_tb * (10 ** 12))
+
+            attrs = smart.get('smart_attributes') or {}
+            if (d.lifetime_write_bytes is None or d.lifetime_write_bytes == 0):
+                if 241 in attrs and attrs[241].get('raw', 0) > 0:
+                    raw_val = attrs[241]['raw']
+                    if raw_val < 500_000_000:
+                        d.lifetime_write_bytes = int(raw_val * 512_000)
+                    else:
+                        d.lifetime_write_bytes = int(raw_val * 512)
+                    d.lifetime_write_tb = round(d.lifetime_write_bytes / (1024 ** 4), 2)
+                elif 246 in attrs and attrs[246].get('raw', 0) > 0:
+                    d.lifetime_write_bytes = int(attrs[246]['raw'] * 512)
+                    d.lifetime_write_tb = round(d.lifetime_write_bytes / (1024 ** 4), 2)
+
+            if (d.lifetime_read_bytes is None or d.lifetime_read_bytes == 0):
+                if 242 in attrs and attrs[242].get('raw', 0) > 0:
+                    raw_val = attrs[242]['raw']
+                    if raw_val < 500_000_000:
+                        d.lifetime_read_bytes = int(raw_val * 512_000)
+                    else:
+                        d.lifetime_read_bytes = int(raw_val * 512)
+                    d.lifetime_read_tb = round(d.lifetime_read_bytes / (1024 ** 4), 2)
+                elif 247 in attrs and attrs[247].get('raw', 0) > 0:
+                    d.lifetime_read_bytes = int(attrs[247]['raw'] * 512)
+                    d.lifetime_read_tb = round(d.lifetime_read_bytes / (1024 ** 4), 2)
+        except Exception as io_err:
+            logger.debug(f"[WindowsStorageSensor] Прямой Win32 SMART опрос диска {d.device_id} завершился с ошибкой: {io_err}")
+
+    # Индивидуальный fallback на счетчики I/O psutil по каждому физическому диску
+    try:
+        import psutil
+        if hasattr(psutil, 'disk_io_counters'):
+            per_io = psutil.disk_io_counters(perdisk=True) or {}
+            for d in disks:
+                dev_digits = ''.join(filter(str.isdigit, str(d.device_id or '')))
+                io_key = f'PhysicalDrive{dev_digits}' if dev_digits else str(d.device_id or '')
+                io_stat = per_io.get(io_key)
+                if io_stat:
+                    if d.lifetime_write_bytes is None or d.lifetime_write_bytes == 0:
+                        d.lifetime_write_bytes = io_stat.write_bytes
+                        d.lifetime_write_tb = round(io_stat.write_bytes / (1024 ** 4), 4)
+                    if d.lifetime_read_bytes is None or d.lifetime_read_bytes == 0:
+                        d.lifetime_read_bytes = io_stat.read_bytes
+                        d.lifetime_read_tb = round(io_stat.read_bytes / (1024 ** 4), 4)
+    except Exception as ps_err:
+        logger.debug(f"[WindowsStorageSensor] Ошибка обогащения через perdisk psutil: {ps_err}")
+
+
 def _enrich_disks_from_telemetry_db(disks: List[StorageDiskHealthInfo]) -> None:
     """Обогащает метрики накопителей (наработка, температура, износ) из SQLite telemetry.db.
 
     Используется как надежный fallback для SATA/HDD/SSD дисков, для которых
-    Windows CIM не возвращает PowerOnHours, либо когда LibreHardwareMonitor не запущен.
+    Windows CIM не возвращает PowerOnHours.
     """
     try:
         from apps.windows.telemetry.sqlite import TelemetryStorage
@@ -421,7 +518,7 @@ def _enrich_disks_from_telemetry_db(disks: List[StorageDiskHealthInfo]) -> None:
                     }
                     for r in s_rows
                 ]
-                _enrich_disks_with_lhm(disks, db_sensors)
+                _enrich_disks_with_sensors(disks, db_sensors)
     except Exception as sp_err:
         logger.debug(f"[WindowsStorageSensor] Ошибка обогащения через sensor_polls: {sp_err}")
 
@@ -473,6 +570,48 @@ def _enrich_disks_from_telemetry_db(disks: List[StorageDiskHealthInfo]) -> None:
                         break
     except Exception as snap_err:
         logger.debug(f"[WindowsStorageSensor] Ошибка обогащения через снимки snapshots: {snap_err}")
+
+
+def _enrich_disks_with_pnp_install_dates(disks: List[StorageDiskHealthInfo]) -> None:
+    """Обогащает наработку накопителей без SMART (USB флешки) датой первой установки из Win32 SetupAPI.
+
+    Args:
+        disks: Список дисков для обогащения наработкой.
+    """
+    if not disks or os.name != 'nt':
+        return
+    try:
+        from apps.windows.sdk.native.setupapi import SetupAPI
+        pnp_dates = SetupAPI().get_disk_install_dates()
+        if not pnp_dates:
+            return
+        now_dt = datetime.now(timezone.utc)
+        for d in disks:
+            if d.power_on_hours is None or d.power_on_hours == 0:
+                sn = str(d.serial_number or "").strip().lower()
+                m = str(d.model or d.friendly_name or "").strip().lower()
+                matched_dt = None
+                if sn and sn != "n/a":
+                    for inst_id, dt in pnp_dates.items():
+                        if sn in inst_id.lower():
+                            matched_dt = dt
+                            break
+                if not matched_dt and m:
+                    keywords = [
+                        w for w in m.replace("-", " ").replace("_", " ").split()
+                        if len(w) >= 4 and w not in ("disk", "drive", "generic", "storage", "device")
+                    ]
+                    if keywords:
+                        for inst_id, dt in pnp_dates.items():
+                            inst_lower = inst_id.lower()
+                            if all(kw in inst_lower for kw in keywords):
+                                matched_dt = dt
+                                break
+                if matched_dt:
+                    hours_diff = max(1, int(round((now_dt - matched_dt).total_seconds() / 3600.0)))
+                    d.power_on_hours = hours_diff
+    except Exception as exc:
+        logger.debug(f"[WindowsStorageSensor] Ошибка обогащения PnP датами установки: {exc}")
 
 
 class WindowsStorageSensor:
@@ -780,7 +919,7 @@ class WindowsStorageSensor:
             if b64:
                 parsed = parse_smart_vendor_data(b64)
                 if parsed:
-                    norm_inst = inst.rstrip('_0').lower()
+                    norm_inst = (inst[:-2] if inst.endswith('_0') else inst).lower()
                     smart_by_pnp[norm_inst] = parsed
 
         wmi_by_index: Dict[str, Dict[str, Any]] = {}
@@ -985,24 +1124,28 @@ class WindowsStorageSensor:
                     raw_storage_data=w_disk,
                 ))
 
-        # Обогащение данными из LibreHardwareMonitor (LhmService)
-        try:
-            from apps.windows.sdk.modules.hardware.lhm_service import LhmService
-            lhm = LhmService()
-            if lhm.is_running():
-                lhm_sensors = lhm.get_flattened_sensors()
-                if lhm_sensors:
-                    _enrich_disks_with_lhm(result_disks, lhm_sensors)
-        except Exception as lhm_err:
-            logger.debug(f'Обогащение через LHM пропущено: {lhm_err}')
 
-        # Обогащение из базы данных телеметрии (sensor_polls и system_snapshots)
-        # если наработка не была возвращена CIM или LHM сервер был недоступен
+        # 1. Прямой опрос SMART оборудования через Win32 IOCTL (SAT ATA / NVMe)
+        if any(d.power_on_hours is None or d.power_on_hours == 0 for d in result_disks):
+            try:
+                _enrich_disks_with_raw_smart(result_disks)
+            except Exception as raw_err:
+                logger.debug(f'Прямое обогащение через Raw SMART пропущено: {raw_err}')
+
+        # 2. Обогащение из базы данных телеметрии (sensor_polls и system_snapshots)
+        # если наработка не была возвращена CIM
         if any(d.power_on_hours is None or d.power_on_hours == 0 for d in result_disks):
             try:
                 _enrich_disks_from_telemetry_db(result_disks)
             except Exception as db_err:
                 logger.debug(f'Обогащение через SQLite пропущено: {db_err}')
+
+        # 3. Обогащение наработки через Win32 SetupAPI PnP FirstInstallDate (для USB флешек)
+        if any(d.power_on_hours is None or d.power_on_hours == 0 for d in result_disks):
+            try:
+                _enrich_disks_with_pnp_install_dates(result_disks)
+            except Exception as pnp_err:
+                logger.debug(f'Обогащение через PnP SetupAPI пропущено: {pnp_err}')
 
         return result_disks
 

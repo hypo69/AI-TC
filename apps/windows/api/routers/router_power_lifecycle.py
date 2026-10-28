@@ -18,12 +18,13 @@
 # Package: apps.windows.api.routers
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-20 13:35:00
 # =============================================================================
 
 from __future__ import annotations
 """FastAPI REST эндпоинты для анализа жизненного цикла питания и сессий Windows."""
 
+import asyncio
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Union
 from fastapi import APIRouter, HTTPException, Query
@@ -55,6 +56,7 @@ def init_router(prefix: str = "/api/v1/power", **kwargs: Any) -> APIRouter:
     """
     router = APIRouter(prefix=prefix, tags=["Power Lifecycle & Boot History"])
     engine = PowerLifecycleEngine()
+    reconstruct_lock = asyncio.Lock()
 
     @router.get("/summary", response_model=PowerLifecycleSummary)
     async def get_power_summary() -> PowerLifecycleSummary:
@@ -63,7 +65,10 @@ def init_router(prefix: str = "/api/v1/power", **kwargs: Any) -> APIRouter:
             # Если в БД ещё нет записей, выполняем первичное быстрое сканирование
             summary = engine.get_summary()
             if summary.total_sessions_count == 0:
-                summary = engine.scan_and_reconstruct(hours=720)
+                async with reconstruct_lock:
+                    summary = engine.get_summary()
+                    if summary.total_sessions_count == 0:
+                        summary = engine.scan_and_reconstruct(hours=720)
             return summary
         except Exception as exc:
             logger.error(f"[RouterPowerLifecycle] Ошибка получения сводки: {exc}", exc_info=True)
@@ -86,13 +91,21 @@ def init_router(prefix: str = "/api/v1/power", **kwargs: Any) -> APIRouter:
             )
             if not sessions and offset == 0:
                 # Первоначальный сбор при пустой базе
-                engine.scan_and_reconstruct(hours=720)
-                sessions = engine.get_sessions(
-                    limit=limit,
-                    offset=offset,
-                    shutdown_type=shutdown_type,
-                    unexpected_only=unexpected_only,
-                )
+                async with reconstruct_lock:
+                    sessions = engine.get_sessions(
+                        limit=limit,
+                        offset=offset,
+                        shutdown_type=shutdown_type,
+                        unexpected_only=unexpected_only,
+                    )
+                    if not sessions and offset == 0:
+                        engine.scan_and_reconstruct(hours=720)
+                        sessions = engine.get_sessions(
+                            limit=limit,
+                            offset=offset,
+                            shutdown_type=shutdown_type,
+                            unexpected_only=unexpected_only,
+                        )
             return sessions
         except Exception as exc:
             logger.error(f"[RouterPowerLifecycle] Ошибка получения сессий: {exc}", exc_info=True)

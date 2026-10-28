@@ -1,0 +1,141 @@
+/**
+ * =============================================================================
+ * Process Name: Windows Web Styles - Base Stylesheet
+ * =============================================================================
+ * Description:
+ *   Таблица стилей стиля и оформления интерфейса (base).
+ *
+ * Usage Examples:
+ *   HTML Link Tag:
+ *     <link rel="stylesheet" href="/windows/api/webgui/css/base.css?v=20261001_v1">
+ *
+ * File: base.css
+ * Project: ai-windows-admin
+ * Package: windows/api/webgui/css
+ * Author: hypo69
+ * Copyright: © 2026 hypo69
+ * Updated: 2026-10-18 23:15:00
+ * =============================================================================
+ */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BASE STYLES & SCROLLBARS — AI Windows Admin WebGUI
+   Базовые стили страницы, скроллбары и контейнеры вкладок
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Базовый шрифт и цвет фона страницы */
+html {
+  font-size: calc(14px + 2pt);
+  height: 100%;
+  background-color: var(--bg-color);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   МАСШТАБИРОВАНИЕ СВЕТЛОЙ ТЕМЫ (+10% / ЭКВИВАЛЕНТ ЗУМА БРАУЗЕРА 110%)
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root[data-bs-theme="light"],
+:root[data-theme="light"],
+:root[data-theme="brick"],
+:root[data-theme="theme-light-enterprise"],
+html[data-bs-theme="light"],
+html[data-theme="light"],
+html[data-theme="brick"],
+html[data-theme="theme-light-enterprise"],
+html.theme-light {
+  zoom: 1.1;
+}
+
+/* Fallback для изолированных страниц, где класс светлой темы установлен только на body */
+html:not([data-bs-theme="light"]):not([data-theme="light"]):not([data-theme="brick"]):not([data-theme="theme-light-enterprise"]):not(.theme-light) body.theme-light,
+html:not([data-bs-theme="light"]):not([data-theme="light"]):not([data-theme="brick"]):not([data-theme="theme-light-enterprise"]):not(.theme-light) body.theme-light-enterprise {
+  zoom: 1.1;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 100vh;
+  background-color: var(--bg-color) !important;
+  color: var(--text-color);
+  font-size: 0.9375rem; /* ≈ 13.125px */
+  line-height: 1.5;
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   СКРОЛЛБАРЫ
+   ═══════════════════════════════════════════════════════════════════════════ */
+::-webkit-scrollbar        { width: 6px; height: 6px; }
+::-webkit-scrollbar-track  { background: var(--scrollbar-track); border-radius: 3px; }
+::-webkit-scrollbar-thumb  { background: var(--scrollbar-thumb); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { opacity: 0.8; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ВКЛАДКИ (TAB PANES)
+   ═══════════════════════════════════════════════════════════════════════════ */
+.tab-content {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.tab-pane {
+  min-height: auto;
+  padding-bottom: 16px;
+}
+
+.tab-pane.active {
+  display: block;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   АДМИН-ИНТЕРФЕЙС
+   ═══════════════════════════════════════════════════════════════════════════ */
+/* Стили для #admin-interface внутри .container-fluid (как в index.html) */
+#admin-interface,
+.container-fluid#admin-interface {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  height: 100%;
+  overflow-y: auto;
+}
+
+#admin-interface .tab-content,
+.container-fluid#admin-interface .tab-content {
+  flex-grow: 1;
+  overflow-y: auto;
+}
+
+#admin-interface .tab-pane,
+.container-fluid#admin-interface .tab-pane {
+  flex-grow: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+#admin-interface .tab-pane.active,
+.container-fluid#admin-interface .tab-pane.active {
+  display: block;
+}
+
+/* Скроллбары для админки */
+#admin-interface ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+#admin-interface ::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+  border-radius: 4px;
+}
+
+#admin-interface ::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 4px;
+}
+
+#admin-interface ::-webkit-scrollbar-thumb:hover {
+  opacity: 0.85;
+}

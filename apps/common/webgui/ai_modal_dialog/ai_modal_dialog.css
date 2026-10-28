@@ -1,0 +1,40 @@
+/**
+ * =============================================================================
+ * Process Name: Windows WebGUI - AI Modal Dialog CSS Styles
+ * =============================================================================
+ * Description:
+ *   Стили модального окна AI-диалога, бейджей и карточек (01_FRONTEND.md).
+ *
+ * File: ai_modal_dialog.css
+ * Project: ai-windows-admin
+ * Package: apps.windows.api.webgui.ai_modal_dialog
+ * Author: hypo69
+ * Copyright: © 2026 hypo69
+ * Updated: 2026-10-17 04:47:00
+ * =============================================================================
+ */
+
+@import url('style.css');
+
+.ai-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  z-index: 1050;
+}
+
+.ai-modal-card {
+  background: var(--surface-1, #1e293b);
+  border: 1px solid var(--border-color, #334155);
+  border-radius: 8px;
+  color: var(--text-main, #f8fafc);
+  width: 80vw;
+  max-width: 80vw;
+  height: 90vh;
+  min-height: 90vh;
+  max-height: 90vh;
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+}

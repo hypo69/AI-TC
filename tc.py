@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Windows-Admin Root - Tc Launcher
+# Process Name: AI-TC Root - Tc Launcher
 # =============================================================================
 # Description:
 #   Точка входа и лончер внутреннего сервера Windows System API (Terminal Controller / TC)
@@ -23,11 +23,11 @@
 #     run_tc(port=8001, region="ru-RU")
 #
 # File: tc.py
-# Project: ai-windows-admin
+# Project: ai-tc
 # Package: root
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-28 00:10:00
 # =============================================================================
 
 from __future__ import annotations

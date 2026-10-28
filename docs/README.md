@@ -43,6 +43,6 @@ mkdocs build          # static site output to site/
 
 - **Hardware Sensors & Telemetry** — `docs/hardware_sensors_telemetry.md`
   - Overview of hardware monitoring system
-  - Two independent sensor sources (LibreHardwareMonitor and custom collectors)
+  - Two independent sensor sources (Hardware Monitor and custom collectors)
   - CSV logging architecture with change filtering
   - Configuration and usage guide

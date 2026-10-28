@@ -20,7 +20,7 @@
 # Package: apps.windows.telemetry
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-28 04:40:00
 # =============================================================================
 
 from __future__ import annotations
@@ -63,7 +63,8 @@ def get_default_telemetry_config_path() -> Path:
     if ai_tel_config.is_file():
         return ai_tel_config
 
-    target_path = base_dir / 'AI-Windows-Admin' / 'apps' / 'windows' / 'telemetry' / 'config.json'
+    app_name = os.environ.get('APP_NAME') or 'ai-tc'
+    target_path = base_dir / app_name / 'telemetry' / 'config.json'
 
     if not target_path.exists():
         bundled_template = Path(__file__).parent / 'config.json'
@@ -160,6 +161,7 @@ class TelemetryConfigManager:
         self._db_cleanup_interval_seconds = 300.0
         self._flush_interval_seconds = 30.0
         self._auto_vacuum_enabled = True
+        self._enable_foreground_window = True
         self._last_mtime_ns: int = 0
         self._load_config()
 
@@ -182,13 +184,43 @@ class TelemetryConfigManager:
 
             self._loggers_config = self._config.get('loggers', {})
 
-            raw_interval = self._config.get('interval_seconds', self._config.get('interval', self._config.get('telemetry', {}).get('interval_seconds', 5.0)))
+            raw_interval = self._config.get('light_poll_interval_seconds', self._config.get('interval_seconds', self._config.get('interval', self._config.get('telemetry', {}).get('interval_seconds', 5.0))))
             self._default_interval = parse_interval_to_seconds(raw_interval, 5.0)
 
-            raw_heavy = self._config.get('heavy_interval_seconds', self._config.get('heavy_interval', self._config.get('telemetry', {}).get('heavy_interval_seconds', 60.0)))
-            self._heavy_interval = parse_interval_to_seconds(raw_heavy, 60.0)
+            raw_heavy = self._config.get('heavy_poll_interval_seconds', self._config.get('heavy_interval_seconds', self._config.get('heavy_interval', self._config.get('telemetry', {}).get('heavy_interval_seconds', 90.0))))
+            self._heavy_interval = parse_interval_to_seconds(raw_heavy, 90.0)
 
-            raw_disk_interval = self._config.get('heavy_disk_scan_interval_seconds')
+            # Детальные интервалы для каждого типа тяжелого опроса
+            heavy_polls = self._config.get('heavy_polls_intervals', {})
+            if not isinstance(heavy_polls, dict):
+                heavy_polls = {}
+
+            self._hardware_audit_interval_sec = parse_interval_to_seconds(
+                heavy_polls.get('hardware_audit_interval_sec', self._config.get('hardware_audit_interval_sec', self._heavy_interval)),
+                self._heavy_interval
+            )
+            self._startup_audit_interval_sec = parse_interval_to_seconds(
+                heavy_polls.get('startup_audit_interval_sec', self._config.get('startup_audit_interval_sec', 180.0)),
+                180.0
+            )
+            self._extended_audit_interval_sec = parse_interval_to_seconds(
+                heavy_polls.get('extended_audit_interval_sec', self._config.get('extended_audit_interval_sec', 300.0)),
+                300.0
+            )
+            self._defender_audit_interval_sec = parse_interval_to_seconds(
+                heavy_polls.get('defender_audit_interval_sec', self._config.get('defender_audit_interval_sec', 120.0)),
+                120.0
+            )
+            self._process_activity_sync_interval_sec = parse_interval_to_seconds(
+                heavy_polls.get('process_activity_sync_interval_sec', self._config.get('process_activity_sync_interval_sec', 60.0)),
+                60.0
+            )
+            self._software_audit_interval_sec = parse_interval_to_seconds(
+                heavy_polls.get('software_audit_interval_sec', self._config.get('software_audit_interval_sec', 3600.0)),
+                3600.0
+            )
+
+            raw_disk_interval = heavy_polls.get('disk_scan_interval_sec', self._config.get('heavy_disk_scan_interval_seconds'))
             self._heavy_disk_scan_interval = parse_interval_to_seconds(raw_disk_interval, 43200.0)
 
             raw_fast_interval = self._config.get('fast_interval_seconds')
@@ -205,8 +237,43 @@ class TelemetryConfigManager:
             self._heavy_mode_auto_switch_enabled = bool(self._config.get('heavy_mode_auto_switch_enabled', True))
             self._mode = str(self._config.get('mode', self._config.get('telemetry', {}).get('mode', 'hybrid'))).lower()
 
-            raw_tel_mode = str(self._config.get('telemetry_mode', self._config.get('profile', 'telemetry'))).lower()
-            self._telemetry_mode = raw_tel_mode if raw_tel_mode in ('telemetry', 'tc') else 'telemetry'
+            # Audit запускается на старте телеметрии в любом случае
+            self._audit_enabled = bool(self._config.get('audit_enabled', True))
+
+            # Стриминг можно отключать отдельно от аудита или запускать оба процесса одновременно
+            raw_streaming = self._config.get('streaming_enabled', self._config.get('live_stream_enabled'))
+            raw_tel_mode = str(self._config.get('telemetry_mode', self._config.get('profile', 'audit'))).lower()
+
+            if raw_streaming is not None:
+                self._streaming_enabled = bool(raw_streaming)
+            else:
+                self._streaming_enabled = raw_tel_mode in ('live_stream', 'live', 'streaming', 'both', 'all')
+
+            if raw_tel_mode in ('both', 'all', 'streaming_and_audit'):
+                self._telemetry_mode = 'both'
+                self._streaming_enabled = True
+                self._audit_enabled = True
+            elif raw_tel_mode in ('live_stream', 'live', 'streaming'):
+                self._telemetry_mode = 'both' if self._audit_enabled else 'live_stream'
+                self._streaming_enabled = True
+            elif raw_tel_mode in ('tc',):
+                self._telemetry_mode = 'tc'
+                self._streaming_enabled = True
+            elif raw_tel_mode in ('audit', 'process_audit', 'telemetry'):
+                self._telemetry_mode = 'audit'
+                if raw_streaming is None:
+                    self._streaming_enabled = False
+            else:
+                self._telemetry_mode = 'both' if (self._audit_enabled and self._streaming_enabled) else ('live_stream' if self._streaming_enabled else 'audit')
+
+            raw_target_pid = self._config.get('audit_target_pid')
+            try:
+                self._audit_target_pid = int(raw_target_pid) if raw_target_pid is not None else None
+            except (ValueError, TypeError):
+                self._audit_target_pid = None
+
+            raw_audit_interval = self._config.get('audit_interval_sec', self._config.get('audit_interval_seconds', 1.0))
+            self._audit_interval_sec = parse_interval_to_seconds(raw_audit_interval, 1.0)
 
             raw_std_flush = self._config.get('standard_flush_interval_seconds', self._config.get('flush_interval_seconds', 30.0))
             self._standard_flush_interval_seconds = parse_interval_to_seconds(raw_std_flush, 30.0)
@@ -238,6 +305,21 @@ class TelemetryConfigManager:
                 self._flush_interval_seconds = self._standard_flush_interval_seconds
 
             self._auto_vacuum_enabled = bool(self._config.get('auto_vacuum_enabled', True))
+            self._enable_foreground_window = bool(self._config.get('enable_foreground_window', True))
+
+            # Независимые интервалы опроса коллекторов (03_TELEMETRY.md и heavy_polls_intervals)
+            self._wmi_interval_sec = parse_interval_to_seconds(
+                heavy_polls.get('wmi_interval_sec', self._config.get('wmi_interval_sec', 120.0)), 120.0
+            )
+            self._smart_interval_sec = parse_interval_to_seconds(
+                heavy_polls.get('smart_interval_sec', self._config.get('smart_interval_sec', 300.0)), 300.0
+            )
+            self._handles_interval_sec = parse_interval_to_seconds(
+                heavy_polls.get('handles_interval_sec', self._config.get('handles_interval_sec', 60.0)), 60.0
+            )
+            self._network_ports_interval_sec = parse_interval_to_seconds(
+                heavy_polls.get('network_ports_interval_sec', self._config.get('network_ports_interval_sec', 30.0)), 30.0
+            )
         except FileNotFoundError:
             if not self._config:
                 self._config = {}
@@ -248,7 +330,10 @@ class TelemetryConfigManager:
                 self._heavy_disk_scan_interval = 43200.0
                 self._heavy_mode_max_duration_days = 5.0
                 self._heavy_mode_auto_switch_enabled = True
-                self._mode = 'hybrid'
+                self._mode = 'audit'
+                self._telemetry_mode = 'audit'
+                self._audit_enabled = True
+                self._streaming_enabled = False
                 self._max_db_size_mb = 50.0
                 self._retention_days = 7
                 self._db_cleanup_interval_seconds = 300.0
@@ -302,7 +387,8 @@ class TelemetryConfigManager:
                 base_dir = Path(appdata)
             else:
                 base_dir = Path.home() / '.config'
-        return base_dir / 'AI-Windows-Admin' / 'apps' / 'windows' / 'telemetry' / 'logs'
+        app_name = os.environ.get('APP_NAME') or 'ai-tc'
+        return base_dir / app_name / 'telemetry'
 
     def get_db_path(self) -> Path:
         """Возвращает настроенный или системный путь к файлу SQLite базы данных телеметрии."""
@@ -335,9 +421,73 @@ class TelemetryConfigManager:
         """Возвращает быстрый базовый интервал сбора телеметрии."""
         return self._default_interval
 
+    def get_light_poll_interval_seconds(self) -> float:
+        """Возвращает интервал тиков для легких опросов (базовый поток live stream)."""
+        return self._default_interval
+
     def get_heavy_interval_seconds(self) -> float:
         """Возвращает периодический интервал тяжелых сенсоров."""
         return self._heavy_interval
+
+    def get_heavy_poll_interval_seconds(self) -> float:
+        """Возвращает общий базовый интервал тиков для тяжелых опросов."""
+        return self._heavy_interval
+
+    def get_hardware_audit_interval_seconds(self) -> float:
+        """Возвращает интервал аудита аппаратного оборудования (железа)."""
+        return getattr(self, '_hardware_audit_interval_sec', self._heavy_interval)
+
+    def get_startup_audit_interval_seconds(self) -> float:
+        """Возвращает интервал аудита автозапуска Windows."""
+        return getattr(self, '_startup_audit_interval_sec', 180.0)
+
+    def get_extended_audit_interval_seconds(self) -> float:
+        """Возвращает интервал расширенного системного аудита."""
+        return getattr(self, '_extended_audit_interval_sec', 300.0)
+
+    def get_defender_audit_interval_seconds(self) -> float:
+        """Возвращает интервал аудита безопасности и Microsoft Defender."""
+        return getattr(self, '_defender_audit_interval_sec', 120.0)
+
+    def get_process_activity_sync_interval_seconds(self) -> float:
+        """Возвращает интервал синхронизации активности процессов ProcessActivityEngine."""
+        return getattr(self, '_process_activity_sync_interval_sec', 60.0)
+
+    def get_software_audit_interval_seconds(self) -> float:
+        """Возвращает интервал периодического аудита установленного ПО."""
+        return getattr(self, '_software_audit_interval_sec', 3600.0)
+
+    def get_heavy_polls_intervals(self) -> Dict[str, float]:
+        """Возвращает словарь всех индивидуальных интервалов для тяжелых опросов."""
+        return {
+            'hardware_audit_interval_sec': self.get_hardware_audit_interval_seconds(),
+            'startup_audit_interval_sec': self.get_startup_audit_interval_seconds(),
+            'extended_audit_interval_sec': self.get_extended_audit_interval_seconds(),
+            'defender_audit_interval_sec': self.get_defender_audit_interval_seconds(),
+            'process_activity_sync_interval_sec': self.get_process_activity_sync_interval_seconds(),
+            'software_audit_interval_sec': self.get_software_audit_interval_seconds(),
+            'wmi_interval_sec': self.get_wmi_interval_seconds(),
+            'smart_interval_sec': self.get_smart_interval_seconds(),
+            'handles_interval_sec': self.get_handles_interval_seconds(),
+            'network_ports_interval_sec': self.get_network_ports_interval_seconds(),
+            'disk_scan_interval_sec': self.get_heavy_disk_scan_interval(),
+        }
+
+    def get_wmi_interval_seconds(self) -> float:
+        """Возвращает интервал аудита WMI и оборудования (в секундах)."""
+        return getattr(self, '_wmi_interval_sec', 120.0)
+
+    def get_smart_interval_seconds(self) -> float:
+        """Возвращает интервал проверки SMART накопителей (в секундах)."""
+        return getattr(self, '_smart_interval_sec', 300.0)
+
+    def get_handles_interval_seconds(self) -> float:
+        """Возвращает интервал сбора дескрипторов и процессов (в секундах)."""
+        return getattr(self, '_handles_interval_sec', 60.0)
+
+    def get_network_ports_interval_seconds(self) -> float:
+        """Возвращает интервал сбора сетевых сокетов и портов (в секундах)."""
+        return getattr(self, '_network_ports_interval_sec', 30.0)
 
     def get_heavy_disk_scan_interval(self) -> float:
         """Возвращает интервал тяжелой проверки дисков (в секундах)."""
@@ -381,10 +531,180 @@ class TelemetryConfigManager:
         except (ValueError, TypeError):
             return 50
 
+    def is_audit_enabled(self) -> bool:
+        """Проверяет, активен ли сбор аудита (Audit запускается на старте телеметрии в любом случае)."""
+        return getattr(self, '_audit_enabled', True)
+
+    def is_audit_mode(self) -> bool:
+        """Проверяет, активен ли аудит системы или процесса."""
+        return self.is_audit_enabled()
+
+    def is_streaming_enabled(self) -> bool:
+        """Проверяет, активен ли сбор стриминга метрик (потоковый опрос снимков системы)."""
+        return getattr(self, '_streaming_enabled', False)
+
+    def is_live_stream_mode(self) -> bool:
+        """Проверяет, активен ли стриминг (live stream)."""
+        return self.is_streaming_enabled()
+
     def get_telemetry_mode(self) -> str:
-        """Возвращает режим телеметрии: 'telemetry' (стандартный) или 'tc' (реальное время)."""
+        """Возвращает текущий режим телеметрии: 'both', 'live_stream', 'audit' или 'tc'."""
         self.check_tc_mode_auto_switch()
-        return getattr(self, '_telemetry_mode', 'telemetry')
+        mode = getattr(self, '_telemetry_mode', None)
+        if mode in ('tc',):
+            return mode
+        audit_on = self.is_audit_enabled()
+        stream_on = self.is_streaming_enabled()
+        if audit_on and stream_on:
+            return 'both'
+        if stream_on:
+            return 'live_stream'
+        return 'audit'
+
+    def get_audit_target_pid(self) -> Optional[int]:
+        """Возвращает целевой PID процесса для режима аудита."""
+        return getattr(self, '_audit_target_pid', None)
+
+    def get_audit_interval_sec(self) -> float:
+        """Возвращает интервал сбора аудита процесса в секундах (по умолчанию 1.0с)."""
+        return getattr(self, '_audit_interval_sec', 1.0)
+
+    def activate_audit_mode(self, pid: Optional[int] = None, interval_sec: Optional[float] = None) -> bool:
+        """Активирует аудит целевого процесса по PID или общий аудит. Стриминг при этом не отключается автоматически.
+
+        Args:
+            pid: Идентификатор процесса Windows (PID), опционально.
+            interval_sec: Интервал сбора замеров аудита (сек).
+
+        Returns:
+            bool: True при успешной активации.
+        """
+        self._audit_enabled = True
+        updates: Dict[str, Any] = {'audit_enabled': True}
+        if pid is not None:
+            self._audit_target_pid = int(pid)
+            updates['audit_target_pid'] = self._audit_target_pid
+        if interval_sec is not None:
+            self._audit_interval_sec = max(0.1, float(interval_sec))
+            updates['audit_interval_sec'] = self._audit_interval_sec
+        self._telemetry_mode = self.get_telemetry_mode()
+        updates['telemetry_mode'] = self._telemetry_mode
+        logger.info(f"🎯 [Телеметрия] Аудит активен (PID={self._audit_target_pid}, интервал: {self.get_audit_interval_sec()}с)")
+        return self.save_config(updates)
+
+    def deactivate_audit_mode(self) -> bool:
+        """Отключает процесс аудита."""
+        self._audit_enabled = False
+        self._audit_target_pid = None
+        updates: Dict[str, Any] = {
+            'audit_enabled': False,
+            'audit_target_pid': None,
+            'telemetry_mode': self.get_telemetry_mode(),
+        }
+        logger.info("⏸️ [Телеметрия] Процесс аудита отключен.")
+        return self.save_config(updates)
+
+    def activate_streaming_mode(self, interval_sec: Optional[float] = None) -> bool:
+        """Активирует стриминг метрик реального времени. Аудит при этом продолжает работу.
+
+        Args:
+            interval_sec: Интервал сбора снимков метрик (сек).
+
+        Returns:
+            bool: True при успешной активации.
+        """
+        self._streaming_enabled = True
+        updates: Dict[str, Any] = {
+            'streaming_enabled': True,
+            'live_stream_enabled': True,
+        }
+        if interval_sec is not None:
+            self._interval_seconds = max(0.1, float(interval_sec))
+            updates['interval_seconds'] = self._interval_seconds
+        self._telemetry_mode = self.get_telemetry_mode()
+        updates['telemetry_mode'] = self._telemetry_mode
+        logger.info(f"📡 [Телеметрия] Стриминг метрик активирован (интервал: {self.get_interval_seconds()}с)")
+        return self.save_config(updates)
+
+    def activate_live_stream_mode(self, interval_sec: Optional[float] = None) -> bool:
+        """Алиас для активации стриминга (live stream)."""
+        return self.activate_streaming_mode(interval_sec=interval_sec)
+
+    def deactivate_streaming_mode(self) -> bool:
+        """Отключает стриминг метрик отдельно от аудита. Аудит продолжает работать.
+
+        Returns:
+            bool: True при успешном отключении.
+        """
+        self._streaming_enabled = False
+        updates: Dict[str, Any] = {
+            'streaming_enabled': False,
+            'live_stream_enabled': False,
+            'telemetry_mode': self.get_telemetry_mode(),
+        }
+        logger.info("⏸️ [Телеметрия] Стриминг отключен отдельно от аудита. Аудит продолжает работу.")
+        return self.save_config(updates)
+
+    def deactivate_live_stream_mode(self) -> bool:
+        """Алиас для отключения стриминга (live stream)."""
+        return self.deactivate_streaming_mode()
+
+    def activate_both_mode(self, pid: Optional[int] = None, interval_sec: Optional[float] = None) -> bool:
+        """Активирует оба процесса одновременно: и стриминг, и аудит.
+
+        Args:
+            pid: Идентификатор процесса Windows (PID) для аудита, если требуется.
+            interval_sec: Интервал сбора замеров (сек).
+
+        Returns:
+            bool: True при успешной активации обоих процессов.
+        """
+        self._audit_enabled = True
+        self._streaming_enabled = True
+        updates: Dict[str, Any] = {
+            'audit_enabled': True,
+            'streaming_enabled': True,
+            'live_stream_enabled': True,
+            'telemetry_mode': 'both',
+        }
+        if pid is not None:
+            self._audit_target_pid = int(pid)
+            updates['audit_target_pid'] = self._audit_target_pid
+        if interval_sec is not None:
+            self._interval_seconds = max(0.1, float(interval_sec))
+            updates['interval_seconds'] = self._interval_seconds
+        self._telemetry_mode = 'both'
+        logger.info("🚀 [Телеметрия] Активированы оба процесса одновременно: Стриминг и Аудит.")
+        return self.save_config(updates)
+
+    def set_telemetry_mode(
+        self,
+        mode: str,
+        target_pid: Optional[int] = None,
+        interval_sec: Optional[float] = None
+    ) -> bool:
+        """Устанавливает режим работы телеметрии: 'both', 'live_stream'/'streaming' или 'audit'.
+
+        Args:
+            mode: Режим ('both'/'all', 'live_stream'/'streaming', или 'audit'/'process_audit').
+            target_pid: Целевой PID процесса (обязателен при режиме audit, если отслеживается процесс).
+            interval_sec: Интервал сбора данных в секундах.
+
+        Returns:
+            bool: True при успешном сохранении конфигурации.
+        """
+        clean_mode = str(mode).lower().strip()
+        if clean_mode in ('both', 'all', 'streaming_and_audit'):
+            return self.activate_both_mode(pid=target_pid, interval_sec=interval_sec)
+        elif clean_mode in ('audit', 'process_audit'):
+            # В режиме 'audit' стриминг отключается отдельно от аудита
+            self.deactivate_streaming_mode()
+            return self.activate_audit_mode(pid=target_pid, interval_sec=interval_sec)
+        else:
+            # clean_mode in ('live_stream', 'streaming', 'live')
+            # Стриминг активируется, аудит запускается на старте телеметрии в любом случае!
+            self._audit_enabled = True
+            return self.activate_streaming_mode(interval_sec=interval_sec)
 
     def check_tc_mode_auto_switch(self) -> bool:
         """Проверяет таймаут активного режима 'tc' (реальное время) и переключает в 'telemetry'.
@@ -472,36 +792,144 @@ class TelemetryConfigManager:
 
     def get_multi_rate_config(self) -> Dict[str, Any]:
         """Возвращает настройки асинхронного многоскоростного ядра сбора телеметрии."""
-        return self._config.get('multi_rate_engine', {
+        defaults: Dict[str, Any] = {
             'enabled': True,
             'level3_realtime_interval_seconds': 1.0,
+            'level2_adaptive_initial_interval_seconds': 2.0,
             'level2_adaptive_min_interval_seconds': 0.5,
             'level2_adaptive_max_interval_seconds': 30.0,
+            'level2_cooldown_ticks': 10,
+            'level2_backoff_multiplier': 1.5,
             'level1_smart_interval_seconds': 43200.0,
             'level1_battery_interval_seconds': 900.0,
             'level1_security_interval_seconds': 3600.0,
             'level1_scm_interval_seconds': 1800.0,
+            'level1_schedule_check_interval_seconds': 60.0,
+            'wal_flush_interval_seconds': 5.0,
+            'ring_buffer_capacity': 600,
+            'ring_buffer_max_mb': 32,
             'deadband': {
                 'temperature_c': 1.0,
                 'cpu_load_pct': 3.0,
                 'freq_mhz': 50.0,
                 'power_w': 2.0,
                 'fan_rpm': 100.0,
+                'network_bytes': 10485760.0,
+                'network_packets': 10000.0,
+                'disk_space_gb': 0.5,
+                'default_threshold': 2.0,
                 'heartbeat_interval_seconds': 60.0,
-            }
-        })
+                'ignore_cumulative_network_spikes': True,
+            },
+        }
+        custom = self._config.get('multi_rate_engine', {})
+        if isinstance(custom, dict):
+            merged = dict(defaults)
+            merged.update({k: v for k, v in custom.items() if k != 'deadband'})
+            if isinstance(custom.get('deadband'), dict):
+                db_merged = dict(defaults['deadband'])
+                db_merged.update(custom['deadband'])
+                merged['deadband'] = db_merged
+            return merged
+        return defaults
 
-    def get_deadband_config(self) -> Dict[str, float]:
+    def get_deadband_config(self) -> Dict[str, Any]:
         """Возвращает пороги Deadband для сенсоров."""
         mr = self.get_multi_rate_config()
-        return mr.get('deadband', {
-            'temperature_c': 1.0,
-            'cpu_load_pct': 3.0,
-            'freq_mhz': 50.0,
-            'power_w': 2.0,
-            'fan_rpm': 100.0,
-            'heartbeat_interval_seconds': 60.0,
-        })
+        return mr.get('deadband', {})
+
+    def get_cache_ttls_config(self) -> Dict[str, float]:
+        """Возвращает словарь TTL кэширования сенсоров и коллекторов (в секундах)."""
+        defaults: Dict[str, float] = {
+            'acpi_thermal_ttl_sec': 15.0,
+            'storage_smart_ttl_sec': 30.0,
+            'cloud_storage_ttl_sec': 120.0,
+            'internet_speed_ttl_sec': 1800.0,
+            'network_adapter_stats_ttl_sec': 15.0,
+            'physical_disks_health_ttl_sec': 43200.0,
+            'forensics_consent_store_ttl_sec': 60.0,
+            'forensics_userassist_ttl_sec': 300.0,
+            'gpu_probe_ttl_sec': 10.0,
+            'disk_partitions_ttl_sec': 60.0,
+        }
+        custom = self._config.get('cache_ttls', {})
+        if isinstance(custom, dict):
+            for k, v in custom.items():
+                try:
+                    defaults[k] = float(v)
+                except (ValueError, TypeError):
+                    pass
+        return defaults
+
+    def get_cache_ttl(self, key: str, default: float = 30.0) -> float:
+        """Возвращает TTL кэша по ключу из секции cache_ttls."""
+        return float(self.get_cache_ttls_config().get(key, default))
+
+    def get_thresholds_config(self) -> Dict[str, float]:
+        """Возвращает словарь диагностических порогов аномалий, утечек и нагрузки."""
+        defaults: Dict[str, float] = {
+            'incident_cpu_pct': 90.0,
+            'incident_cpu_critical_pct': 95.0,
+            'incident_disk_write_burst_mb_s': 100.0,
+            'incident_net_burst_mb_s': 50.0,
+            'incident_cooldown_seconds': 60.0,
+            'incident_window_before_seconds': 300.0,
+            'suspicious_temp_cpu_pct': 15.0,
+            'suspicious_temp_critical_cpu_pct': 30.0,
+            'individual_process_high_cpu_pct': 50.0,
+            'leak_candidate_handles': 250.0,
+            'leak_candidate_memory_mb': 80.0,
+            'leak_warning_handles': 1500.0,
+            'leak_critical_handles': 4000.0,
+            'leak_severe_handles': 10000.0,
+            'leak_warning_gdi': 800.0,
+            'leak_critical_gdi': 2000.0,
+            'leak_warning_user_objects': 500.0,
+            'leak_high_page_faults': 2000000.0,
+            'leak_high_memory_mb': 2048.0,
+            'dpc_elevated_pct': 1.5,
+            'dpc_severe_pct': 5.0,
+            'interrupt_elevated_pct': 1.0,
+            'interrupt_severe_pct': 3.0,
+            'leaks_scan_every_n_ticks': 10.0,
+        }
+        custom = self._config.get('thresholds', {})
+        if isinstance(custom, dict):
+            for k, v in custom.items():
+                try:
+                    defaults[k] = float(v)
+                except (ValueError, TypeError):
+                    pass
+        return defaults
+
+    def get_threshold(self, key: str, default: float = 0.0) -> float:
+        """Возвращает пороговое значение по ключу из секции thresholds."""
+        return float(self.get_thresholds_config().get(key, default))
+
+    def get_sampling_controller_config(self) -> Dict[str, float]:
+        """Возвращает конфигурацию интервалов адаптивного контроллера режимов сбора."""
+        defaults: Dict[str, float] = {
+            'forensic_interval_sec': 0.25,
+            'forensic_duration_sec': 300.0,
+            'incident_interval_sec': 1.0,
+            'incident_duration_sec': 1200.0,
+            'boot_phase1_max_uptime_sec': 600.0,
+            'boot_phase1_interval_sec': 1.0,
+            'boot_phase2_max_uptime_sec': 3600.0,
+            'boot_phase2_interval_sec': 5.0,
+            'boot_phase3_max_uptime_sec': 86400.0,
+            'boot_phase3_interval_sec': 30.0,
+            'monitoring_interval_sec': 30.0,
+            'normal_interval_sec': 60.0,
+        }
+        custom = self._config.get('sampling_controller', {})
+        if isinstance(custom, dict):
+            for k, v in custom.items():
+                try:
+                    defaults[k] = float(v)
+                except (ValueError, TypeError):
+                    pass
+        return defaults
 
     def get_max_db_size_mb(self) -> float:
         """Возвращает максимальный разрешенный размер SQLite базы данных (в МБ, по умолчанию 100.0)."""
@@ -526,6 +954,10 @@ class TelemetryConfigManager:
     def is_auto_vacuum_enabled(self) -> bool:
         """Возвращает флаг разрешения авто-вакуума (VACUUM) SQLite при усечении."""
         return bool(self._config.get('auto_vacuum_enabled', True))
+
+    def get_enable_foreground_window(self) -> bool:
+        """Возвращает флаг разрешения отслеживания заголовков фокусного окна (ForegroundWindow)."""
+        return bool(self._config.get('enable_foreground_window', getattr(self, '_enable_foreground_window', True)))
 
     def get_process_mode(self) -> str:
         """Возвращает режим фильтрации процессов ('top_n' или 'all')."""
@@ -589,12 +1021,25 @@ class TelemetryConfigManager:
             return bool(logger_info.get('enabled', default))
         return default
 
+    def get_trigger_mode(self) -> str:
+        """Возвращает режим запуска тяжелых коллекторов (ON_STARTUP, ON_DEMAND, ON_STARTUP_OR_DEMAND, INTERVAL_BASED)."""
+        return str(self._config.get('trigger_mode', 'INTERVAL_BASED'))
+
+    def is_sequential_heavy_enabled(self) -> bool:
+        """Возвращает флаг последовательного запуска тяжелых коллекторов."""
+        return bool(self._config.get('sequential_heavy_execution', True))
+
     def get_all_intervals(self) -> Dict[str, Any]:
         """Возвращает сводный словарь всех настроенных интервалов системы."""
         return {
             'telemetry_mode': self.get_telemetry_mode(),
+            'trigger_mode': self.get_trigger_mode(),
+            'sequential_heavy_execution': self.is_sequential_heavy_enabled(),
             'default_interval_seconds': self.get_interval_seconds(),
+            'light_poll_interval_seconds': self.get_light_poll_interval_seconds(),
             'heavy_interval_seconds': self.get_heavy_interval_seconds(),
+            'heavy_poll_interval_seconds': self.get_heavy_poll_interval_seconds(),
+            'heavy_polls_intervals': self.get_heavy_polls_intervals(),
             'fast_interval_seconds': self.get_fast_interval(),
             'aggregation_interval_seconds': self.get_aggregation_interval(),
             'heavy_disk_scan_interval_seconds': self.get_heavy_disk_scan_interval(),
@@ -643,10 +1088,40 @@ class TelemetryConfigManager:
                 self._loggers_config = new_config['loggers']
             if 'interval_seconds' in new_config:
                 self._default_interval = parse_interval_to_seconds(new_config['interval_seconds'], 5.0)
+            if 'light_poll_interval_seconds' in new_config:
+                self._default_interval = parse_interval_to_seconds(new_config['light_poll_interval_seconds'], 5.0)
             if 'heavy_interval_seconds' in new_config:
                 self._heavy_interval = parse_interval_to_seconds(new_config['heavy_interval_seconds'], 60.0)
+            if 'heavy_poll_interval_seconds' in new_config:
+                self._heavy_interval = parse_interval_to_seconds(new_config['heavy_poll_interval_seconds'], 60.0)
+            if 'heavy_polls_intervals' in new_config and isinstance(new_config['heavy_polls_intervals'], dict):
+                hp = new_config['heavy_polls_intervals']
+                if 'hardware_audit_interval_sec' in hp:
+                    self._hardware_audit_interval_sec = parse_interval_to_seconds(hp['hardware_audit_interval_sec'], self._heavy_interval)
+                if 'startup_audit_interval_sec' in hp:
+                    self._startup_audit_interval_sec = parse_interval_to_seconds(hp['startup_audit_interval_sec'], 180.0)
+                if 'extended_audit_interval_sec' in hp:
+                    self._extended_audit_interval_sec = parse_interval_to_seconds(hp['extended_audit_interval_sec'], 300.0)
+                if 'defender_audit_interval_sec' in hp:
+                    self._defender_audit_interval_sec = parse_interval_to_seconds(hp['defender_audit_interval_sec'], 120.0)
+                if 'process_activity_sync_interval_sec' in hp:
+                    self._process_activity_sync_interval_sec = parse_interval_to_seconds(hp['process_activity_sync_interval_sec'], 60.0)
+                if 'software_audit_interval_sec' in hp:
+                    self._software_audit_interval_sec = parse_interval_to_seconds(hp['software_audit_interval_sec'], 3600.0)
+                if 'wmi_interval_sec' in hp:
+                    self._wmi_interval_sec = parse_interval_to_seconds(hp['wmi_interval_sec'], 120.0)
+                if 'smart_interval_sec' in hp:
+                    self._smart_interval_sec = parse_interval_to_seconds(hp['smart_interval_sec'], 300.0)
+                if 'handles_interval_sec' in hp:
+                    self._handles_interval_sec = parse_interval_to_seconds(hp['handles_interval_sec'], 60.0)
+                if 'network_ports_interval_sec' in hp:
+                    self._network_ports_interval_sec = parse_interval_to_seconds(hp['network_ports_interval_sec'], 30.0)
+                if 'disk_scan_interval_sec' in hp:
+                    self._heavy_disk_scan_interval = parse_interval_to_seconds(hp['disk_scan_interval_sec'], 43200.0)
             if 'heavy_disk_scan_interval_seconds' in new_config:
                 self._heavy_disk_scan_interval = parse_interval_to_seconds(new_config['heavy_disk_scan_interval_seconds'], 43200.0)
+            if 'software_audit_interval_sec' in new_config:
+                self._software_audit_interval_sec = parse_interval_to_seconds(new_config['software_audit_interval_sec'], 3600.0)
             if 'fast_interval_seconds' in new_config:
                 self._fast_interval = parse_interval_to_seconds(new_config['fast_interval_seconds'], 30.0)
             if 'aggregation_interval_seconds' in new_config:
@@ -659,6 +1134,12 @@ class TelemetryConfigManager:
                 self._mode = str(new_config['mode']).lower()
             if 'telemetry_mode' in new_config:
                 self._telemetry_mode = str(new_config['telemetry_mode']).lower()
+            if 'audit_enabled' in new_config:
+                self._audit_enabled = bool(new_config['audit_enabled'])
+            if 'streaming_enabled' in new_config:
+                self._streaming_enabled = bool(new_config['streaming_enabled'])
+            if 'live_stream_enabled' in new_config:
+                self._streaming_enabled = bool(new_config['live_stream_enabled'])
             if 'standard_flush_interval_seconds' in new_config:
                 self._standard_flush_interval_seconds = parse_interval_to_seconds(new_config['standard_flush_interval_seconds'], 30.0)
             if 'tc_flush_interval_seconds' in new_config:
@@ -687,3 +1168,29 @@ class TelemetryConfigManager:
             return True
         except Exception:
             return False
+
+
+_global_telemetry_config_manager: Optional[TelemetryConfigManager] = None
+
+
+def get_telemetry_config_manager() -> TelemetryConfigManager:
+    """Возвращает глобальный экземпляр менеджера конфигурации телеметрии."""
+    global _global_telemetry_config_manager
+    if _global_telemetry_config_manager is None:
+        _global_telemetry_config_manager = TelemetryConfigManager()
+    return _global_telemetry_config_manager
+
+
+def get_trigger_mode() -> str:
+    """Возвращает текущий триггерный режим сбора телеметрии."""
+    return get_telemetry_config_manager().get_trigger_mode()
+
+
+def is_sequential_heavy_enabled() -> bool:
+    """Возвращает флаг последовательного сбора тяжелой телеметрии."""
+    return get_telemetry_config_manager().is_sequential_heavy_enabled()
+
+
+def get_all_intervals() -> Dict[str, Any]:
+    """Возвращает сводный словарь интервалов телеметрии."""
+    return get_telemetry_config_manager().get_all_intervals()

@@ -7,6 +7,24 @@
   },
   "routers": [
     {
+      "module": "apps.ai_assistant.router",
+      "factory": "init_router",
+      "enabled": false,
+      "description": "Модуль умной истории версий AI Assistant (/api/v1/ai-assistant/version-history/*)"
+    },
+    {
+      "module": "apps.windows.api.routers.router_procedural_tools",
+      "factory": "init_router",
+      "enabled": true,
+      "description": "Процедурная память WikiLLM и динамические инструменты (/api/v1/procedural-tools/*)"
+    },
+    {
+      "module": "apps.windows.api.routers.router_ai_instruments",
+      "factory": "init_router",
+      "enabled": true,
+      "description": "Изолированная база инструментов ИИ-агента (/api/v1/ai-instruments/*)"
+    },
+    {
       "module": "apps.windows.api.routers.router_menu",
       "factory": "init_router",
       "enabled": true,
@@ -18,6 +36,12 @@
       "enabled": true,
       "inject_app": true,
       "description": "Windows diagnostics & hardware (/api/windows/*)"
+    },
+    {
+      "module": "apps.windows.sdk.modules.window_control_plane.router",
+      "factory": "init_router",
+      "enabled": true,
+      "description": "Windows User Environment Settings (/api/v1/user-environment-settings/*)"
     },
     {
       "module": "apps.windows.api.routers.router_log_settings",
@@ -51,7 +75,7 @@
       "description": "Windows Sysadmin (/api/sysadmin/*)"
     },
     {
-      "module": "apps.windows.network.router",
+      "module": "apps.windows.sdk.modules.network.router",
       "factory": "init_router",
       "enabled": true,
       "description": "Сетевой терминал (/api/network/*)"
@@ -105,6 +129,24 @@
       "description": "Панель 'О Системе' (/api/v1/about-system/*)"
     },
     {
+      "module": "apps.windows.api.router_software",
+      "factory": "init_router",
+      "enabled": true,
+      "description": "Утилиты работы с программным обеспечением (/api/v1/software/*)"
+    },
+    {
+      "module": "apps.windows.analytics.server",
+      "factory": "init_router",
+      "enabled": true,
+      "description": "Аналитическое исследование телеметрии и дашборды (/apps/telemetry_research/*, /api/*)"
+    },
+    {
+      "module": "apps.windows.api.routers.router_wikillm_editor",
+      "factory": "init_router",
+      "enabled": true,
+      "description": "Управление базой WikiLLM (/api/v1/wikillm/*)"
+    },
+    {
       "module": "apps.windows.api.routers.router_cpu_load",
       "factory": "init_router",
       "enabled": true,
@@ -127,12 +169,6 @@
       "factory": "init_router",
       "enabled": true,
       "description": "Параметры накопителей и дисков (/api/v1/panel/storage-load)"
-    },
-    {
-      "module": "apps.windows.api.routers.router_hardware_sensors",
-      "factory": "init_router",
-      "enabled": true,
-      "description": "Табло сенсоров оборудования (/api/v1/panel/hardware-sensors)"
     },
     {
       "module": "apps.windows.api.routers.router_network_load",
@@ -213,78 +249,186 @@
       "description": "Интеллектуальный просмотрщик системных журналов (/api/v1/system_logs/*)"
     },
     {
-        "module": "apps.windows.api.routers.router_forensics",
-        "factory": "init_router",
-        "enabled": true,
-        "description": "Forensics data endpoint (/api/v1/system/diagnostics/forensics)"
+      "module": "apps.windows.api.routers.router_forensics",
+      "factory": "init_router",
+      "enabled": true,
+      "description": "Forensics data endpoint (/api/v1/system/diagnostics/forensics)"
     },
     {
-        "module": "apps.windows.api.routers.router_system32_catalog",
-        "factory": "init_router",
-        "enabled": true,
-        "description": "Каталог системных возможностей и инструментов Windows System32 (/api/v1/system32/*)"
+      "module": "apps.windows.api.routers.router_system32_catalog",
+      "factory": "init_router",
+      "enabled": true,
+      "description": "Каталог системных возможностей и инструментов Windows System32 (/api/v1/system32/*)"
     },
     {
-        "module": "apps.windows.sdk.modules.taskbar.router",
-        "factory": "init_router",
-        "enabled": true,
-        "description": "Управление панелью задач Windows 10/11 и окнами рабочего стола (/api/v1/taskbar/*)"
+      "module": "apps.windows.sdk.modules.taskbar.router",
+      "factory": "init_router",
+      "enabled": true,
+      "description": "Управление панелью задач Windows 10/11 и окнами рабочего стола (/api/v1/taskbar/*)"
     },
     {
-        "module": "apps.windows.sdk.modules.window_control_plane.router",
-        "factory": "init_router",
-        "enabled": true,
-        "description": "Windows Window Management Control Plane (295 параметров) (/api/v1/window-management/*)"
+      "module": "apps.windows.api.routers.router_focus",
+      "factory": "init_router",
+      "enabled": true,
+      "description": "Управление сессиями фокусировки внимания и Do Not Disturb (/api/windows/focus/*)"
     },
     {
-        "module": "apps.windows.api.routers.router_focus",
-        "factory": "init_router",
-        "enabled": true,
-        "description": "Управление сессиями фокусировки внимания и Do Not Disturb (/api/windows/focus/*)"
+      "module": "apps.windows.api.routers.router_app_logs",
+      "factory": "init_router",
+      "enabled": true,
+      "description": "Анализ и стриминг внутренних логов программы (%APPDATA%/AI-Windows-Admin/logs) (/api/v1/app_logs/*)"
     },
     {
-        "module": "apps.windows.api.routers.router_app_logs",
-        "factory": "init_router",
-        "enabled": true,
-        "description": "Анализ и стриминг внутренних логов программы (%APPDATA%/AI-Windows-Admin/logs) (/api/v1/app_logs/*)"
+      "module": "apps.windows.wikillm.router",
+      "factory": "init_router",
+      "enabled": true,
+      "description": "Progressive Knowledge Base WikiLLM (/api/windows/wikillm/*)"
     },
     {
-        "module": "apps.windows.wikillm.router",
-        "factory": "init_router",
-        "enabled": true,
-        "description": "Progressive Knowledge Base WikiLLM (/api/windows/wikillm/*)"
+      "module": "apps.windows.api.router_capabilities",
+      "factory": "init_router",
+      "enabled": true,
+      "description": "Каталог атомарных возможностей Windows CLI и API (/api/v1/capabilities/*)"
     },
     {
-        "module": "apps.windows.api.router_capabilities",
-        "factory": "init_router",
-        "enabled": true,
-        "description": "Каталог атомарных возможностей Windows CLI и API (/api/v1/capabilities/*)"
+      "module": "apps.windows.api.routers.router_processes_load_inspector",
+      "factory": "init_router",
+      "enabled": true,
+      "description": "Инспектор нагрузки процессов (/api/v1/tab-processes-load-inspector/*)"
     },
     {
-        "module": "apps.windows.api.routers.router_process_activity",
-        "factory": "init_router",
-        "enabled": true,
-        "description": "Отслеживание активности процессов (/api/v1/telemetry/instances/*)"
+      "module": "apps.windows.api.routers.router_process_activity",
+      "factory": "init_router",
+      "enabled": true,
+      "description": "Отслеживание активности процессов (/api/v1/telemetry/instances/*)"
     },
     {
-        "module": "apps.windows.api.routers.router_telemetry",
-        "factory": "init_router",
-        "enabled": true,
-        "description": "Телеметрия процессов и системы (/api/v1/telemetry/*)"
+      "module": "apps.windows.api.routers.router_telemetry",
+      "factory": "init_router",
+      "enabled": true,
+      "description": "Телеметрия процессов и системы (/api/v1/telemetry/*)"
     },
     {
-        "module": "apps.windows.api.routers.router_keys",
-        "factory": "init_router",
-        "enabled": true,
-        "description": "Управление API ключами и квоты Gemini (/api/keys/*)"
+      "module": "apps.windows.api.routers.router_keys",
+      "factory": "init_router",
+      "enabled": true,
+      "description": "Управление API ключами и квоты Gemini (/api/keys/*)"
     },
     {
-        "module": "apps.windows.sdk.software_scanner.router",
-        "factory": "init_router",
-        "enabled": true,
-        "description": "Глубокое сканирование и аудит установленного ПО (/api/windows/software-scanner/*)"
+      "module": "apps.windows.sdk.software_scanner.router",
+      "factory": "init_router",
+      "enabled": true,
+      "description": "Глубокое сканирование и аудит установленного ПО (/api/windows/software-scanner/*)"
+    },
+    {
+      "module": "apps.windows.api.routers.router_ninite",
+      "factory": "init_router",
+      "enabled": true,
+      "description": "Автообновление и инсталлятор Ninite (/api/ninite/*)"
+    },
+    {
+      "module": "apps.windows.sdk.core.software_transparency",
+      "factory": "init_software_transparency_router",
+      "enabled": true,
+      "inject_models": true,
+      "description": "ИИ-Аудит прозрачности и рисков ПО (/api/v1/software-scanner/*)"
+    },
+    {
+      "module": "apps.windows.api.routers.tab_software_scanner.router_software_ai",
+      "factory": "init_router",
+      "enabled": true,
+      "description": "ИИ-Диалог и управление процессами ПО (/api/v1/chat/software-explain, /api/v1/processes/kill, /api/v1/security/firewall/block)"
+    },
+    {
+      "module": "apps.windows.api.routers.router_sound",
+      "factory": "init_router",
+      "enabled": true,
+      "description": "Управление системным звуком и аудиомикшером Windows (/api/v1/sound/*)"
     }
-  ]
+  ],
+  "database": {
+    "engine": "mariadb",
+    "sqlite": {
+      "path": "data/windows_wikillm/knowledge.db"
+    },
+    "mariadb": {
+      "connection_type": "php_api",
+      "host": "srv1502.hstgr.io",
+      "port": 3306,
+      "user": "u177424397_davidka",
+      "password": "@Davidka#1969",
+      "database": "u177424397_comp_knowledge",
+      "ip_fallback": "77.37.35.16",
+      "connect_timeout": 10,
+      "php_api_url": "https://srv1502.hstgr.io/wikillm_hostinger.php",
+      "php_api_key": "test_token_123"
+    }
+  },
+  "wikillm": {
+    "active_profile": "balanced",
+    "search_mode": "hybrid",
+    "profiles": {
+      "fast": {
+        "top_k": 3,
+        "fetch_k": 10,
+        "score_threshold": 0.6,
+        "reranker_enabled": false,
+        "rerank_top_n": 3,
+        "temperature": 0.2,
+        "max_context_tokens": 2048,
+        "grounding_required": true
+      },
+      "balanced": {
+        "top_k": 5,
+        "fetch_k": 20,
+        "score_threshold": 0.7,
+        "reranker_enabled": true,
+        "rerank_top_n": 5,
+        "temperature": 0.1,
+        "max_context_tokens": 4096,
+        "grounding_required": true
+      },
+      "precise": {
+        "top_k": 10,
+        "fetch_k": 50,
+        "score_threshold": 0.82,
+        "reranker_enabled": true,
+        "rerank_top_n": 8,
+        "temperature": 0.0,
+        "max_context_tokens": 8192,
+        "grounding_required": true
+      }
+    }
+  },
+  "smart_audit": {
+    "enabled": true,
+    "chunk_size": 50,
+    "default_provider": "gemini",
+    "supported_providers": [
+      "gemini",
+      "agy"
+    ],
+    "auto_delete_after_audit": false,
+    "backup_before_delete": true
+  },
+  "ai_instruments": {
+    "description": "Изолированная база данных инструментов ИИ-агента (ai_instruments.db)",
+    "engine": "sqlite",
+    "sqlite": {
+      "path": "data/ai_instruments/ai_instruments.db"
+    },
+    "hostinger": {
+      "connection_type": "php_api",
+      "host": "srv1502.hstgr.io",
+      "port": 3306,
+      "user": "u177424397_davidka",
+      "password": "@Davidka#1969",
+      "database": "u177424397_comp_knowledge",
+      "table_name": "ai_instruments",
+      "ip_fallback": "77.37.35.16",
+      "connect_timeout": 10,
+      "php_api_url": "https://srv1502.hstgr.io/wikillm_hostinger.php",
+      "php_api_key": "test_token_123"
+    }
+  }
 }
-
-

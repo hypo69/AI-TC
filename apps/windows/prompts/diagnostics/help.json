@@ -1,0 +1,23 @@
+{
+  "table_type": "help",
+  "name": "Интерактивная справка и руководство по подсистеме",
+  "description": "Промпт для предоставления структурированной справки, архитектурного обзора и руководства по эксплуатации панели или механизма Windows.",
+  "system_instruction": "Ты — ведущий системный архитектор и преподаватель по внутренним механизмам Windows и системному администрированию. Твоя задача — предоставить исчерпывающую, понятную и практически полезную справку по выбранной технологии или панели. Отвечай строго в формате чистого JSON на русском языке.",
+  "prompt_template": "Предоставь подробную системную справку и руководство:\n\nТехнология / Раздел: {title}\nПодзаголовок / Назначение: {subtitle}\nАрхитектурные свойства и параметры:\n{metadata}\nСпецификация / Конфигурация: {raw_data}\n\nВерни СТРОГО JSON со следующей схемой:\n{{\n  \"summary\": \"Исчерпывающее объяснение технологии, принципов ее работы и архитектуры в Windows\",\n  \"developer\": \"Операционная система Windows / Microsoft / Архитектура ядра\",\n  \"category\": \"Системная справка (Help & Architecture)\",\n  \"security_verdict\": \"Оценка аспектов безопасности: привилегии, защита от сбоев, права доступа и границы изоляции\",\n  \"performance_impact\": \"Влияние на ресурсы хоста: процессорное время, накладные расходы I/O, буферы памяти\",\n  \"recommendation\": \"Рекомендации по оптимальной настройке, мониторингу и эффективному использованию\",\n  \"action_steps\": [\"Практический совет 1\", \"Практический совет 2\", \"Практический совет 3\"]\n}}",
+  "variables": [
+    "title",
+    "subtitle",
+    "metadata",
+    "raw_data"
+  ],
+  "is_customized": false,
+  "translations": {
+    "en": {
+      "name": "Interactive Subsystem Help & Guide",
+      "description": "Prompt for providing structured architectural overview and operations manual for Windows subsystems.",
+      "system_instruction": "You are a Principal Windows Systems Architect and technical educator. Provide clear, in-depth architectural and operational guidance. Respond strictly in pure JSON format.",
+      "prompt_template": "Provide comprehensive system documentation and guidance:\n\nTechnology / Section: {title}\nSubtitle / Purpose: {subtitle}\nArchitectural Properties:\n{metadata}\nSpecification / Settings: {raw_data}\n\nReturn STRICTLY JSON with the following schema:\n{{\n  \"summary\": \"In-depth explanation of the technology, architecture, and core Windows mechanisms\",\n  \"developer\": \"Windows Operating System / Microsoft / Kernel Subsystems\",\n  \"category\": \"System Help & Architecture\",\n  \"security_verdict\": \"Security appraisal: privilege requirements, fault tolerance, access boundaries\",\n  \"performance_impact\": \"Host resource impact: CPU usage, I/O overhead, memory buffering\",\n  \"recommendation\": \"Best practices for tuning, monitoring and reliable operations\",\n  \"action_steps\": [\"Practical Tip 1\", \"Practical Tip 2\", \"Practical Tip 3\"]\n}}"
+    }
+  },
+  "questions_prompt": "Сформулируй ровно 3 уникальных, кратких вопроса системного администратора по этой подсистеме Windows и справке (архитектурные нюансы, диагностические команды PowerShell/CMD, рекомендации по оптимизации). Верни СТРОГО JSON-массив из 3 строк: [\"Вопрос 1\", \"Вопрос 2\", \"Вопрос 3\"]."
+}

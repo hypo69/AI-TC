@@ -1,0 +1,521 @@
+<!--
+=============================================================================
+Process Name: Windows Web Interface - Windows User Settings & Control Plane Tab
+=============================================================================
+Description:
+  Единая панель управления пользовательскими настройками системы Windows:
+  - Управление окнами и фокусом (Active Window Tracking / X-Mouse, таймауты)
+  - Специальные возможности (Accessibility: толщина курсора, лупа, контраст)
+  - Мышь, клавиатура и ввод (скорости, залипание клавиш, фильтрация)
+  - Визуальные эффекты, DWM, Snap Layouts и многозадачность
+  - SafeOps: Dry-Run предпросмотр, аудит рисков и мгновенный откат (Rollback)
+
+Usage Examples:
+    Web Route:
+      /html/tab_windows_settings/index.html
+
+File: index.html
+Project: ai-windows-admin
+Package: windows/api/webgui/tab_windows_settings
+Author: hypo69
+Copyright: © 2026 hypo69
+Updated: 2026-10-20 10:55:00
+=============================================================================
+-->
+
+<div class="container-fluid p-3 win-settings-wrapper d-flex flex-column gap-3" style="max-width: 1400px; margin: 0 auto;">
+  <!-- Заголовок вкладки -->
+  <div class="tab-header d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+    <div class="d-flex align-items-center gap-2">
+      <span class="tab-header-icon fs-4 text-warning">🎛️</span>
+      <div>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+          <h3 class="tab-header-title panel-header mb-0">Пользовательские настройки Windows</h3>
+          <span class="badge bg-primary-subtle text-primary border border-primary-subtle fs-6" id="winset-total-badge">295 параметров</span>
+        </div>
+        <small class="tab-header-subtitle text-secondary">Управление окнами, мышью, визуальными эффектами, DWM, Snap Layouts и многозадачностью с SafeOps откатом</small>
+      </div>
+    </div>
+    
+  </div>
+<!-- Метрики и быстрые действия в шапке -->
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+      <button class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-2" id="winset-btn-refresh-all" title="Обновить текущие живые значения">
+        <i class="bi bi-arrow-clockwise" id="winset-refresh-spinner"></i>
+        <span>Обновить все</span>
+      </button>
+      <button class="btn btn-sm btn-outline-danger d-flex align-items-center gap-2" id="winset-btn-rollback-last" title="Быстрый откат последнего изменения">
+        <i class="bi bi-arrow-counterclockwise"></i>
+        <span>Откатить последнее</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Карточка: Рабочий стол и дисплеи (Desktop & Displays) -->
+  <div class="card border-info-subtle shadow-sm bg-body">
+    <div class="card-header bg-info-subtle text-info-emphasis py-2 px-3 fw-semibold d-flex align-items-center justify-content-between">
+      <div class="d-flex align-items-center gap-2">
+        <i class="bi bi-display"></i>
+        <span>Рабочий стол и дисплеи (Desktop & Displays)</span>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <span class="badge bg-info text-white" id="winset-desktop-status">Готов</span>
+      </div>
+    </div>
+    <div class="card-body p-3">
+      <!-- Баннер обратного отсчета при повороте экрана -->
+      <div class="alert alert-warning d-none align-items-center justify-content-between p-2 mb-3" id="winset-rotate-countdown-alert">
+        <div class="d-flex align-items-center gap-2">
+          <i class="bi bi-hourglass-split fs-4 text-warning"></i>
+          <div>
+            <strong>Ориентация экрана изменена!</strong> Сохранить новый режим?
+            <span class="badge bg-dark ms-2" id="winset-rotate-timer-badge">15s</span>
+          </div>
+        </div>
+        <div class="d-flex gap-2">
+          <button class="btn btn-sm btn-success" id="winset-btn-confirm-rotation">
+            <i class="bi bi-check-lg"></i> Сохранить
+          </button>
+          <button class="btn btn-sm btn-outline-danger" id="winset-btn-cancel-rotation">
+            <i class="bi bi-arrow-counterclockwise"></i> Вернуть сейчас
+          </button>
+        </div>
+      </div>
+
+      <div class="row g-3">
+        <!-- 1. Мониторы и Ориентация экрана -->
+        <div class="col-12 col-lg-6">
+          <div class="p-3 rounded border bg-body-tertiary h-100 d-flex flex-column justify-content-between">
+            <div>
+              <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="fw-bold text-body">
+                  <i class="bi bi-display text-info me-1"></i> Ориентация экрана
+                </span>
+                <span class="badge bg-secondary" id="winset-active-display-badge">Определение...</span>
+              </div>
+              <div class="mb-3">
+                <label class="form-label small text-muted mb-1" for="winset-select-display">Целевой дисплей:</label>
+                <select class="form-select form-select-sm" id="winset-select-display">
+                  <option value="">Поиск дисплеев...</option>
+                </select>
+              </div>
+              <div class="d-flex flex-wrap gap-2 mb-2">
+                <button class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1 flex-fill" data-orientation="landscape" id="winset-btn-orient-landscape">
+                  <i class="bi bi-laptop"></i>
+                  <span>Альбомная</span>
+                </button>
+                <button class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1 flex-fill" data-orientation="portrait" id="winset-btn-orient-portrait">
+                  <i class="bi bi-phone"></i>
+                  <span>Портретная</span>
+                </button>
+                <button class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1 flex-fill" data-orientation="landscape_flipped" id="winset-btn-orient-land-flip">
+                  <i class="bi bi-laptop-fill"></i>
+                  <span>Альбомная перевёрнутая</span>
+                </button>
+                <button class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1 flex-fill" data-orientation="portrait_flipped" id="winset-btn-orient-port-flip">
+                  <i class="bi bi-phone-fill"></i>
+                  <span>Портретная перевёрнутая</span>
+                </button>
+              </div>
+            </div>
+            <div class="d-flex align-items-center justify-content-between pt-2 border-top">
+              <span class="small text-muted">MONITOR.ROTATE (Win32 API)</span>
+              <span class="badge bg-info-subtle text-info border" id="winset-cur-orientation-label">Альбомная (0°)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Панель задач: Положение и Выравнивание -->
+        <div class="col-12 col-lg-6">
+          <div class="p-3 rounded border bg-body-tertiary h-100 d-flex flex-column justify-content-between">
+            <div>
+              <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="fw-bold text-body">
+                  <i class="bi bi-layout-sidebar-inset text-info me-1"></i> Панель задач Windows
+                </span>
+                <span class="badge bg-info-subtle text-info border" id="winset-taskbar-compat-badge">Win 11 Shell</span>
+              </div>
+              
+              <!-- Расположение панели задач -->
+              <div class="mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <label class="form-label small text-muted mb-0">Расположение панели задач:</label>
+                  <span class="small text-muted" id="winset-position-status">Снизу</span>
+                </div>
+                <div class="btn-group btn-group-sm w-100" role="group">
+                  <button type="button" class="btn btn-outline-secondary" data-position="bottom" id="winset-btn-pos-bottom">Снизу</button>
+                  <button type="button" class="btn btn-outline-secondary" data-position="top" id="winset-btn-pos-top">Сверху</button>
+                  <button type="button" class="btn btn-outline-secondary" data-position="left" id="winset-btn-pos-left">Слева</button>
+                  <button type="button" class="btn btn-outline-secondary" data-position="right" id="winset-btn-pos-right">Справа</button>
+                </div>
+                <div class="form-text small text-muted mt-1" id="winset-position-hint">
+                  Перемещение к верхнему и боковым краям зависит от версии Windows и поддерживаемого механизма.
+                </div>
+              </div>
+
+              <!-- Выравнивание значков и автоскрытие -->
+              <div class="row g-2 align-items-center">
+                <div class="col-12 col-sm-6">
+                  <label class="form-label small text-muted mb-1">Выравнивание значков:</label>
+                  <div class="btn-group btn-group-sm w-100" role="group">
+                    <button type="button" class="btn btn-outline-primary" data-align="left" id="winset-btn-align-left">Слева</button>
+                    <button type="button" class="btn btn-outline-primary" data-align="center" id="winset-btn-align-center">По центру</button>
+                  </div>
+                </div>
+                <div class="col-12 col-sm-6">
+                  <div class="form-check form-switch mt-3">
+                    <input class="form-check-input" type="checkbox" role="switch" id="winset-switch-autohide">
+                    <label class="form-check-label small fw-semibold" for="winset-switch-autohide">
+                      Автоскрытие панели
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="d-flex align-items-center justify-content-between pt-2 border-top mt-3">
+              <span class="small text-muted">TASKBAR.SET_ALIGNMENT &amp; POSITION</span>
+              <span class="badge bg-secondary" id="winset-status-taskbar">Синхронизировано</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Консоль ответа контракта Command Registry -->
+      <div class="mt-3 p-2 rounded bg-dark text-light font-monospace small d-flex flex-wrap align-items-center justify-content-between" style="font-size: 0.75rem;">
+        <div class="d-flex align-items-center gap-2">
+          <span class="badge bg-primary">Command Registry</span>
+          <span class="text-secondary" id="winset-contract-cmd">Ожидание команды...</span>
+        </div>
+        <div class="text-secondary" id="winset-contract-result">Готов к выполнению контрактов</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Карточка быстрых переключателей (Quick Actions & Accessibility) -->
+  <div class="card border-primary-subtle shadow-sm bg-body">
+    <div class="card-header bg-primary-subtle text-primary py-2 px-3 fw-semibold d-flex align-items-center justify-content-between">
+      <div class="d-flex align-items-center gap-2">
+        <i class="bi bi-lightning-charge-fill"></i>
+        <span>Экспресс-настройки: Активное отслеживание окон и Доступность</span>
+      </div>
+      <span class="badge bg-primary text-white" id="winset-quick-status">Синхронизировано</span>
+    </div>
+    <div class="card-body p-3">
+      <div class="row g-3">
+        <!-- 1. X-Mouse Active Window Tracking -->
+        <div class="col-12 col-md-6 col-lg-4">
+          <div class="p-3 rounded border bg-body-tertiary h-100 d-flex flex-column justify-content-between">
+            <div>
+              <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="fw-bold text-body">
+                  <i class="bi bi-cursor-fill text-primary me-1"></i> Фокус за курсором (X-Mouse)
+                </span>
+                <div class="form-check form-switch mb-0">
+                  <input class="form-check-input" type="checkbox" role="switch" id="winset-switch-xmouse">
+                </div>
+              </div>
+              <p class="small text-muted mb-2">
+                Автоматическая передача фокуса окну под указателем мыши (Active Window Tracking).
+              </p>
+            </div>
+            <div class="d-flex align-items-center justify-content-between pt-2 border-top">
+              <span class="small text-muted">SPI_GETACTIVEWINDOWTRACKING</span>
+              <span class="badge bg-secondary" id="winset-status-xmouse">Чтение...</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Active Window Tracking Delay -->
+        <div class="col-12 col-md-6 col-lg-4">
+          <div class="p-3 rounded border bg-body-tertiary h-100 d-flex flex-column justify-content-between">
+            <div>
+              <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="fw-bold text-body">
+                  <i class="bi bi-stopwatch text-primary me-1"></i> Задержка фокуса окна
+                </span>
+                <span class="badge bg-info-subtle text-info border" id="winset-val-xmouse-delay">500 ms</span>
+              </div>
+              <p class="small text-muted mb-2">
+                Время удержания курсора над окном перед передачей фокуса (0..2000 мс).
+              </p>
+              <input type="range" class="form-range" min="0" max="2000" step="50" id="winset-range-xmouse-delay">
+            </div>
+            <div class="d-flex align-items-center justify-content-end pt-2 border-top">
+              <button class="btn btn-xs btn-outline-primary py-0 px-2" id="winset-btn-apply-delay">Применить</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Foreground Lock Timeout -->
+        <div class="col-12 col-md-6 col-lg-4">
+          <div class="p-3 rounded border bg-body-tertiary h-100 d-flex flex-column justify-content-between">
+            <div>
+              <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="fw-bold text-body">
+                  <i class="bi bi-shield-lock text-primary me-1"></i> Блокировка фокуса
+                </span>
+                <span class="badge bg-info-subtle text-info border" id="winset-val-fglock">200000 ms</span>
+              </div>
+              <p class="small text-muted mb-2">
+                Защита от нежелательного перехвата фокуса фоновыми приложениями.
+              </p>
+              <div class="input-group input-group-sm">
+                <input type="number" class="form-control" id="winset-input-fglock" value="200000" step="1000">
+                <button class="btn btn-outline-primary" id="winset-btn-apply-fglock">Сохранить</button>
+              </div>
+            </div>
+            <div class="d-flex align-items-center justify-content-between pt-2 border-top mt-2">
+              <span class="small text-muted">SPI_SETFOREGROUNDLOCKTIMEOUT</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. Толщина текстового курсора (Accessibility Caret) -->
+        <div class="col-12 col-md-6 col-lg-4">
+          <div class="p-3 rounded border bg-body-tertiary h-100 d-flex flex-column justify-content-between">
+            <div>
+              <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="fw-bold text-body">
+                  <i class="bi bi-border-width text-primary me-1"></i> Толщина курсора
+                </span>
+                <span class="badge bg-secondary" id="winset-val-caret-width">1 px</span>
+              </div>
+              <p class="small text-muted mb-2">
+                Толщина мигающей каретки ввода текста (Специальные возможности).
+              </p>
+              <input type="range" class="form-range" min="1" max="20" step="1" id="winset-range-caret-width" value="1">
+            </div>
+            <div class="d-flex align-items-center justify-content-end pt-2 border-top">
+              <button class="btn btn-xs btn-outline-primary py-0 px-2" id="winset-btn-apply-caret">Применить</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5. Анимации окон (Visual Effects) -->
+        <div class="col-12 col-md-6 col-lg-4">
+          <div class="p-3 rounded border bg-body-tertiary h-100 d-flex flex-column justify-content-between">
+            <div>
+              <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="fw-bold text-body">
+                  <i class="bi bi-window-fullscreen text-primary me-1"></i> Анимация окон
+                </span>
+                <div class="form-check form-switch mb-0">
+                  <input class="form-check-input" type="checkbox" role="switch" id="winset-switch-animations">
+                </div>
+              </div>
+              <p class="small text-muted mb-2">
+                Анимация сворачивания и разворачивания окон для ускорения отклика интерфейса.
+              </p>
+            </div>
+            <div class="d-flex align-items-center justify-content-between pt-2 border-top">
+              <span class="small text-muted">SPI_SETANIMATION</span>
+              <span class="badge bg-secondary" id="winset-status-animations">Чтение...</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 6. Snap Assist / Прикрепление окон -->
+        <div class="col-12 col-md-6 col-lg-4">
+          <div class="p-3 rounded border bg-body-tertiary h-100 d-flex flex-column justify-content-between">
+            <div>
+              <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="fw-bold text-body">
+                  <i class="bi bi-grid-1x2 text-primary me-1"></i> Snap Assist (Привязка)
+                </span>
+                <div class="form-check form-switch mb-0">
+                  <input class="form-check-input" type="checkbox" role="switch" id="winset-switch-snap">
+                </div>
+              </div>
+              <p class="small text-muted mb-2">
+                Автоматическое размещение окон по краям экрана и раскладки Snap Layouts.
+              </p>
+            </div>
+            <div class="d-flex align-items-center justify-content-between pt-2 border-top">
+              <span class="small text-muted">Explorer Snap Policy</span>
+              <span class="badge bg-secondary" id="winset-status-snap">Чтение...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Вкладки категорий и каталог параметров -->
+  <div class="card border-secondary-subtle shadow-sm bg-body">
+    <!-- Навигация по подразделам -->
+    <div class="card-header bg-body-tertiary p-2 border-bottom">
+      <ul class="nav nav-pills card-header-pills gap-1 flex-wrap" id="winset-category-tabs">
+        <li class="nav-item">
+          <button class="nav-link btn-sm" data-category="desktop_displays">
+            <i class="bi bi-display me-1"></i> Рабочий стол и дисплеи
+          </button>
+        </li>
+        <li class="nav-item">
+          <button class="nav-link active btn-sm" data-category="focus_activation">
+            <i class="bi bi-cursor me-1"></i> Окна и Фокус
+          </button>
+        </li>
+        <li class="nav-item">
+          <button class="nav-link btn-sm" data-category="accessibility_presentation">
+            <i class="bi bi-universal-access me-1"></i> Специальные возможности
+          </button>
+        </li>
+        <li class="nav-item">
+          <button class="nav-link btn-sm" data-category="mouse_window_behaviour">
+            <i class="bi bi-mouse me-1"></i> Мышь и Ввод
+          </button>
+        </li>
+        <li class="nav-item">
+          <button class="nav-link btn-sm" data-category="keyboard_focus_navigation">
+            <i class="bi bi-keyboard me-1"></i> Клавиатура
+          </button>
+        </li>
+        <li class="nav-item">
+          <button class="nav-link btn-sm" data-category="animations_visual_effects">
+            <i class="bi bi-magic me-1"></i> Визуальные эффекты
+          </button>
+        </li>
+        <li class="nav-item">
+          <button class="nav-link btn-sm" data-category="dwm_window_composition">
+            <i class="bi bi-palette me-1"></i> DWM и Стили
+          </button>
+        </li>
+        <li class="nav-item">
+          <button class="nav-link btn-sm" data-category="desktop_explorer">
+            <i class="bi bi-folder me-1"></i> Проводник и Оболочка
+          </button>
+        </li>
+        <li class="nav-item">
+          <button class="nav-link btn-sm" data-category="all">
+            <i class="bi bi-list-columns me-1"></i> Все параметры
+          </button>
+        </li>
+        <li class="nav-item ms-auto">
+          <button class="nav-link btn-sm text-warning" data-category="history">
+            <i class="bi bi-clock-history me-1"></i> SafeOps Аудит и Откат
+          </button>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Тулбар фильтрации и поиска -->
+    <div class="card-body p-3 border-bottom bg-body">
+      <div class="row g-2 align-items-center">
+        <div class="col-12 col-md-5">
+          <div class="input-group input-group-sm">
+            <span class="input-group-text bg-body-tertiary"><i class="bi bi-search"></i></span>
+            <input type="text" class="form-control" id="winset-search-input" placeholder="Поиск параметра по имени (RU/EN), ID или описанию...">
+            <button class="btn btn-outline-secondary" id="winset-btn-clear-search"><i class="bi bi-x-lg"></i></button>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <select class="form-select form-select-sm" id="winset-filter-risk">
+            <option value="">Все уровни риска</option>
+            <option value="safe">Safe (Безопасно)</option>
+            <option value="low">Low (Низкий)</option>
+            <option value="medium">Medium (Средний)</option>
+            <option value="high">High (Высокий)</option>
+          </select>
+        </div>
+        <div class="col-6 col-md-2">
+          <select class="form-select form-select-sm" id="winset-filter-backend">
+            <option value="">Все бэкенды</option>
+            <option value="SystemParametersInfoW">SystemParametersInfoW</option>
+            <option value="Registry">Реестр</option>
+            <option value="DwmApi">DWM API</option>
+            <option value="PolicyGPO">Политики GPO</option>
+          </select>
+        </div>
+        <div class="col-12 col-md-2 text-end">
+          <span class="small text-muted" id="winset-count-label">Показано: 0</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Основная таблица параметров / История -->
+    <div class="card-body p-0">
+      
+      <!-- Контейнер для таблицы настроек -->
+      <div id="winset-catalog-container" class="table-responsive" style="max-height: 600px; overflow-y: auto;">
+        <table class="table table-hover table-striped align-middle mb-0">
+          <thead class="table-light sticky-top" style="z-index: 1;">
+            <tr>
+              <th style="width: 50px;">#</th>
+              <th>Параметр / Назначение</th>
+              <th style="width: 140px;">Бэкенд / Сфера</th>
+              <th style="width: 120px;">Риск</th>
+              <th style="width: 220px;">Текущее значение</th>
+              <th style="width: 180px;" class="text-end">Действия</th>
+            </tr>
+          </thead>
+          <tbody id="winset-table-body">
+            <tr>
+              <td colspan="6" class="text-center py-4 text-muted">
+                <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+                Загрузка каталога параметров...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Контейнер для истории SafeOps (показывается при клике на вкладку истории) -->
+      <div id="winset-history-container" class="table-responsive d-none p-3" style="max-height: 600px; overflow-y: auto;">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <h5 class="mb-0 fw-bold d-flex align-items-center gap-2">
+            <i class="bi bi-journal-text text-warning"></i>
+            <span>Журнал изменений параметров и аудит SafeOps</span>
+          </h5>
+          <span class="small text-muted">Фиксация в telemetry.db</span>
+        </div>
+        <table class="table table-sm table-hover align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>Время</th>
+              <th>Параметр</th>
+              <th>Было</th>
+              <th>Стало</th>
+              <th>Статус</th>
+              <th>Точка восстановления</th>
+              <th class="text-end">Откат</th>
+            </tr>
+          </thead>
+          <tbody id="winset-history-body">
+            <tr>
+              <td colspan="7" class="text-center py-3 text-muted">Загрузка журнала изменений...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Модальное окно предпросмотра и подтверждения (SafeOps Dry-Run Modal) -->
+  <div class="modal fade" id="winset-modal-preview" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-secondary-subtle shadow">
+        <div class="modal-header bg-body-tertiary">
+          <h5 class="modal-title fw-bold d-flex align-items-center gap-2" id="winset-modal-title">
+            <i class="bi bi-shield-check text-primary"></i>
+            <span>Предпросмотр SafeOps (Dry-Run)</span>
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+        </div>
+        <div class="modal-body p-4" id="winset-modal-body">
+          <!-- Динамическое наполнение деталями предпросмотра -->
+        </div>
+        <div class="modal-footer bg-body-tertiary">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+          <button type="button" class="btn btn-primary d-flex align-items-center gap-2" id="winset-btn-modal-confirm">
+            <i class="bi bi-check2-circle"></i>
+            <span>Подтвердить и применить</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+

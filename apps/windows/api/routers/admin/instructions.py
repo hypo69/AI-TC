@@ -11,7 +11,7 @@
 # Package: apps.windows.api.routers.admin
 # Author: hypo69
 # Copyright: c 2026 hypo69
-# Updated: 2026-10-12 06:00:00
+# Updated: 2026-10-22 13:30:00
 # =============================================================================
 
 from __future__ import annotations
@@ -36,13 +36,13 @@ from .routers import router
 # ============================================================================
 
 _INSTRUCTION_FILES: Dict[str, Path] = {
-    'chat': __root__ / 'prompts' / 'chat' / 'system_instruction.md',
-    'narrator': __root__ / 'prompts' / 'narrator' / 'narrator_style.md',
+    'chat': __root__ / 'apps' / 'windows' / 'prompts' / 'chat' / 'system_instruction.md',
+    'narrator': __root__ / 'apps' / 'windows' / 'prompts' / 'narrator' / 'narrator_style.md',
 }
 
 _VERSIONS_DIRS: Dict[str, Path] = {
-    'chat': __root__ / 'prompts' / 'chat' / 'versions',
-    'narrator': __root__ / 'prompts' / 'narrator' / 'versions',
+    'chat': __root__ / 'apps' / 'windows' / 'prompts' / 'chat' / 'versions',
+    'narrator': __root__ / 'apps' / 'windows' / 'prompts' / 'narrator' / 'versions',
 }
 
 _SOURCES_FILE = __root__ / 'plugins' / 'movie_search_sources' / 'sources.json'

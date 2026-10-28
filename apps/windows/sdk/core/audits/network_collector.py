@@ -16,20 +16,20 @@
 # Package: apps.windows.sdk.core.audits
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-13 16:25:00
 # =============================================================================
 
 from __future__ import annotations
 """Коллектор аудита сетевой активности и открытых портов Windows."""
 
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-13 16:25:00
 import json
 import subprocess
 import time
 from typing import Any, Dict, List
 import psutil
 from logger import logger
-from apps.windows.telemetry.win32_ffi.nethelper import IPHelperAPI
+from apps.windows.sdk.win32_ffi.nethelper import IPHelperAPI
 from apps.windows.sdk.core.models import AuditFinding, DomainAuditResult, RiskLevel
 
 class NetworkCollector:

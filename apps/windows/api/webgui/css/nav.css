@@ -14,7 +14,7 @@
  * Package: windows/api/webgui/css
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-10 17:35:00
+ * Updated: 2026-10-21 01:09:00
  * =============================================================================
  */
 
@@ -28,7 +28,8 @@
   background-color: var(--nav-bg);
   border-bottom: 1px solid var(--border-color);
   min-height: 34px;
-  position: relative;
+  position: sticky;
+  top: 0;
   z-index: 1020;
   overflow: visible !important;
   box-shadow: var(--shadow-xs);
@@ -43,11 +44,13 @@
 
 .nav-tabs .nav-item {
   flex-shrink: 0;
-  position: relative;
+  position: sticky;
+  top: 0;
 }
 
 .nav-tabs .nav-item.dropdown {
-  position: relative;
+  position: sticky;
+  top: 0;
 }
 
 /* Nav-links — компактные */

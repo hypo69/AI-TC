@@ -16,7 +16,7 @@
 # Package: apps.windows.api
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-13 08:11:00
 # =============================================================================
 
 from __future__ import annotations
@@ -134,7 +134,7 @@ async def execute_operation(payload: AtomicOperationExecutionRequest) -> AtomicO
 # REST эндпоинты категорий
 # =============================================================================
 
-@router.get('/storage/disks')
+@router.get('/capabilities/storage/disks')
 async def list_storage_disks() -> Dict[str, Any]:
     """Перечисление физических дисков хоста."""
     try:

@@ -1,0 +1,12 @@
+{
+  "theme": {
+    "background": "var(--bs-body-bg, #0c1017)",
+    "foreground": "var(--bs-body-color, #e6edf3)",
+    "cursor": "#38bdf8",
+    "selectionBackground": "rgba(56, 189, 248, 0.3)"
+  },
+  "fontFamily": "Cascadia Code, Consolas, monospace",
+  "fontSize": 14,
+  "cursorBlink": true,
+  "scrollback": 5000
+}

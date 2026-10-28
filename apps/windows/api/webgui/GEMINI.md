@@ -1,5 +1,7 @@
 # GEMINI.md — Инструкция WebGUI и Руководство по интеграции `ai_modal_dialog`
 
+**Updated:** 2026-10-15 12:15:00
+
 ## 📋 Общие сведения модуля `apps/windows/api/webgui`
 
 Данная директория содержит фронтенд веб-интерфейса AI Windows Admin (оболочки `/`, `/apps`, `/tc`, `/admin`, изолированные модули вкладок `*_tab/`, системные скрипты `js/` и универсальное модальное окно AI-анализатора `ai_modal_dialog/`).
@@ -208,3 +210,12 @@ function openItemAiModal(item) {
 3. **Сохранение в WikiLLM**: После получения результата пользователь может нажать «Одобрить и сохранить в WikiLLM», чтобы знание навсегда закешировалось для всех последующих вызовов.
 4. **Редактор промптов**: Кнопка «Промпт» в заголовке карточки позволяет администратору настроить системный промпт конкретного типа сущности прямо из интерфейса.
 5. **Адаптивность тем**: Контейнеры и текст автоматически принимают палитру активной темы (Light/NightView, Brick, Dark, Terminal).
+
+---
+
+## 📚 Инструменты и стандарты разработчика WebGUI
+
+- **Инженерный стандарт WebGUI**: [`.ai/instructions/standards/WEBGUI.md`](file:///c:/Users/onela/AppData/Local/AI-TC/.ai/instructions/standards/WEBGUI.md)
+- **Эталонный шаблон вкладки**: [`apps/windows/api/webgui/templates/tab_template/`](file:///c:/Users/onela/AppData/Local/AI-TC/apps/windows/api/webgui/templates/tab_template/)
+- **Навык агента по разработке WebGUI**: [`.agents/skills/webgui-developer/SKILL.md`](file:///c:/Users/onela/AppData/Local/AI-TC/.agents/skills/webgui-developer/SKILL.md)
+- **Генератор вкладок (CLI)**: `py .agents/skills/webgui-developer/scripts/scaffold_tab.py <name> --title "<Заголовок>"`

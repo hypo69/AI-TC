@@ -11,7 +11,7 @@
 # Package: apps.windows.api.routers.chat
 # Author: hypo69
 # Copyright: c 2026 hypo69
-# Updated: 2026-10-12 06:20:00
+# Updated: 2026-10-22 14:40:00
 # =============================================================================
 
 from __future__ import annotations
@@ -40,7 +40,7 @@ _active_chat_models: dict[str, object] = {}
 
 def _get_default_system_instruction() -> str:
     """Load default system instruction for chat assistant."""
-    prompt_file = __root__ / 'prompts' / 'chat' / 'system_instruction.md'
+    prompt_file = __root__ / 'apps' / 'windows' / 'prompts' / 'chat' / 'system_instruction.md'
     if prompt_file.exists():
         try:
             content = prompt_file.read_text(encoding='utf-8', errors='replace').strip()
@@ -301,7 +301,6 @@ def _resolve_default_model_and_provider(profile: str = "") -> tuple[str, str, st
         if profile in ("tc", "test-computer", "test_computer", "apps_tc"):
             for candidate in [
                 __root__ / "apps" / "windows" / "config.json",
-                __root__ / "config" / "tc.json",
                 __root__ / "config_tc.json",
                 __root__ / "tc.json",
             ]:
@@ -311,16 +310,15 @@ def _resolve_default_model_and_provider(profile: str = "") -> tuple[str, str, st
         else:
             for candidate in [
                 __root__ / "apps" / "windows" / "config.json",
-                __root__ / "config" / "tc.json",
                 __root__ / "config_tc.json",
                 __root__ / "tc.json",
             ]:
-                if candidate.exists() and not (__root__ / "config.json").exists() and not (__root__ / "config" / "dashboard.json").exists():
+                if candidate.exists() and not (__root__ / "config.json").exists():
                     active_path = candidate
                     break
 
         if not active_path or not active_path.exists():
-            active_path = (__root__ / "config" / "dashboard.json") if (__root__ / "config" / "dashboard.json").exists() else (__root__ / "config.json")
+            active_path = __root__ / "config.json"
 
     provider = "GEMINI"
     model_name = ""

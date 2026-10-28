@@ -11,7 +11,7 @@
 # Package: apps.windows.api.routers.about_system
 # Author: hypo69
 # Copyright: c 2026 hypo69
-# Updated: 2026-10-12 06:20:00
+# Updated: 2026-10-16 19:10:00
 # =============================================================================
 
 from __future__ import annotations
@@ -222,6 +222,29 @@ class LocaleOption(BaseModel):
     name: str = Field(..., description="Название языка и региона")
 
 
+class LanguagePackInfo(BaseModel):
+    """Модель сведений о языковом пакете Windows."""
+    tag: str = Field(..., description="Код языка (ru-RU, he-IL, en-US)")
+    name: str = Field(..., description="Название языка")
+    native_name: str = Field(default="", description="Название на родном языке")
+    flag: str = Field(default="🌐", description="Флаг языка")
+    is_installed: bool = Field(default=False, description="Установлен ли пакет в системе")
+    is_active: bool = Field(default=False, description="Активен ли в профиле пользователя")
+
+
+class InstallLanguagePackRequest(BaseModel):
+    """Запрос на установку или активацию языкового пакета Windows."""
+    tag: str = Field(..., min_length=2, max_length=20, description="Код языка (ru-RU, he-IL, en-US)")
+
+
+class InstallLanguagePackResponse(BaseModel):
+    """Результат установки языкового пакета."""
+    status: str = Field(default="ok", description="Статус операции (ok/error)")
+    tag: str = Field(default="", description="Код языка")
+    message: str = Field(default="", description="Информационное сообщение")
+    installed: bool = Field(default=False, description="Установлен ли пакет")
+
+
 class RegionalOptionsResponse(BaseModel):
     """Модель ответа списка доступных региональных параметров хоста."""
     status: str = Field(default="ok", description="Статус ответа")
@@ -231,10 +254,22 @@ class RegionalOptionsResponse(BaseModel):
     current_user_locale: str = Field(default="", description="Текущая пользовательская локаль")
     current_username: str = Field(default="", description="Текущий пользователь")
     current_user_fullname: str = Field(default="", description="Полное имя пользователя")
-    current_user_description: str = Field(default="", description="Описание пользователя")
+    current_user_first_name: str = Field(default="", description="Имя пользователя")
+    current_user_last_name: str = Field(default="", description="Фамилия пользователя")
+    current_user_description: str = Field(default="", description="Описание / должность пользователя")
+    current_user_sid: str = Field(default="", description="Идентификатор безопасности (SID)")
+    current_user_profile: str = Field(default="", description="Каталог профиля пользователя")
+    current_user_domain: str = Field(default="", description="Хост или домен пользователя")
+    current_user_groups: List[str] = Field(default_factory=list, description="Группы безопасности пользователя")
+    current_user_account_type: str = Field(default="", description="Тип учетной записи")
+    current_user_last_logon: str = Field(default="", description="Время последнего входа в систему")
     current_codepage: str = Field(default="UTF-8 (65001)", description="Текущая кодовая страница")
+    network_category: str = Field(default="Public", description="Текущая категория сетевого профиля (Public/Private)")
+    network_interface_index: Optional[int] = Field(default=None, description="Индекс основного сетевого адаптера")
+    is_discovery_enabled: bool = Field(default=False, description="Включено ли сетевое обнаружение")
     timezones: List[TimezoneOption] = Field(default_factory=list, description="Список доступных часовых поясов")
     locales: List[LocaleOption] = Field(default_factory=list, description="Список распространенных локалей")
+    language_packs: List[LanguagePackInfo] = Field(default_factory=list, description="Список языковых пакетов Windows")
 
 
 class SetTimezoneRequest(BaseModel):
@@ -276,3 +311,46 @@ class UpdateUserProfileResponse(BaseModel):
     status: str = Field(default="ok", description="Статус операции (ok/error)")
     username: str = Field(default="", description="Имя пользователя")
     message: str = Field(default="", description="Информационное сообщение")
+
+
+class SetNetworkCategoryRequest(BaseModel):
+    """Запрос на изменение категории профиля сети (Public/Private)."""
+    category: str = Field(..., description="Категория сети ('Public' или 'Private')")
+    interface_index: Optional[int] = Field(default=None, description="Индекс сетевого интерфейса")
+
+
+class SetNetworkCategoryResponse(BaseModel):
+    """Ответ на смену категории сетевого профиля."""
+    status: str = Field(default="ok", description="Статус операции (ok/error)")
+    interface_index: Optional[int] = Field(default=None, description="Индекс интерфейса")
+    category: str = Field(default="", description="Новая категория профиля сети")
+    message: str = Field(default="", description="Информационное сообщение")
+
+
+class ToggleNetworkDiscoveryRequest(BaseModel):
+    """Запрос на включение или отключение сетевого обнаружения."""
+    enabled: bool = Field(..., description="Включить (true) или отключить (false) обнаружение")
+    set_category: Optional[str] = Field(default=None, description="Опционально переключить категорию ('Private'/'Public')")
+    interface_index: Optional[int] = Field(default=None, description="Индекс сетевого адаптера")
+
+
+class ToggleNetworkDiscoveryResponse(BaseModel):
+    """Ответ на включение или отключение сетевого обнаружения."""
+    status: str = Field(default="ok", description="Статус операции (ok/error)")
+    message: str = Field(default="", description="Информационное сообщение")
+    actions: List[str] = Field(default_factory=list, description="Список выполненных действий")
+    is_discovery_enabled: bool = Field(default=False, description="Итоговый статус сетевого обнаружения")
+    current_category: str = Field(default="Public", description="Текущая категория сети")
+
+
+class NetworkProfileStatusResponse(BaseModel):
+    """Модель детального статуса сетевого обнаружения хоста."""
+    status: str = Field(default="ok", description="Статус операции")
+    is_discovery_enabled: bool = Field(default=False, description="Включено ли сетевое обнаружение")
+    current_category: str = Field(default="Public", description="Текущая категория сети (Public/Private)")
+    primary_interface_index: Optional[int] = Field(default=None, description="Индекс активного интерфейса")
+    primary_profile: Optional[Dict[str, Any]] = Field(default=None, description="Характеристики первичного профиля")
+    profiles: List[Dict[str, Any]] = Field(default_factory=list, description="Список всех активных профилей")
+    services: Dict[str, Any] = Field(default_factory=dict, description="Состояние служб обнаружения")
+    firewall: Dict[str, Any] = Field(default_factory=dict, description="Состояние правил брандмауэра")
+

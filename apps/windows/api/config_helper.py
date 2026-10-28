@@ -16,7 +16,7 @@
 # Package: apps.windows.api
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-22 14:40:00
 # =============================================================================
 
 from __future__ import annotations
@@ -43,7 +43,6 @@ def resolve_active_config_path(profile: str = "") -> Path:
     candidates = [
         __root__ / "config.json",
         __root__ / "apps" / "windows" / "config.json",
-        __root__ / "config" / "tc.json",
         __root__ / "config_tc.json",
         __root__ / "tc.json",
     ]

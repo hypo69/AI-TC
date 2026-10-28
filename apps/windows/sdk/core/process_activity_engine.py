@@ -20,7 +20,7 @@
 # Package: apps.windows.sdk.core
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-12 07:25:00
+# Updated: 2026-10-20 09:41:00
 # =============================================================================
 
 from __future__ import annotations
@@ -35,7 +35,7 @@ import threading
 import time
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
 import psutil
 
@@ -166,7 +166,6 @@ class ProcessActivityEngine:
         if sys.platform != "win32":
             return "Medium"
         try:
-            # Быстрая эвристика на основе прав доступа и SID
             if pid in (0, 4):
                 return "System"
             return "Medium"
@@ -180,8 +179,8 @@ class ProcessActivityEngine:
     def sync_processes(self) -> List[ProcessInstanceRecord]:
         """Синхронизирует текущие активные процессы ОС с базой данных SQLite.
         
-        Использует пару (pid, start_time) для строгого различения инстансов,
-        исключая смешивание метрик при переиспользовании PID.
+        Использует пару (pid, start_time) в таблице process_lifecycle_sessions
+        для строгого различения инстансов, исключая смешивание метрик при переиспользовании PID.
 
         Returns:
             List[ProcessInstanceRecord]: Список активных инстансов процессов.
@@ -193,6 +192,15 @@ class ProcessActivityEngine:
 
         conn = self._get_conn()
         cursor = conn.cursor()
+
+        latest_snap_id: Optional[int] = None
+        try:
+            cursor.execute("SELECT MAX(id) FROM system_snapshots")
+            row_max = cursor.fetchone()
+            if row_max and row_max[0] is not None:
+                latest_snap_id = int(row_max[0])
+        except Exception:
+            latest_snap_id = None
 
         # 1. Сбор процессов через psutil
         for proc in psutil.process_iter(
@@ -216,9 +224,10 @@ class ProcessActivityEngine:
                 if pid <= 0:
                     continue
 
-                create_ts = pinfo.get("create_time") or now_epoch
+                create_ts = float(pinfo.get("create_time") or now_epoch)
                 start_iso = datetime.fromtimestamp(create_ts, tz=timezone.utc).isoformat()
                 current_active_keys.add((pid, start_iso))
+                unique_inst_key = f"{pid}_{int(create_ts * 1000)}"
 
                 name = str(pinfo.get("name") or "unknown.exe")
                 exe_path = str(pinfo.get("exe") or name)
@@ -238,77 +247,77 @@ class ProcessActivityEngine:
                     norm_status = "RUNNING"
 
                 uptime = max(0.0, now_epoch - create_ts)
+                definition_id = abs(hash(exe_path)) % 1000000 or 1
 
-                # 2. Регистрация паспорта программы (process_definition)
+                # 2. Поиск существующего инстанса в process_lifecycle_sessions
                 cursor.execute(
-                    """
-                    INSERT INTO process_definition (name, executable_path, first_seen, last_seen)
-                    VALUES (?, ?, ?, ?)
-                    ON CONFLICT(executable_path) DO UPDATE SET
-                        last_seen = excluded.last_seen,
-                        name = excluded.name;
-                    """,
-                    (name, exe_path, start_iso, now_iso),
-                )
-                cursor.execute("SELECT definition_id FROM process_definition WHERE executable_path = ?", (exe_path,))
-                def_row = cursor.fetchone()
-                definition_id = def_row[0] if def_row else 1
-
-                # 3. Поиск существующего process_instance
-                cursor.execute(
-                    "SELECT instance_id, parent_instance_id FROM process_instance WHERE pid = ? AND start_time = ?",
+                    "SELECT instance_id, parent_instance_id FROM process_lifecycle_sessions WHERE pid = ? AND created_at = ?",
                     (pid, start_iso),
                 )
                 inst_row = cursor.fetchone()
 
-                parent_inst_id: Optional[int] = None
+                parent_inst_id: Optional[str] = None
                 if inst_row:
-                    instance_id = inst_row[0]
-                    parent_inst_id = inst_row[1]
-                    # Обновляем статус
+                    instance_id = str(inst_row[0])
+                    parent_inst_id = str(inst_row[1]) if inst_row[1] is not None else None
                     cursor.execute(
-                        "UPDATE process_instance SET status = ?, user_name = COALESCE(user_name, ?) WHERE instance_id = ?",
-                        (norm_status, user_name, instance_id),
+                        """
+                        UPDATE process_lifecycle_sessions
+                        SET status = ?, is_alive = 1, username = COALESCE(username, ?),
+                            lifetime_sec = ?, peak_working_set_mb = MAX(COALESCE(peak_working_set_mb, 0.0), ?)
+                        WHERE instance_id = ?
+                        """,
+                        (norm_status, user_name, uptime, mem_ws_mb, instance_id),
                     )
                 else:
-                    # Попытка связать с родителем
                     if ppid > 0:
                         cursor.execute(
                             """
-                            SELECT instance_id FROM process_instance
-                            WHERE pid = ? AND start_time <= ? AND (exit_time IS NULL OR exit_time >= ?)
-                            ORDER BY instance_id DESC LIMIT 1
+                            SELECT instance_id FROM process_lifecycle_sessions
+                            WHERE pid = ? AND created_at <= ? AND (terminated_at IS NULL OR terminated_at >= ?)
+                            ORDER BY created_ts DESC LIMIT 1
                             """,
                             (ppid, start_iso, start_iso),
                         )
                         p_row = cursor.fetchone()
                         if p_row:
-                            parent_inst_id = p_row[0]
+                            parent_inst_id = str(p_row[0])
 
                     integrity = self._get_process_integrity_level(pid)
                     cursor.execute(
                         """
-                        INSERT INTO process_instance (
-                            definition_id, pid, parent_instance_id, name, executable_path,
-                            command_line, start_time, session_id, user_name, integrity_level, status
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?)
+                        INSERT INTO process_lifecycle_sessions (
+                            instance_id, definition_id, pid, ppid, parent_instance_id, name, exe_path,
+                            cmdline, created_at, created_ts, session_id, username, integrity_level,
+                            status, is_alive, lifetime_sec, peak_working_set_mb, peak_private_mb
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, 1, ?, ?, ?)
+                        ON CONFLICT(instance_id) DO UPDATE SET
+                            status = excluded.status,
+                            is_alive = 1,
+                            lifetime_sec = excluded.lifetime_sec
                         """,
                         (
+                            unique_inst_key,
                             definition_id,
                             pid,
+                            ppid,
                             parent_inst_id,
                             name,
                             exe_path,
                             cmdline_str,
                             start_iso,
+                            create_ts,
                             user_name,
                             integrity,
                             norm_status,
+                            uptime,
+                            mem_ws_mb,
+                            mem_priv_mb,
                         ),
                     )
-                    instance_id = cursor.lastrowid
+                    instance_id = unique_inst_key
 
-                # 4. Запись среза телеметрии (process_sample)
+                # 3. Запись среза телеметрии в process_snapshots (sample_type = 'sample') для активных процессов
                 gdi_obj, user_obj = self._get_gui_resources(pid)
                 handle_count = 0
                 try:
@@ -316,7 +325,6 @@ class ProcessActivityEngine:
                 except Exception:
                     pass
 
-                # Сбор сокетов для образца
                 sockets_count = 0
                 sockets_list = []
                 try:
@@ -333,29 +341,42 @@ class ProcessActivityEngine:
                 except Exception:
                     pass
 
-                cursor.execute(
-                    """
-                    INSERT INTO process_sample (
-                        instance_id, timestamp, created_at, cpu_percent, thread_count,
-                        working_set_mb, private_bytes_mb, handle_count, gdi_objects,
-                        user_objects, sockets_count, sockets_json
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    """,
-                    (
-                        instance_id,
-                        now_iso,
-                        now_epoch,
-                        cpu_pct,
-                        threads,
-                        mem_ws_mb,
-                        mem_priv_mb,
-                        handle_count,
-                        gdi_obj,
-                        user_obj,
-                        sockets_count,
-                        json.dumps(sockets_list) if sockets_list else None,
-                    ),
+                is_active_process = (
+                    cpu_pct > 0.05
+                    or mem_ws_mb >= 50.0
+                    or sockets_count > 0
+                    or gdi_obj > 0
+                    or user_obj > 0
                 )
+
+                if is_active_process:
+                    cursor.execute(
+                        """
+                        INSERT INTO process_snapshots (
+                            snapshot_id, sample_type, instance_id, pid, name, timestamp, created_at,
+                            cpu_percent, num_threads, memory_mb, working_set_mb, private_mb,
+                            num_handles, gdi_objects, user_objects, tcp_connections_count, sockets_json
+                        ) VALUES (?, 'sample', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        """,
+                        (
+                            latest_snap_id,
+                            str(instance_id),
+                            pid,
+                            name,
+                            now_iso,
+                            now_epoch,
+                            cpu_pct,
+                            threads,
+                            mem_ws_mb,
+                            mem_ws_mb,
+                            mem_priv_mb,
+                            handle_count,
+                            gdi_obj,
+                            user_obj,
+                            sockets_count,
+                            json.dumps(sockets_list) if sockets_list else None,
+                        ),
+                    )
 
                 record = ProcessInstanceRecord(
                     instance_id=instance_id,
@@ -382,15 +403,19 @@ class ProcessActivityEngine:
             except Exception as item_err:
                 logger.debug(f"[ProcessActivityEngine] Ошибка сбора процесса {proc}: {item_err}")
 
-        # 5. Обработка завершившихся процессов (EXITED)
+        # 4. Обработка завершившихся процессов (EXITED)
         try:
-            cursor.execute("SELECT instance_id, pid, start_time FROM process_instance WHERE status = 'RUNNING'")
+            cursor.execute("SELECT instance_id, pid, created_at FROM process_lifecycle_sessions WHERE status = 'RUNNING'")
             running_db_rows = cursor.fetchall()
             for r_id, r_pid, r_start in running_db_rows:
                 if (r_pid, r_start) not in current_active_keys:
                     cursor.execute(
-                        "UPDATE process_instance SET status = 'EXITED', exit_time = ?, exit_code = 0 WHERE instance_id = ?",
-                        (now_iso, r_id),
+                        """
+                        UPDATE process_lifecycle_sessions
+                        SET status = 'EXITED', is_alive = 0, terminated_at = ?, terminated_ts = ?, exit_code = 0
+                        WHERE instance_id = ?
+                        """,
+                        (now_iso, now_epoch, str(r_id)),
                     )
         except sqlite3.OperationalError as db_err:
             if "database is locked" not in str(db_err):
@@ -420,29 +445,29 @@ class ProcessActivityEngine:
 
         query = """
             SELECT
-                i.instance_id, i.definition_id, i.pid, i.parent_instance_id,
-                i.name, i.executable_path, i.command_line, i.start_time,
-                i.exit_time, i.exit_code, i.session_id, i.user_name,
-                i.integrity_level, i.status,
+                i.instance_id, COALESCE(i.definition_id, 1), i.pid, i.parent_instance_id,
+                i.name, COALESCE(i.exe_path, i.name), i.cmdline, i.created_at,
+                i.terminated_at, i.exit_code, COALESCE(i.session_id, 1), i.username,
+                COALESCE(i.integrity_level, 'Medium'), COALESCE(i.status, 'RUNNING'),
                 COALESCE(s.cpu_percent, 0.0) as cpu_percent,
-                COALESCE(s.working_set_mb, 0.0) as memory_mb,
-                d.icon_base64
-            FROM process_instance i
-            JOIN process_definition d ON i.definition_id = d.definition_id
+                COALESCE(s.working_set_mb, i.peak_working_set_mb, 0.0) as memory_mb,
+                i.icon_base64
+            FROM process_lifecycle_sessions i
             LEFT JOIN (
                 SELECT instance_id, cpu_percent, working_set_mb, MAX(created_at)
-                FROM process_sample
+                FROM process_snapshots
+                WHERE sample_type = 'sample'
                 GROUP BY instance_id
             ) s ON i.instance_id = s.instance_id
             WHERE i.status = 'RUNNING'
         """
         params: List[Any] = []
         if search:
-            query += " AND (i.name LIKE ? OR CAST(i.pid AS TEXT) LIKE ? OR CAST(i.instance_id AS TEXT) LIKE ?)"
+            query += " AND (i.name LIKE ? OR CAST(i.pid AS TEXT) LIKE ? OR i.instance_id LIKE ?)"
             s_pat = f"%{search}%"
             params.extend([s_pat, s_pat, s_pat])
 
-        query += " ORDER BY s.cpu_percent DESC, s.working_set_mb DESC LIMIT ?"
+        query += " ORDER BY cpu_percent DESC, memory_mb DESC LIMIT ?"
         params.append(limit)
 
         try:
@@ -458,7 +483,7 @@ class ProcessActivityEngine:
         result: List[ProcessInstanceRecord] = []
         for r in rows:
             try:
-                start_dt = datetime.fromisoformat(r[7].replace("Z", "+00:00"))
+                start_dt = datetime.fromisoformat(str(r[7]).replace("Z", "+00:00"))
                 uptime = max(0.0, now_epoch - start_dt.timestamp())
             except Exception:
                 uptime = 0.0
@@ -466,8 +491,8 @@ class ProcessActivityEngine:
             result.append(
                 ProcessInstanceRecord(
                     instance_id=r[0],
-                    definition_id=r[1],
-                    pid=r[2],
+                    definition_id=int(r[1] or 1),
+                    pid=int(r[2]),
                     parent_instance_id=r[3],
                     name=r[4],
                     executable_path=r[5],
@@ -475,7 +500,7 @@ class ProcessActivityEngine:
                     start_time=r[7],
                     exit_time=r[8],
                     exit_code=r[9],
-                    session_id=r[10],
+                    session_id=int(r[10] or 1),
                     user_name=r[11],
                     integrity_level=r[12],
                     status=r[13],
@@ -505,22 +530,21 @@ class ProcessActivityEngine:
 
         query = """
             SELECT
-                i.instance_id, i.definition_id, i.pid, i.parent_instance_id,
-                i.name, i.executable_path, i.command_line, i.start_time,
-                i.exit_time, i.exit_code, i.session_id, i.user_name,
-                i.integrity_level, i.status,
-                d.icon_base64
-            FROM process_instance i
-            JOIN process_definition d ON i.definition_id = d.definition_id
+                i.instance_id, COALESCE(i.definition_id, 1), i.pid, i.parent_instance_id,
+                i.name, COALESCE(i.exe_path, i.name), i.cmdline, i.created_at,
+                i.terminated_at, i.exit_code, COALESCE(i.session_id, 1), i.username,
+                COALESCE(i.integrity_level, 'Medium'), COALESCE(i.status, 'EXITED'),
+                i.icon_base64
+            FROM process_lifecycle_sessions i
             WHERE i.status != 'RUNNING'
         """
         params: List[Any] = []
         if search:
-            query += " AND (i.name LIKE ? OR CAST(i.pid AS TEXT) LIKE ? OR CAST(i.instance_id AS TEXT) LIKE ?)"
+            query += " AND (i.name LIKE ? OR CAST(i.pid AS TEXT) LIKE ? OR i.instance_id LIKE ?)"
             s_pat = f"%{search}%"
             params.extend([s_pat, s_pat, s_pat])
 
-        query += " ORDER BY i.instance_id DESC LIMIT ? OFFSET ?"
+        query += " ORDER BY i.created_ts DESC LIMIT ? OFFSET ?"
         params.extend([limit, offset])
 
         try:
@@ -536,8 +560,8 @@ class ProcessActivityEngine:
             uptime = 0.0
             if r[7] and r[8]:
                 try:
-                    s_ts = datetime.fromisoformat(r[7].replace("Z", "+00:00")).timestamp()
-                    e_ts = datetime.fromisoformat(r[8].replace("Z", "+00:00")).timestamp()
+                    s_ts = datetime.fromisoformat(str(r[7]).replace("Z", "+00:00")).timestamp()
+                    e_ts = datetime.fromisoformat(str(r[8]).replace("Z", "+00:00")).timestamp()
                     uptime = max(0.0, e_ts - s_ts)
                 except Exception:
                     pass
@@ -545,8 +569,8 @@ class ProcessActivityEngine:
             result.append(
                 ProcessInstanceRecord(
                     instance_id=r[0],
-                    definition_id=r[1],
-                    pid=r[2],
+                    definition_id=int(r[1] or 1),
+                    pid=int(r[2]),
                     parent_instance_id=r[3],
                     name=r[4],
                     executable_path=r[5],
@@ -554,7 +578,7 @@ class ProcessActivityEngine:
                     start_time=r[7],
                     exit_time=r[8],
                     exit_code=r[9],
-                    session_id=r[10],
+                    session_id=int(r[10] or 1),
                     user_name=r[11],
                     integrity_level=r[12],
                     status=r[13],
@@ -564,33 +588,177 @@ class ProcessActivityEngine:
             )
         return result
 
-    def get_instance_details(self, instance_id: int) -> Optional[ProcessInstanceRecord]:
+    def _create_or_update_live_instance_by_pid(self, pid: int) -> Optional[ProcessInstanceRecord]:
+        """Создает сессию инстанса и первый сэмпл на лету для запущенного процесса."""
+        if not psutil.pid_exists(pid):
+            return None
+        try:
+            proc = psutil.Process(pid)
+            pinfo = proc.as_dict(
+                attrs=[
+                    "pid",
+                    "name",
+                    "exe",
+                    "cmdline",
+                    "create_time",
+                    "ppid",
+                    "username",
+                    "num_threads",
+                    "cpu_percent",
+                    "memory_info",
+                    "status",
+                ]
+            )
+            create_ts = float(pinfo.get("create_time") or time.time())
+            start_iso = datetime.fromtimestamp(create_ts, tz=timezone.utc).isoformat()
+            now_iso = datetime.now(timezone.utc).isoformat()
+            now_epoch = time.time()
+            uptime = max(0.0, now_epoch - create_ts)
+            unique_inst_key = f"{pid}_{int(create_ts * 1000)}"
+
+            name = str(pinfo.get("name") or f"Process_{pid}")
+            exe_path = str(pinfo.get("exe") or name)
+            cmdline_list = pinfo.get("cmdline") or []
+            cmdline_str = " ".join(cmdline_list) if isinstance(cmdline_list, list) else str(cmdline_list)
+            ppid = int(pinfo.get("ppid") or 0)
+            user_name = pinfo.get("username") or "SYSTEM"
+            threads = int(pinfo.get("num_threads") or 1)
+            cpu_pct = float(pinfo.get("cpu_percent") or 0.0)
+            mem_info = pinfo.get("memory_info")
+            mem_ws_mb = round(mem_info.rss / (1024 * 1024), 2) if mem_info else 0.0
+            mem_priv_mb = round(mem_info.vms / (1024 * 1024), 2) if mem_info else 0.0
+            norm_status = "RUNNING"
+            definition_id = abs(hash(exe_path)) % 1000000 or 1
+            integrity = self._get_process_integrity_level(pid)
+            gdi_obj, user_obj = self._get_gui_resources(pid)
+            handle_count = 0
+            try:
+                handle_count = proc.num_handles() if hasattr(proc, "num_handles") else 0
+            except Exception:
+                pass
+
+            conn = self._get_conn()
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                INSERT INTO process_lifecycle_sessions (
+                    instance_id, definition_id, pid, ppid, parent_instance_id, name, exe_path,
+                    cmdline, created_at, created_ts, session_id, username, integrity_level,
+                    status, is_alive, lifetime_sec, peak_working_set_mb, peak_private_mb
+                ) VALUES (?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, 1, ?, ?, ?, 1, ?, ?, ?)
+                ON CONFLICT(instance_id) DO UPDATE SET
+                    status = excluded.status,
+                    is_alive = 1,
+                    lifetime_sec = excluded.lifetime_sec,
+                    peak_working_set_mb = MAX(COALESCE(peak_working_set_mb, 0.0), excluded.peak_working_set_mb)
+                """,
+                (
+                    unique_inst_key,
+                    definition_id,
+                    pid,
+                    ppid,
+                    name,
+                    exe_path,
+                    cmdline_str,
+                    start_iso,
+                    create_ts,
+                    user_name,
+                    integrity,
+                    norm_status,
+                    uptime,
+                    mem_ws_mb,
+                    mem_priv_mb,
+                ),
+            )
+            cursor.execute(
+                """
+                INSERT INTO process_snapshots (
+                    sample_type, instance_id, pid, name, timestamp, created_at,
+                    cpu_percent, num_threads, memory_mb, working_set_mb, private_mb,
+                    num_handles, gdi_objects, user_objects, tcp_connections_count
+                ) VALUES ('sample', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
+                """,
+                (
+                    unique_inst_key,
+                    pid,
+                    name,
+                    now_iso,
+                    now_epoch,
+                    cpu_pct,
+                    threads,
+                    mem_ws_mb,
+                    mem_ws_mb,
+                    mem_priv_mb,
+                    handle_count,
+                    gdi_obj,
+                    user_obj,
+                ),
+            )
+            conn.commit()
+
+            return ProcessInstanceRecord(
+                instance_id=unique_inst_key,
+                definition_id=definition_id,
+                pid=pid,
+                parent_instance_id=None,
+                name=name,
+                executable_path=exe_path,
+                command_line=cmdline_str,
+                start_time=start_iso,
+                session_id=1,
+                user_name=user_name,
+                integrity_level=integrity,
+                status=norm_status,
+                cpu_percent=cpu_pct,
+                memory_mb=mem_ws_mb,
+                uptime_seconds=uptime,
+                ppid=ppid,
+            )
+        except Exception as e:
+            logger.debug(f"[ProcessActivityEngine] Не удалось создать live инстанс для PID {pid}: {e}")
+            return None
+
+    def get_instance_details(self, instance_id: Union[str, int]) -> Optional[ProcessInstanceRecord]:
         """Возвращает подробный паспорт и текущий статус конкретного инстанса процесса.
 
         Args:
-            instance_id: Уникальный ID инстанса.
+            instance_id: Уникальный ID инстанса или PID процесса.
 
         Returns:
             Optional[ProcessInstanceRecord]: Данные инстанса или None.
         """
         conn = self._get_conn()
         cursor = conn.cursor()
+        inst_str = str(instance_id).strip()
+        is_int_pid = False
+        target_pid = -1
+        try:
+            target_pid = int(inst_str)
+            is_int_pid = True
+        except (ValueError, TypeError):
+            pass
+
         try:
             cursor.execute(
                 """
                 SELECT
-                    i.instance_id, i.definition_id, i.pid, i.parent_instance_id,
-                    i.name, i.executable_path, i.command_line, i.start_time,
-                    i.exit_time, i.exit_code, i.session_id, i.user_name,
-                    i.integrity_level, i.status,
-                    d.icon_base64
-                FROM process_instance i
-                JOIN process_definition d ON i.definition_id = d.definition_id
-                WHERE i.instance_id = ?
+                    i.instance_id, COALESCE(i.definition_id, 1), i.pid, i.parent_instance_id,
+                    i.name, COALESCE(i.exe_path, i.name), i.cmdline, i.created_at,
+                    i.terminated_at, i.exit_code, COALESCE(i.session_id, 1), i.username,
+                    COALESCE(i.integrity_level, 'Medium'), COALESCE(i.status, 'RUNNING'),
+                    i.icon_base64
+                FROM process_lifecycle_sessions i
+                WHERE i.instance_id = ? OR (i.pid = ? AND i.status = 'RUNNING')
+                ORDER BY CASE WHEN i.instance_id = ? THEN 0 ELSE 1 END, i.created_ts DESC
+                LIMIT 1
                 """,
-                (instance_id,),
+                (inst_str, target_pid if is_int_pid else -1, inst_str),
             )
             r = cursor.fetchone()
+            if not r and is_int_pid and psutil.pid_exists(target_pid):
+                live_rec = self._create_or_update_live_instance_by_pid(target_pid)
+                if live_rec:
+                    return live_rec
             if not r:
                 return None
         except sqlite3.OperationalError as db_err:
@@ -599,18 +767,22 @@ class ProcessActivityEngine:
                 return None
             raise
 
+        actual_instance_id = str(r[0])
+        actual_pid = int(r[2])
+
         # Получение последней метрики
         try:
             cursor.execute(
                 """
-                SELECT cpu_percent, working_set_mb FROM process_sample
-                WHERE instance_id = ? ORDER BY sample_id DESC LIMIT 1
+                SELECT cpu_percent, working_set_mb FROM process_snapshots
+                WHERE (instance_id = ? OR (pid = ? AND sample_type = 'sample')) AND sample_type = 'sample'
+                ORDER BY id DESC LIMIT 1
                 """,
-                (instance_id,),
+                (actual_instance_id, actual_pid),
             )
             sample_row = cursor.fetchone()
-            cpu_val = float(sample_row[0]) if sample_row else 0.0
-            mem_val = float(sample_row[1]) if sample_row else 0.0
+            cpu_val = float(sample_row[0] or 0.0) if sample_row else 0.0
+            mem_val = float(sample_row[1] or 0.0) if sample_row else 0.0
         except sqlite3.OperationalError as db_err:
             if "database is locked" in str(db_err):
                 cpu_val = 0.0
@@ -624,9 +796,9 @@ class ProcessActivityEngine:
         now_epoch = time.time()
         uptime = 0.0
         try:
-            s_ts = datetime.fromisoformat(r[7].replace("Z", "+00:00")).timestamp()
+            s_ts = datetime.fromisoformat(str(r[7]).replace("Z", "+00:00")).timestamp()
             if r[8]:
-                e_ts = datetime.fromisoformat(r[8].replace("Z", "+00:00")).timestamp()
+                e_ts = datetime.fromisoformat(str(r[8]).replace("Z", "+00:00")).timestamp()
                 uptime = max(0.0, e_ts - s_ts)
             else:
                 uptime = max(0.0, now_epoch - s_ts)
@@ -635,8 +807,8 @@ class ProcessActivityEngine:
 
         return ProcessInstanceRecord(
             instance_id=r[0],
-            definition_id=r[1],
-            pid=r[2],
+            definition_id=int(r[1] or 1),
+            pid=int(r[2]),
             parent_instance_id=r[3],
             name=r[4],
             executable_path=r[5],
@@ -644,7 +816,7 @@ class ProcessActivityEngine:
             start_time=r[7],
             exit_time=r[8],
             exit_code=r[9],
-            session_id=r[10],
+            session_id=int(r[10] or 1),
             user_name=r[11],
             integrity_level=r[12],
             status=r[13],
@@ -656,7 +828,7 @@ class ProcessActivityEngine:
 
     def get_instance_samples(
         self,
-        instance_id: int,
+        instance_id: Union[str, int],
         limit: int = 300,
         from_time: Optional[str] = None,
         to_time: Optional[str] = None,
@@ -664,7 +836,7 @@ class ProcessActivityEngine:
         """Возвращает временной ряд телеметрии процесса (CPU, RAM, GPU, Диск).
 
         Args:
-            instance_id: ID инстанса.
+            instance_id: ID инстанса или PID процесса.
             limit: Максимальное количество точек.
             from_time: Начало временного интервала (ISO).
             to_time: Конец временного интервала (ISO).
@@ -674,19 +846,27 @@ class ProcessActivityEngine:
         """
         conn = self._get_conn()
         cursor = conn.cursor()
+        inst_str = str(instance_id).strip()
+        is_int_pid = False
+        target_pid = -1
+        try:
+            target_pid = int(inst_str)
+            is_int_pid = True
+        except (ValueError, TypeError):
+            pass
 
         query = """
             SELECT
-                sample_id, instance_id, timestamp, created_at,
-                cpu_percent, cpu_user_time, cpu_kernel_time, thread_count,
-                working_set_mb, private_bytes_mb, page_faults_sec,
-                gpu_load_percent, gpu_vram_mb, disk_read_bytes_sec,
-                disk_write_bytes_sec, disk_iops, handle_count,
-                gdi_objects, user_objects, sockets_count, sockets_json
-            FROM process_sample
-            WHERE instance_id = ?
+                id, instance_id, timestamp, COALESCE(created_at, 0.0),
+                cpu_percent, COALESCE(user_time_sec, 0.0), COALESCE(kernel_time_sec, 0.0), COALESCE(num_threads, 1),
+                COALESCE(working_set_mb, memory_mb, 0.0), COALESCE(private_mb, 0.0), COALESCE(page_faults, 0.0),
+                0.0 as gpu_load_percent, 0.0 as gpu_vram_mb, COALESCE(read_bytes_sec, 0.0),
+                COALESCE(write_bytes_sec, 0.0), 0.0 as disk_iops, COALESCE(num_handles, 0),
+                COALESCE(gdi_objects, 0), COALESCE(user_objects, 0), COALESCE(tcp_connections_count, 0), sockets_json
+            FROM process_snapshots
+            WHERE (instance_id = ? OR (pid = ? AND sample_type = 'sample')) AND sample_type = 'sample'
         """
-        params: List[Any] = [instance_id]
+        params: List[Any] = [inst_str, target_pid if is_int_pid else -1]
         if from_time:
             query += " AND timestamp >= ?"
             params.append(from_time)
@@ -694,12 +874,16 @@ class ProcessActivityEngine:
             query += " AND timestamp <= ?"
             params.append(to_time)
 
-        query += " ORDER BY sample_id DESC LIMIT ?"
+        query += " ORDER BY id DESC LIMIT ?"
         params.append(limit)
 
         try:
             cursor.execute(query, tuple(params))
             rows = cursor.fetchall()
+            if not rows and is_int_pid and psutil.pid_exists(target_pid):
+                self._create_or_update_live_instance_by_pid(target_pid)
+                cursor.execute(query, tuple(params))
+                rows = cursor.fetchall()
         except sqlite3.OperationalError as db_err:
             if "database is locked" in str(db_err):
                 logger.debug(f"[ProcessActivityEngine] Пропущена выборка сэмплов #{instance_id}: база заблокирована")
@@ -711,10 +895,10 @@ class ProcessActivityEngine:
         for r in rows:
             result.append(
                 ProcessSampleRecord(
-                    sample_id=r[0],
+                    sample_id=int(r[0]),
                     instance_id=r[1],
                     timestamp=r[2],
-                    created_at=r[3],
+                    created_at=float(r[3] or 0.0),
                     cpu_percent=float(r[4] or 0.0),
                     cpu_user_time=float(r[5] or 0.0),
                     cpu_kernel_time=float(r[6] or 0.0),
@@ -736,7 +920,7 @@ class ProcessActivityEngine:
             )
         return result
 
-    def get_instance_lineage(self, instance_id: int) -> ProcessLineageNode:
+    def get_instance_lineage(self, instance_id: Union[str, int]) -> ProcessLineageNode:
         """Строит иерархическое дерево происхождения (Lineage) инстанса процесса.
 
         Args:
@@ -757,8 +941,8 @@ class ProcessActivityEngine:
         if target.parent_instance_id:
             try:
                 cursor.execute(
-                    "SELECT instance_id, pid, name, status, start_time, executable_path FROM process_instance WHERE instance_id = ?",
-                    (target.parent_instance_id,),
+                    "SELECT instance_id, pid, name, status, created_at, COALESCE(exe_path, name) FROM process_lifecycle_sessions WHERE instance_id = ?",
+                    (str(target.parent_instance_id),),
                 )
                 p_row = cursor.fetchone()
                 if p_row:
@@ -779,11 +963,11 @@ class ProcessActivityEngine:
         try:
             cursor.execute(
                 """
-                SELECT instance_id, pid, name, status, start_time, executable_path
-                FROM process_instance WHERE parent_instance_id = ?
-                ORDER BY instance_id ASC
+                SELECT instance_id, pid, name, status, created_at, COALESCE(exe_path, name)
+                FROM process_lifecycle_sessions WHERE parent_instance_id = ?
+                ORDER BY created_ts ASC
                 """,
-                (instance_id,),
+                (str(target.instance_id),),
             )
             children_rows = cursor.fetchall()
         except sqlite3.OperationalError as db_err:
@@ -805,7 +989,7 @@ class ProcessActivityEngine:
         ]
 
         return ProcessLineageNode(
-            instance_id=target.instance_id or instance_id,
+            instance_id=target.instance_id or str(instance_id),
             pid=target.pid,
             name=target.name,
             status=target.status,
@@ -818,7 +1002,7 @@ class ProcessActivityEngine:
 
     def get_instance_file_activity(
         self,
-        instance_id: int,
+        instance_id: Union[str, int],
         limit: int = 100,
         action: Optional[str] = None,
         extension: Optional[str] = None,
@@ -836,16 +1020,20 @@ class ProcessActivityEngine:
         """
         conn = self._get_conn()
         cursor = conn.cursor()
+        target = self.get_instance_details(instance_id)
+        target_inst_id = target.instance_id if target else str(instance_id)
+        target_pid = target.pid if target else (int(instance_id) if str(instance_id).isdigit() else -1)
 
         query = """
-            SELECT event_id, instance_id, timestamp, action_type, target_directory, file_path, bytes_affected, created_at
+            SELECT event_id, instance_id, timestamp, operation_type, target_directory, file_path, bytes_transferred, created_at
             FROM process_file_events
-            WHERE instance_id = ?
+            WHERE instance_id = ? OR (pid = ? AND ? > 0)
         """
-        params: List[Any] = [instance_id]
+        params: List[Any] = [str(target_inst_id), target_pid, target_pid]
         if action:
-            query += " AND action_type = ?"
-            params.append(action.upper())
+            act_clean = action.strip()
+            query += " AND (operation_type = ? OR operation_type LIKE ?)"
+            params.extend([act_clean.upper(), f"%{act_clean}%"])
         if extension:
             query += " AND file_path LIKE ?"
             params.append(f"%{extension}")
@@ -866,18 +1054,18 @@ class ProcessActivityEngine:
                 id=r[0],
                 instance_id=r[1],
                 timestamp=r[2],
-                action=r[3],
+                action=r[3] or "UNKNOWN",
                 target_folder=r[4],
-                file_path=r[5],
-                bytes_count=r[6],
-                created_at=r[7],
+                file_path=r[5] or "",
+                bytes_count=r[6] or 0,
+                created_at=r[7] or 0.0,
             )
             for r in rows
         ]
 
     def record_file_event(
         self,
-        instance_id: int,
+        instance_id: Union[str, int],
         action: str,
         file_path: str,
         target_folder: Optional[str] = None,
@@ -899,10 +1087,10 @@ class ProcessActivityEngine:
         try:
             cursor.execute(
                 """
-                INSERT INTO process_file_events (instance_id, timestamp, action_type, target_directory, file_path, bytes_affected, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO process_file_events (instance_id, pid, timestamp, operation_type, target_directory, file_path, bytes_transferred, created_at)
+                VALUES (?, 0, ?, ?, ?, ?, ?, ?)
                 """,
-                (instance_id, now_iso, action.upper(), target_folder, file_path, bytes_count, now_epoch),
+                (str(instance_id), now_iso, action.upper(), target_folder, file_path, bytes_count, now_epoch),
             )
             conn.commit()
         except sqlite3.OperationalError as db_err:
@@ -911,7 +1099,7 @@ class ProcessActivityEngine:
             else:
                 raise
 
-    def get_instance_sockets(self, instance_id: int) -> List[ProcessSocketRecord]:
+    def get_instance_sockets(self, instance_id: Union[str, int]) -> List[ProcessSocketRecord]:
         """Возвращает активные сокеты и сетевые подключения выбранного инстанса.
 
         Args:
@@ -928,7 +1116,6 @@ class ProcessActivityEngine:
         if inst.status == "RUNNING" and psutil.pid_exists(inst.pid):
             try:
                 proc = psutil.Process(inst.pid)
-                # Проверяем, совпадает ли время создания для защиты от PID recycling
                 if abs(proc.create_time() - datetime.fromisoformat(inst.start_time.replace("Z", "+00:00")).timestamp()) < 2.0:
                     records: List[ProcessSocketRecord] = []
                     for c in proc.net_connections(kind="inet"):
@@ -958,8 +1145,8 @@ class ProcessActivityEngine:
         cursor = conn.cursor()
         try:
             cursor.execute(
-                "SELECT sockets_json FROM process_sample WHERE instance_id = ? AND sockets_json IS NOT NULL ORDER BY sample_id DESC LIMIT 1",
-                (instance_id,),
+                "SELECT sockets_json FROM process_snapshots WHERE instance_id = ? AND sample_type = 'sample' AND sockets_json IS NOT NULL ORDER BY id DESC LIMIT 1",
+                (str(instance_id),),
             )
             row = cursor.fetchone()
             if row and row[0]:
@@ -988,7 +1175,7 @@ class ProcessActivityEngine:
     # -------------------------------------------------------------------------
 
     def execute_safe_action(
-        self, instance_id: int, request: ProcessSafeOpsRequest
+        self, instance_id: Union[str, int], request: ProcessSafeOpsRequest
     ) -> ProcessSafeOpsResponse:
         """Выполняет безопасное действие над инстансом процесса.
 
@@ -1014,12 +1201,11 @@ class ProcessActivityEngine:
 
         # Проверка живости процесса в ОС
         if not psutil.pid_exists(pid):
-            # Обновляем статус в БД на EXITED
             conn = self._get_conn()
             try:
                 conn.execute(
-                    "UPDATE process_instance SET status = 'EXITED' WHERE instance_id = ?",
-                    (instance_id,),
+                    "UPDATE process_lifecycle_sessions SET status = 'EXITED', is_alive = 0 WHERE instance_id = ?",
+                    (str(instance_id),),
                 )
                 conn.commit()
             except sqlite3.OperationalError as db_err:
@@ -1039,7 +1225,6 @@ class ProcessActivityEngine:
 
             if action_name == "kill":
                 proc.terminate()
-                # Ждем 0.5с и при необходимости force kill
                 try:
                     proc.wait(timeout=0.5)
                 except psutil.TimeoutExpired:
@@ -1048,8 +1233,8 @@ class ProcessActivityEngine:
                 conn = self._get_conn()
                 try:
                     conn.execute(
-                        "UPDATE process_instance SET status = 'EXITED', exit_time = ?, exit_code = 1 WHERE instance_id = ?",
-                        (datetime.now(timezone.utc).isoformat(), instance_id),
+                        "UPDATE process_lifecycle_sessions SET status = 'EXITED', is_alive = 0, terminated_at = ?, exit_code = 1 WHERE instance_id = ?",
+                        (datetime.now(timezone.utc).isoformat(), str(instance_id)),
                     )
                     conn.commit()
                 except sqlite3.OperationalError as db_err:
@@ -1069,7 +1254,7 @@ class ProcessActivityEngine:
                 proc.suspend()
                 conn = self._get_conn()
                 try:
-                    conn.execute("UPDATE process_instance SET status = 'SUSPENDED' WHERE instance_id = ?", (instance_id,))
+                    conn.execute("UPDATE process_lifecycle_sessions SET status = 'SUSPENDED' WHERE instance_id = ?", (str(instance_id),))
                     conn.commit()
                 except sqlite3.OperationalError as db_err:
                     if "database is locked" not in str(db_err):
@@ -1087,7 +1272,7 @@ class ProcessActivityEngine:
                 proc.resume()
                 conn = self._get_conn()
                 try:
-                    conn.execute("UPDATE process_instance SET status = 'RUNNING' WHERE instance_id = ?", (instance_id,))
+                    conn.execute("UPDATE process_lifecycle_sessions SET status = 'RUNNING' WHERE instance_id = ?", (str(instance_id),))
                     conn.commit()
                 except sqlite3.OperationalError as db_err:
                     if "database is locked" not in str(db_err):

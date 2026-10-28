@@ -16,11 +16,11 @@
 # Package: apps.windows.sdk.modules.software_manager.core
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-18 09:30:00
 # =============================================================================
 
 from __future__ import annotations
-"""# Description:"""
+"""Модели данных менеджера программного обеспечения и пакетов."""
 
 from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field
@@ -33,6 +33,8 @@ class InstalledPackage(BaseModel):
     version: str
     available_version: Optional[str] = None
     source: str = 'winget'  # winget, msstore, msi, registry
+    publisher: Optional[str] = None
+    store_id: Optional[str] = None
     install_date: Optional[str] = None
 
 
@@ -40,6 +42,7 @@ class SoftwareReport(BaseModel):
     """Сводный отчет об установленном ПО."""
     total_packages: int = 0
     updates_available_count: int = 0
+    store_packages_count: int = 0
     winget_available: bool = True
     packages: List[InstalledPackage] = Field(default_factory=list)
     timestamp: str = ''

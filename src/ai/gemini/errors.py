@@ -16,7 +16,7 @@
 # Package: src.ai.gemini
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 22:28:45
+# Updated: 2026-10-16 16:20:00
 # =============================================================================
 
 """Mixin class for centralized error handling in GoogleGenerativeAI."""
@@ -178,7 +178,10 @@ class GoogleGenerativeAIErrorMixin:
             attempt=attempt + 1,
             max_attempts=max_attempts,
         )
-        logger.error(f'Gemini Model Error (Attempt {attempt + 1}/{max_attempts}):\n{err_json}')
+        if attempt + 1 >= max_attempts:
+            logger.error(f'Gemini Model Error (Attempt {attempt + 1}/{max_attempts}):\n{err_json}', exc_info=False)
+        else:
+            logger.warning(f'Gemini Model Retry (Attempt {attempt + 1}/{max_attempts}):\n{err_json}', exc_info=False)
         if '401' in ex_str or 'API_KEY_INVALID' in ex_str or 'PERMISSION_DENIED' in ex_str:
             logger.warning(f'GoogleGenerativeAI: Authorization error (API key invalid/expired). Rotating key...', exc_info=False)
             record_model_error(provider='gemini', model_name=active_model, error=ex_str, status_code=401, attempt=attempt, max_attempts=max_attempts, action_taken='rotate_key')
@@ -199,15 +202,10 @@ class GoogleGenerativeAIErrorMixin:
                 await asyncio.sleep(wait)
                 return True
             else:
-                logger.warning(f'GoogleGenerativeAI: Model {active_model} is experiencing persistent high demand after {self._unavailable_attempts} attempts. Switching to alternative model...', exc_info=False)
-                record_model_error(provider='gemini', model_name=active_model, error=ex_str, status_code=503, attempt=attempt, max_attempts=max_attempts, action_taken='switch_model')
-                if self._switch_model():
-                    self._unavailable_attempts = 0
-                    return True
-                else:
-                    logger.error('GoogleGenerativeAI: No alternative models available for gemini provider', exc_info=False)
-                    self._unavailable_attempts = 0
-                    return False
+                logger.warning(f'GoogleGenerativeAI: Model {active_model} is experiencing persistent high demand after {self._unavailable_attempts} attempts. Retries exhausted.', exc_info=False)
+                record_model_error(provider='gemini', model_name=active_model, error=ex_str, status_code=503, attempt=attempt, max_attempts=max_attempts, action_taken='failed')
+                self._unavailable_attempts = 0
+                return False
         if '429' in ex_str or 'RESOURCE_EXHAUSTED' in ex_str:
             # Простая логика ротации ключей при ошибке 429
             logger.warning(f'GoogleGenerativeAI: Ошибка 429 (RESOURCE_EXHAUSTED). Маркируем ключ как exhausted и переключаемся...')
@@ -230,6 +228,6 @@ class GoogleGenerativeAIErrorMixin:
             record_model_error(provider='gemini', model_name=active_model, error=ex_str, attempt=attempt, max_attempts=max_attempts, action_taken='retry', retry_delay_seconds=float(wait_sec))
             await asyncio.sleep(wait_sec)
             return True
-        logger.error(f'GoogleGenerativeAI: API Error (exhausted {max_attempts} attempts): {ex_str}')
+        logger.error(f'GoogleGenerativeAI: API Error (exhausted {max_attempts} attempts): {ex_str}', exc_info=False)
         record_model_error(provider='gemini', model_name=active_model, error=ex_str, attempt=attempt, max_attempts=max_attempts, action_taken='failed')
         return False

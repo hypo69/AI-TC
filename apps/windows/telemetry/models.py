@@ -16,7 +16,7 @@
 # Package: apps.windows.telemetry
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-19 00:13:00
 # =============================================================================
 
 from __future__ import annotations
@@ -193,6 +193,12 @@ class MemoryMetrics(BaseModel):
     swap_total_gb: float = Field(default=0.0, description='Total swap space in GB')
     swap_used_gb: float = Field(default=0.0, description='Used swap space in GB')
     swap_percent: float = Field(default=0.0, description='Swap utilization percentage')
+    commit_total_gb: Optional[float] = Field(default=None, description='Текущий объем выделенной виртуальной памяти Commit Charge (ГБ)')
+    commit_limit_gb: Optional[float] = Field(default=None, description='Лимит виртуальной памяти Commit Limit (ГБ)')
+    commit_percent: Optional[float] = Field(default=None, description='Процент заполнения Commit Charge (%)')
+    pool_paged_mb: Optional[float] = Field(default=None, description='Выгружаемый пул ядра Paged Pool (МБ)')
+    pool_nonpaged_mb: Optional[float] = Field(default=None, description='Невыгружаемый пул ядра Non-Paged Pool (МБ)')
+    page_faults_per_sec: Optional[float] = Field(default=None, description='Интенсивность страничных ошибок Page Faults/sec')
 
 class GpuMetrics(BaseModel):
     """GPU accelerator telemetry and compute backends."""
@@ -246,11 +252,14 @@ class DiskPartitionMetrics(BaseModel):
     drive_type: str = Field(default='Fixed', description='Тип диска (Fixed, Google Drive, Cloud / Virtual, Removable)')
 
 class DiskIoMetrics(BaseModel):
-    """Disk read and write I/O rates."""
+    """Disk read and write I/O rates and latency."""
     read_bytes_per_sec: float = Field(default=0.0, description='Read throughput in bytes/s')
     write_bytes_per_sec: float = Field(default=0.0, description='Write throughput in bytes/s')
     read_count_per_sec: float = Field(default=0.0, description='Read operations per second')
     write_count_per_sec: float = Field(default=0.0, description='Write operations per second')
+    read_latency_ms: float = Field(default=0.0, description='Средняя задержка чтения с диска (мс/оп)')
+    write_latency_ms: float = Field(default=0.0, description='Средняя задержка записи на диск (мс/оп)')
+    busy_percent: float = Field(default=0.0, description='Процент времени активности диска (%)')
 
 class NetworkAdapterStatistics(BaseModel):
     """Накопительная статистика сетевого адаптера (Get-NetAdapterStatistics / MIB_IF_ROW2)."""
@@ -543,6 +552,16 @@ class HardwareNode(BaseModel):
     name: str = Field(..., description='Device or component name')
     properties: Dict[str, Any] = Field(default_factory=dict, description='Detailed hardware properties')
     children: List[HardwareNode] = Field(default_factory=list, description='Sub-components or devices')
+    vendor_url: Optional[str] = Field(default=None, description='Ссылка на официальную страницу спецификации/технических характеристик вендора')
+    component_key: Optional[str] = Field(default=None, description='Уникальный ключ компонента в БД')
+    enrichment_status: Optional[str] = Field(default='pending', description='Статус обогащения (pending, completed, skipped)')
+    is_present: bool = Field(default=True, description='Присутствует ли компонент сейчас в системе')
+    install_count: int = Field(default=1, description='Количество установок/подключений компонента в систему')
+    first_seen: Optional[str] = Field(default=None, description='Дата первичного обнаружения в системе')
+    last_seen: Optional[str] = Field(default=None, description='Дата последнего подтверждения в системе')
+    removed_at: Optional[str] = Field(default=None, description='Дата, с которой компонент перестал обнаруживаться')
+    production_date: Optional[str] = Field(default=None, description='Дата или неделя производства оборудования')
+    production_date_source: Optional[str] = Field(default=None, description='Источник/метод определения даты производства')
 
 class MonitorInfo(BaseModel):
     """Connected display monitor details."""
@@ -605,22 +624,23 @@ class SystemSnapshot(BaseModel):
     gpus: List[GpuMetrics] = Field(default_factory=list, description='Detected GPU accelerators')
     npus: List[NpuMetrics] = Field(default_factory=list, description='Detected NPU neural processors')
     monitors: List[MonitorInfo] = Field(default_factory=list, description='Connected display monitors')
-    updates: WindowsUpdateInfo = Field(default_factory=WindowsUpdateInfo, description='Windows Update information')
-    office: OfficeSuiteInfo = Field(default_factory=OfficeSuiteInfo, description='Office suite telemetry')
-    onedrive: CloudStorageInfo = Field(default_factory=CloudStorageInfo, description='OneDrive cloud storage telemetry')
+    updates: Optional[WindowsUpdateInfo] = Field(default_factory=WindowsUpdateInfo, description='Windows Update information')
+    office: Optional[OfficeSuiteInfo] = Field(default_factory=OfficeSuiteInfo, description='Office suite telemetry')
+    onedrive: Optional[CloudStorageInfo] = Field(default_factory=CloudStorageInfo, description='OneDrive cloud storage telemetry')
     disks: List[DiskPartitionMetrics] = Field(default_factory=list, description='Disk partitions')
     physical_disks: List[PhysicalDiskHealth] = Field(default_factory=list, description='Physical storage disks and SMART health')
     disk_io: DiskIoMetrics = Field(default_factory=DiskIoMetrics, description='Aggregate disk I/O rates')
     network: List[NetworkInterfaceMetrics] = Field(default_factory=list, description='Network interfaces')
     listening_ports: List[NetworkPortMetrics] = Field(default_factory=list, description='Active listening ports and sockets')
     network_activity: List[ProcessNetworkActivity] = Field(default_factory=list, description='Сетевая активность программ (соединения и трафик)')
-    battery: BatteryMetrics = Field(default_factory=BatteryMetrics, description='Battery and power state')
+    battery: Optional[BatteryMetrics] = Field(default_factory=BatteryMetrics, description='Battery and power state')
     alerts: SystemHealthAlerts = Field(default_factory=SystemHealthAlerts, description='System health and reliability alerts')
     sensors: List[HardwareSensor] = Field(default_factory=list, description='Hardware sensor readings')
     top_processes: List[ProcessMetrics] = Field(default_factory=list, description='Top active processes')
     apps_count: int = Field(default=0, description='Количество запущенных оконных приложений (Apps)')
     background_count: int = Field(default=0, description='Количество фоновых процессов (Background processes)')
     windows_count: int = Field(default=0, description='Количество системных процессов Windows (Windows processes)')
+    network_profile: Optional[Dict[str, Any]] = Field(default_factory=dict, description='Профиль сетевого подключения и статус обнаружения сети')
     hardware_audit: Dict[str, Any] = Field(default_factory=dict, description='Full hardware audit data (manufacturer, serial, etc.)')
 
 class WindowsFeaturesSnapshot(BaseModel):
@@ -763,6 +783,8 @@ class PeripheralsNetworkReport(BaseModel):
     usb_devices: List[Dict[str, Any]] = Field(default_factory=list, description='Подключенные USB-устройства и контроллеры')
     wifi_telemetry: Dict[str, Any] = Field(default_factory=dict, description='Параметры текущей беспроводной сети Wi-Fi (SSID, BSSID, RSSI, канал)')
     audio_endpoints: List[Dict[str, Any]] = Field(default_factory=list, description='Аудиоустройства и активные конечные точки')
+    bluetooth_devices: List[Dict[str, Any]] = Field(default_factory=list, description='Сопряженные и подключенные Bluetooth устройства и радиомодули')
+    printers: List[Dict[str, Any]] = Field(default_factory=list, description='Локальные, сетевые (WSD/TCP-IP) и виртуальные принтеры')
 
 class SystemCoreMetrics(BaseModel):
     """Быстрые базовые метрики хоста (CPU, RAM, GPU, Disk I/O, Battery)."""
@@ -1204,10 +1226,10 @@ class ProcessDefinitionRecord(BaseModel):
 
 class ProcessInstanceRecord(BaseModel):
     """Единичный уникальный инстанс процесса (Process Instance) с защитой от PID Recycling."""
-    instance_id: Optional[int] = Field(default=None, description='Уникальный первичный ключ инстанса')
+    instance_id: Optional[Union[str, int]] = Field(default=None, description='Уникальный первичный ключ инстанса')
     definition_id: int = Field(..., description='Ссылка на паспорт программы')
     pid: int = Field(..., description='Process ID операционной системы')
-    parent_instance_id: Optional[int] = Field(default=None, description='Уникальный instance_id родительского процесса')
+    parent_instance_id: Optional[Union[str, int]] = Field(default=None, description='Уникальный instance_id родительского процесса')
     name: str = Field(..., description='Имя процесса')
     executable_path: str = Field(..., description='Полный путь к исполняемому файлу')
     command_line: Optional[str] = Field(default=None, description='Полная командная строка запуска')
@@ -1228,7 +1250,7 @@ class ProcessInstanceRecord(BaseModel):
 class ProcessSampleRecord(BaseModel):
     """Временной срез телеметрии ресурсов инстанса процесса."""
     sample_id: Optional[int] = Field(default=None, description='Идентификатор среза')
-    instance_id: int = Field(..., description='Уникальный instance_id процесса')
+    instance_id: Union[str, int] = Field(..., description='Уникальный instance_id процесса')
     timestamp: str = Field(..., description='ISO-8601 временная метка')
     created_at: float = Field(..., description='Epoch timestamp среза')
     cpu_percent: float = Field(default=0.0, description='Суммарный % загрузки CPU')
@@ -1253,7 +1275,7 @@ class ProcessSampleRecord(BaseModel):
 class ProcessFileEventRecord(BaseModel):
     """Событие файловой операции процесса."""
     id: Optional[int] = Field(default=None, description='Идентификатор события')
-    instance_id: Optional[int] = Field(default=None, description='Instance ID процесса')
+    instance_id: Optional[Union[str, int]] = Field(default=None, description='Instance ID процесса')
     timestamp: str = Field(..., description='Время события')
     action: str = Field(..., description='Действие: CREATE, MODIFY, DELETE, RENAME')
     target_folder: Optional[str] = Field(default=None, description='Целевая папка')
@@ -1276,7 +1298,7 @@ class ProcessSocketRecord(BaseModel):
 
 class ProcessLineageNode(BaseModel):
     """Узел интерактивного графа происхождения процесса (Process Lineage)."""
-    instance_id: int = Field(..., description='Уникальный instance_id')
+    instance_id: Union[str, int] = Field(..., description='Уникальный instance_id')
     pid: int = Field(..., description='PID процесса')
     name: str = Field(..., description='Имя процесса')
     status: str = Field(default='RUNNING', description='Статус инстанса')
@@ -1297,7 +1319,7 @@ class ProcessSafeOpsRequest(BaseModel):
 
 class ProcessSafeOpsResponse(BaseModel):
     """Ответ на безопасное действие над процессом."""
-    instance_id: int = Field(..., description='Идентификатор инстанса')
+    instance_id: Union[str, int] = Field(..., description='Идентификатор инстанса')
     pid: int = Field(..., description='PID процесса')
     action: str = Field(..., description='Выполненное действие')
     success: bool = Field(..., description='Успешность операции')
@@ -1410,6 +1432,90 @@ class ProcessPidSnapshot(BaseModel):
     gdi_objects: int = Field(default=0, description='GDI объекты')
     user_objects: int = Field(default=0, description='USER объекты')
     timestamp: str = Field(default='', description='Время снимка')
+
+
+class ProcessPrivacySensorInfo(BaseModel):
+    """Статус использования датчиков конфиденциальности (камера, микрофон) в Windows."""
+    is_active_now: bool = Field(default=False, description='Датчик активен прямо сейчас')
+    last_used: Optional[str] = Field(default=None, description='Время последнего обращения (ISO-8601)')
+    access_allowed: bool = Field(default=True, description='Разрешен ли доступ в политике Windows')
+    app_identifier: Optional[str] = Field(default=None, description='Идентификатор пакета или путь к бинарнику')
+
+
+class ProcessSocketConnection(BaseModel):
+    """Сетевое подключение процесса."""
+    protocol: str = Field(default='TCP', description='Протокол (TCP/UDP)')
+    local_address: str = Field(default='', description='Локальный адрес и порт')
+    remote_address: str = Field(default='', description='Удаленный адрес и порт')
+    status: str = Field(default='NONE', description='Статус подключения (ESTABLISHED, LISTEN и т.п.)')
+
+
+class ProcessDeepHistoryResponse(BaseModel):
+    """Исчерпывающий паспорт жизненного цикла и накопленной телеметрии процесса по PID."""
+    pid: int = Field(..., description='Process ID операционной системы')
+    process_name: str = Field(..., description='Имя исполняемого файла')
+    executable_path: Optional[str] = Field(default=None, description='Полный путь к файлу')
+    command_line: Optional[str] = Field(default=None, description='Командная строка запуска')
+    start_time: str = Field(default='', description='Время запуска процесса (ISO-8601)')
+    uptime_seconds: float = Field(default=0.0, description='Время непрерывной работы в секундах')
+    user_name: Optional[str] = Field(default=None, description='Учетная запись пользователя (кем запущен)')
+    ppid: Optional[int] = Field(default=None, description='PID родительского процесса')
+    parent_name: Optional[str] = Field(default=None, description='Имя родительского процесса')
+    session_id: Optional[int] = Field(default=None, description='Идентификатор сессии Windows')
+
+    # Память (накопленная и пиковая)
+    memory_working_set_mb: float = Field(default=0.0, description='Текущая память Working Set (МБ)')
+    memory_peak_working_set_mb: float = Field(default=0.0, description='Пиковая память Working Set за всё время (МБ)')
+    memory_private_bytes_mb: float = Field(default=0.0, description='Выделенная память Private Bytes (МБ)')
+    memory_page_faults_total: int = Field(default=0, description='Всего ошибок страниц (Page Faults)')
+
+    # Диск (накопленный I/O)
+    disk_read_bytes_total: int = Field(default=0, description='Всего прочитано с диска (байт)')
+    disk_write_bytes_total: int = Field(default=0, description='Всего записано на диск (байт)')
+    disk_read_mb_total: float = Field(default=0.0, description='Всего прочитано с диска (МБ)')
+    disk_write_mb_total: float = Field(default=0.0, description='Всего записано на диск (МБ)')
+    disk_read_ops_total: int = Field(default=0, description='Всего операций чтения')
+    disk_write_ops_total: int = Field(default=0, description='Всего операций записи')
+
+    # Процессор (накопленный CPU)
+    cpu_percent: float = Field(default=0.0, description='Текущая загрузка CPU %')
+    cpu_user_time_sec: float = Field(default=0.0, description='Время CPU в режиме пользователя (сек)')
+    cpu_kernel_time_sec: float = Field(default=0.0, description='Время CPU в режиме ядра (сек)')
+    cpu_total_time_sec: float = Field(default=0.0, description='Суммарное процессорное время (сек)')
+    thread_count: int = Field(default=1, description='Количество активных потоков')
+
+    # Видео / GPU
+    gpu_vram_mb: float = Field(default=0.0, description='Выделенная видеопамять VRAM (МБ)')
+    gpu_load_percent: float = Field(default=0.0, description='Нагрузка видеоядра GPU %')
+
+    # Сеть (трафик и сокеты)
+    net_bytes_sent_total: int = Field(default=0, description='Всего передано по сети (байт)')
+    net_bytes_recv_total: int = Field(default=0, description='Всего получено по сети (байт)')
+    net_sent_mb_total: float = Field(default=0.0, description='Всего передано по сети (МБ)')
+    net_recv_mb_total: float = Field(default=0.0, description='Всего принято по сети (МБ)')
+    active_sockets_count: int = Field(default=0, description='Количество активных сетевых сокетов')
+    sockets: List[ProcessSocketConnection] = Field(default_factory=list, description='Список открытых соединений')
+
+    # Оборудование и датчики конфиденциальности
+    microphone: ProcessPrivacySensorInfo = Field(default_factory=ProcessPrivacySensorInfo, description='Телеметрия доступа к микрофону')
+    camera: ProcessPrivacySensorInfo = Field(default_factory=ProcessPrivacySensorInfo, description='Телеметрия доступа к веб-камере')
+
+    # Дескрипторы и UI
+    handles_count: int = Field(default=0, description='Количество открытых дескрипторов (Handles)')
+    gdi_objects: int = Field(default=0, description='Количество объектов GDI')
+    user_objects: int = Field(default=0, description='Количество объектов USER')
+
+    # Оценка подозрительности и аномалий поведения
+    suspicion_score: int = Field(default=0, description='Балл подозрительности процесса (0-100)')
+    suspicion_level: str = Field(default='SAFE', description='Уровень риска (SAFE, LOW, MEDIUM, HIGH, CRITICAL)')
+    powershell_spawns_count: int = Field(default=0, description='Количество порожденных дочерних процессов PowerShell/cmd')
+    suspicious_children_count: int = Field(default=0, description='Количество подозрительных дочерних процессов')
+    suspicion_triggers: List[str] = Field(default_factory=list, description='Обнаруженные триггеры и аномалии поведения')
+
+    # Телеметрия из базы SQLite
+    sqlite_snapshots_count: int = Field(default=0, description='Количество сохраненных срезов в БД телеметрии')
+    timestamp: str = Field(default='', description='Время фиксации снимка (ISO-8601)')
+
 
 
 

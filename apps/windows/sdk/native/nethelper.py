@@ -7,16 +7,16 @@
 #
 # Usage Examples:
 #   Python API:
-#     from apps.windows.telemetry.win32_ffi.nethelper import MIB_TCPROW_OWNER_PID
+#     from apps.windows.sdk.win32_ffi.nethelper import MIB_TCPROW_OWNER_PID
 #
 #     service = MIB_TCPROW_OWNER_PID()
 #
 # File: nethelper.py
 # Project: ai-windows-admin
-# Package: apps.windows.telemetry.win32_ffi
+# Package: apps.windows.sdk.win32_ffi
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-15 00:17:00
 # =============================================================================
 
 from __future__ import annotations
@@ -306,6 +306,32 @@ class IPHelperAPI:
             local_port = self._port_to_int(row.dwLocalPort)
             sockets_list.append(NetworkSocketInfo(protocol='UDP', local_address=local_ip, local_port=local_port, remote_address='*.*.*.*', remote_port=0, state='LISTEN', pid=row.dwOwningPid))
         return sockets_list
+
+    def get_process_network_connections(self, pid: int) -> List[NetworkSocketInfo]:
+        """Получить все TCP-соединения и UDP-сокеты, принадлежащие конкретному PID.
+
+        Args:
+            pid: Идентификатор процесса Windows (PID).
+
+        Returns:
+            List[NetworkSocketInfo]: Список активных сокетов и соединений процесса.
+        """
+        all_conns: List[NetworkSocketInfo] = []
+        try:
+            for tcp in self.get_tcp_connections():
+                if tcp.pid == pid:
+                    all_conns.append(tcp)
+        except Exception as ex:
+            logger.debug(f'Ошибка выборки TCP соединений для PID {pid}: {ex}')
+
+        try:
+            for udp in self.get_udp_sockets():
+                if udp.pid == pid:
+                    all_conns.append(udp)
+        except Exception as ex:
+            logger.debug(f'Ошибка выборки UDP сокетов для PID {pid}: {ex}')
+
+        return all_conns
 
     def send_arp(self, dest_ip: str, src_ip: Optional[str] = None) -> Optional[str]:
         """Отправка ARP-запроса через SendARP API Windows и получение MAC-адреса.

@@ -18,7 +18,7 @@
 # Package: apps.windows.api.routers
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-19 00:25:00
 # =============================================================================
 
 from __future__ import annotations
@@ -215,4 +215,52 @@ def init_router() -> APIRouter:
             "intervals": cfg_mgr.get_all_intervals(),
         }
 
+    router.post("/collect-heavy-sequentially")(collect_heavy_sequentially)
+
+    # Прямой алиас по корневому пути /api/windows/telemetry/collect-heavy-sequentially
+    direct_alias_router = APIRouter()
+    direct_alias_router.post("/api/windows/telemetry/collect-heavy-sequentially", include_in_schema=False)(collect_heavy_sequentially)
+
+    router.include_router(direct_alias_router)
     return router
+
+
+async def collect_heavy_sequentially(payload: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """Последовательный (по одному) запуск тяжелых коллекторов (WMI, SMART, порты, дескрипторы)."""
+    import time
+    collectors = (payload or {}).get("collectors", ["wmi", "smart", "ports", "handles"])
+    results: Dict[str, Any] = {}
+
+    for name in collectors:
+        t0 = time.perf_counter()
+        try:
+            if name == "wmi":
+                from apps.windows.telemetry.sensors import _probe_acpi_thermal_zones
+                items = _probe_acpi_thermal_zones()
+                results[name] = {"status": "OK", "items_count": len(items), "elapsed_ms": round((time.perf_counter() - t0) * 1000.0, 2)}
+            elif name == "smart":
+                from apps.windows.telemetry.sensors import _probe_storage_sensors
+                items = _probe_storage_sensors()
+                results[name] = {"status": "OK", "items_count": len(items), "elapsed_ms": round((time.perf_counter() - t0) * 1000.0, 2)}
+            elif name == "ports":
+                import psutil
+                conns = psutil.net_connections(kind="inet")
+                results[name] = {"status": "OK", "items_count": len(conns), "elapsed_ms": round((time.perf_counter() - t0) * 1000.0, 2)}
+            elif name == "handles":
+                from apps.windows.telemetry.deep_diagnostics import DeepDiagnosticsEngine
+                leaks = DeepDiagnosticsEngine().collect_process_leaks()
+                results[name] = {"status": "OK", "items_count": len(leaks.get("top_processes", [])), "elapsed_ms": round((time.perf_counter() - t0) * 1000.0, 2)}
+            else:
+                results[name] = {"status": "SKIPPED", "items_count": 0, "elapsed_ms": 0.0}
+        except Exception as exc:
+            logger.debug(f"Ошибка при последовательном запуске тяжелого коллектора '{name}': {exc}")
+            results[name] = {"status": "ERROR", "error": str(exc), "elapsed_ms": round((time.perf_counter() - t0) * 1000.0, 2)}
+
+    return {
+        "status": "SUCCESS",
+        "success": True,
+        "count": len(results),
+        "results": results,
+    }
+
+

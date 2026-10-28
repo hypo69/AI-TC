@@ -1,0 +1,10 @@
+{
+  "id": "dark",
+  "name": "Стандартная тёмная",
+  "nameEn": "Default Dark",
+  "category": "dark",
+  "icon": "bi-moon-stars-fill",
+  "iconColor": "text-primary",
+  "description": "Классическая глубокая контрастная тёмная тема",
+  "baseType": "dark"
+}

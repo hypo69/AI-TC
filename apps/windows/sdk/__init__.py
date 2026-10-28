@@ -20,7 +20,7 @@
 # Package: apps.windows.sdk
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 19:20:00
+# Updated: 2026-10-16 20:35:00
 # =============================================================================
 
 from __future__ import annotations
@@ -38,12 +38,14 @@ from apps.windows.sdk.client import (
 
 # Экспорт ключевых подпакетов
 from apps.windows.sdk import native
+from apps.windows.sdk import win32_ffi
 from apps.windows.sdk import core
 from apps.windows.sdk import drivers
 from apps.windows.sdk import features
 from apps.windows.sdk import modules
-from apps.windows.sdk import software_scanner
-from apps.windows.sdk import exceptions
+from apps.windows.sdk.dynamic_runner import DynamicToolRunner
+from apps.windows.sdk.modules.network.discovery import NetworkDiscoveryManager, WindowsNetworkDiscovery
+from apps.windows.sdk.modules.regional import RegionalManager
 
 # Экспорт ключевых исключений SDK
 from apps.windows.sdk.exceptions import (
@@ -88,12 +90,14 @@ __all__ = [
     "ModulesSubsystem",
     # Подпакеты
     "native",
+    "win32_ffi",
     "core",
     "drivers",
     "features",
     "modules",
     "software_scanner",
     "exceptions",
+    "DynamicToolRunner",
     # Исключения
     "WindowsSDKError",
     "NativeCallError",
@@ -123,4 +127,7 @@ __all__ = [
     "BackupOperationError",
     "FirewallConfigurationError",
     "DefenderConfigurationError",
+    "NetworkDiscoveryManager",
+    "WindowsNetworkDiscovery",
+    "RegionalManager",
 ]

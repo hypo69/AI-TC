@@ -45,7 +45,7 @@ apps/windows/sdk/
 │   └── system32_catalog.py   # Каталог 149 системных утилит Windows
 │
 └── modules/              # [Слой 5] 27 специализированных доменных подсистем
-    ├── hardware/         # LibreHardwareMonitor, GPU, температуры, датчики
+    ├── hardware/         # Нативные датчики, GPU, температуры, WMI/CIM
     ├── network/          # Сканер портов, сокеты, замеры скорости
     ├── storage_manager/  # Диски, SMART, тома, клон и бенчмарк DiskSpd
     ├── explorer_manager/ # Стартовое представление и Folder Options Проводника

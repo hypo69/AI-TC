@@ -128,11 +128,14 @@ def get_data_dir() -> Path:
     """
     if sys.platform == 'win32':
         localappdata = os.environ.get('LOCALAPPDATA', str(Path.home() / 'AppData' / 'Local'))
-        return Path(localappdata) / 'AI-Windows-Admin'
+        app_name = get_config_value('app_name', os.environ.get('APP_NAME', 'AI-TC'))
+        return Path(localappdata) / app_name / 'data'
     elif sys.platform == 'darwin':
-        return Path.home() / 'Library' / 'Application Support' / 'AI-Windows-Admin'
+        app_name = get_config_value('app_name', os.environ.get('APP_NAME', 'AI-TC'))
+        return Path.home() / 'Library' / 'Application Support' / app_name / 'data'
     else:
-        return Path.home() / '.local' / 'share' / 'AI-Windows-Admin'
+        app_name = get_config_value('app_name', os.environ.get('APP_NAME', 'AI-TC'))
+        return Path.home() / '.local' / 'share' / app_name / 'data'
 
 def is_port_open(host: str='127.0.0.1', port: int=8000, timeout: float=1.0) -> bool:
     """

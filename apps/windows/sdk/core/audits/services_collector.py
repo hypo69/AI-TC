@@ -16,7 +16,7 @@
 # Package: apps.windows.sdk.core.audits
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-13 16:25:00
 # =============================================================================
 
 from __future__ import annotations
@@ -28,7 +28,7 @@ import winreg
 from typing import Any, Dict, List
 import psutil
 from logger import logger
-from apps.windows.telemetry.win32_ffi.scm import ServiceControlManager
+from apps.windows.sdk.win32_ffi.scm import ServiceControlManager
 from apps.windows.sdk.core.models import ActionType, AuditFinding, DomainAuditResult, RemediationAction, RiskLevel
 PROTECTED_SYSTEM_SERVICES = {'appxsvc', 'bfe', 'rpcss', 'dcomlaunch', 'plugplay', 'lanmanworkstation', 'lanmanserver', 'dnscache', 'dhcp', 'mpssvc', 'windefend', 'wuauserv', 'cryptsvc', 'eventlog', 'nsi', 'schedule', 'samss', 'lsass', 'gpsvc', 'bits', 'wsearch', 'trustedinstaller', 'spooler', 'sens', 'profsvc'}
 

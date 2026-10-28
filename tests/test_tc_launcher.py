@@ -1,17 +1,17 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Windows-Admin Tests - TC Launcher
+# Process Name: AI-TC Tests - TC Launcher
 # =============================================================================
 # Description:
 #   Тесты базовой линии для точки входа tc.py: нормализация BCP 47,
 #   освобождение порта, разбор аргументов и dry-run запуск.
 #
 # File: test_tc_launcher.py
-# Project: ai-windows-admin
+# Project: ai-tc
 # Package: tests
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 23:05:00
+# Updated: 2026-10-28 00:15:00
 # =============================================================================
 
 from __future__ import annotations

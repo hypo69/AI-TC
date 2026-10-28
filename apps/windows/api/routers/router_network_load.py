@@ -17,7 +17,7 @@
 # Package: apps.windows.api.routers
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-16 22:42:00
 # =============================================================================
 
 from __future__ import annotations
@@ -36,7 +36,6 @@ except ImportError:
     psutil = None
 
 from logger import logger
-from apps.windows.sdk.modules.hardware.lhm_service import LhmService
 from apps.windows.telemetry import SystemCollector
 from apps.windows.telemetry.models import ProcessNetworkActivity
 
@@ -189,65 +188,98 @@ def _get_bluetooth_info() -> BluetoothStatusInfo:
     return info
 
 
+_last_net_calc_io: Optional[Any] = None
+_last_net_calc_time: Optional[float] = None
+
+
 def calculate_network_load() -> NetworkLoadResponse:
-    """Собирает полный снимок нагрузки сети."""
-    global _last_net_io, _last_net_time, _net_history
+    """Собирает полный снимок нагрузки сети из базы данных telemetry.db и живых счетчиков."""
+    global _net_history, _last_net_calc_io, _last_net_calc_time
+    from apps.windows.telemetry.sqlite import TelemetryStorage
+    storage = TelemetryStorage.get_instance(read_only=True)
+    snap = storage.get_latest_snapshot_full() or {}
 
-    now = time.time()
-    current_io = psutil.net_io_counters() if psutil else None
-    
-    rx_sec = 0.0
-    tx_sec = 0.0
+    rx_sec = float(snap.get("network_recv_bytes_sec") or 0.0)
+    tx_sec = float(snap.get("network_sent_bytes_sec") or 0.0)
 
-    if current_io and _last_net_io and _last_net_time > 0:
-        dt = max(0.2, now - _last_net_time)
-        rx_sec = max(0.0, (current_io.bytes_recv - _last_net_io.bytes_recv) / dt)
-        tx_sec = max(0.0, (current_io.bytes_sent - _last_net_io.bytes_sent) / dt)
+    # Если в верхнем снимке нули, проверяем список интерфейсов внутри снимка
+    if not rx_sec and not tx_sec and snap.get("network"):
+        for iface in snap.get("network", []):
+            if isinstance(iface, dict):
+                rx_sec += float(iface.get("bytes_recv_per_sec") or iface.get("bytes_recv_sec") or 0.0)
+                tx_sec += float(iface.get("bytes_sent_per_sec") or iface.get("bytes_sent_sec") or 0.0)
 
-    _last_net_io = current_io
-    _last_net_time = now
+    # Живой расчет через psutil при доступности счетчиков ОС
+    cur_io = psutil.net_io_counters() if psutil else None
+    now_ts = time.time()
+    if cur_io and _last_net_calc_io and _last_net_calc_time:
+        dt = max(now_ts - _last_net_calc_time, 0.1)
+        calc_rx = max(0.0, (cur_io.bytes_recv - _last_net_calc_io.bytes_recv) / dt)
+        calc_tx = max(0.0, (cur_io.bytes_sent - _last_net_calc_io.bytes_sent) / dt)
+        if rx_sec <= 0.0 and calc_rx > 0.0:
+            rx_sec = calc_rx
+        if tx_sec <= 0.0 and calc_tx > 0.0:
+            tx_sec = calc_tx
+    if cur_io:
+        _last_net_calc_io = cur_io
+        _last_net_calc_time = now_ts
+
+    download_total_bytes = int(cur_io.bytes_recv if cur_io else (snap.get("download_total_bytes") or 0))
+    upload_total_bytes = int(cur_io.bytes_sent if cur_io else (snap.get("upload_total_bytes") or 0))
 
     ts_str = time.strftime("%H:%M:%S")
     _net_history.append({"timestamp": ts_str, "download_bytes_sec": rx_sec, "upload_bytes_sec": tx_sec})
     if len(_net_history) > _MAX_HISTORY:
         _net_history.pop(0)
 
-    # Собираем список сетевых адаптеров
+    # Собираем список сетевых адаптеров из базы данных
     adapters_list: List[NetworkAdapterInfo] = []
     main_name = "Ethernet"
     main_speed = 1000
 
-    if psutil:
-        stats_map = psutil.net_if_stats()
-        addrs_map = psutil.net_if_addrs()
+    try:
+        db_adapters = storage.get_network_adapter_inventory() or []
+    except Exception:
+        db_adapters = []
 
-        for if_name, stat in stats_map.items():
-            if not stat.isup:
-                continue
-            is_virt = any(v in if_name.lower() for v in ("vethernet", "virtual", "hyper-v", "loopback", "wsl", "vmware", "box"))
-            is_wifi = "wi-fi" in if_name.lower() or "wlan" in if_name.lower() or "wireless" in if_name.lower()
-            atype = "Wi-Fi" if is_wifi else ("Virtual" if is_virt else "Ethernet")
+    for ad in db_adapters:
+        if_name = ad.get("name") or ad.get("adapter_name") or "Network Adapter"
+        is_up = bool(ad.get("is_up", True))
+        speed = int(ad.get("speed_mbps") or 1000)
+        atype = str(ad.get("adapter_type") or "Ethernet")
+        ip_val = str(ad.get("ip_address") or "")
+        mac_val = str(ad.get("mac_address") or "")
 
-            addrs = addrs_map.get(if_name, [])
-            ip_val = next((str(a.address) for a in addrs if getattr(a.family, "name", "") == "AF_INET"), "")
-            mac_val = next((str(a.address) for a in addrs if getattr(a.family, "name", "") == "AF_LINK"), "")
+        if speed > 0 and "virtual" not in atype.lower():
+            main_name = f"{if_name} ({speed} Mbps)"
+            main_speed = speed
 
-            if not is_virt and stat.speed > 0:
-                main_name = f"{if_name} ({stat.speed} Mbps)"
-                main_speed = stat.speed
-
-            adapters_list.append(
-                NetworkAdapterInfo(
-                    name=if_name,
-                    adapter_type=atype,
-                    is_up=stat.isup,
-                    speed_mbps=stat.speed if stat.speed > 0 else None,
-                    ip_address=ip_val,
-                    mac_address=mac_val,
-                    bytes_recv_sec=rx_sec if not is_virt else 0.0,
-                    bytes_sent_sec=tx_sec if not is_virt else 0.0,
-                )
+        adapters_list.append(
+            NetworkAdapterInfo(
+                name=if_name,
+                adapter_type=atype,
+                is_up=is_up,
+                speed_mbps=speed if speed > 0 else None,
+                ip_address=ip_val,
+                mac_address=mac_val,
+                bytes_recv_sec=rx_sec,
+                bytes_sent_sec=tx_sec,
             )
+        )
+
+    if not adapters_list:
+        adapters_list.append(
+            NetworkAdapterInfo(
+                name="Ethernet",
+                adapter_type="Ethernet",
+                is_up=True,
+                speed_mbps=1000,
+                ip_address="127.0.0.1",
+                mac_address="",
+                bytes_recv_sec=rx_sec,
+                bytes_sent_sec=tx_sec,
+            )
+        )
 
     # Оценка утилизации канала (в процентах от скорости линка в байтах)
     max_bandwidth_bps = (main_speed * 1_000_000) / 8.0 if main_speed > 0 else 125_000_000.0
@@ -270,15 +302,15 @@ def calculate_network_load() -> NetworkLoadResponse:
         timestamp=ts_str,
         download_bytes_sec=rx_sec,
         upload_bytes_sec=tx_sec,
-        download_total_bytes=current_io.bytes_recv if current_io else 0,
-        upload_total_bytes=current_io.bytes_sent if current_io else 0,
+        download_total_bytes=download_total_bytes,
+        upload_total_bytes=upload_total_bytes,
         utilization_percent=utilization_pct,
         link_speed_mbps=main_speed,
         adapters=adapters_list,
         wifi=wifi_info,
         bluetooth=bt_info,
         history=hist_points,
-        meta={"source": "psutil/netsh/pnp", "adapters_count": len(adapters_list)},
+        meta={"source": "telemetry.db", "adapters_count": len(adapters_list)},
     )
 
 
@@ -324,11 +356,6 @@ def init_router() -> APIRouter:
         except Exception as exc:
             logger.debug(f"[RouterNetworkLoad] Ошибка чтения активности процессов из SQLite: {exc}")
 
-        try:
-            collector = get_collector()
-            return collector.get_process_network_activity(limit=limit, only_internet=only_internet)
-        except Exception as exc:
-            logger.error(f"[RouterNetworkLoad] Ошибка получения сетевой активности процессов: {exc}", exc_info=True)
-            return []
+        return []
 
     return router

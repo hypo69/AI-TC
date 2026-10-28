@@ -16,7 +16,7 @@
 # Package: src.ai.agents
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-13 10:06:00
 # =============================================================================
 
 from __future__ import annotations
@@ -100,7 +100,7 @@ class MediaSearchAgent:
 
         Returns:
             dict с ключами:
-            - action: 'player' | 'torrent' | 'info' | 'error'
+            - action: 'player' | 'sources' | 'info' | 'error'
             - data: dictionary с результатами, зависящий от action
         """
         try:
@@ -164,8 +164,8 @@ class MediaSearchAgent:
             yield {'status': '⚙️ Подключаю инструменты поиска...'}
             result = await self.search(query)
             action = result.get('action', 'error')
-            if action == 'torrent':
-                yield {'status': '🧲 Найдены торренты!'}
+            if action == 'sources':
+                yield {'status': '🔍 Найдены источники!'}
             elif action == 'player':
                 yield {'status': '▶️ Найден источник для просмотра!'}
             elif action == 'info':

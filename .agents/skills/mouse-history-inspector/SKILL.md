@@ -1,6 +1,8 @@
+# Updated: 2026-10-22 03:20:10
 ---
 name: mouse-history-inspector
-description: Automated assistant skill for: Аудит истории подключения мышей и манипуляторов HID/USB
+description: "Automated assistant skill for: Аудит истории подключения мышей и манипуляторов HID/USB"
+# Updated: 2026-10-22 03:20:10
 ---
 
 # Инспектор истории подключения мышей

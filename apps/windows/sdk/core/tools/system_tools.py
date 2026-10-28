@@ -16,7 +16,7 @@
 # Package: apps.windows.sdk.core.tools
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-20 17:15:00
 # =============================================================================
 
 from __future__ import annotations
@@ -31,6 +31,7 @@ from logger import logger
 from apps.windows.sdk.core.models import RiskLevel
 from apps.windows.sdk.core.tools.base import BaseTool, ToolExecutionResult
 from apps.windows.sdk.core.tools.registry import ToolRegistry
+from apps.windows.sdk.core.tools.net_user_tool import NetUserTool
 
 
 class WindowsCollectorTool(BaseTool):
@@ -112,3 +113,4 @@ def register_system_tools(registry: ToolRegistry) -> None:
     """Регистрирует базовые умные инструменты в переданном реестре."""
     registry.register(WindowsCollectorTool())
     registry.register(SafePowerShellProbeTool())
+    registry.register(NetUserTool())

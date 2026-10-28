@@ -1,0 +1,10 @@
+{
+  "id": "theme-cyberpunk",
+  "name": "Cyberpunk Neon (Киберпанк неон)",
+  "nameEn": "Cyberpunk Neon",
+  "category": "dark",
+  "icon": "bi-lightning-fill",
+  "iconColor": "text-warning",
+  "description": "Высокотехнологичный неоновый стиль с киберпанк-акцентами",
+  "baseType": "dark"
+}

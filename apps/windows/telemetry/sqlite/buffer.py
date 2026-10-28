@@ -52,7 +52,7 @@
 # Package: apps.windows.telemetry.sqlite
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-15 01:17:00
 # =============================================================================
 
 from __future__ import annotations
@@ -304,9 +304,33 @@ class TelemetryBuffer:
                     logger.warning(f'Ошибка усечения файла буфера: {trunc_err}')
 
             if inserted_count > 0:
-                logger.debug(f'[Хранилище SQLite] Пакетный сброс буфера: {inserted_count} записей зафиксировано в {self._cm.db_path.name}')
+                logger.console(f'[Хранилище SQLite] Пакетный сброс буфера: {inserted_count} записей зафиксировано в {self._cm.db_path.name}')
 
             return inserted_count
+
+    def clear(self) -> int:
+        """Очищает буфер в памяти и на диске без сброса в базу данных.
+
+        Используется при переключении из live stream в audit режим,
+        чтобы остаточные снимки хоста не попадали в БД после очистки таблиц.
+
+        Returns:
+            int: Количество удаленных из очереди записей.
+        """
+        with self._cm.lock:
+            discarded = len(self._buffer) + self._file_buffer_count
+            self._buffer.clear()
+            self._current_buffer_bytes = 0
+            if self._buffer_file_path.exists():
+                try:
+                    with open(self._buffer_file_path, 'w', encoding='utf-8') as f:
+                        f.truncate(0)
+                    self._file_buffer_count = 0
+                except Exception as ex:
+                    logger.warning(f'Ошибка усечения файла аварийного буфера при очистке: {ex}')
+            if discarded > 0:
+                logger.info(f'Буфер телеметрии сброшен ({discarded} записей отброшено без записи в БД)')
+            return discarded
 
     def close(self) -> None:
         """Останавливает таймер и выполняет финальный сброс буфера."""

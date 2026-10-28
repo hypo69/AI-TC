@@ -16,16 +16,19 @@
 # Package: apps.windows.api.routers
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-15 12:24:00
 # =============================================================================
 
 """Router для управления API ключами."""
 
+import json
+from pathlib import Path
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
-from typing import List, Literal
+from typing import List, Literal, Dict, Any, Optional
 from types import SimpleNamespace
 
+from header import __root__
 from logger import logger
 from src.ai.gemini.gemini_api_key_state import reset_all_quotas, reset_quota, mark_exhausted, load_api_keys
 
@@ -340,8 +343,376 @@ async def test_api_key(key_name: str, payload: KeyTestPayload = None) -> dict:
         }
 
 
+# =============================================================================
+# Google Antigravity (AGY) Key Pool Endpoints
+# =============================================================================
+
+_AGY_KEYS_FILE: Path = __root__ / "src" / "secrets" / "agy_keys.json"
+
+
+class AGYKeyPoolManager:
+    """Менеджер пула API-ключей Google Antigravity (AGY)."""
+
+    def __init__(self, secrets_path: Path = _AGY_KEYS_FILE) -> None:
+        self.secrets_path = secrets_path
+
+    def _load(self) -> List[Dict[str, Any]]:
+        """Загрузка ключей из файла agy_keys.json."""
+        if not self.secrets_path.exists():
+            return []
+        try:
+            with open(self.secrets_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            if isinstance(data, list):
+                result = []
+                for item in data:
+                    if isinstance(item, dict):
+                        result.append({
+                            "name": item.get("name", ""),
+                            "key": item.get("key") or item.get("value") or item.get("api_key") or "",
+                            "status": item.get("status", "active"),
+                            "is_active": bool(item.get("is_active", False)),
+                            "exhausted": bool(item.get("exhausted", False) or item.get("status") == "exhausted" or item.get("exhausted_at")),
+                            "exhausted_at": item.get("exhausted_at", ""),
+                            "last_run": item.get("last_run", ""),
+                        })
+                return result
+            elif isinstance(data, dict):
+                result = []
+                for name, d in data.items():
+                    if isinstance(d, dict):
+                        result.append({
+                            "name": name,
+                            "key": d.get("value") or d.get("key") or d.get("api_key") or "",
+                            "status": d.get("status", "active"),
+                            "is_active": bool(d.get("is_active", False)),
+                            "exhausted": bool(d.get("exhausted", False) or d.get("status") == "exhausted" or d.get("exhausted_at")),
+                            "exhausted_at": d.get("exhausted_at", ""),
+                            "last_run": d.get("last_run", ""),
+                        })
+                    else:
+                        result.append({
+                            "name": name,
+                            "key": str(d),
+                            "status": "active",
+                            "is_active": False,
+                            "exhausted": False,
+                            "exhausted_at": "",
+                            "last_run": "",
+                        })
+                return result
+        except Exception as e:
+            logger.error(f"Ошибка чтения ключей AGY из {self.secrets_path}: {e}")
+            return []
+        return []
+
+    def _save(self, keys: List[Dict[str, Any]]) -> bool:
+        """Сохранение ключей в agy_keys.json в формате словаря, аналогичном gemini_keys.json."""
+        try:
+            self.secrets_path.parent.mkdir(parents=True, exist_ok=True)
+            data: Dict[str, Dict[str, Any]] = {}
+            for item in keys:
+                name = item.get("name", "").strip()
+                if not name:
+                    continue
+                data[name] = {
+                    "value": item.get("key") or item.get("value") or "",
+                    "last_run": item.get("last_run", ""),
+                    "status": "active" if item.get("status") == "OK" else item.get("status", "active"),
+                    "exhausted_at": item.get("exhausted_at", ""),
+                    "is_active": bool(item.get("is_active", False)),
+                }
+            with open(self.secrets_path, "w", encoding="utf-8") as f:
+                json.dump(data, f, ensure_ascii=False, indent=4)
+            return True
+        except Exception as e:
+            logger.error(f"Ошибка сохранения ключей AGY в {self.secrets_path}: {e}")
+            return False
+
+    def list_keys(self) -> List[Dict[str, Any]]:
+        """Получить список ключей AGY с гарантией наличия активного ключа."""
+        keys = self._load()
+        has_active = any(k.get("is_active") and k.get("status") == "active" for k in keys)
+        if not has_active and keys:
+            for k in keys:
+                if k.get("status") == "active":
+                    k["is_active"] = True
+                    self._save(keys)
+                    break
+        return keys
+
+    def add_key(self, name: str, key: str, is_active: bool = False) -> Dict[str, Any]:
+        """Добавить новый или обновить существующий ключ AGY."""
+        keys = self._load()
+        for item in keys:
+            if item.get("name") == name:
+                item["key"] = key
+                item["status"] = "active"
+                item["exhausted"] = False
+                item["exhausted_at"] = ""
+                if is_active:
+                    for other in keys:
+                        other["is_active"] = (other.get("name") == name)
+                self._save(keys)
+                return item
+
+        new_entry = {
+            "name": name,
+            "key": key,
+            "status": "active",
+            "is_active": is_active or (len(keys) == 0),
+            "exhausted": False,
+            "exhausted_at": "",
+            "last_run": "",
+        }
+        if is_active:
+            for other in keys:
+                other["is_active"] = False
+        keys.append(new_entry)
+        self._save(keys)
+        return new_entry
+
+    def remove_key(self, name: str) -> bool:
+        """Удалить ключ AGY по имени."""
+        keys = self._load()
+        orig_len = len(keys)
+        keys = [k for k in keys if k.get("name") != name]
+        if len(keys) == orig_len:
+            return False
+        if not any(k.get("is_active") for k in keys) and keys:
+            keys[0]["is_active"] = True
+        self._save(keys)
+        return True
+
+    def reset_quotas(self) -> int:
+        """Сбросить квоты всех ключей AGY."""
+        keys = self._load()
+        count = 0
+        for k in keys:
+            if k.get("exhausted") or k.get("status") == "exhausted" or k.get("exhausted_at"):
+                count += 1
+            k["status"] = "active"
+            k["exhausted"] = False
+            k["exhausted_at"] = ""
+        self._save(keys)
+        return count
+
+    def reset_quota(self, name: str) -> bool:
+        """Сбросить квоту для одного ключа AGY."""
+        keys = self._load()
+        found = False
+        for k in keys:
+            if k.get("name") == name:
+                k["status"] = "active"
+                k["exhausted"] = False
+                k["exhausted_at"] = ""
+                found = True
+                break
+        if found:
+            self._save(keys)
+        return found
+
+    def toggle_status(self, name: str, new_status: str) -> bool:
+        """Включить/выключить ключ AGY."""
+        keys = self._load()
+        found = False
+        for k in keys:
+            if k.get("name") == name:
+                k["status"] = new_status
+                if new_status == "disabled":
+                    k["is_active"] = False
+                found = True
+                break
+        if found:
+            if not any(k.get("is_active") for k in keys if k.get("status") == "active"):
+                for k in keys:
+                    if k.get("status") == "active":
+                        k["is_active"] = True
+                        break
+            self._save(keys)
+        return found
+
+    def set_active(self, name: str) -> bool:
+        """Сделать ключ AGY активным."""
+        keys = self._load()
+        found = False
+        for k in keys:
+            if k.get("name") == name:
+                k["is_active"] = True
+                k["status"] = "active"
+                found = True
+            else:
+                k["is_active"] = False
+        if found:
+            self._save(keys)
+        return found
+
+
+_agy_manager = AGYKeyPoolManager(secrets_path=_AGY_KEYS_FILE)
+
+
+class AGYKeyPayload(BaseModel):
+    """Модель полезной нагрузки добавления ключа AGY."""
+    name: str = Field(..., description="Название ключа AGY")
+    key: Optional[str] = Field(None, description="Значение API-ключа AGY")
+    api_key: Optional[str] = Field(None, description="Псевдоним ключа AGY")
+    value: Optional[str] = Field(None, description="Значение ключа AGY")
+    is_active: Optional[bool] = Field(False, description="Флаг активности")
+
+
+@router.get("/agy")
+@router.get("/agy/")
+async def list_agy_keys() -> List[KeyEntry]:
+    """Возвращает пул ключей Google Antigravity (AGY)."""
+    keys = _agy_manager.list_keys()
+    result = []
+    for k in keys:
+        key_val = k.get("key", "")
+        masked = _mask_key(key_val) if len(key_val) >= 4 else ("****" if key_val else "")
+        status = k.get("status", "active")
+        if status == "OK":
+            status = "active"
+        result.append(KeyEntry(
+            id=k.get("name", "key"),
+            name=k.get("name", "key"),
+            role="admin",
+            masked_key=masked,
+            status=status,
+            exhausted=bool(k.get("exhausted", False)),
+            exhausted_at=k.get("exhausted_at", ""),
+            last_run=k.get("last_run", ""),
+            is_active=bool(k.get("is_active", False)),
+        ))
+    return result
+
+
+@router.post("/agy")
+@router.post("/agy/")
+async def add_agy_key(payload: AGYKeyPayload) -> Dict[str, Any]:
+    """Добавляет или обновляет ключ в пуле Google Antigravity (AGY)."""
+    key_val = (payload.key or payload.api_key or payload.value or "").strip()
+    if not key_val:
+        raise HTTPException(status_code=400, detail="API-ключ AGY не может быть пустым")
+    res = _agy_manager.add_key(payload.name.strip(), key_val, is_active=bool(payload.is_active))
+    return {"status": "success", "entry": res}
+
+
+@router.delete("/agy/{key_name}")
+async def delete_agy_key(key_name: str) -> Dict[str, Any]:
+    """Удаляет ключ из пула Google Antigravity (AGY)."""
+    success = _agy_manager.remove_key(key_name)
+    if not success:
+        raise HTTPException(status_code=404, detail=f"Ключ '{key_name}' не найден")
+    return {"status": "success", "message": f"Ключ '{key_name}' удален"}
+
+
+@router.post("/agy/reset")
+@router.post("/agy/reset-all")
+async def reset_agy_keys() -> Dict[str, Any]:
+    """Сбрасывает квоты и статусы всех ключей AGY."""
+    count = _agy_manager.reset_quotas()
+    return {"status": "success", "message": f"Квоты сброшены для {count} ключей AGY", "reset_count": count}
+
+
+@router.post("/agy/{key_name}/reset-quota")
+async def reset_agy_key_quota(key_name: str) -> Dict[str, Any]:
+    """Сбросить квоту для конкретного ключа AGY."""
+    success = _agy_manager.reset_quota(key_name)
+    if not success:
+        raise HTTPException(status_code=404, detail=f"Ключ '{key_name}' не найден")
+    return {"status": "success", "message": f"Квота для ключа '{key_name}' успешно сброшена"}
+
+
+@router.patch("/agy/{key_name}")
+async def toggle_agy_key_status(key_name: str, req: Dict[str, Any]) -> Dict[str, Any]:
+    """Переключить статус ключа AGY (active/disabled)."""
+    new_status = req.get("status", "active")
+    if new_status not in ["active", "disabled"]:
+        raise HTTPException(status_code=400, detail="Недопустимый статус. Допустимые значения: active, disabled")
+    success = _agy_manager.toggle_status(key_name, new_status)
+    if not success:
+        raise HTTPException(status_code=404, detail=f"Ключ '{key_name}' не найден")
+    return {"status": "success", "message": f"Статус ключа AGY '{key_name}' изменен на '{new_status}'"}
+
+
+@router.post("/agy/{key_name}/activate")
+@router.post("/agy/{key_name}/set-active")
+async def activate_agy_key(key_name: str) -> Dict[str, Any]:
+    """Назначить конкретный API-ключ AGY активным."""
+    success = _agy_manager.set_active(key_name)
+    if not success:
+        raise HTTPException(status_code=404, detail=f"Ключ '{key_name}' не найден")
+    return {"status": "success", "message": f"Ключ AGY '{key_name}' назначен активным", "active_key": key_name}
+
+
+@router.post("/agy/{key_name}/test")
+async def test_agy_key_endpoint(key_name: str, payload: Optional[KeyTestPayload] = None) -> Dict[str, Any]:
+    """Проверка валидности API-ключа AGY отправкой тестового запроса."""
+    import time
+    keys = _agy_manager.list_keys()
+    match = next((k for k in keys if k.get("name") == key_name), None)
+    if not match:
+        raise HTTPException(status_code=404, detail=f"Ключ AGY '{key_name}' не найден")
+
+    raw_key = match.get("key", "").strip()
+    masked = _mask_key(raw_key) if len(raw_key) >= 4 else ("****" if raw_key else "")
+    if not raw_key:
+        raise HTTPException(status_code=400, detail=f"Значение токена для ключа '{key_name}' пустое")
+
+    target_model = payload.model if payload and payload.model else "gemini-3.1-flash-lite"
+    test_msg = payload.message if payload and payload.message else "hello world"
+    start_t = time.perf_counter()
+
+    try:
+        from google import genai
+        client = genai.Client(api_key=raw_key)
+        response = client.models.generate_content(
+            model=target_model,
+            contents=test_msg,
+        )
+        duration_ms = round((time.perf_counter() - start_t) * 1000, 1)
+        resp_text = response.text or ""
+        _agy_manager.reset_quota(key_name)
+        return {
+            "status": "success",
+            "valid": True,
+            "key_name": key_name,
+            "masked_key": masked,
+            "model": target_model,
+            "message": test_msg,
+            "response": resp_text,
+            "duration_ms": duration_ms,
+        }
+    except Exception as exc:
+        duration_ms = round((time.perf_counter() - start_t) * 1000, 1)
+        err_str = str(exc)
+        logger.warning(f"[RouterKeys] Ошибка валидации ключа AGY '{key_name}': {err_str}")
+        return {
+            "status": "error",
+            "valid": False,
+            "key_name": key_name,
+            "masked_key": masked,
+            "model": target_model,
+            "message": test_msg,
+            "error": err_str,
+            "duration_ms": duration_ms,
+        }
+
+
 def init_router() -> APIRouter:
     """Инициализация роутера ключей."""
     return router
 
-__all__ = ["init_router", "router", "KeyCreateRequest", "KeyEntry", "KeyUpdateRequest", "KeyTestPayload", "_check_exhaustion", "_mask_key"]
+
+__all__ = [
+    "init_router",
+    "router",
+    "KeyCreateRequest",
+    "KeyEntry",
+    "KeyUpdateRequest",
+    "KeyTestPayload",
+    "AGYKeyPayload",
+    "AGYKeyPoolManager",
+    "_check_exhaustion",
+    "_mask_key",
+]

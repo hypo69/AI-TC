@@ -130,7 +130,7 @@
 | **Фаза 2: Форензика** | Граф происхождения процессов (Process Provenance Graph) | High | 4-5 дней | ✅ Завершено | Таблица `process_provenance_events`, `ProcessTokenCollector`. |
 | **Фаза 2: Форензика** | Локализация DPC/ISR прерываний ядра до `.sys` драйвера | High | 5 дней | ✅ Завершено | `DeepDiagnosticsEngine` + ETW trace. |
 | **Фаза 2: Форензика** | Гиперадаптивный сэмплинг (`SamplingController` FORENSIC) | High | 1-2 дня | ✅ Завершено | Добавлен режим `SamplingMode.FORENSIC` (250 мс) и метод `trigger_forensic_mode`. |
-| **Фаза 3: Оптимизация** | Полная замена WMI на FFI/COM Worker | Critical | 3 дня | ✅ Завершено | Модульный нативный FFI стек в `apps/windows/telemetry/win32_ffi`. |
+| **Фаза 3: Оптимизация** | Полная замена WMI на FFI/COM Worker | Critical | 3 дня | ✅ Завершено | Модульный нативный FFI стек в `apps/windows/sdk/win32_ffi`. |
 | **Фаза 3: Оптимизация** | Оптимизация SQLite: WAL, PRAGMA, MMAP, составные индексы | Critical | 1-2 дня | ✅ Завершено | PRAGMA WAL, `mmap_size=256MB`, `cache_size=-64MB`, 8 составных индексов в `schema.py`. |
 | **Фаза 3: Оптимизация** | Фоновый регламентный агрегатор (`TelemetrySqlAggregator`) | High | 1-2 дня | ✅ Завершено | `start_background_scheduler` / `stop_background_scheduler` в агрегаторе и хранилище. |
 | **Фаза 3: Оптимизация** | Жесткие лимиты RAM для `TelemetryRingBuffer` и `TelemetryBuffer` | High | 1 день | ✅ Завершено | Ограничение `max_bytes=32MB` с авто-вытеснением и аварийным `flush()`. |

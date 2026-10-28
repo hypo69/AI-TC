@@ -13,6 +13,7 @@ data/rag_documents/
 data/rag_index/
 data/users/
 data/browser_profile/
+data/browser_cache/
 
 
 # IDE settings
@@ -452,3 +453,6 @@ docs\it
 data/
 brain/
 wikillm_hostinger.php
+AI-Portable/
+!AI-Portable/Run-Gemini.ps1
+scratch/

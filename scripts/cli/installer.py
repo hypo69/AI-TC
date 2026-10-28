@@ -18,7 +18,7 @@
 # Package: scripts.cli
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 22:22:30
+# Updated: 2026-10-27 23:01:00
 # =============================================================================
 
 """Cross-platform installation system for AI Windows Admin.
@@ -73,9 +73,9 @@ class Installer:
         """Get default installation directory"""
         if sys.platform == 'win32':
             localappdata = os.environ.get('LOCALAPPDATA', str(Path.home() / 'AppData' / 'Local'))
-            return Path(localappdata) / 'AI-Windows-Admin'
+            return Path(localappdata) / (os.environ.get('APP_NAME') or 'ai-tc')
         else:
-            return Path.home() / 'AI-Windows-Admin'
+            return Path.home() / (os.environ.get('APP_NAME') or 'ai-tc')
 
     def print_header(self):
         """Print installation header"""
@@ -134,10 +134,9 @@ class Installer:
                         logger.console(f'[WARN]')
                         if result.stderr:
                             logger.console(f'    {result.stderr[:100]}')
-            if self.light_version:
-                logger.console('  Installing Google AI providers (gemini, agy)...', end=' ', flush=True)
-                subprocess.run([str(pip_exe), 'install', 'google-genai', 'google-antigravity', 'langchain-google-genai'], capture_output=True, text=True)
-                logger.console('[OK]')
+            logger.console('  Installing Google AI providers (gemini, agy)...', end=' ', flush=True)
+            subprocess.run([str(pip_exe), 'install', 'google-genai', 'google-antigravity', 'langchain-google-genai'], capture_output=True, text=True)
+            logger.console('[OK]')
             logger.console()
             return True
         except Exception as e:

@@ -16,7 +16,7 @@
 # Package: apps.windows.sdk.modules.hardware
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-11 04:27:42
+# Updated: 2026-10-16 21:01:00
 # =============================================================================
 
 from __future__ import annotations
@@ -31,6 +31,13 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Tuple
 from logger import logger
+
+try:
+    import pythoncom
+    import win32com.client
+    _HAS_WIN32COM = True
+except ImportError:
+    _HAS_WIN32COM = False
 
 @dataclass
 class GpuDeviceTelemetry:
@@ -282,15 +289,57 @@ class GpuProber:
     def _query_wddm_counters(self) -> Tuple[Dict[str, Dict[str, float]], Dict[str, Dict[str, float]]]:
         """Опрашивает счетчики WDDM/Direct3D: память адаптеров и загрузку графических движков.
 
-        Два PowerShell-запроса выполняются параллельно.
+        Выполняется напрямую через COM/WMI без вызова внешних процессов PowerShell.
+        При недоступности COM используется резервный вызов PowerShell.
 
         Returns:
             Tuple[Dict, Dict]: (память по LUID, загрузка движков по LUID); пустые словари при ошибке.
         """
-        ps_mem = 'Get-CimInstance Win32_PerfFormattedData_GPUPerformanceCounters_GPUAdapterMemory -ErrorAction SilentlyContinue | Select-Object Name, DedicatedUsage, SharedUsage, TotalCommitted | ConvertTo-Json -Compress'
-        ps_eng = 'Get-CimInstance Win32_PerfFormattedData_GPUPerformanceCounters_GPUEngine -ErrorAction SilentlyContinue | Select-Object Name, UtilizationPercentage | ConvertTo-Json -Compress'
         luid_memory: Dict[str, Dict[str, float]] = {}
         luid_engines: Dict[str, Dict[str, float]] = {}
+
+        if _HAS_WIN32COM:
+            try:
+                pythoncom.CoInitialize()
+                wmi = win32com.client.GetObject('winmgmts:root\\cimv2')
+
+                mem_rows = wmi.ExecQuery(
+                    'SELECT Name, DedicatedUsage, SharedUsage, TotalCommitted '
+                    'FROM Win32_PerfFormattedData_GPUPerformanceCounters_GPUAdapterMemory'
+                )
+                for m in mem_rows:
+                    name = str(getattr(m, 'Name', ''))
+                    if 'luid_' in name:
+                        match = re.search(r'luid_(0x[0-9a-fA-F]+_0x[0-9a-fA-F]+)', name)
+                        if match:
+                            luid = match.group(1).lower()
+                            ded = float(getattr(m, 'DedicatedUsage', 0) or 0.0) / (1024 ** 2)
+                            shared = float(getattr(m, 'SharedUsage', 0) or 0.0) / (1024 ** 2)
+                            tot = float(getattr(m, 'TotalCommitted', 0) or 0.0) / (1024 ** 2)
+                            luid_memory[luid] = {'dedicated_mb': ded, 'shared_mb': shared, 'total_mb': tot}
+
+                eng_rows = wmi.ExecQuery(
+                    'SELECT Name, UtilizationPercentage '
+                    'FROM Win32_PerfFormattedData_GPUPerformanceCounters_GPUEngine'
+                )
+                for it in eng_rows:
+                    name = str(getattr(it, 'Name', ''))
+                    if '_luid_' in name and '_engtype_' in name:
+                        match = re.search(r'luid_(0x[0-9a-fA-F]+_0x[0-9a-fA-F]+)', name)
+                        if match:
+                            luid = match.group(1).lower()
+                            eng_type = name.split('_engtype_')[-1].strip()
+                            if eng_type:
+                                val = float(getattr(it, 'UtilizationPercentage', 0) or 0.0)
+                                luid_engines.setdefault(luid, {}).setdefault(eng_type, 0.0)
+                                luid_engines[luid][eng_type] += val
+
+                return luid_memory, luid_engines
+            except Exception as com_exc:
+                logger.debug(f'WDDM COM query error, falling back to PowerShell: {com_exc}')
+
+        ps_mem = 'Get-CimInstance Win32_PerfFormattedData_GPUPerformanceCounters_GPUAdapterMemory -ErrorAction SilentlyContinue | Select-Object Name, DedicatedUsage, SharedUsage, TotalCommitted | ConvertTo-Json -Compress'
+        ps_eng = 'Get-CimInstance Win32_PerfFormattedData_GPUPerformanceCounters_GPUEngine -ErrorAction SilentlyContinue | Select-Object Name, UtilizationPercentage | ConvertTo-Json -Compress'
         try:
             with ThreadPoolExecutor(max_workers=2, thread_name_prefix='wddm_query') as pool:
                 mem_future = pool.submit(subprocess.run, ['powershell', '-NoProfile', '-Command', ps_mem], capture_output=True, text=True, timeout=5)
@@ -494,8 +543,51 @@ class GpuProber:
         return results
 
     def _probe_wmi(self) -> List[GpuDeviceTelemetry]:
-        """Query WMI Win32_VideoController as fallback or multi-adapter prober."""
+        """Query WMI Win32_VideoController as fallback or multi-adapter prober via direct COM or PowerShell."""
         results: List[GpuDeviceTelemetry] = []
+
+        if _HAS_WIN32COM:
+            try:
+                pythoncom.CoInitialize()
+                wmi = win32com.client.GetObject('winmgmts:root\\cimv2')
+                vcs = wmi.ExecQuery('SELECT Name, DriverVersion, AdapterRAM FROM Win32_VideoController')
+                for idx, item in enumerate(vcs):
+                    name = str(getattr(item, 'Name', 'Generic Display Adapter') or 'Generic Display Adapter').strip()
+                    raw_ram = getattr(item, 'AdapterRAM', 0)
+                    try:
+                        ram_bytes = int(raw_ram or 0)
+                        # В WMI AdapterRAM 32-битное поле может переполняться в отрицательное
+                        if ram_bytes < 0:
+                            ram_bytes = abs(ram_bytes)
+                    except (ValueError, TypeError):
+                        ram_bytes = 0
+                    ram_mb = round(ram_bytes / 1024 ** 2, 1) if ram_bytes > 0 else None
+                    caps = determine_gpu_compute_backends('', name, memory_total_mb=ram_mb, dedicated_mb=ram_mb)
+                    results.append(GpuDeviceTelemetry(
+                        index=idx,
+                        name=name,
+                        vendor=caps['vendor'],
+                        driver_version=str(getattr(item, 'DriverVersion', 'N/A') or 'N/A'),
+                        memory_total_mb=ram_mb,
+                        gpu_type=caps['gpu_type'],
+                        dedicated_memory_mb=caps['dedicated_memory_mb'],
+                        shared_memory_mb=caps['shared_memory_mb'],
+                        memory_type=caps['memory_type'],
+                        directx_version=caps['directx_version'],
+                        has_cuda=caps['has_cuda'],
+                        has_rocm=caps['has_rocm'],
+                        has_oneapi=caps['has_oneapi'],
+                        has_directml=caps['has_directml'],
+                        has_vulkan=caps['has_vulkan'],
+                        has_opencl=caps['has_opencl'],
+                        compute_apis=caps['compute_apis'],
+                        ai_backends=caps['ai_backends'],
+                    ))
+                if results:
+                    return results
+            except Exception as com_exc:
+                logger.debug(f'WMI GPU COM probe error, falling back to PowerShell: {com_exc}')
+
         try:
             ps_cmd = 'Get-CimInstance Win32_VideoController | Select-Object Name, DriverVersion, AdapterRAM | ConvertTo-Json -Compress'
             res = subprocess.run(['powershell', '-NoProfile', '-Command', ps_cmd], capture_output=True, text=True, timeout=5)
@@ -539,17 +631,47 @@ class GpuProber:
         """
         npus: List[NpuDeviceTelemetry] = []
         try:
-            ps_cmd = "Get-CimInstance Win32_PnPEntity -ErrorAction SilentlyContinue | Where-Object { $_.Name -like '*NPU*' -or $_.Name -like '*AI Boost*' -or $_.Name -like '*Hexagon*' -or $_.Name -like '*IPU*' -or $_.PNPClass -eq 'ComputeAccelerator' } | Select-Object Name, Manufacturer, DeviceID, Status | ConvertTo-Json -Compress"
+            ps_cmd = (
+                "Get-CimInstance Win32_PnPEntity -ErrorAction SilentlyContinue | Where-Object { "
+                "($_.PNPClass -eq 'ComputeAccelerator') -or "
+                "($_.Name -match '\\b(NPU|AI Boost|Hexagon)\\b' -and "
+                "$_.Name -notmatch '(?i)(input|audio|cable|mouse|keyboard|hid|receiver|hub|controller|print|bluetooth|camera)') "
+                "} | Select-Object Name, Manufacturer, DeviceID, PNPClass, Status | ConvertTo-Json -Compress"
+            )
             res = subprocess.run(['powershell', '-NoProfile', '-Command', ps_cmd], capture_output=True, text=True, timeout=5)
             if res.returncode == 0 and res.stdout.strip():
                 raw = json.loads(res.stdout)
                 items = [raw] if isinstance(raw, dict) else raw
-                for idx, item in enumerate(items):
-                    name = str(item.get('Name', 'NPU Compute Accelerator')).strip()
+                blacklist_terms = (
+                    'input', 'mouse', 'keyboard', 'cable', 'audio', 'sound', 'hid',
+                    'receiver', 'touchpad', 'gamepad', 'hub', 'print', 'camera', 'microphone'
+                )
+                idx = 0
+                for item in items:
+                    name = str(item.get('Name', '')).strip()
                     mfg = str(item.get('Manufacturer', '')).strip()
+                    dev_id = str(item.get('DeviceID', '')).strip().lower()
+                    pnp_class = str(item.get('PNPClass', '')).strip().lower()
                     status = str(item.get('Status', 'OK')).strip() or 'OK (Активно)'
                     name_l = name.lower()
                     mfg_l = mfg.lower()
+
+                    # Фильтрация периферии и ложных совпадений
+                    if any(term in name_l for term in blacklist_terms):
+                        continue
+                    if any(term in dev_id for term in ('hid', 'kbd', 'mou', 'usb\\vid', 'bth')):
+                        if pnp_class != 'computeaccelerator':
+                            continue
+                    if pnp_class in ('hidclass', 'keyboard', 'mouse', 'media', 'sound'):
+                        continue
+
+                    # Проверяем наличие явных NPU идентификаторов
+                    is_npu = (
+                        pnp_class == 'computeaccelerator'
+                        or bool(re.search(r'\b(npu|ai boost|hexagon|snapdragon x|ryzen ai)\b', name_l))
+                    )
+                    if not is_npu:
+                        continue
 
                     if 'intel' in name_l or 'intel' in mfg_l:
                         vendor = 'Intel'
@@ -561,13 +683,13 @@ class GpuProber:
                         ai_backends = ['Qualcomm QNN', 'DirectML NPU', 'ONNX QNN']
                         has_openvino = False
                         has_qnn = True
-                    elif 'amd' in name_l or 'ryzen' in name_l or 'ipu' in name_l:
+                    elif 'amd' in name_l or 'ryzen' in name_l:
                         vendor = 'AMD'
                         ai_backends = ['AMD Ryzen AI (Vitis)', 'DirectML NPU', 'ONNX DirectML']
                         has_openvino = False
                         has_qnn = False
                     else:
-                        vendor = mfg or 'Generic'
+                        vendor = mfg or 'Generic NPU'
                         ai_backends = ['DirectML NPU', 'ONNX DirectML']
                         has_openvino = False
                         has_qnn = False
@@ -582,6 +704,7 @@ class GpuProber:
                         has_openvino=has_openvino,
                         ai_backends=ai_backends,
                     ))
+                    idx += 1
         except Exception as exc:
             logger.debug(f'NPU probe error: {exc}')
         return npus

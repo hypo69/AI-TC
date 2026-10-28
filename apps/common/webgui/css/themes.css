@@ -1,0 +1,582 @@
+/**
+ * =============================================================================
+ * Process Name: Windows Web Interface - UI Kit & Themes v2.0
+ * =============================================================================
+ * Description:
+ *   Единая система компонентов и темы оформления по ТЗ v2.2 (10_UI_DESIGN_SYSTEM_AND_THEMES.md).
+ *   4 темы: Dark Slate, Light Enterprise, Cyberpunk Neon, High Contrast.
+ *
+ * File: themes.css
+ * Project: ai-windows-admin
+ * Package: windows/api/webgui/css
+ * Author: hypo69
+ * Copyright: © 2026 hypo69
+ * Updated: 2026-10-20 14:00:00
+ * =============================================================================
+ */
+
+/* ==========================================================================
+   1. Темы оформления (Themes)
+   ========================================================================== */
+
+/* Тема 1: Dark Slate (по умолчанию) */
+:root,
+body.theme-dark-slate {
+  --ui-bg-base: #0b0f19;
+  --ui-bg-surface: #111827;
+  --ui-bg-surface-elevated: #1f2937;
+  --ui-border-color: #374151;
+  --ui-border-color-subtle: rgba(75, 85, 99, 0.4);
+  --ui-text-primary: #f9fafb;
+  --ui-text-secondary: #9ca3af;
+  --ui-text-muted: #6b7280;
+  --ui-accent: #38bdf8;
+  --ui-accent-hover: #0ea5e9;
+  --ui-danger: #ef4444;
+  --ui-warning: #f59e0b;
+  --ui-success: #10b981;
+  --ui-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --ui-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+
+  /* Status Badges & Warnings (Dark Slate) */
+  --badge-warning-bg: rgba(245, 158, 11, 0.15);
+  --badge-warning-text: #f59e0b;
+  --badge-warning-border: rgba(245, 158, 11, 0.3);
+
+  --badge-danger-bg: rgba(239, 68, 68, 0.15);
+  --badge-danger-text: #ef4444;
+  --badge-danger-border: rgba(239, 68, 68, 0.3);
+
+  --badge-success-bg: rgba(16, 185, 129, 0.15);
+  --badge-success-text: #10b981;
+  --badge-success-border: rgba(16, 185, 129, 0.3);
+
+  --badge-info-bg: rgba(56, 189, 248, 0.15);
+  --badge-info-text: #38bdf8;
+  --badge-info-border: rgba(56, 189, 248, 0.3);
+
+  /* Panel Header (Dark Slate - H3) */
+  --panel-header-font-size: 1.75rem;
+  --panel-header-color: #f9fafb;
+  --panel-header-bg: #1f2937;
+
+  /* Tab Header (Dark Slate) */
+  --tab-header-title-size: 1.35rem;
+  --tab-header-title-color: #f9fafb;
+  --tab-header-subtitle-color: #9ca3af;
+}
+
+/* Тема 2: Light Enterprise (WCAG 2.1 AA Compliant - Contrast > 7.2:1) */
+:root[data-theme="light"],
+:root[data-theme="theme-light-enterprise"],
+:root[data-bs-theme="light"],
+html[data-theme="light"],
+html[data-theme="theme-light-enterprise"],
+html[data-bs-theme="light"],
+html.theme-light {
+  zoom: 1.1;
+}
+
+html:not([data-bs-theme="light"]):not([data-theme="light"]):not([data-theme="theme-light-enterprise"]):not(.theme-light) body.theme-light-enterprise {
+  zoom: 1.1;
+}
+
+[data-theme="light"],
+[data-theme="theme-light-enterprise"],
+body.theme-light-enterprise {
+  --ui-bg-base: #e2e8f0;             /* комфортный нейтрально-серый задний фон страницы (Slate-200) */
+  --ui-bg-surface: #eaedf2;          /* матовая светло-серая поверхность карточек без слепящей белизны */
+  --ui-bg-surface-elevated: #dbe2ea; /* приподнятые плашки, хедеры */
+  --ui-border-color: #cbd5e1;
+  --ui-border-color-subtle: #cbd5e1;
+  --ui-text-primary: #0f172a;
+  --ui-text-secondary: #475569;
+  --ui-text-muted: #64748b;
+  --ui-accent: #0284c7;
+  --ui-accent-hover: #0369a1;
+  --ui-danger: #b91c1c;
+  --ui-warning: #b43418; /* Выделяется красноватым оттенком, но не совсем чистый красный */
+  --ui-success: #166534; /* Сочный читаемый изумрудно-зеленый */
+  --ui-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --ui-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+
+  /* Warning Badge / Alert (С добавлением красного акцента, но отлично от danger) */
+  --badge-warning-bg: #fff1f0;
+  --badge-warning-text: #b43418;
+  --badge-warning-border: #fca5a5;
+
+  /* Danger Badge */
+  --badge-danger-bg: #fee2e2;
+  --badge-danger-text: #b91c1c;
+  --badge-danger-border: #f87171;
+
+  /* Success Badge */
+  --badge-success-bg: #dcfce7;
+  --badge-success-text: #166534;
+  --badge-success-border: #86efac;
+
+  /* Info Badge */
+  --badge-info-bg: #dbeafe;
+  --badge-info-text: #1e40af;
+  --badge-info-border: #93c5fd;
+
+  /* Panel Header (Light Enterprise - H3) */
+  --panel-header-font-size: 1.75rem;
+  --panel-header-color: #0f172a;
+  --panel-header-bg: #dbe2ea;
+
+  /* Tab Header (Light Enterprise) */
+  --tab-header-title-size: 1.35rem;
+  --tab-header-title-color: #0f172a;
+  --tab-header-subtitle-color: #64748b;
+
+  background-color: var(--ui-bg-base) !important;
+  color: var(--ui-text-primary) !important;
+}
+
+[data-theme="light"] body,
+[data-bs-theme="light"] body,
+html[data-theme="light"] body,
+html[data-bs-theme="light"] body,
+body.theme-light,
+body.theme-light-enterprise {
+  background-color: var(--ui-bg-base, var(--bg-color)) !important;
+  color: var(--ui-text-primary, var(--text-color)) !important;
+}
+
+/* Тема: NightView (Аутентичная тёплая бумага / Warm Paper) */
+:root[data-theme="nightview"],
+html[data-theme="nightview"] {
+  zoom: 1.0;
+}
+
+[data-theme="nightview"],
+body.theme-nightview {
+  --ui-bg-base: #ede6d9;             /* мягкий приглушенный теплый фон страницы (Warm Paper) */
+  --ui-bg-surface: #f6f1e8;          /* мягкая бумажная поверхность карточек */
+  --ui-bg-surface-elevated: #e2dac9; /* приподнятые плашки, хедеры карточек */
+  --ui-border-color: #cfc5b4;        /* теплый контур */
+  --ui-border-color-subtle: #ded6c7; /* деликатные внутренние разделители */
+  --ui-text-primary: #18181b;        /* глубокий антрацит высокой четкости */
+  --ui-text-secondary: #3f3f46;      /* контрастный текст подписей */
+  --ui-text-muted: #52525b;          /* приглушенный текст */
+  --ui-accent: #1d4ed8;              /* сапфирово-синий акцент */
+  --ui-accent-hover: #1e40af;
+  --ui-danger: #9e2b17;
+  --ui-warning: #b43418;
+  --ui-success: #185223;
+  --ui-shadow-sm: 0 1px 3px 0 rgba(50, 40, 30, 0.08);
+  --ui-shadow-md: 0 4px 10px -1px rgba(50, 40, 30, 0.12);
+
+  /* Warning Badge / Alert (Тёплый пастельный) */
+  --badge-warning-bg: #f8f0dd;
+  --badge-warning-text: #704705;
+  --badge-warning-border: #dfc279;
+
+  /* Danger Badge */
+  --badge-danger-bg: #f6e6e6;
+  --badge-danger-text: #7e1f1f;
+  --badge-danger-border: #e19f9d;
+
+  /* Success Badge */
+  --badge-success-bg: #e7f2e9;
+  --badge-success-text: #185223;
+  --badge-success-border: #98c9a0;
+
+  /* Info Badge */
+  --badge-info-bg: #e5eef7;
+  --badge-info-text: #184674;
+  --badge-info-border: #97bcdb;
+
+  /* Panel Header (NightView - H3) */
+  --panel-header-font-size: 1.75rem;
+  --panel-header-color: #18181b;
+  --panel-header-bg: #e2dac9;
+
+  /* Tab Header (NightView) */
+  --tab-header-title-size: 1.35rem;
+  --tab-header-title-color: #18181b;
+  --tab-header-subtitle-color: #3f3f46;
+
+  /* Legacy & Bootstrap surface tokens */
+  --bg-color: #ede6d9;
+  --surface-1: #f6f1e8;
+  --surface-2: #e2dac9;
+  --card-bg: #f6f1e8;
+  --card-text: #18181b;
+  --nav-bg: #f6f1e8;
+  --nav-text: #27272a;
+  --nav-active: #1d4ed8;
+  --nav-hover-bg: #eae4d8;
+  --border-color: #cfc5b4;
+  --border-strong: #9ca3af;
+  --border-subtle: #ded6c7;
+  --divider-color: #cfc5b4;
+  --modal-bg: #f6f1e8;
+  --modal-text: #18181b;
+  --modal-border: #cfc5b4;
+
+  --bs-body-bg: #ede6d9;
+  --bs-body-bg-rgb: 237, 230, 217;
+  --bs-body-color: #18181b;
+  --bs-card-bg: #f6f1e8;
+  --bs-card-color: #18181b;
+  --bs-modal-bg: #f6f1e8;
+  --bs-modal-color: #18181b;
+  --bs-offcanvas-bg: #f6f1e8;
+  --bs-tertiary-bg: #e2dac9;
+  --bs-tertiary-bg-rgb: 226, 218, 201;
+  --bs-secondary-bg: #e2dac9;
+  --bs-secondary-bg-rgb: 226, 218, 201;
+  --bs-list-group-bg: #f6f1e8;
+  --bs-dropdown-bg: #f6f1e8;
+  --bs-dropdown-color: #18181b;
+  --bs-dropdown-border-color: #cfc5b4;
+  --bs-border-color: #cfc5b4;
+
+  background-color: var(--ui-bg-base) !important;
+  color: var(--ui-text-primary) !important;
+}
+
+[data-theme="nightview"] body,
+html[data-theme="nightview"] body,
+body.theme-nightview {
+  background-color: var(--ui-bg-base, #ede6d9) !important;
+  color: var(--ui-text-primary, #18181b) !important;
+}
+
+/* Тема 3: Cyberpunk Neon */
+body.theme-cyberpunk {
+  --ui-bg-base: #05050a;
+  --ui-bg-surface: #0a0a16;
+  --ui-bg-surface-elevated: #121124;
+  --ui-border-color: #f43f5e;
+  --ui-border-color-subtle: rgba(6, 182, 212, 0.5);
+  --ui-text-primary: #00f0ff;
+  --ui-text-secondary: #ff007f;
+  --ui-text-muted: #a855f7;
+  --ui-accent: #00f0ff;
+  --ui-accent-hover: #ff007f;
+  --ui-danger: #ff0055;
+  --ui-warning: #ffe600;
+  --ui-success: #00ff66;
+  --ui-shadow-sm: 0 0 8px rgba(0, 240, 255, 0.3);
+  --ui-shadow-md: 0 0 16px rgba(255, 0, 127, 0.4);
+  /* Panel Header (Cyberpunk Neon - H3) */
+  --panel-header-font-size: 1.75rem;
+  --panel-header-color: #00f0ff;
+  --panel-header-bg: #121124;
+  /* Tab Header (Cyberpunk Neon) */
+  --tab-header-title-size: 1.35rem;
+  --tab-header-title-color: #00f0ff;
+  --tab-header-subtitle-color: #ff007f;
+  background-color: var(--ui-bg-base) !important;
+  color: var(--ui-text-primary) !important;
+}
+
+/* Тема 4: High Contrast */
+body.theme-high-contrast {
+  --ui-bg-base: #000000;
+  --ui-bg-surface: #000000;
+  --ui-bg-surface-elevated: #000000;
+  --ui-border-color: #ffffff;
+  --ui-border-color-subtle: #ffff00;
+  --ui-text-primary: #ffffff;
+  --ui-text-secondary: #ffff00;
+  --ui-text-muted: #00ffff;
+  --ui-accent: #00ffff;
+  --ui-accent-hover: #ffff00;
+  --ui-danger: #ff0000;
+  --ui-warning: #ffff00;
+  --ui-success: #00ff00;
+  --ui-shadow-sm: none;
+  --ui-shadow-md: none;
+  /* Panel Header (High Contrast - H3) */
+  --panel-header-font-size: 1.75rem;
+  --panel-header-color: #ffffff;
+  --panel-header-bg: #000000;
+  /* Tab Header (High Contrast) */
+  --tab-header-title-size: 1.35rem;
+  --tab-header-title-color: #ffffff;
+  --tab-header-subtitle-color: #ffff00;
+  background-color: #000000 !important;
+  color: #ffffff !important;
+}
+
+/* ==========================================================================
+   2. Единая дизайн-система компонентов (UI Kit v2.0)
+   ========================================================================== */
+
+/* Карточка .ui-card */
+.ui-card {
+  background-color: var(--ui-bg-surface);
+  border: 1px solid var(--ui-border-color);
+  border-radius: 8px;
+  box-shadow: var(--ui-shadow-sm);
+  color: var(--ui-text-primary);
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.ui-card-header {
+  padding: 10px 16px;
+  background-color: var(--ui-bg-surface-elevated);
+  border-bottom: 1px solid var(--ui-border-color);
+  font-weight: 600;
+}
+
+.ui-card-body {
+  padding: 16px;
+}
+
+/* Панель и заголовок панели .panel-header (размер H3) */
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: var(--panel-header-padding, 0.6rem 1rem);
+  background-color: var(--panel-header-bg, var(--ui-bg-surface-elevated));
+  border-bottom: 1px solid var(--ui-border-color);
+  color: var(--panel-header-color, var(--ui-text-primary));
+  font-size: var(--panel-header-font-size, 1.75rem);
+  font-weight: 600;
+  line-height: 1.3;
+  border-top-left-radius: inherit;
+  border-top-right-radius: inherit;
+}
+
+h3.panel-header,
+.panel-header h3,
+.panel-header .panel-title {
+  font-size: var(--panel-header-font-size, 1.75rem);
+  font-weight: 600;
+  color: var(--panel-header-color, var(--ui-text-primary));
+  line-height: 1.3;
+  margin: 0;
+}
+
+/* Заголовок страницы/вкладки .tab-header */
+.tab-header,
+.ui-tab-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  flex-wrap: wrap;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+}
+
+.tab-header-title,
+.tab-header h3,
+.ui-tab-header h3,
+.tab-header h3.panel-header,
+.ui-tab-header h3.panel-header {
+  font-size: var(--tab-header-title-size, 1.35rem) !important;
+  font-weight: 700 !important;
+  color: var(--tab-header-title-color, var(--ui-text-primary)) !important;
+  line-height: 1.25 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  display: inline-block !important;
+}
+
+.tab-header-subtitle,
+.tab-header small,
+.ui-tab-header small {
+  font-size: 0.82rem !important;
+  color: var(--tab-header-subtitle-color, var(--ui-text-secondary)) !important;
+  line-height: 1.3;
+  display: block;
+}
+
+.tab-header-icon {
+  font-size: 1.5rem;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Кнопка .ui-btn */
+.ui-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 14px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  border-radius: 6px;
+  border: 1px solid var(--ui-border-color);
+  background-color: var(--ui-bg-surface-elevated);
+  color: var(--ui-text-primary);
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+}
+
+.ui-btn:hover {
+  background-color: var(--ui-border-color);
+  color: var(--ui-accent);
+}
+
+.ui-btn-primary {
+  background-color: var(--ui-accent);
+  border-color: var(--ui-accent);
+  color: #ffffff;
+}
+
+.ui-btn-primary:hover {
+  background-color: var(--ui-accent-hover);
+  border-color: var(--ui-accent-hover);
+  color: #ffffff;
+}
+
+.ui-btn-danger {
+  background-color: var(--ui-danger);
+  border-color: var(--ui-danger);
+  color: #ffffff;
+}
+
+.ui-btn-warning {
+  background-color: var(--ui-warning);
+  border-color: var(--ui-warning);
+  color: #000000;
+}
+
+.ui-btn-sm {
+  padding: 3px 8px;
+  font-size: 0.75rem;
+}
+
+/* Таблица .ui-table */
+.ui-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  color: var(--ui-text-primary);
+}
+
+.ui-table th {
+  background-color: var(--ui-bg-surface-elevated);
+  color: var(--ui-text-secondary);
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--ui-border-color);
+}
+
+.ui-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--ui-border-color-subtle);
+  font-size: 0.84rem;
+}
+
+.ui-table tr:hover td {
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+/* Бейджи .ui-badge */
+.ui-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  font-size: var(--badge-font-size, 0.72rem);
+  font-weight: 600;
+  border-radius: 9999px;
+  border: 1px solid transparent;
+}
+
+.ui-badge-success {
+  background-color: var(--badge-success-bg, rgba(16, 185, 129, 0.15));
+  color: var(--badge-success-text, var(--ui-success));
+  border-color: var(--badge-success-border, rgba(16, 185, 129, 0.3));
+}
+
+.ui-badge-warning {
+  background-color: var(--badge-warning-bg, rgba(245, 158, 11, 0.15));
+  color: var(--badge-warning-text, var(--ui-warning));
+  border-color: var(--badge-warning-border, rgba(245, 158, 11, 0.3));
+}
+
+.ui-badge-danger {
+  background-color: var(--badge-danger-bg, rgba(239, 68, 68, 0.15));
+  color: var(--badge-danger-text, var(--ui-danger));
+  border-color: var(--badge-danger-border, rgba(239, 68, 68, 0.3));
+}
+
+.ui-badge-info {
+  background-color: var(--badge-info-bg, rgba(56, 189, 248, 0.15));
+  color: var(--badge-info-text, var(--ui-accent));
+  border-color: var(--badge-info-border, rgba(56, 189, 248, 0.3));
+}
+
+/* Модальный оверлей ИИ-диалога .ai-modal-overlay */
+.ai-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+  z-index: 1090;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease-in-out, visibility 0.2s ease-in-out;
+}
+
+.ai-modal-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.ai-modal-card {
+  width: 80vw;
+  max-width: 80vw;
+  height: 90vh;
+  min-height: 90vh;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--ui-bg-surface);
+  border: 1px solid var(--ui-border-color);
+  border-radius: 12px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+}
+
+/* ==========================================================================
+   3. Адаптивная сетка датчиков оборудования (18_HARDWARE_INSPECTOR_GRID_FIX_AND_LEGACY_CLEANUP.md)
+   ========================================================================== */
+
+.hardware-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 16px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 16px;
+}
+
+.hardware-sensor-card {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+  background-color: var(--ui-bg-surface);
+  border: 1px solid var(--ui-border-color);
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: var(--ui-shadow-sm);
+}

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Windows-Admin Apps Windows - Window Management Telemetry DB History
+# Process Name: AI-Breadboard Apps Windows - Window Management Telemetry DB History
 # =============================================================================
 # Description:
 #   Менеджер фиксации всех изменений Window Management Control Plane в SQLite
@@ -16,11 +16,11 @@
 #     history = history_mgr.get_history(limit=50)
 #
 # File: history.py
-# Project: ai-windows-admin
+# Project: ai-breadboard
 # Package: apps.windows.sdk.modules.window_control_plane
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-28 00:10:00
 # =============================================================================
 
 from __future__ import annotations
@@ -44,11 +44,12 @@ except ImportError:
 def get_default_telemetry_db_path() -> Path:
     """Возвращает стандартный путь к файлу базы данных telemetry.db с fallback-путями."""
     programdata = os.environ.get("ProgramData") or os.environ.get("ALLUSERSPROFILE")
+    app_name = os.environ.get("APP_NAME") or "ai-tc"
     if programdata and os.path.exists(programdata):
-        primary = Path(programdata) / "AI-Windows-Admin" / "apps" / "windows" / "telemetry" / "logs" / "telemetry.db"
+        primary = Path(programdata) / app_name / "telemetry" / "telemetry.db"
     else:
         appdata = os.environ.get("APPDATA") or os.environ.get("LOCALAPPDATA") or str(Path.home() / ".config")
-        primary = Path(appdata) / "AI-Windows-Admin" / "apps" / "windows" / "telemetry" / "logs" / "telemetry.db"
+        primary = Path(appdata) / app_name / "telemetry" / "telemetry.db"
 
     if not primary.parent.exists():
         try:

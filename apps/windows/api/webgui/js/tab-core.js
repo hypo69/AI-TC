@@ -17,7 +17,7 @@
  * Package: windows/api/webgui/js
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-10 17:35:00
+ * Updated: 2026-10-20 18:54:00
  * =============================================================================
  */
 
@@ -25,9 +25,10 @@
  * tab-core.js — Единая система управления вкладками, их жизненным циклом и поллингом.
  * Архитектура: UI_ARCHITECTURE.md
  * 
- * Правило: Только открытая АКТИВНАЯ вкладка выполняет периодические опросы API.
- * При неактивности вкладки или скрытии страницы (visibilitychange) все таймеры засыпают.
- * Сценарий опроса запускается немедленно при открытии вкладки.
+ * Правило: Только открытая АКТИВНАЯ вкладка и АКТИВНАЯ панель (#tab_id#panel_id)
+ * выполняют периодические опросы API. Неактивные вкладки и панели не запрашивают ничего.
+ * При неактивности вкладки/панели или скрытии страницы (visibilitychange) все таймеры засыпают.
+ * Сценарий опроса запускается немедленно при открытии вкладки/панели.
  * 
  * Приоритет переключения: кнопки навигации имеют самый высокий приоритет.
  * Если что-то запущено внутри вкладки, переключение происходит немедленно без ожидания.
@@ -46,7 +47,8 @@ const processingFlags = new Map(); // хранит флаг isProcessing для 
  */
 export function normalizeTabId(tabId) {
   if (!tabId) return '';
-  return tabId.startsWith('tab-') ? tabId : `tab-${tabId}`;
+  const base = String(tabId).replace(/^#/, '').split('#')[0];
+  return base.startsWith('tab-') ? base : `tab-${base}`;
 }
 
 /**
@@ -59,11 +61,105 @@ export function isTabActive(tabId) {
   if (typeof document !== 'undefined' && document.hidden) {
     return false;
   }
-  if (currentActiveTabId) {
-    return currentActiveTabId === normId;
+  if (currentActiveTabId === normId) {
+    return true;
+  }
+  // Поддержка суб-панелей консолидированных вкладок (App Internals, AI Ecosystem, Storage Management)
+  const consolidatedParent = {
+    'tab-telemetry-control': 'tab-app-internals',
+    'tab-telemetry-config': 'tab-app-internals',
+    'tab-models': 'tab-app-internals',
+    'tab-system-logs': 'tab-app-internals',
+    'tab-performance-tracing': 'tab-app-internals',
+    'tab-log-settings': 'tab-app-internals',
+    'tab-agents': 'tab-ai-ecosystem',
+    'tab-skills': 'tab-ai-ecosystem',
+    'tab-mcp': 'tab-ai-ecosystem',
+    'tab-storage-manager': 'tab-storage-management',
+    'tab-storage-wear': 'tab-storage-management',
+    'tab-defender': 'tab-defender-firewall',
+    'tab-defender-firewall': 'tab-defender-firewall',
+    'tab-firewall-manager': 'tab-defender-firewall',
+    'tab-software-audit': 'tab-software-monitor',
+    'tab-software-manager': 'tab-software-monitor',
+    'tab-software-transparency': 'tab-software-monitor',
+    'tab-ninite-updater': 'tab-software-monitor',
+    'tab-startup-auditor': 'tab-software-monitor',
+    'tab-software-scanner': 'tab-software-monitor',
+    'tab-software-monitor': 'tab-software-monitor',
+    'tab-forensics': 'tab-system-control',
+    'tab-forensics-timeline': 'tab-system-control',
+    'tab-forensics-userassist': 'tab-system-control',
+    'tab-throttling': 'tab-system-control',
+  }[normId];
+  if (consolidatedParent && currentActiveTabId === consolidatedParent) {
+    return true;
   }
   const pane = document.getElementById(normId);
   return pane ? pane.classList.contains('active') : false;
+}
+
+/**
+ * Извлекает идентификатор активной панели из URL hash (#tab_id#panel_id).
+ * @param {string} [tabId] - Опциональный ID вкладки для верификации
+ * @returns {string|null} Идентификатор панели или null
+ */
+export function getActivePanel(tabId = null) {
+  const hash = (typeof location !== 'undefined' ? location.hash : '') || '';
+  const clean = hash.replace(/^#/, '');
+  const parts = clean.split('#');
+  if (parts.length < 2) return null;
+  const currentTab = parts[0];
+  if (tabId && normalizeTabId(currentTab) !== normalizeTabId(tabId)) {
+    return null;
+  }
+  return parts[1] || null;
+}
+
+/**
+ * Проверяет, активна ли панель на вкладке согласно URL hash (#tab_id#panel_id).
+ * Если панель не активна в URL (или вкладка не активна) — возвращает false.
+ * @param {string} tabId - Идентификатор вкладки (например, 'tab-workspace' или 'tab-windows-admin')
+ * @param {string} [panelId] - Идентификатор панели (например, 'panel-overview' или 'panel_documents')
+ * @param {string} [defaultPanel] - Панель по умолчанию, если в хэше указана только вкладка
+ * @returns {boolean}
+ */
+export function isPanelActive(tabId, panelId = null, defaultPanel = null) {
+  if (!isTabActive(tabId)) {
+    return false;
+  }
+  if (!panelId) {
+    return true;
+  }
+  const activePanel = getActivePanel(tabId);
+  if (!activePanel) {
+    if (defaultPanel) {
+      const cleanDef = String(defaultPanel).toLowerCase().replace(/[-_]/g, '');
+      const cleanTarget = String(panelId).toLowerCase().replace(/[-_]/g, '');
+      return cleanDef === cleanTarget;
+    }
+    return false;
+  }
+  const cleanActive = activePanel.toLowerCase().replace(/[-_]/g, '');
+  const cleanTarget = String(panelId).toLowerCase().replace(/[-_]/g, '');
+  return cleanActive === cleanTarget;
+}
+
+/**
+ * Устанавливает активную панель в URL hash (#tab_id#panel_id).
+ * @param {string} tabId 
+ * @param {string} panelId 
+ */
+export function setPanelHash(tabId, panelId) {
+  if (!tabId || !panelId) return;
+  const normTab = normalizeTabId(tabId);
+  const newHash = `#${normTab}#${panelId}`;
+  if (typeof location !== 'undefined' && location.hash !== newHash) {
+    try {
+      history.replaceState(null, null, newHash);
+      document.dispatchEvent(new CustomEvent('panel:activated', { detail: { tabId: normTab, panelId } }));
+    } catch (_) {}
+  }
 }
 
 /**
@@ -191,7 +287,10 @@ export function setTabPollerEnabled(pollerId, enabled) {
  */
 export function switchTab(tabId) {
   if (!tabId) return;
-  const id = normalizeTabId(tabId);
+  const rawClean = String(tabId).replace(/^#/, '');
+  const parts = rawClean.split('#');
+  const id = normalizeTabId(parts[0]);
+  const subPanelId = parts[1] || null;
   const prevTabId = currentActiveTabId;
 
   // 1. Остановка фонового аудио / синтеза речи при переходе
@@ -231,12 +330,23 @@ export function switchTab(tabId) {
   // 5. Быстро закрыть offcanvas меню
   OFFCANVAS_IDS.forEach(ocId => {
     const el = document.getElementById(ocId);
-    if (el) bootstrap.Offcanvas.getInstance(el)?.hide();
+    if (el) {
+      try {
+        bootstrap.Offcanvas.getInstance(el)?.hide();
+      } catch (_) {}
+    }
   });
+  setTimeout(() => {
+    document.querySelectorAll('.offcanvas-backdrop, .modal-backdrop').forEach(b => b.remove());
+    document.body.classList.remove('modal-open');
+    document.body.style.overflow = '';
+    document.body.style.pointerEvents = '';
+  }, 50);
 
-  // 6. Обновить URL hash
+  // 6. Обновить URL hash с сохранением суб-панели
   try {
-    history.replaceState(null, null, `#${id}`);
+    const targetHash = subPanelId ? `#${id}#${subPanelId}` : `#${id}`;
+    history.replaceState(null, null, targetHash);
   } catch (e) {}
 
   // 7. Запуск опросников новой активной вкладки
@@ -271,12 +381,32 @@ export function switchTab(tabId) {
       window[`activate${name[0].toUpperCase() + name.slice(1)}Tab`]?.();
     } catch (err) { console.debug('activate tab hook error:', err); }
 
+    if (subPanelId && id === 'tab-processes-load-inspector' && typeof window.switchProcessesSubTab === 'function') {
+      try {
+        window.switchProcessesSubTab(subPanelId, false);
+      } catch (err) {
+        console.debug('switchProcessesSubTab error:', err);
+      }
+    } else if (subPanelId && id === 'tab-system-control' && typeof window.switchSystemControlSource === 'function') {
+      try {
+        window.switchSystemControlSource(subPanelId);
+      } catch (err) {
+        console.debug('switchSystemControlSource error:', err);
+      }
+    } else if (subPanelId && (id === 'tab-software-monitor' || id === 'tab-software-scanner') && typeof window.switchSoftwareSubTab === 'function') {
+      try {
+        window.switchSoftwareSubTab(subPanelId);
+      } catch (err) {
+        console.debug('switchSoftwareSubTab error:', err);
+      }
+    }
+
     const targetPane = document.getElementById(id);
     if (targetPane && typeof window.initPanels === 'function') {
       window.initPanels(targetPane);
     }
     
-    document.dispatchEvent(new CustomEvent('tab:activated', { detail: { tabId: id, name } }));
+    document.dispatchEvent(new CustomEvent('tab:activated', { detail: { tabId: id, name, subPanelId } }));
   });
 }
 
@@ -311,7 +441,14 @@ export async function loadTab(tabName, htmlUrl, jsUrl) {
   }
 
   try {
-    const r = await fetch(htmlUrl);
+    let r;
+    try {
+      r = await fetch(htmlUrl);
+    } catch (netErr) {
+      // Краткий сетевой сбой (сервер перезапускается или стартует) - даем шанс повторить через 1 с
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      r = await fetch(htmlUrl);
+    }
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     container.innerHTML = await r.text();
     if (jsUrl) {
@@ -336,8 +473,11 @@ export async function loadTab(tabName, htmlUrl, jsUrl) {
         console.debug(`[TabCore] Ошибка вызова ${initName}:`, err);
       }
     }
-    if (typeof window.initPanels === 'function') {
+    if (typeof window.initPanels === 'function' && tabName !== 'about-system' && tabName !== 'about_system' && container?.id !== 'tab-about-system') {
       window.initPanels(container);
+    }
+    if (typeof window.initAllTableResizers === 'function') {
+      window.initAllTableResizers(container);
     }
   } catch (e) {
     const safeName = String(tabName).replace(/[^a-zA-Z0-9_-]/g, '');
@@ -363,13 +503,30 @@ export function setupTabClicks() {
   document.addEventListener('click', e => {
     const btn = e.target.closest('button[data-tab], a[data-tab]');
     if (btn && btn.dataset.tab) {
+      // Игнорируем кнопки открытия модальных окон или внутренние суб-панели
+      if (
+        btn.hasAttribute('data-bs-toggle') ||
+        btn.hasAttribute('data-reg-tab') ||
+        btn.classList.contains('btn-open-reg-tab') ||
+        btn.closest('.modal') ||
+        btn.dataset.tab.startsWith('pane-')
+      ) {
+        return;
+      }
+      e.preventDefault();
+      // Мгновенная очистка оверлеев и снятие блокировок body
+      document.querySelectorAll('.offcanvas-backdrop, .modal-backdrop').forEach(b => b.remove());
+      document.body.classList.remove('modal-open');
+      document.body.style.overflow = '';
+      document.body.style.pointerEvents = '';
+
       if (typeof window.switchTab === 'function') {
         window.switchTab(btn.dataset.tab);
       } else {
         switchTab(btn.dataset.tab);
       }
     }
-  });
+  }, true);
 }
 
 // Слушатель изменения видимости вкладки браузера
@@ -431,6 +588,9 @@ if (typeof window !== 'undefined') {
   window.setupTabClicks = setupTabClicks;
   window.normalizeTabId = normalizeTabId;
   window.isTabActive = isTabActive;
+  window.getActivePanel = getActivePanel;
+  window.isPanelActive = isPanelActive;
+  window.setPanelHash = setPanelHash;
   window.getCurrentActiveTabId = getCurrentActiveTabId;
   window.registerTabPoller = registerTabPoller;
   window.unregisterTabPoller = unregisterTabPoller;

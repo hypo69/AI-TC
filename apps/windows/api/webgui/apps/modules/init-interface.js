@@ -17,7 +17,7 @@
  * Package: windows/api/webgui/apps/modules
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-10 17:35:00
+ * Updated: 2026-10-14 04:07:00
  * =============================================================================
  */
 
@@ -87,11 +87,33 @@ export async function setupThemeAndLang() {
     });
   }
 
+  const quickLangBtn = document.getElementById('quick-lang-btn');
+  if (quickLangBtn) {
+    const curLang = (getCurrentLang() || 'ru').toUpperCase();
+    quickLangBtn.textContent = curLang === 'EN' ? 'EN' : 'RU';
+    quickLangBtn.addEventListener('click', () => {
+      const nextLang = quickLangBtn.textContent.trim() === 'RU' ? 'en-US' : 'ru-RU';
+      switchLocale(nextLang);
+      quickLangBtn.textContent = nextLang.startsWith('en') ? 'EN' : 'RU';
+    });
+  }
+
   const themeSel = document.getElementById('apps-theme-selector');
   if (themeSel) {
     themeSel.value = getThemeMode();
     themeSel.addEventListener('change', (e) => {
       setTheme(e.target.value);
+      if (quickThemeSel) quickThemeSel.value = e.target.value;
+    });
+  }
+
+  const quickThemeSel = document.getElementById('quick-theme-selector');
+  if (quickThemeSel) {
+    quickThemeSel.value = getThemeMode();
+    quickThemeSel.addEventListener('change', (e) => {
+      setTheme(e.target.value);
+      if (themeSel) themeSel.value = e.target.value;
     });
   }
 }
+

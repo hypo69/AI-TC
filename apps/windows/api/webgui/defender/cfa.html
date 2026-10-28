@@ -1,0 +1,61 @@
+<!--
+=============================================================================
+Process Name: Windows Defender - CFA Allowed Applications View
+=============================================================================
+Description:
+  Управление списком разрешенных приложений Controlled Folder Access (CFA).
+  Включает модальное окно добавления пути и вызовы REST API /api/v1/defender/cfa/allowed-apps.
+  Соответствует ТЗ v3 пункт 14.
+
+File: cfa.html
+Project: ai-windows-admin
+Package: windows/api/webgui/defender
+Author: hypo69
+Copyright: © 2026 hypo69
+Updated: 2026-10-20 09:37:00
+=============================================================================
+-->
+<div class="cfa-container p-3" id="tab-cfa-container">
+  <div class="card shadow-sm border-0 mb-3">
+    <div class="panel-header d-flex justify-content-between align-items-center">
+      <h3 class="panel-header mb-0"><i class="bi bi-shield-lock text-warning me-2"></i>Контролируемый доступ к папкам (CFA)</h3>
+      <button class="btn btn-sm btn-primary rounded-pill" data-bs-toggle="modal" data-bs-target="#cfaAddAppModal">
+        <i class="bi bi-plus-lg me-1"></i>Добавить приложение
+      </button>
+    </div>
+    <div class="card-body">
+      <div id="def-cfa-apps-list" class="p-2">
+        <div class="text-muted small">Загрузка списка разрешенных программ...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal fade" id="cfaAddAppModal" tabindex="-1" aria-labelledby="cfaAddAppModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content shadow">
+        <div class="modal-header py-2.5">
+          <h6 class="modal-title fw-bold" id="cfaAddAppModalLabel">
+            <i class="bi bi-shield-plus text-primary me-2"></i>Добавить разрешенное приложение CFA
+          </h6>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body py-3">
+          <p class="small text-secondary mb-2">
+            Укажите полный путь к исполняемому файлу программы (.exe):
+          </p>
+          <div class="input-group">
+            <span class="input-group-text"><i class="bi bi-file-earmark-binary"></i></span>
+            <input type="text" class="form-control form-control-sm font-monospace" id="cfa-app-path-input" placeholder="C:\Program Files\App\app.exe" required/>
+          </div>
+        </div>
+        <div class="modal-footer py-2">
+          <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
+          <button type="button" class="btn btn-sm btn-primary fw-bold" id="btn-cfa-submit-add-app">
+            <i class="bi bi-check-circle me-1"></i>Добавить в исключения
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

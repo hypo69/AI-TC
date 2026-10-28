@@ -16,7 +16,7 @@
 # Package: src.ai.wikillm
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-16 16:30:00
 # =============================================================================
 
 from __future__ import annotations
@@ -200,6 +200,31 @@ class ApproveKnowledgeRequest(BaseModel):
 async def approve_knowledge(req: ApproveKnowledgeRequest) -> Dict[str, Any]:
     """Фиксирует и одобряет проверенное пользователем знание в локальной базе WikiLLM."""
     engine = get_engine()
+
+    # Защита: отклоняем сохранение сообщений об ошибках модели
+    lower_summary = (req.summary or "").lower()
+    lower_rec = (req.recommendation or "").lower()
+    error_markers = (
+        "streaming error:",
+        "model error:",
+        "service unavailable",
+        "503",
+        "resourceexhausted",
+        "resource_exhausted",
+        "429 too many requests",
+        "quota exceeded",
+        "rate limit",
+        "все api ключи исчерпаны",
+        "harness process exited",
+        "ошибка провайдера",
+        "сбой ответа модели",
+    )
+    if any(m in lower_summary for m in error_markers) or any(m in lower_rec for m in error_markers) or len((req.summary or "").strip()) < 10:
+        raise HTTPException(
+            status_code=400,
+            detail="Нельзя зафиксировать в базе знаний WikiLLM сообщение об ошибке модели или некорректный ответ."
+        )
+
 
     canonical_key = req.canonical_key
     if not canonical_key or canonical_key == "unknown:unspecified":

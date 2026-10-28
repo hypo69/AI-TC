@@ -16,7 +16,7 @@
 # Package: apps.windows.sdk.modules.task_scheduler.core
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-15 19:05:00
 # =============================================================================
 
 from __future__ import annotations
@@ -48,6 +48,7 @@ class TaskSchedulerReport(BaseModel):
     ready_tasks: int = 0
     running_tasks: int = 0
     disabled_tasks: int = 0
+    history_enabled: Optional[bool] = None
     tasks: List[ScheduledTaskItem] = Field(default_factory=list)
     timestamp: str = ''
 
@@ -61,8 +62,23 @@ class TaskActionRequest(BaseModel):
     confirmed_by_user: bool = True
 
 
+class TaskHistoryStatusRequest(BaseModel):
+    """Запрос на изменение статуса журнала истории планировщика."""
+    enabled: bool = True
+
+
+class TaskHistoryStatusResponse(BaseModel):
+    """Ответ со статусом журнала истории планировщика."""
+    channel: str = 'Microsoft-Windows-TaskScheduler/Operational'
+    enabled: bool = False
+    status: str = 'SUCCESS'
+    message: str = ''
+
+
 __all__ = [
     'ScheduledTaskItem',
     'TaskSchedulerReport',
     'TaskActionRequest',
+    'TaskHistoryStatusRequest',
+    'TaskHistoryStatusResponse',
 ]

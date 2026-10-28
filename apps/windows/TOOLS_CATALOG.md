@@ -63,7 +63,7 @@ flowchart TD
 | **Windows TUI Dashboard** | `python -m apps.windows.tui` | Полноэкранный интерактивный дашборд на Rich/Textual с мониторингом метрик, процессов и сенсоров. |
 | **WikiLLM CLI** | `python -m apps.windows.wikillm` | Поиск по базе знаний, индексация кодовой базы, аудит команд и синонимов. |
 | **WikiLLM TUI** | `python -m apps.windows.wikillm.tui` | Интерактивный терминальный интерфейс для исследования графа знаний и сущностей Windows. |
-| **Telemetry Analytics CLI** | `python -m apps.windows.telemetry.analytics.cli` | Извлечение метрик из `telemetry.db`, анализ перезагрузок, аудит железа и инцидентов. |
+| **Telemetry Analytics CLI** | `python -m apps.windows.analytics.cli` | Извлечение метрик из `telemetry.db`, анализ перезагрузок, аудит железа и инцидентов. |
 | **System Inspector TUI** | `python -m apps.windows.sdk.modules.sysadmin.tui` | Аудит пользователей, мониторинг директорий и контроль целостности файлов. |
 | **Taskbar Manager TUI** | `python -m apps.windows.sdk.modules.taskbar.core.manager` | Управление панелью задач, окнами и виртуальными рабочими столами. |
 | **Storage Manager TUI** | `python -m apps.windows.sdk.modules.storage_manager.tui` | Управление дисками, запуск экспресс-бенчмарка DiskSpd и низкоуровневое клонирование. |
@@ -116,7 +116,7 @@ flowchart TD
 
 | № | Модуль | Основные классы / Функционал | Назначение |
 |---|---|---|---|
-| 1 | **`hardware`** | `HardwareManager`, `GPUProber`, `CpuSensor` | Мониторинг температур, напряжений, тактовых частот и сенсоров через LibreHardwareMonitor / WMI. |
+| 1 | **`hardware`** | `HardwareManager`, `GPUProber`, `CpuSensor` | Мониторинг температур, напряжений, тактовых частот и сенсоров через нативный WMI / CIM. |
 | 2 | **`network`** | `NetworkManager`, `LanScanner`, `SpeedtestRunner` | Сетевая телеметрия, сканирование локальной сети, замер пропускной способности, открытые сокеты. |
 | 3 | **`storage_manager`** | `StorageManager`, `DiskSpdBenchmark`, `RawCloner` | Разметка накопителей, низкоуровневое посекторное клонирование, бенчмарк DiskSpd, SMART. |
 | 4 | **`services_manager`** | `ServicesManager`, `Win32ServiceController` | Управление службами Windows, обнаружение осиротевших сервисов, анализ триггеров запуска. |
@@ -235,7 +235,6 @@ flowchart LR
 | `router_diagnostics.py` | `/api/v1/diagnostics` | Комплексная экспресс- и полная диагностика, расчёт Health Score. |
 | `router_system32_catalog.py` | `/api/v1/system32` | Поиск, инспекция возможностей и метаданных 149 системных утилит. |
 | `router_process_activity.py` | `/api/v1/processes` | Мониторинг процессов, замер ресурсов, поиск аномалий и управление. |
-| `router_hardware_sensors.py` | `/api/v1/hardware` | Опрос сенсоров LibreHardwareMonitor, температуры CPU/GPU, напряжение. |
 | `router_cpu_load.py` | `/api/v1/cpu` | Нагрузка процессора по ядрам, частота, прерывания, DPC latency. |
 | `router_gpu_load.py` | `/api/v1/gpu` | Мониторинг VRAM, 3D Engine, видеодекодера и энергопотребления GPU. |
 | `router_memory_io.py` | `/api/v1/memory` | Физическая и виртуальная память, Committed bytes, Pagefile, Paged Pool. |
@@ -280,7 +279,7 @@ python -m apps.windows.wikillm query "Как восстановить повре
 
 ### Анализ последних сбоев и перезагрузок системы:
 ```powershell
-python -m apps.windows.telemetry.analytics.cli analyze-reboots
+python -m apps.windows.analytics.cli analyze-reboots
 ```
 
 ### Запуск экспресс-диагностики через API:

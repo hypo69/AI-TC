@@ -15,7 +15,7 @@
  * Package: windows/api/webgui/css
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-10 17:35:00
+ * Updated: 2026-10-20 19:15:00
  * =============================================================================
  */
 
@@ -125,25 +125,122 @@
   box-shadow: var(--shadow-xs, 0 1px 3px rgba(0, 0, 0, 0.1));
 }
 
-/* ── 6. Универсальные заголовки панелей ────────────────────────────────────── */
+/* ── 6. Универсальные заголовки панелей (.panel-header, размер H3) ──────────── */
 
+.panel-header,
 .ui-panel-header,
 .about-sys-panel-header,
 .def-panel-header,
 .sysctl-panel-header,
 .winadmin-panel-header,
+.diag-panel-header,
+.wb-panel-header,
+.assistant-panel-header,
 .sys-panel-header {
-  background: var(--surface-2);
+  background: var(--panel-header-bg, var(--surface-2)) !important;
   border-bottom: 1px solid var(--border-color);
-  padding: 0.5rem 0.9rem;
-  font-size: 0.85rem;
+  padding: var(--panel-header-padding, 0.6rem 1rem);
+  font-size: var(--panel-header-font-size, 1.75rem) !important;
   font-weight: 600;
-  color: var(--text-color);
+  color: var(--panel-header-color, var(--text-color)) !important;
   display: flex;
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 0.5rem;
+}
+
+h3.panel-header,
+.panel-header h3,
+.ui-panel-header h3,
+.about-sys-panel-header h3,
+.diag-panel-header h3,
+.wb-panel-header h3,
+.winadmin-panel-header h3,
+.panel-header > div > span,
+.panel-header > span {
+  font-size: var(--panel-header-font-size, 1.75rem) !important;
+  color: var(--panel-header-color, var(--text-color)) !important;
+  line-height: 1.3;
+  margin: 0;
+}
+
+/* ── 6.0. Компактные заголовки панелей уровня H6 (для таблиц спецификаций) ─── */
+.ui-panel-header.ui-panel-header-sm,
+.ui-panel-header.panel-header-sm,
+[data-panel-id="panel-about-hardware-spec"] .ui-panel-header,
+[data-panel-id="panel-about-user-security"] .ui-panel-header {
+  font-size: var(--panel-header-font-size-sm, 1rem) !important;
+  padding: 0.45rem 0.85rem !important;
+}
+
+[data-panel-id="panel-about-hardware-spec"] .ui-panel-header h6,
+[data-panel-id="panel-about-hardware-spec"] .ui-panel-header span,
+[data-panel-id="panel-about-hardware-spec"] .ui-panel-header i,
+[data-panel-id="panel-about-user-security"] .ui-panel-header h6,
+[data-panel-id="panel-about-user-security"] .ui-panel-header span,
+[data-panel-id="panel-about-user-security"] .ui-panel-header i,
+.ui-panel-header h6,
+.ui-panel-header .panel-title-sm {
+  font-size: var(--panel-header-font-size-sm, 1rem) !important;
+  font-weight: 600 !important;
+  line-height: 1.3 !important;
+  margin: 0 !important;
+}
+
+/* ── 6.1. Заголовки страниц и вкладок (.tab-header, .tab-header-title) ─────── */
+
+.tab-header,
+.ui-tab-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  margin-bottom: var(--tab-header-margin-bottom, 0.5rem) !important;
+  flex-wrap: wrap !important;
+  gap: var(--tab-header-gap, 0.5rem) !important;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+}
+
+.tab-header-title,
+.tab-header h3,
+.ui-tab-header h3,
+.tab-header h3.panel-header,
+.ui-tab-header h3.panel-header,
+.tab-header .panel-header,
+.tab-header > div > div > h3 {
+  font-size: var(--tab-header-title-size, 1.35rem) !important;
+  font-weight: var(--tab-header-title-weight, 700) !important;
+  color: var(--tab-header-title-color, var(--text-color)) !important;
+  line-height: 1.25 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  display: inline-block !important;
+}
+
+.tab-header-subtitle,
+.tab-header small,
+.ui-tab-header small,
+.tab-header > div > small {
+  font-size: var(--tab-header-subtitle-size, 0.82rem) !important;
+  color: var(--tab-header-subtitle-color, var(--text-muted)) !important;
+  line-height: 1.3 !important;
+  display: block !important;
+}
+
+.tab-header-icon,
+.tab-header > div > span.fs-4,
+.ui-tab-header > div > span.fs-4 {
+  font-size: var(--tab-header-icon-size, 1.5rem) !important;
+  line-height: 1 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
 /* ── 7. Универсальные таблицы спецификаций ─────────────────────────────────── */
@@ -176,6 +273,7 @@
   border-bottom: 1px solid var(--border-subtle);
   background: transparent;
   vertical-align: middle;
+  text-align: start !important;
 }
 
 .ui-spec-table td,
@@ -189,6 +287,77 @@
   vertical-align: middle;
   line-height: 1.45;
   color: var(--text-color);
+  text-align: start !important;
+}
+
+/* Выравнивание по левому краю в языках LTR и по правому краю в языках RTL для всех таблиц */
+table th,
+table td:not([colspan]),
+table td[colspan="1"],
+.table th,
+.table td:not([colspan]),
+.table td[colspan="1"],
+.slc-table th,
+.slc-table td:not([colspan]),
+.slc-table td[colspan="1"],
+.ui-table th,
+.ui-table td:not([colspan]),
+.ui-table td[colspan="1"],
+.sys-table th,
+.sys-table td:not([colspan]),
+.sys-table td[colspan="1"],
+.ui-spec-table th,
+.ui-spec-table td:not([colspan]),
+.ui-spec-table td[colspan="1"] {
+  text-align: start !important;
+}
+
+[dir="rtl"] table th,
+[dir="rtl"] table td:not([colspan]),
+[dir="rtl"] table td[colspan="1"],
+[dir="rtl"] .table th,
+[dir="rtl"] .table td:not([colspan]),
+[dir="rtl"] .table td[colspan="1"],
+[dir="rtl"] .slc-table th,
+[dir="rtl"] .slc-table td:not([colspan]),
+[dir="rtl"] .slc-table td[colspan="1"],
+[dir="rtl"] .ui-table th,
+[dir="rtl"] .ui-table td:not([colspan]),
+[dir="rtl"] .ui-table td[colspan="1"],
+[dir="rtl"] .sys-table th,
+[dir="rtl"] .sys-table td:not([colspan]),
+[dir="rtl"] .sys-table td[colspan="1"],
+[dir="rtl"] .ui-spec-table th,
+[dir="rtl"] .ui-spec-table td:not([colspan]),
+[dir="rtl"] .ui-spec-table td[colspan="1"] {
+  text-align: right !important;
+}
+
+[dir="ltr"] table th,
+[dir="ltr"] table td:not([colspan]),
+[dir="ltr"] table td[colspan="1"],
+[dir="ltr"] .table th,
+[dir="ltr"] .table td:not([colspan]),
+[dir="ltr"] .table td[colspan="1"],
+[dir="ltr"] .slc-table th,
+[dir="ltr"] .slc-table td:not([colspan]),
+[dir="ltr"] .slc-table td[colspan="1"],
+[dir="ltr"] .ui-table th,
+[dir="ltr"] .ui-table td:not([colspan]),
+[dir="ltr"] .ui-table td[colspan="1"],
+[dir="ltr"] .sys-table th,
+[dir="ltr"] .sys-table td:not([colspan]),
+[dir="ltr"] .sys-table td[colspan="1"],
+[dir="ltr"] .ui-spec-table th,
+[dir="ltr"] .ui-spec-table td:not([colspan]),
+[dir="ltr"] .ui-spec-table td[colspan="1"] {
+  text-align: left !important;
+}
+
+table td.text-center[colspan]:not([colspan="1"]),
+.table td.text-center[colspan]:not([colspan="1"]),
+.slc-table td.text-center[colspan]:not([colspan="1"]) {
+  text-align: center !important;
 }
 
 .ui-spec-table tr:hover td,
@@ -251,6 +420,30 @@
   word-break: break-word;
 }
 
+.ui-spec-table .ui-spec-val .d-flex,
+.about-sys-spec-table .about-sys-spec-val .d-flex {
+  gap: 0.75rem !important;
+}
+
+.ui-spec-table .ui-spec-val span + span,
+.about-sys-spec-table .about-sys-spec-val span + span {
+  margin-left: 0.45rem;
+}
+
+.ui-spec-table .ui-spec-val .ui-badge,
+.about-sys-spec-table .about-sys-spec-val .ui-badge {
+  margin-left: 0.2rem;
+  margin-right: 0.35rem;
+}
+
+.ui-spec-table .ui-spec-val .spec-pipe,
+.about-sys-spec-table .about-sys-spec-val .spec-pipe {
+  margin: 0 0.45rem;
+  opacity: 0.45;
+  display: inline-block;
+}
+
+
 /* ── 9. Универсальные бейджи статусов ──────────────────────────────────────── */
 
 .ui-badge,
@@ -260,7 +453,7 @@
 .diag-badge-critical,
 .diag-badge-warning,
 .diag-badge-normal {
-  font-size: 0.72rem;
+  font-size: var(--badge-font-size, calc(0.75rem + 1pt));
   font-weight: 600;
   padding: 0.2rem 0.55rem;
   border-radius: var(--radius-xs, 4px);
@@ -299,6 +492,19 @@
   border: 1px solid var(--status-info-border);
 }
 
+.ui-badge-neutral {
+  background: var(--surface-2);
+  color: var(--text-muted);
+  border: 1px solid var(--border-color);
+}
+
+.ui-badge.text-wrap,
+.status-badge-unified.text-wrap {
+  white-space: normal;
+  flex-wrap: wrap;
+  line-height: 1.35;
+}
+
 /* ── 10. Универсальные панели диагностики ──────────────────────────────────── */
 
 .diag-panel,
@@ -311,25 +517,10 @@
   box-shadow: var(--shadow-xs, 0 1px 3px rgba(0, 0, 0, 0.1));
 }
 
-.diag-panel-header,
-.ui-panel-header {
-  background: var(--surface-2);
-  border-bottom: 1px solid var(--border-color);
-  padding: 0.5rem 0.9rem;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--text-color);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
 
 /* ── 11. Универсальные карточки метрик ─────────────────────────────────────── */
 
-.diag-meter-card,
-.ui-kpi-card {
+.diag-meter-card {
   background: var(--surface-2);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
@@ -616,7 +807,6 @@
 /* ── 29. Универсальные панели с адаптивным заголовком ──────────────────────── */
 
 @media (max-width: 575px) {
-  .ui-panel-header,
   .ui-kpi-label {
     font-size: 0.75rem;
     padding: 0.4rem 0.6rem;
@@ -665,8 +855,9 @@
 /* ── 34. Универсальные панели с адаптивным заголовком панели ───────────────── */
 
 @media (max-width: 575px) {
+  .panel-header,
   .ui-panel-header {
-    font-size: 0.75rem;
+    font-size: calc(var(--panel-header-font-size, 1.75rem) * 0.8) !important;
     padding: 0.4rem 0.6rem;
   }
 }
@@ -732,9 +923,9 @@
 /* ── 42. Универсальные панели с адаптивным значением заголовка панели ──────── */
 
 @media (max-width: 575px) {
-  .ui-panel-header {
-    font-size: 0.7rem;
-    padding: 0.3rem 0.5rem;
+  .panel-header h3,
+  h3.panel-header {
+    font-size: calc(var(--panel-header-font-size, 1.75rem) * 0.8) !important;
   }
 }
 

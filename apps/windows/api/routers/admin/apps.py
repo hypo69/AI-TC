@@ -10,8 +10,8 @@
 # Project: ai-windows-admin
 # Package: apps.windows.api.routers.admin
 # Author: hypo69
-# Copyright: c 2026 hypo69
-# Updated: 2026-10-12 06:00:00
+# Copyright: © 2026 hypo69
+# Updated: 2026-10-22 14:40:00
 # =============================================================================
 
 from __future__ import annotations
@@ -112,36 +112,6 @@ APPS_REGISTRY: List[Dict[str, Any]] = [
         "icon": "🗓️",
     },
     {
-        "id": "gcloud_monitor",
-        "key": "gcloud_monitor",
-        "tab": "tab-gcloud",
-        "folder": "gcloud_monitor",
-        "aliases": ["gcloud_monitor", "gcloud", "google_cloud", "tab-gcloud"],
-        "name": "Google Cloud Monitor",
-        "ru_name": "Google Cloud Monitor",
-        "icon": "☁️",
-    },
-    {
-        "id": "website_monitor",
-        "key": "website_monitor",
-        "tab": "tab-website-monitor",
-        "folder": "website_monitor",
-        "aliases": ["website_monitor", "website", "website_intelligence", "tab-website-monitor"],
-        "name": "Website Intelligence Monitor",
-        "ru_name": "Website Intelligence",
-        "icon": "📊",
-    },
-    {
-        "id": "cloudflared_monitor",
-        "key": "cloudflared_monitor",
-        "tab": "tab-cloudflared",
-        "folder": "cloudflared_monitor",
-        "aliases": ["cloudflared_monitor", "cloudflared", "tab-cloudflared"],
-        "name": "Cloudflared Monitor",
-        "ru_name": "Cloudflared Monitor",
-        "icon": "☁️",
-    },
-    {
         "id": "system_control_center",
         "key": "system_control_center",
         "tab": "tab-system-control",
@@ -162,26 +132,6 @@ APPS_REGISTRY: List[Dict[str, Any]] = [
         "icon": "📜",
     },
     {
-        "id": "wikipedia_research",
-        "key": "wikipedia_research",
-        "tab": "tab-wikipedia-research",
-        "folder": "wikipedia_research",
-        "aliases": ["wikipedia_research", "wikipedia", "wiki_lab", "tab-wikipedia-research"],
-        "name": "Wikipedia Research Lab",
-        "ru_name": "Wikipedia Research (Сравнение языков и моделей)",
-        "icon": "🌐",
-    },
-    {
-        "id": "ai_windows_admin_admin",
-        "key": "ai_windows_admin_admin",
-        "tab": "tab-admin",
-        "folder": "ai_windows_admin_admin",
-        "aliases": ["ai_windows_admin_admin", "admin", "admin_panel", "tab-admin"],
-        "name": "AI Windows Admin Admin",
-        "ru_name": "Панель администратора",
-        "icon": "⚙️",
-    },
-    {
         "id": "research_and_statistic",
         "key": "research_and_statistic",
         "tab": "tab-research",
@@ -190,16 +140,6 @@ APPS_REGISTRY: List[Dict[str, Any]] = [
         "name": "Research & Statistics Desk",
         "ru_name": "Анализ данных и статистика",
         "icon": "📈",
-    },
-    {
-        "id": "helpdesk",
-        "key": "helpdesk",
-        "tab": "tab-helpdesk",
-        "folder": "helpdesk",
-        "aliases": ["helpdesk", "support", "tab-helpdesk"],
-        "name": "Helpdesk & Support",
-        "ru_name": "Служба поддержки (Helpdesk)",
-        "icon": "🎧",
     },
     {
         "id": "software_audit",
@@ -229,6 +169,16 @@ APPS_REGISTRY: List[Dict[str, Any]] = [
         "aliases": ["windows_startup_auditor", "startup_auditor", "startup", "autoruns", "tab-startup-auditor"],
         "name": "Windows Startup Auditor",
         "ru_name": "Аудит автозапуска Windows",
+        "icon": "🚀",
+    },
+    {
+        "id": "boot_and_servicing",
+        "key": "boot_and_servicing",
+        "tab": "tab-boot-recovery",
+        "folder": "boot_recovery_tab",
+        "aliases": ["boot_winre", "sfc_dism", "sfc", "dism", "winre", "boot", "boot_recovery", "servicing_integrity"],
+        "name": "Boot, WinRE & System Servicing (SFC/DISM)",
+        "ru_name": "🚀 Загрузка, WinRE и обслуживание SFC/DISM",
         "icon": "🚀",
     },
     {
@@ -280,7 +230,7 @@ def get_apps_status(profile: Optional[str] = None) -> Dict[str, Any]:
     cfg_env = os.getenv("AIWINDOWSADMIN_CONFIG") or os.getenv("CONFIG_FILE")
     active_path: Optional[Path] = None
     if profile in ("tc", "test-computer", "test_computer", "apps_tc"):
-        for candidate in [__root__ / "config" / "tc.json", __root__ / "config_tc.json", __root__ / "tc.json"]:
+        for candidate in [__root__ / "config_tc.json", __root__ / "tc.json"]:
             if candidate.exists():
                 active_path = candidate
                 break
@@ -289,12 +239,12 @@ def get_apps_status(profile: Optional[str] = None) -> Dict[str, Any]:
         active_path = p if p.is_absolute() else (__root__ / cfg_env)
 
     if not active_path or not active_path.exists():
-        for candidate in [__root__ / "config" / "tc.json", __root__ / "config_tc.json", __root__ / "tc.json"]:
-            if candidate.exists() and not (__root__ / "config.json").exists() and not (__root__ / "config" / "dashboard.json").exists():
+        for candidate in [__root__ / "config_tc.json", __root__ / "tc.json"]:
+            if candidate.exists() and not (__root__ / "config.json").exists():
                 active_path = candidate
                 break
         if not active_path or not active_path.exists():
-            active_path = (__root__ / "config" / "dashboard.json") if (__root__ / "config" / "dashboard.json").exists() else (__root__ / "config.json")
+            active_path = __root__ / "config.json"
 
     apps_cfg: Any = {}
     config_filename = active_path.name if active_path else "config.json"

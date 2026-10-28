@@ -16,11 +16,11 @@
 # Package: apps.windows.sdk.modules.task_scheduler.tests
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-15 19:05:00
 # =============================================================================
 
 from __future__ import annotations
-"""# Description:"""
+"""Тестирование функциональности модуля планировщика задач Windows."""
 
 import pytest
 from fastapi import FastAPI
@@ -71,3 +71,44 @@ def test_task_scheduler_endpoints(client: TestClient):
 
     resp_tasks = client.get('/api/task-scheduler/tasks')
     assert resp_tasks.status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_com_taskscheduler_in_worker_thread():
+    """Проверка доступности COM-интерфейса планировщика в фоновом потоке asyncio.to_thread."""
+    import asyncio
+    from apps.windows.sdk.win32_ffi.tasksched import TaskSchedulerAPI
+
+    api = TaskSchedulerAPI()
+    assert api.is_available is True
+
+    # Вызов сбора задач в фоновом потоке пула
+    tasks = await asyncio.to_thread(api.get_all_tasks, max_tasks=10)
+    assert isinstance(tasks, list)
+    assert len(tasks) > 0
+
+
+def test_history_status(manager: TaskSchedulerManager):
+    """Проверка получения статуса журнала истории планировщика."""
+    status = manager.get_history_status()
+    assert isinstance(status, dict)
+    assert 'enabled' in status
+    assert 'channel' in status
+    assert status['channel'] == 'Microsoft-Windows-TaskScheduler/Operational'
+
+
+def test_history_status_endpoints(client: TestClient):
+    """Проверка эндпоинтов получения и изменения статуса истории задач."""
+    # GET запрос статуса
+    resp_get = client.get('/api/task-scheduler/history-status')
+    assert resp_get.status_code == 200
+    data_get = resp_get.json()
+    assert 'enabled' in data_get
+    assert data_get['channel'] == 'Microsoft-Windows-TaskScheduler/Operational'
+
+    # Проверка отчета на наличие поля history_enabled
+    resp_rep = client.get('/api/task-scheduler/report')
+    assert resp_rep.status_code == 200
+    assert 'history_enabled' in resp_rep.json()
+
+

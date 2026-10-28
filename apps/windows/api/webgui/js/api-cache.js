@@ -338,13 +338,60 @@ export async function getApiCacheStats() {
   };
 }
 
+// Классы для совместимости с оптимизатором и старыми модулями
+export class APICache {
+  constructor() {
+    this.memoryCache = new Map();
+  }
+  get(key) {
+    const item = this.memoryCache.get(key);
+    if (!item) return null;
+    if (Date.now() > item.expiresAt) {
+      this.memoryCache.delete(key);
+      return null;
+    }
+    return item.data;
+  }
+  set(key, data, ttlMs = 300000) {
+    this.memoryCache.set(key, { data, expiresAt: Date.now() + ttlMs });
+  }
+  invalidate(pattern) {
+    let count = 0;
+    if (typeof pattern === 'string') {
+      if (this.memoryCache.delete(pattern)) count++;
+    } else if (pattern instanceof RegExp) {
+      for (const key of this.memoryCache.keys()) {
+        if (pattern.test(key)) {
+          this.memoryCache.delete(key);
+          count++;
+        }
+      }
+    }
+    return count;
+  }
+}
+
+export class APIFetcher {
+  constructor(cacheInstance = null) {
+    this.cache = cacheInstance;
+  }
+  async fetch(url, options = {}, cacheOptions = {}) {
+    return cachedApiFetch(url, options, cacheOptions);
+  }
+}
+
+export { invalidateCacheByTag as clearCacheByTag };
+
 // Экспорт в глобальный контекст для доступности из всех вкладок
 if (typeof window !== 'undefined') {
   window.cachedApiFetch = cachedApiFetch;
   window.invalidateCacheByTag = invalidateCacheByTag;
+  window.clearCacheByTag = invalidateCacheByTag;
   window.clearAllApiCache = clearAllApiCache;
   window.getApiCacheStats = getApiCacheStats;
   window.CACHE_STRATEGIES = CACHE_STRATEGIES;
+  window.APICache = APICache;
+  window.APIFetcher = APIFetcher;
 }
 
 export default cachedApiFetch;

@@ -20,7 +20,7 @@
 # Package: apps.windows.telemetry
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-13 16:25:00
 # =============================================================================
 
 from __future__ import annotations
@@ -41,8 +41,8 @@ except ImportError:
     import logging
     logger = logging.getLogger(__name__)
 
-from apps.windows.telemetry.win32_ffi.wevtapi import WevtAPI
-from apps.windows.telemetry.win32_ffi.error_decoder import decode_bugcheck_code, format_system_error
+from apps.windows.sdk.win32_ffi.wevtapi import WevtAPI
+from apps.windows.sdk.win32_ffi.error_decoder import decode_bugcheck_code, format_system_error
 from apps.windows.telemetry.models import (
     PowerEventRecord,
     PowerSessionRecord,

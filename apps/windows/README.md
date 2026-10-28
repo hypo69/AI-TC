@@ -76,7 +76,7 @@ AI WINDOWS DIAGNOSTIC & ADMINISTRATION CENTER
 
 ### 2. `apps/windows/modules` — Функциональные доменные подсистемы
 Содержит **изолированные тематические подсистемы (мини-приложения/микромодули)**, каждое из которых отвечает за конкретную предметную область Windows и обычно имеет собственный `router.py`, `tui.py`, `core/`, `models.py` и `tests/`:
-* **Оборудование и сеть:** `hardware` (GPU Prober, LibreHardwareMonitor), `network` (LAN Scanner, Speedtest, Network Usage).
+* **Оборудование и сеть:** `hardware` (GPU Prober, Hardware Sensors), `network` (LAN Scanner, Speedtest, Network Usage).
 * **Диски и хранилище:** `storage_manager` (клонирование, экспресс-бенчмарк DiskSpd, низкоуровневые сенсоры накопителей).
 * **Системное администрирование:** `services_manager`, `task_scheduler`, `process_manager`, `firewall_manager`, `defender`, `registry`, `startup`.
 * **Резервное копирование и целостность:** `system_checkpoints`, `boot_recovery`, `backup_manager`, `servicing_integrity`.

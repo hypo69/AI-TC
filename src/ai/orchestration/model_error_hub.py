@@ -16,7 +16,7 @@
 # Package: src.ai.orchestration
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-15 11:27:00
 # =============================================================================
 
 from __future__ import annotations
@@ -73,7 +73,7 @@ def classify_model_error(ex: Any, status_code: Optional[int]=None) -> Tuple[Mode
         if match:
             code = int(match.group(1))
     low: str = ex_str.lower()
-    if code == 503 or '503' in ex_str or 'unavailable' in low or ('high demand' in low) or ('overloaded' in low):
+    if code == 503 or '503' in ex_str or 'unavailable' in low or ('high demand' in low) or ('overloaded' in low) or ('unreachable' in low):
         return (ModelErrorCategory.SERVICE_UNAVAILABLE, code or 503)
     if code == 429 or '429' in ex_str or 'resource_exhausted' in low or ('rate limit' in low) or ('too many requests' in low):
         return (ModelErrorCategory.RATE_LIMIT, code or 429)
@@ -85,7 +85,7 @@ def classify_model_error(ex: Any, status_code: Optional[int]=None) -> Tuple[Mode
         return (ModelErrorCategory.CONTEXT_OVERFLOW, code)
     if any((k in low for k in ['safety', 'harm_category', 'blocked by content policy', 'moderation', 'censorship'])):
         return (ModelErrorCategory.SAFETY_BLOCK, code)
-    if any((k in low for k in ['connectionrefused', 'connection reset', 'timed out', 'timeout', 'network error', 'connecterror'])):
+    if any((k in low for k in ['connectionrefused', 'connection reset', 'timed out', 'timeout', 'network error', 'connecterror', 'ws close', '1006', 'harness process exited', 'localharness'])):
         return (ModelErrorCategory.CONNECTION_ERROR, code)
     if code in (500, 502, 504) or any((k in low for k in ['500 internal', 'bad gateway', 'gateway timeout'])):
         return (ModelErrorCategory.INTERNAL_SERVER_ERROR, code or 500)

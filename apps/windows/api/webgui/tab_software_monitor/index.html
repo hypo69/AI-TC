@@ -1,0 +1,368 @@
+<!--
+=============================================================================
+Process Name: Windows Web Interface - Software Monitor Tab View
+=============================================================================
+Description:
+  Консолидированная панель установленных программ и мониторинга ПО (Software Hub).
+  Объединяет функциональные панели:
+  1. Реестр установленных программ (Инвентарь ПО, Quiet Uninstall, экспорт)
+  2. Менеджер пакетов ПО (WinGet, Microsoft Store, Ninite)
+  3. Спящие программы и Сироты (Dormant & Orphans на базе UserAssist/Prefetch)
+  4. Автозапуск программ (Startup Auditor)
+  5. ИИ-аудит прозрачности и рисков ПО (AI Software Transparency Scanner)
+  6. Ресурсоемкие программы
+  7. Конфигурации и открытые сокеты
+
+Usage Examples:
+    Web Route:
+      /windows/api/webgui/tab_software_monitor/index.html
+
+File: index.html
+Project: ai-windows-admin
+Package: windows/api/webgui/tab_software_monitor
+Author: hypo69
+Copyright: © 2026 hypo69
+Updated: 2026-10-20 20:20:00
+=============================================================================
+-->
+<div class="container-fluid py-2 px-3" id="software-monitor-container">
+  <!-- Заголовок вкладки -->
+  <div class="tab-header d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+    <div class="d-flex align-items-center gap-2">
+      <span class="tab-header-icon fs-4 text-warning">📦</span>
+      <div>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+          <h3 class="tab-header-title panel-header mb-0">Установленные программы и Мониторинг ПО</h3>
+          
+        </div>
+        <small class="tab-header-subtitle text-secondary">Полная инвентаризация установленных программ Windows (x64/x86/MSIX), отслеживание изменений и обновлений</small>
+      </div>
+    </div>
+    
+  </div>
+<!-- Отдельный блок меню суб-вкладок ПОД названием вкладки, расположен слева -->
+  <div class="d-flex align-items-center mb-3 pb-2 border-bottom border-secondary border-opacity-25 flex-wrap gap-2">
+    <div class="d-flex align-items-center gap-1 flex-wrap" id="software-subtabs-nav" role="tablist">
+      <button class="btn btn-sm btn-outline-primary active d-flex align-items-center gap-1.5 py-1 px-2.5 rounded" id="subtab-sw-inventory-btn" data-term="sw-inventory" data-ai-tooltip="true" data-placement="top" data-bs-toggle="pill" data-bs-target="#subpane-sw-inventory" type="button" role="tab">
+        <i class="bi bi-card-checklist text-primary"></i>
+        <span>Реестр программ (Инвентарь)</span>
+      </button>
+      <button class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1.5 py-1 px-2.5 rounded" id="subtab-sw-packages-btn" data-term="sw-packages" data-ai-tooltip="true" data-placement="top" data-bs-toggle="pill" data-bs-target="#subpane-sw-packages" type="button" role="tab">
+        <i class="bi bi-box-seam text-info"></i>
+        <span>Менеджер пакетов (WinGet, MSI, Store &amp; Ninite)</span>
+      </button>
+      <button class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1.5 py-1 px-2.5 rounded" id="subtab-sw-dormant-btn" data-term="sw-dormant" data-ai-tooltip="true" data-placement="top" data-bs-toggle="pill" data-bs-target="#subpane-sw-dormant" type="button" role="tab">
+        <i class="bi bi-clock-history text-warning"></i>
+        <span>Спящие программы и Сироты</span>
+      </button>
+      <button class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1.5 py-1 px-2.5 rounded" id="subtab-sw-startup-btn" data-term="sw-startup" data-ai-tooltip="true" data-placement="top" data-bs-toggle="pill" data-bs-target="#subpane-sw-startup" type="button" role="tab">
+        <i class="bi bi-rocket-takeoff text-success"></i>
+        <span>Автозапуск программ</span>
+      </button>
+      <button class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1.5 py-1 px-2.5 rounded" id="subtab-sw-transparency-btn" data-term="sw-transparency" data-ai-tooltip="true" data-placement="top" data-bs-toggle="pill" data-bs-target="#subpane-sw-transparency" type="button" role="tab">
+        <i class="bi bi-shield-check text-primary"></i>
+        <span>ИИ-Аудит прозрачности и рисков</span>
+      </button>
+      <button class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1.5 py-1 px-2.5 rounded" id="subtab-sw-heavy-btn" data-term="sw-heavy" data-ai-tooltip="true" data-placement="top" data-bs-toggle="pill" data-bs-target="#subpane-sw-heavy" type="button" role="tab">
+        <i class="bi bi-lightning-fill text-warning"></i>
+        <span>Ресурсоемкие программы</span>
+      </button>
+      <button class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1.5 py-1 px-2.5 rounded" id="subtab-sw-sockets-btn" data-term="sw-sockets" data-ai-tooltip="true" data-placement="top" data-bs-toggle="pill" data-bs-target="#subpane-sw-sockets" type="button" role="tab">
+        <i class="bi bi-hdd-network text-info"></i>
+        <span>Конфигурации и сокеты</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Subtabs Content Panes -->
+  <div class="tab-content" id="software-subtabs-content">
+    <!-- Subpane 1: Реестр установленных программ (Инвентарь ПО) -->
+    <div class="tab-pane fade show active" id="subpane-sw-inventory" role="tabpanel" data-panel-id="software_monitor-inventory">
+      <div id="sw-inventory-embed-container"></div>
+    </div>
+
+    <!-- Subpane 2: Менеджер пакетов ПО (WinGet, MSI, Microsoft Store & Ninite) -->
+    <div class="tab-pane fade" id="subpane-sw-packages" role="tabpanel" data-panel-id="software_monitor-package_manager">
+      <div class="d-flex align-items-center justify-content-between mb-2">
+        <ul class="nav nav-pills" id="sw-packages-subtabs" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active btn-sm rounded-pill px-3 py-1 me-2" id="sw-subtab-winget-btn" data-term="sw-winget" data-ai-tooltip="true" data-placement="top" data-bs-toggle="pill" data-bs-target="#sw-subpane-winget" type="button" role="tab">
+              <i class="bi bi-box-seam me-1"></i> Пакеты WinGet
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link btn-sm rounded-pill px-3 py-1 me-2" id="sw-subtab-msi-btn" data-term="sw-msi" data-ai-tooltip="true" data-placement="top" data-bs-toggle="pill" data-bs-target="#sw-subpane-msi" type="button" role="tab">
+              <i class="bi bi-gear-wide-connected me-1"></i> Пакеты MSI
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link btn-sm rounded-pill px-3 py-1 me-2" id="sw-subtab-store-btn" data-term="sw-store" data-ai-tooltip="true" data-placement="top" data-bs-toggle="pill" data-bs-target="#sw-subpane-store" type="button" role="tab">
+              <i class="bi bi-shop me-1"></i> Microsoft Store (AppX/MSIX)
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link btn-sm rounded-pill px-3 py-1" id="sw-subtab-ninite-btn" data-term="sw-ninite" data-ai-tooltip="true" data-placement="top" data-bs-toggle="pill" data-bs-target="#sw-subpane-ninite" type="button" role="tab">
+              <i class="bi bi-lightning-charge me-1"></i> Автообновление Ninite
+            </button>
+          </li>
+        </ul>
+      </div>
+      <div class="tab-content" id="sw-packages-inner-content">
+        <div class="tab-pane fade show active" id="sw-subpane-winget" role="tabpanel">
+          <div id="sw-winget-embed-container"></div>
+          <div id="sw-packages-embed-container" style="display: none;"></div>
+        </div>
+        <div class="tab-pane fade" id="sw-subpane-msi" role="tabpanel">
+          <div id="sw-msi-embed-container"></div>
+        </div>
+        <div class="tab-pane fade" id="sw-subpane-store" role="tabpanel">
+          <div id="sw-store-embed-container"></div>
+        </div>
+        <div class="tab-pane fade" id="sw-subpane-ninite" role="tabpanel">
+          <div id="sw-ninite-embed-container"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Subpane 3: Спящие программы и Сироты (Dormant & Orphans) -->
+    <div class="tab-pane fade" id="subpane-sw-dormant" role="tabpanel" data-panel-id="software_monitor-dormant">
+      <!-- Верхняя карточка управления и запуска сканирования -->
+      <div class="card bg-dark text-white border-secondary mb-3 shadow-sm" id="panel-software-scanner-summary" data-panel-id="panel-software-scanner-summary">
+        <div class="card-body p-3">
+          <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+            <div class="d-flex align-items-center gap-2">
+              <span class="fs-4">🕵️</span>
+              <div>
+                <h5 class="mb-0 fw-bold">Глубокий сканер ПО и спящих программ</h5>
+                <div class="text-muted small">Инвентаризация реестра, каталогов установки, служб, задач, UserAssist и Prefetch</div>
+              </div>
+            </div>
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+              <select class="form-select form-select-sm bg-dark text-white border-secondary" id="sw-scan-mode-select" data-term="sw-scan-modes" data-ai-tooltip="true" data-placement="top" style="width: auto;">
+                <option value="quick">Быстрый опрос (Quick)</option>
+                <option value="deep" selected>Глубокое сканирование (Deep)</option>
+                <option value="forensic">Форензика + Артефакты (Forensic)</option>
+                <option value="orphans">Поиск сирот и остатков (Orphans)</option>
+              </select>
+              <span class="badge rounded-pill bg-success-subtle text-success border border-success px-3 py-2" id="sw-scanner-status-badge">
+                ● Готов к запуску
+              </span>
+              <button class="btn btn-sm btn-primary d-flex align-items-center gap-1 shadow-sm px-3" id="sw-btn-trigger-scan" data-term="sw-scan-trigger" data-ai-tooltip="true" data-placement="top">
+                <i class="bi bi-play-fill fs-6"></i> Запустить сканирование
+              </button>
+            </div>
+          </div>
+
+          <!-- Сводные метрики сканирования -->
+          <div class="row g-2" id="panel-software-scanner-metrics" data-panel-id="panel-software-scanner-metrics">
+            <div class="col-6 col-md-2">
+              <div class="p-2 bg-secondary bg-opacity-10 border border-secondary rounded">
+                <div class="text-muted small text-uppercase" style="font-size: 0.68rem;">Найдено следов</div>
+                <div class="fs-5 fw-bold text-info" id="sw-metric-total-evidence">0</div>
+              </div>
+            </div>
+            <div class="col-6 col-md-2">
+              <div class="p-2 bg-secondary bg-opacity-10 border border-secondary rounded">
+                <div class="text-muted small text-uppercase" style="font-size: 0.68rem;">Программ в базе</div>
+                <div class="fs-5 fw-bold text-light" id="sw-metric-total-apps">0</div>
+              </div>
+            </div>
+            <div class="col-6 col-md-2">
+              <div class="p-2 bg-secondary bg-opacity-10 border border-secondary rounded">
+                <div class="text-muted small text-uppercase" style="font-size: 0.68rem;">🟢 Активных ПО</div>
+                <div class="fs-5 fw-bold text-success" id="sw-metric-active-apps">0</div>
+              </div>
+            </div>
+            <div class="col-6 col-md-2">
+              <div class="p-2 bg-secondary bg-opacity-10 border border-secondary rounded">
+                <div class="text-muted small text-uppercase" style="font-size: 0.68rem;">🟡 Спящих (Dormant)</div>
+                <div class="fs-5 fw-bold text-warning" id="sw-metric-dormant-apps">0</div>
+              </div>
+            </div>
+            <div class="col-6 col-md-2">
+              <div class="p-2 bg-secondary bg-opacity-10 border border-secondary rounded">
+                <div class="text-muted small text-uppercase" style="font-size: 0.68rem;">🔴 Остатков (Orphans)</div>
+                <div class="fs-5 fw-bold text-danger" id="sw-metric-orphan-items">0</div>
+              </div>
+            </div>
+            <div class="col-6 col-md-2">
+              <div class="p-2 bg-secondary bg-opacity-10 border border-secondary rounded">
+                <div class="text-muted small text-uppercase" style="font-size: 0.68rem;">⏱️ Время анализа</div>
+                <div class="fs-5 fw-bold text-light" id="sw-metric-duration">0 мс</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Фильтры и строка поиска -->
+      <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+        <div class="d-flex align-items-center gap-2 flex-grow-1" style="max-width: 450px;">
+          <div class="input-group input-group-sm">
+            <span class="input-group-text bg-dark text-secondary border-secondary"><i class="bi bi-search"></i></span>
+            <input class="form-control bg-dark text-white border-secondary" id="sw-scanner-search-input" placeholder="Поиск по названию программы или издателю..." type="text"/>
+          </div>
+        </div>
+        <div class="btn-group btn-group-sm" role="group" id="sw-status-filter-group">
+          <button class="btn btn-outline-secondary active" data-filter="all" type="button">Все</button>
+          <button class="btn btn-outline-warning" data-filter="dormant" data-term="sw-filter-dormant" data-ai-tooltip="true" data-placement="top" type="button">🟡 Спящие (&gt;90 дн.)</button>
+          <button class="btn btn-outline-success" data-filter="active" type="button">🟢 Активные</button>
+          <button class="btn btn-outline-danger" data-filter="orphan" data-term="sw-filter-orphan" data-ai-tooltip="true" data-placement="top" type="button">🔴 Сироты / Битые</button>
+          <button class="btn btn-outline-info" data-filter="store_app" data-term="sw-filter-store" data-ai-tooltip="true" data-placement="top" type="button">Store / AppX</button>
+        </div>
+      </div>
+
+      <!-- Таблица программного обеспечения -->
+      <div class="card bg-dark text-white border-secondary shadow-sm mb-3" id="panel-software-scanner-table" data-panel-id="panel-software-scanner-table">
+        <div class="card-header bg-dark border-secondary d-flex align-items-center justify-content-between py-2 px-3">
+          <span class="fw-semibold small text-secondary">
+            <i class="bi bi-table me-1"></i> Реестр программного обеспечения и история активности
+          </span>
+          <span class="badge bg-secondary" id="sw-table-count-badge">0 записей</span>
+        </div>
+        <div class="table-responsive" style="max-height: 520px; overflow-y: auto;">
+          <table class="table table-dark table-hover mb-0 align-middle small">
+            <thead class="table-dark text-secondary sticky-top border-secondary" style="z-index: 2;">
+              <tr>
+                <th style="width: 28%;">Программа / Исполняемый файл</th>
+                <th style="width: 16%;">Издатель / Версия</th>
+                <th style="width: 12%;">Статус</th>
+                <th style="width: 16%;">Последний запуск</th>
+                <th style="width: 10%;">Запусков</th>
+                <th style="width: 18%; text-align: right;">Действия / Деинсталляция</th>
+              </tr>
+            </thead>
+            <tbody id="sw-table-body">
+              <tr>
+                <td class="text-center py-4 text-muted" colspan="6">
+                  Нажмите кнопку «Запустить сканирование» для обхода следов ПО.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Блок обнаруженных сирот и остатков -->
+      <div class="card bg-dark text-white border-danger mb-3 shadow-sm" id="panel-software-scanner-orphans" data-panel-id="panel-software-scanner-orphans" style="display: none;">
+        <div class="card-header bg-danger bg-opacity-10 border-danger d-flex align-items-center justify-content-between py-2 px-3">
+          <span class="fw-semibold small text-danger">
+            <i class="bi bi-exclamation-triangle-fill me-1"></i> Обнаруженные сироты (битые службы, задачи и удаленные папки)
+          </span>
+          <span class="badge bg-danger text-white" id="sw-orphans-count-badge">0</span>
+        </div>
+        <div class="table-responsive" style="max-height: 250px; overflow-y: auto;">
+          <table class="table table-dark table-hover mb-0 align-middle small">
+            <thead class="table-dark text-secondary sticky-top border-secondary">
+              <tr>
+                <th style="width: 20%;">Источник</th>
+                <th style="width: 40%;">Путь / Целевой файл</th>
+                <th style="width: 40%;">Причина обнаружения</th>
+              </tr>
+            </thead>
+            <tbody id="sw-orphans-table-body">
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Subpane: Автозапуск программ (Startup Auditor) -->
+    <div class="tab-pane fade" id="subpane-sw-startup" role="tabpanel" data-panel-id="software_monitor-startup_auditor">
+      <div id="sw-startup-embed-container"></div>
+    </div>
+
+    <!-- Subpane 4: ИИ-Аудит прозрачности и рисков ПО -->
+    <div class="tab-pane fade" id="subpane-sw-transparency" role="tabpanel" data-panel-id="software_monitor-transparency_audit">
+      <div id="sw-transparency-embed-container"></div>
+    </div>
+
+    <!-- Subpane 5: Ресурсоемкие программы (Heavy Resources) (01_FRONTEND.md) -->
+    <div class="tab-pane fade" id="subpane-sw-heavy" role="tabpanel" data-panel-id="software_monitor-heavy_resources">
+      <div class="card bg-dark text-white border-secondary mb-3 shadow-sm">
+        <div class="card-header bg-dark border-secondary d-flex align-items-center justify-content-between py-2 px-3">
+          <div class="d-flex align-items-center gap-2">
+            <span class="text-warning">⚡</span>
+            <span class="fw-semibold small">Процессы с высокой утилизацией процессора, памяти и дискового I/O</span>
+          </div>
+          <button class="btn btn-sm btn-outline-info d-flex align-items-center gap-1" id="sw-btn-refresh-heavy" data-term="sw-refresh-heavy" data-ai-tooltip="true" data-placement="top">
+            <i class="bi bi-arrow-clockwise"></i> Обновить
+          </button>
+        </div>
+        <div class="table-responsive" style="max-height: 520px; overflow-y: auto;">
+          <table class="table table-dark table-hover mb-0 align-middle small" id="sw-heavy-table">
+            <thead class="table-dark text-secondary sticky-top border-secondary">
+              <tr>
+                <th style="width: 10%;">PID</th>
+                <th style="width: 30%;">Имя процесса</th>
+                <th style="width: 20%;">Нагрузка CPU</th>
+                <th style="width: 20%;">Память (RAM)</th>
+                <th style="width: 20%;">Дисковые операции</th>
+              </tr>
+            </thead>
+            <tbody id="sw-heavy-table-body">
+              <tr>
+                <td class="text-center py-4 text-muted" colspan="5">
+                  Загрузка ресурсоемких процессов из кэша IndexedDB...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Subpane 6: Конфигурации и сокеты (Sockets & Ports) (01_FRONTEND.md) -->
+    <div class="tab-pane fade" id="subpane-sw-sockets" role="tabpanel" data-panel-id="software_monitor-sockets_config">
+      <div class="card bg-dark text-white border-secondary mb-3 shadow-sm">
+        <div class="card-header bg-dark border-secondary d-flex align-items-center justify-content-between py-2 px-3">
+          <div class="d-flex align-items-center gap-2">
+            <span class="text-info">🌐</span>
+            <span class="fw-semibold small">Сетевые сокеты, открытые порты и параметры запуска ПО</span>
+          </div>
+          <button class="btn btn-sm btn-outline-info d-flex align-items-center gap-1" id="sw-btn-refresh-sockets" data-term="sw-refresh-sockets" data-ai-tooltip="true" data-placement="top">
+            <i class="bi bi-arrow-clockwise"></i> Обновить
+          </button>
+        </div>
+        <div class="table-responsive" style="max-height: 520px; overflow-y: auto;">
+          <table class="table table-dark table-hover mb-0 align-middle small" id="sw-sockets-table">
+            <thead class="table-dark text-secondary sticky-top border-secondary">
+              <tr>
+                <th style="width: 12%;">Протокол</th>
+                <th style="width: 22%;">Локальный адрес / Порт</th>
+                <th style="width: 20%;">Удаленный узел</th>
+                <th style="width: 10%;">PID</th>
+                <th style="width: 36%;">Процесс и командная строка</th>
+              </tr>
+            </thead>
+            <tbody id="sw-sockets-table-body">
+              <tr>
+                <td class="text-center py-4 text-muted" colspan="5">
+                  Загрузка сетевых сокетов из кэша IndexedDB...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Модальное окно просмотра всех свидетельств программы -->
+<div aria-hidden="true" class="modal fade" id="sw-evidence-modal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content bg-dark text-white border-secondary">
+      <div class="modal-header border-secondary">
+        <h6 class="modal-title fw-bold" id="sw-evidence-modal-title">Свидетельства и следы программы</h6>
+        <button aria-label="Close" class="btn-close btn-close-white" data-bs-dismiss="modal" type="button"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3" id="sw-evidence-modal-summary"></div>
+        <h6 class="text-secondary small fw-bold text-uppercase mb-2">Обнаруженные компоненты и артефакты:</h6>
+        <div class="list-group list-group-flush border border-secondary rounded" id="sw-evidence-modal-list"></div>
+      </div>
+    </div>
+  </div>
+</div>
+

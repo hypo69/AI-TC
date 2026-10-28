@@ -1,0 +1,7 @@
+{
+  "entries": [
+    {"path": "system-plugins/gdrive_sync"},
+    {"path": "system-plugins/application_log_analyzer"},
+    {"path": "system-plugins/google_oauth"}
+  ]
+}

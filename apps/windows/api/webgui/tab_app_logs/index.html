@@ -1,0 +1,561 @@
+<!--
+=============================================================================
+Process Name: Windows Web Interface - App Logs Intelligence Tab
+=============================================================================
+Description:
+  Клиентский веб-интерфейс комплексного анализа, аудита, поиска и потокового
+  мониторинга внутренних журналов программы AI-Windows-Admin строго из
+  каталога %APPDATA%\AI-Windows-Admin\logs (log.json, info.log, errors.log, fastapi.log и др.).
+  Включает глубокую интеграцию с AIModalDialog, динамический Timeline график,
+  кластеризацию инцидентов, экспорт (CSV/JSON/Markdown) и живой терминал.
+  Полная поддержка темной, светлой (NightView), кирпичной и терминальной тем через CSS-переменные.
+
+Usage Examples:
+  Web Route:
+    /html/tab_app_logs/index.html
+    /windows/api/webgui/tab_app_logs/index.html
+
+  Tab Frame Integration:
+    <div id="tab-app-logs" class="tab-pane fade"></div>
+
+File: index.html
+Project: ai-windows-admin
+Package: windows/api/webgui/tab_app_logs
+Author: hypo69
+Copyright: © 2026 hypo69
+Updated: 2026-10-20 10:55:00
+=============================================================================
+-->
+<style>
+  .app-logs-container {
+    color: var(--text-color, #18181b);
+    padding: 0.25rem 0.5rem;
+  }
+  .apl-compact-header {
+    background: var(--surface-1, #f6f3ec);
+    border: 1px solid var(--border-color, #cfc6b8);
+    border-radius: var(--radius-md, 8px);
+    padding: 0.55rem 0.85rem;
+    margin-bottom: 0.5rem;
+    color: var(--text-color, #18181b);
+  }
+  .apl-metric-pill {
+    background: var(--surface-2, #eee9e0);
+    border: 1px solid var(--border-color, #cfc6b8);
+    border-radius: 6px;
+    padding: 0.25rem 0.55rem;
+    font-size: 0.76rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    color: var(--text-color, #18181b);
+  }
+  .apl-panel {
+    background: var(--surface-1, #f6f3ec) !important;
+    border: 1px solid var(--border-color, #cfc6b8) !important;
+    border-radius: 8px;
+    overflow: hidden;
+    color: var(--text-color, #18181b);
+  }
+  .apl-panel-header {
+    background: var(--surface-2, #eee9e0) !important;
+    border-bottom: 1px solid var(--border-color, #cfc6b8) !important;
+    padding: 0.55rem 0.9rem;
+    font-weight: 600;
+    font-size: 0.84rem;
+    color: var(--nav-active, #1d4ed8);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .apl-table {
+    width: 100%;
+    margin-bottom: 0;
+    color: var(--text-color, #18181b);
+    font-size: 0.8rem;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+  .apl-table th {
+    background: var(--surface-2, #eee9e0);
+    color: var(--text-muted, #3f3f46);
+    border-bottom: 1.5px solid var(--border-color, #cfc6b8);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.7rem;
+    letter-spacing: 0.04em;
+    padding: 0.5rem 0.65rem;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+  }
+  .apl-table td {
+    border-bottom: 1px solid var(--border-subtle, rgba(51, 65, 85, 0.15));
+    padding: 0.5rem 0.65rem;
+    vertical-align: top;
+    color: var(--text-color, #18181b);
+  }
+  .apl-table tbody tr:hover td {
+    background: var(--nav-hover-bg, rgba(56, 189, 248, 0.08));
+    cursor: pointer;
+  }
+  .badge-apl-crit { background: #dc2626 !important; color: #fff !important; }
+  .badge-apl-err { background: #ef4444 !important; color: #fff !important; }
+  .badge-apl-warn { background: #f59e0b !important; color: #000 !important; }
+  .badge-apl-inf { background: #0284c7 !important; color: #fff !important; }
+  .badge-apl-deb { background: var(--surface-2, #64748b) !important; color: var(--text-muted, #3f3f46) !important; border: 1px solid var(--border-color, #cfc6b8) !important; }
+
+  .apl-search-input, .apl-select {
+    background: var(--surface-1, #f6f3ec) !important;
+    border: 1px solid var(--border-color, #cfc6b8) !important;
+    color: var(--text-color, #18181b) !important;
+  }
+  .apl-search-input:focus, .apl-select:focus {
+    border-color: var(--nav-active, #1d4ed8) !important;
+    box-shadow: 0 0 0 0.2rem rgba(29, 78, 216, 0.15) !important;
+  }
+  .apl-input-addon {
+    background: var(--surface-2, #eee9e0) !important;
+    border: 1px solid var(--border-color, #cfc6b8) !important;
+    color: var(--text-muted, #3f3f46) !important;
+  }
+  .apl-card {
+    background: var(--surface-2, #eee9e0) !important;
+    border: 1px solid var(--border-color, #cfc6b8) !important;
+    color: var(--text-color, #18181b) !important;
+    border-radius: 6px;
+  }
+  .apl-term {
+    background: var(--surface-2, #eee9e0);
+    color: var(--text-color, #18181b);
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace);
+    font-size: 0.78rem;
+    border: 1px solid var(--border-color, #cfc6b8);
+    border-radius: 6px;
+    padding: 0.75rem;
+    min-height: 480px;
+    max-height: 600px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+  .apl-comp-badge {
+    background: var(--surface-2, #eee9e0);
+    border: 1px solid var(--border-color, #cfc6b8);
+    color: var(--nav-active, #1d4ed8);
+  }
+  .apl-file-badge {
+    cursor: pointer;
+    transition: all 0.15s ease;
+    background: var(--surface-2, #eee9e0);
+    border: 1px solid var(--border-color, #cfc6b8);
+    color: var(--text-color, #18181b);
+    display: inline-flex;
+    align-items: center;
+    user-select: none;
+  }
+  .apl-file-badge:hover, .apl-file-badge.active {
+    background-color: var(--nav-active, #1d4ed8) !important;
+    color: #fff !important;
+    border-color: var(--nav-active, #1d4ed8) !important;
+  }
+  .apl-file-badge.has-error {
+    border-color: #ef4444 !important;
+  }
+  .apl-badge-clear-btn {
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 0.15s ease, transform 0.15s ease, background-color 0.15s ease;
+    padding: 1px 4px;
+    margin-left: 4px;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #ef4444 !important;
+  }
+  .apl-badge-clear-btn:hover {
+    opacity: 1;
+    transform: scale(1.15);
+    background-color: rgba(239, 68, 68, 0.2) !important;
+  }
+  .apl-file-badge.active .apl-badge-clear-btn {
+    color: #fecaca !important;
+  }
+  .apl-file-badge.active .apl-badge-clear-btn:hover {
+    color: #fff !important;
+    background-color: rgba(239, 68, 68, 0.5) !important;
+  }
+  .apl-quick-preset-btn {
+    border-radius: 20px;
+    font-size: 0.74rem;
+    padding: 0.2rem 0.6rem;
+    border: 1px solid var(--border-color, #cfc6b8);
+    background: var(--surface-2, #eee9e0);
+    color: var(--text-color, #18181b);
+    transition: all 0.15s ease;
+  }
+  .apl-quick-preset-btn:hover, .apl-quick-preset-btn.active {
+    background: var(--nav-active, #1d4ed8);
+    color: #fff;
+    border-color: var(--nav-active, #1d4ed8);
+  }
+  .apl-nav-pills .nav-link {
+    color: var(--text-muted, #3f3f46);
+    font-size: 0.8rem;
+    border-radius: 20px;
+    padding: 0.25rem 0.75rem;
+    transition: all 0.15s ease;
+  }
+  .apl-nav-pills .nav-link:hover {
+    color: var(--nav-active, #1d4ed8);
+    background: var(--nav-hover-bg, rgba(0,0,0,0.05));
+  }
+  .apl-nav-pills .nav-link.active {
+    color: #fff !important;
+    background: var(--nav-active, #1d4ed8) !important;
+    font-weight: 600;
+  }
+  .apl-timeline-bar-item {
+    transition: transform 0.1s ease, filter 0.1s ease;
+    cursor: pointer;
+  }
+  .apl-timeline-bar-item:hover {
+    transform: scaleY(1.05);
+    filter: brightness(1.2);
+  }
+</style>
+
+<div class="app-logs-container">
+  <!-- Заголовок вкладки -->
+  <div class="tab-header d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+    <div class="d-flex align-items-center gap-2">
+      <span class="tab-header-icon fs-4 text-warning">📋</span>
+      <div>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+          <h3 class="tab-header-title panel-header mb-0">Журналы приложений и сервисов</h3>
+          
+        </div>
+        <small class="tab-header-subtitle text-secondary">Потоковый просмотр логов компонентов системы, фильтрация по уровню критичности и AI-анализ сбоев</small>
+      </div>
+    </div>
+    
+  </div>
+
+  <!-- Top Header Bar with Metrics & Actions -->
+  <div class="apl-compact-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <!-- Title & Metric Pills -->
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+      <div class="d-flex align-items-center gap-1.5 me-1">
+        <span class="fs-5">📑</span>
+        <span class="fw-bold text-body small">Внутренние логи программы (%APPDATA%\AI-Windows-Admin\logs)</span>
+      </div>
+
+      <!-- Quick Metrics Pills -->
+      <div class="apl-metric-pill" title="Текущий активный файл логов">
+        <span class="text-muted small"><i class="bi bi-file-earmark-code text-info me-1"></i>Файл:</span>
+        <span class="fw-bold text-primary font-monospace text-truncate" id="apl-stat-filename" style="max-width: 140px;">log.json</span>
+      </div>
+      <div class="apl-metric-pill" title="Размер активного файла">
+        <span class="text-muted small"><i class="bi bi-hdd me-1"></i>Размер:</span>
+        <span class="fw-bold text-info font-monospace" id="apl-stat-size">0 KB</span>
+      </div>
+      <div class="apl-metric-pill" title="Записей загружено в таблицу">
+        <span class="text-muted small"><i class="bi bi-list-ol me-1"></i>Записей:</span>
+        <span class="fw-bold text-body font-monospace" id="apl-stat-loaded">0</span>
+      </div>
+      <div class="apl-metric-pill" title="Ошибки (ERROR / CRITICAL)">
+        <span class="text-muted small"><i class="bi bi-exclamation-octagon-fill text-danger me-1"></i>Ошибки:</span>
+        <span class="fw-bold text-danger font-monospace" id="apl-stat-errors">0</span>
+      </div>
+      <div class="apl-metric-pill" title="Предупреждения (WARNING)">
+        <span class="text-muted small"><i class="bi bi-exclamation-triangle-fill text-warning me-1"></i>Предупреждения:</span>
+        <span class="fw-bold text-warning font-monospace" id="apl-stat-warnings">0</span>
+      </div>
+    </div>
+
+    <!-- Actions Toolbar -->
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+      <div class="form-check form-switch mb-0 d-inline-flex align-items-center" style="font-size: 0.78rem;">
+        <input class="form-check-input me-1" id="apl-live-switch" role="switch" style="cursor: pointer;" type="checkbox"/>
+        <label class="form-check-label text-muted small user-select-none" for="apl-live-switch" title="Авто-обновление каждые 3 секунды">Live Stream</label>
+      </div>
+      <button class="btn btn-sm btn-primary rounded-pill px-2.5 py-1 small d-flex align-items-center gap-1" id="btn-apl-refresh" style="font-size: 0.78rem;">
+        <i class="bi bi-arrow-clockwise"></i> <span>Обновить</span>
+      </button>
+      <button class="btn btn-sm btn-outline-warning rounded-pill px-2.5 py-1 small d-flex align-items-center gap-1" id="btn-apl-diagnose" style="font-size: 0.78rem;">
+        <i class="bi bi-robot"></i> <span>AI Диагностика</span>
+      </button>
+
+      <button class="btn btn-sm btn-outline-danger rounded-pill px-2.5 py-1 small d-flex align-items-center gap-1" id="btn-apl-clear-all" style="font-size: 0.78rem;" title="Очистить все файлы логов программы">
+        <i class="bi bi-trash3-fill"></i> <span>Очистить все логи</span>
+      </button>
+
+      <div class="dropdown">
+        <button class="btn btn-sm btn-outline-secondary dropdown-toggle rounded-pill px-2.5 py-1 small d-flex align-items-center gap-1" data-bs-toggle="dropdown" style="font-size: 0.78rem;" type="button">
+          <i class="bi bi-download"></i> <span>Экспорт</span>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end shadow border border-secondary-subtle" style="font-size: 0.8rem;">
+          <li><a class="dropdown-item" href="#" id="btn-apl-export-csv"><i class="bi bi-file-earmark-spreadsheet me-2 text-success"></i>Экспорт в CSV</a></li>
+          <li><a class="dropdown-item" href="#" id="btn-apl-export-json"><i class="bi bi-file-earmark-code me-2 text-info"></i>Экспорт в JSON</a></li>
+          <li><a class="dropdown-item" href="#" id="btn-apl-export-md"><i class="bi bi-file-earmark-text me-2 text-warning"></i>Отчет в Markdown (.md)</a></li>
+          <li><hr class="dropdown-divider"/></li>
+          <li><a class="dropdown-item" href="#" id="btn-apl-download-raw"><i class="bi bi-file-arrow-down me-2 text-primary"></i>Скачать сырой файл</a></li>
+          <li><hr class="dropdown-divider"/></li>
+          <li><a class="dropdown-item text-danger" href="#" id="btn-apl-clear"><i class="bi bi-trash3 me-2"></i>Очистить активный лог-файл</a></li>
+          <li><a class="dropdown-item text-danger fw-bold" href="#" id="btn-apl-menu-clear-all"><i class="bi bi-trash3-fill me-2"></i>Очистить ВСЕ логи программы</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Available Log Files Selector Bar with Error Badges & Clear Buttons -->
+  <div class="apl-panel mb-2 p-2">
+    <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap" id="apl-files-bar">
+      <div class="d-flex align-items-center gap-2 flex-wrap">
+        <span class="text-muted small fw-semibold"><i class="bi bi-folder2-open me-1 text-info"></i>Файлы логов:</span>
+        <div class="d-flex align-items-center gap-1.5 flex-wrap" id="apl-files-badges-container">
+          <div class="spinner-border spinner-border-sm text-info" role="status"></div>
+        </div>
+      </div>
+      <button class="btn btn-outline-danger btn-sm rounded-pill py-0.5 px-2 ms-auto small d-flex align-items-center gap-1" id="btn-apl-clear-all-inline" style="font-size: 0.74rem;" title="Очистить все файлы логов">
+        <i class="bi bi-trash3"></i> <span>Очистить все логи</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Quick Filter Presets Bar -->
+  <div class="apl-panel mb-2 p-2">
+    <div class="d-flex align-items-center gap-1.5 flex-wrap">
+      <span class="text-muted small fw-semibold me-1"><i class="bi bi-funnel me-1 text-warning"></i>Быстрые пресеты:</span>
+      <button type="button" class="btn apl-quick-preset-btn active" data-preset="all">Все записи</button>
+      <button type="button" class="btn apl-quick-preset-btn" data-preset="errors">🔥 Только ошибки</button>
+      <button type="button" class="btn apl-quick-preset-btn" data-preset="warnings_errors">⚠️ Предупреждения и ошибки</button>
+      <button type="button" class="btn apl-quick-preset-btn" data-preset="windows">🌐 Windows API / TC</button>
+      <button type="button" class="btn apl-quick-preset-btn" data-preset="ai">🤖 AI & LLM</button>
+      <button type="button" class="btn apl-quick-preset-btn" data-preset="fastapi">⚙️ FastAPI & Core</button>
+      <button type="button" class="btn apl-quick-preset-btn" data-preset="hour">⏱️ За 1 час</button>
+      <button type="button" class="btn apl-quick-preset-btn" data-preset="day">📅 За 24 часа</button>
+    </div>
+  </div>
+
+  <!-- Filter & View Mode Navigation -->
+  <div class="apl-panel mb-2 p-2">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-1 mb-2 pb-1 border-bottom border-secondary-subtle">
+      <!-- Mode Tabs -->
+      <ul class="nav nav-pills apl-nav-pills gap-1" id="apl-mode-tabs">
+        <li class="nav-item">
+          <button class="nav-link active" data-mode="table">
+            <i class="bi bi-table me-1"></i> Таблица записей
+          </button>
+        </li>
+        <li class="nav-item">
+          <button class="nav-link" data-mode="audit">
+            <i class="bi bi-shield-check me-1 text-warning"></i> Аудит и AI Анализ
+          </button>
+        </li>
+        <li class="nav-item">
+          <button class="nav-link" data-mode="timeline">
+            <i class="bi bi-bar-chart-line me-1 text-info"></i> Аналитика и График
+          </button>
+        </li>
+        <li class="nav-item">
+          <button class="nav-link" data-mode="tail">
+            <i class="bi bi-terminal me-1 text-success"></i> Live Tail Terminal
+          </button>
+        </li>
+        <li class="nav-item">
+          <button class="nav-link" data-mode="raw">
+            <i class="bi bi-file-text me-1"></i> Сырой файл
+          </button>
+        </li>
+      </ul>
+      <!-- Active File Path Indicator -->
+      <div class="small text-muted font-monospace text-truncate d-none d-md-block" id="apl-full-path-label" style="max-width: 400px;">
+        %APPDATA%\AI-Windows-Admin\logs
+      </div>
+    </div>
+
+    <!-- Filter Inputs Grid -->
+    <div class="row g-1.5 align-items-center">
+      <div class="col-lg-4 col-md-4">
+        <div class="input-group input-group-sm">
+          <span class="input-group-text apl-input-addon py-0 px-2"><i class="bi bi-search" style="font-size: 0.75rem;"></i></span>
+          <input class="form-control form-control-sm apl-search-input py-1" id="apl-search-input" placeholder="Поиск по тексту сообщения, стеку, компоненту..." style="font-size: 0.8rem;" type="text"/>
+        </div>
+      </div>
+      <div class="col-lg-2 col-md-2 col-6">
+        <select class="form-select form-select-sm apl-select py-1" id="apl-level-select" style="font-size: 0.8rem;">
+          <option value="">Все уровни</option>
+          <option value="ERRORS">⚠️ Только ошибки (ERROR/CRITICAL)</option>
+          <option value="WARNINGS_ERRORS">⚠️ Ошибки + Предупреждения</option>
+          <option value="CRITICAL">Critical</option>
+          <option value="ERROR">Error</option>
+          <option value="WARNING">Warning</option>
+          <option value="INFO">Info</option>
+          <option value="DEBUG">Debug</option>
+        </select>
+      </div>
+      <div class="col-lg-2 col-md-2 col-6">
+        <select class="form-select form-select-sm apl-select py-1" id="apl-component-select" style="font-size: 0.8rem;">
+          <option value="">Все модули/компоненты</option>
+        </select>
+      </div>
+      <div class="col-lg-1.5 col-md-2 col-6">
+        <select class="form-select form-select-sm apl-select py-1" id="apl-time-preset-select" style="font-size: 0.8rem;">
+          <option value="">Всё время</option>
+          <option value="15m">15 минут</option>
+          <option value="1h">1 час</option>
+          <option value="6h">6 часов</option>
+          <option value="24h">24 часа</option>
+        </select>
+      </div>
+      <div class="col-lg-1.5 col-md-1 col-6">
+        <select class="form-select form-select-sm apl-select py-1" id="apl-limit-select" style="font-size: 0.8rem;">
+          <option value="100">100 шт</option>
+          <option selected="" value="200">200 шт</option>
+          <option value="500">500 шт</option>
+          <option value="1000">1000 шт</option>
+        </select>
+      </div>
+      <div class="col-lg-1 col-md-1 col-12 text-end">
+        <button class="btn btn-sm btn-outline-secondary w-100 rounded py-1" id="btn-apl-reset-filters" style="font-size: 0.78rem;">
+          <i class="bi bi-x-circle me-1"></i> Сброс
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main View Container -->
+  <div class="apl-panel p-2">
+    <!-- 1. Table View -->
+    <div id="apl-view-table">
+      <div class="table-responsive" style="max-height: 560px; overflow-y: auto;">
+        <table class="table apl-table">
+          <thead>
+            <tr>
+              <th style="width: 145px;">Время</th>
+              <th style="width: 85px;">Уровень</th>
+              <th style="width: 130px;">Компонент</th>
+              <th>Сообщение / Данные</th>
+            </tr>
+          </thead>
+          <tbody id="apl-table-body">
+            <tr>
+              <td class="text-center text-muted py-4" colspan="4">
+                <div class="spinner-border spinner-border-sm text-info me-2" role="status"></div>
+                Загрузка внутренних логов приложения...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 2. Audit & AI Diagnostics View -->
+    <div class="d-none p-2" id="apl-view-audit" style="max-height: 560px; overflow-y: auto;">
+      <!-- Health Score Card -->
+      <div class="row g-2 mb-3">
+        <div class="col-md-4">
+          <div class="card apl-card p-3 text-center" id="panel-app-logs-health">
+            <span class="text-muted small text-uppercase fw-semibold">Индекс стабильности (Health Score)</span>
+            <div class="display-6 fw-bold my-1" id="apl-audit-health-score">--%</div>
+            <div class="progress" style="height: 6px;">
+              <div class="progress-bar bg-success" id="apl-audit-health-bar" style="width: 0%;"></div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-8">
+          <div class="card apl-card p-3 h-100 d-flex flex-column justify-content-center" id="panel-app-logs-summary">
+            <span class="text-info fw-bold small mb-1"><i class="bi bi-info-circle me-1"></i>Сводка инцидентов и первопричин</span>
+            <div class="small text-body" id="apl-audit-summary-text">Нажмите «AI Диагностика» для запуска интеллектуального анализа сбоев.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI Recommendations -->
+      <div class="mb-3">
+        <h6 class="text-warning fw-bold small text-uppercase mb-2"><i class="bi bi-lightbulb me-1"></i>Рекомендации и устранение проблем</h6>
+        <div id="apl-audit-recommendations-list">
+          <div class="text-muted small p-2">Нет активных рекомендаций.</div>
+        </div>
+      </div>
+
+      <!-- Error Clusters Table -->
+      <div>
+        <h6 class="text-info fw-bold small text-uppercase mb-2"><i class="bi bi-collection me-1"></i>Кластеры повторяющихся инцидентов</h6>
+        <div class="table-responsive">
+          <table class="table apl-table">
+            <thead>
+              <tr>
+                <th style="width: 80px;">Кол-во</th>
+                <th style="width: 90px;">Уровень</th>
+                <th style="width: 150px;">Посл. фиксация</th>
+                <th>Шаблон инцидента / Пример ошибки</th>
+              </tr>
+            </thead>
+            <tbody id="apl-audit-clusters-body">
+              <tr>
+                <td class="text-muted small text-center py-3" colspan="4">Кластеры пока не сформированы.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. Timeline & Analytics View -->
+    <div class="d-none p-3" id="apl-view-timeline" style="max-height: 560px; overflow-y: auto;">
+      <h6 class="text-info fw-bold small text-uppercase mb-2"><i class="bi bi-graph-up me-1"></i>Распределение логов во времени (Timeline — нажмите на столбец для фильтрации)</h6>
+      <div class="card apl-card p-3 mb-3" id="panel-app-logs-timeline">
+        <div class="d-flex align-items-end gap-1.5" id="apl-timeline-bars" style="height: 160px; overflow-x: auto; padding-bottom: 20px;">
+          <!-- Dynamic bars rendered here -->
+        </div>
+        <div class="d-flex justify-content-between small text-muted mt-2 border-top border-secondary-subtle pt-1">
+          <span><span class="badge bg-danger me-1">■</span>Ошибки (Critical/Error)</span>
+          <span><span class="badge bg-warning text-dark me-1">■</span>Предупреждения (Warning)</span>
+          <span><span class="badge bg-primary me-1">■</span>Информационные события (Info/Debug)</span>
+        </div>
+      </div>
+
+      <!-- Top Components Breakdown -->
+      <h6 class="text-info fw-bold small text-uppercase mb-2"><i class="bi bi-diagram-3 me-1"></i>Топ активных модулей приложения</h6>
+      <div class="row g-2" id="apl-top-components-container">
+        <!-- Injected dynamically -->
+      </div>
+    </div>
+
+    <!-- 4. Live Tail Terminal View -->
+    <div class="d-none p-1" id="apl-view-tail">
+      <div class="d-flex justify-content-between align-items-center mb-1 px-1 flex-wrap gap-2">
+        <span class="small text-muted"><i class="bi bi-terminal-fill me-1 text-success"></i>Поток последних строк в реальном времени:</span>
+        <div class="d-flex align-items-center gap-2">
+          <input class="form-control form-control-sm apl-search-input py-0 px-2" id="apl-tail-filter" placeholder="Фильтр потока..." style="font-size: 0.75rem; width: 140px;" type="text"/>
+          <div class="form-check form-check-inline small text-muted mb-0">
+            <input checked="" class="form-check-input" id="apl-tail-autoscroll" type="checkbox"/>
+            <label class="form-check-label" for="apl-tail-autoscroll">Авто-прокрутка</label>
+          </div>
+          <button class="btn btn-xs btn-outline-secondary py-0 px-2 small" id="btn-apl-clear-terminal">Очистить экран</button>
+        </div>
+      </div>
+      <div class="apl-term" id="apl-tail-terminal">Подключение к лог-потоку...</div>
+    </div>
+
+    <!-- 5. Raw File View -->
+    <div class="d-none p-1" id="apl-view-raw">
+      <div class="d-flex justify-content-between align-items-center mb-1 px-1">
+        <span class="small text-muted"><i class="bi bi-file-code me-1 text-info"></i>Просмотр файла целиком:</span>
+        <div class="d-flex align-items-center gap-1">
+          <button class="btn btn-xs btn-outline-info py-0 px-2 small" id="btn-apl-copy-raw">
+            <i class="bi bi-clipboard me-1"></i>Копировать всё
+          </button>
+          <button class="btn btn-xs btn-outline-danger py-0 px-2 small" id="btn-apl-clear-raw" title="Очистить данный файл лога">
+            <i class="bi bi-trash3 me-1"></i>Очистить файл
+          </button>
+        </div>
+      </div>
+      <pre class="apl-term" id="apl-raw-content" style="max-height: 560px;">Загрузка сырого содержимого файла...</pre>
+    </div>
+  </div>
+</div>
+

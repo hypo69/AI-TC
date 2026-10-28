@@ -10,12 +10,13 @@
 # Package: logger
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-27 23:32:00
 # =============================================================================
 
 """Пакет централизованного логирования AI-Windows-Admin."""
 
 from .logger import (
+    CONSOLE_LEVEL,
     Logger,
     logger,
     JsonFormatter,

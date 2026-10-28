@@ -11,7 +11,7 @@
 # Package: apps.windows.api.routers.tc
 # Author: hypo69
 # Copyright: c 2026 hypo69
-# Updated: 2026-10-12 06:20:00
+# Updated: 2026-10-22 14:40:00
 # =============================================================================
 
 from __future__ import annotations
@@ -53,7 +53,6 @@ def _find_tc_config_path() -> Optional[Path]:
 
     candidates = [
         __root__ / "apps" / "windows" / "config.json",
-        __root__ / "config" / "tc.json",
         __root__ / "config_tc.json",
         __root__ / "tc.json",
     ]
@@ -69,23 +68,23 @@ def _get_tc_default_instruction() -> str:
     Returns:
         str: Текст системной инструкции.
     """
-    tc_prompt_file = __root__ / "prompts" / "tc" / "system_instruction.md"
+    tc_prompt_file = __root__ / "apps" / "windows" / "prompts" / "tc" / "system_instruction.md"
     if tc_prompt_file.exists():
         try:
             content = tc_prompt_file.read_text(encoding="utf-8", errors="replace").strip()
             if content:
                 return content
         except Exception as e:
-            logger.debug(f"[router_tc] Ошибка чтения prompts/tc/system_instruction.md: {e}")
+            logger.debug(f"[router_tc] Ошибка чтения apps/windows/prompts/tc/system_instruction.md: {e}")
 
-    chat_prompt_file = __root__ / "prompts" / "chat" / "system_instruction.md"
+    chat_prompt_file = __root__ / "apps" / "windows" / "prompts" / "chat" / "system_instruction.md"
     if chat_prompt_file.exists():
         try:
             content = chat_prompt_file.read_text(encoding="utf-8", errors="replace").strip()
             if content:
                 return content
         except Exception as e:
-            logger.debug(f"[router_tc] Ошибка чтения prompts/chat/system_instruction.md: {e}")
+            logger.debug(f"[router_tc] Ошибка чтения apps/windows/prompts/chat/system_instruction.md: {e}")
 
     return "Ты — автономный сервисный инженер и диагност операционной системы Windows платформы AI Windows Admin Test Computer."
 

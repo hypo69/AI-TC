@@ -1,0 +1,23 @@
+{
+  "table_type": "app_log",
+  "name": "Аудит записей системных журналов и логов приложений",
+  "description": "Промпт для анализа логов приложений, трейсов ошибок, предупреждений и событий подсистем.",
+  "system_instruction": "Ты — ведущий инженер по надежности (SRE) и анализу прикладных логов Windows. Отвечай строго в формате чистого JSON на русском языке.",
+  "prompt_template": "Проведи детальный аудит записи журнала приложений:\n\nУровень / Компонент: {title}\nКонтекст / Временная метка: {subtitle}\nМетаданные записи:\n{metadata}\nТело записи / Трейс / Данные: {raw_data}\n\nВерни СТРОГО JSON со следующей схемой:\n{{\n  \"summary\": \"Анализ природы записи: суть ошибки, предупреждения или штатной операции\",\n  \"developer\": \"Компонент приложения / Подсистема\",\n  \"category\": \"Журнал приложений (Application Log)\",\n  \"security_verdict\": \"Оценка критичности: штатная работа, сбой связи, ошибка конфигурации или попытка несанкционированного доступа\",\n  \"performance_impact\": \"Влияние на работоспособность сервиса и доступность функций\",\n  \"recommendation\": \"Рекомендации разработчику и администратору по устранению корневой причины\",\n  \"action_steps\": [\"Рекомендованное действие 1\", \"Рекомендованное действие 2\"]\n}}",
+  "variables": [
+    "title",
+    "subtitle",
+    "metadata",
+    "raw_data"
+  ],
+  "is_customized": false,
+  "translations": {
+    "en": {
+      "name": "Application & System Logs Audit",
+      "description": "Prompt for analyzing application logs, stack traces, errors and warnings.",
+      "system_instruction": "You are a Senior Site Reliability Engineer (SRE) and log analysis expert. Respond strictly in pure JSON format.",
+      "prompt_template": "Conduct an expert audit of the application log entry:\n\nLevel / Component: {title}\nContext / Timestamp: {subtitle}\nMetadata:\n{metadata}\nLog Payload / Trace: {raw_data}\n\nReturn STRICTLY JSON with the following schema:\n{{\n  \"summary\": \"Nature of the entry: root cause of error, warning or normal lifecycle operation\",\n  \"developer\": \"Application Component / Subsystem\",\n  \"category\": \"Application Log\",\n  \"security_verdict\": \"Criticality evaluation: normal flow, connectivity glitch, config error or security violation\",\n  \"performance_impact\": \"Impact on service uptime, responsiveness and functional availability\",\n  \"recommendation\": \"Root-cause resolution recommendation for admins and developers\",\n  \"action_steps\": [\"Recommended Action 1\", \"Recommended Action 2\"]\n}}"
+    }
+  },
+  "questions_prompt": "Сформулируй ровно 3 уникальных, кратких вопроса системного администратора о данной записи журнала приложений (причина ошибки или предупреждения, затронутые службы, повторяемость сбоя, шаги локализации проблемы). Верни СТРОГО JSON-массив из 3 строк: [\"Вопрос 1\", \"Вопрос 2\", \"Вопрос 3\"]."
+}

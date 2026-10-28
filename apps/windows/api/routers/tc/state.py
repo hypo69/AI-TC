@@ -11,7 +11,7 @@
 # Package: apps.windows.api.routers.tc
 # Author: hypo69
 # Copyright: c 2026 hypo69
-# Updated: 2026-10-12 06:20:00
+# Updated: 2026-10-13 16:25:00
 # =============================================================================
 
 from __future__ import annotations
@@ -20,11 +20,11 @@ from typing import Optional
 
 from pydantic import BaseModel, Field
 
-from apps.windows.telemetry.analytics.diagnostic_engine import SystemDiagnosticEngine as SystemAIDiagnostician
+from apps.windows.analytics.diagnostic_engine import SystemDiagnosticEngine as SystemAIDiagnostician
 from apps.windows.telemetry import SystemCollector
 from apps.windows.telemetry.sqlite import TelemetryStorage
 from apps.windows.telemetry.sampling_controller import SamplingController
-from apps.windows.telemetry.win32_ffi.wevtapi import WevtAPI
+from apps.windows.sdk.win32_ffi.wevtapi import WevtAPI
 
 
 _collector: Optional[SystemCollector] = None

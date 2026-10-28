@@ -11,7 +11,7 @@
 # Package: apps.windows.api.routers.scenarios
 # Author: hypo69
 # Copyright: c 2026 hypo69
-# Updated: 2026-10-12 06:20:00
+# Updated: 2026-10-15 01:20:00
 # =============================================================================
 
 from __future__ import annotations
@@ -36,6 +36,8 @@ from .assistant import _get_dynamic_tool_engine
 from .assistant import _handle_scenario_chat
 from .assistant import _run_disk_benchmark_scenario
 from .catalog import AVAILABLE_SCENARIOS
+from .dag_orchestrator import dag_engine, DAGSessionState
+from .models import DAGConfirmRequest, DAGStartRequest
 from .models import ScenarioChatRequest
 from .models import ScenarioChatResponse
 from .models import ScenarioCreatedSkillInfo
@@ -333,5 +335,41 @@ def init_router() -> APIRouter:
         except Exception as ex:
             logger.error(f"Ошибка сохранения одобренного ответа TC: {ex}", exc_info=True)
             raise HTTPException(status_code=500, detail=str(ex))
+
+    @router.post("/dag/start", response_model=DAGSessionState)
+    async def start_dag_scenario(req: DAGStartRequest) -> DAGSessionState:
+        """Запускает автономный сценарий с графом выполнения (DAG) и поддержкой паузы."""
+        title = req.title or f"Сценарий: {req.scenario_id}"
+        state = dag_engine.start_scenario(
+            scenario_id=req.scenario_id,
+            title=title,
+            probe_desc=req.probe_desc or "Опрос телеметрии и поиск навыков в WikiLLM",
+            action_desc=req.action_desc or "Применение исправлений конфигурации хоста",
+            requires_confirmation=req.requires_confirmation,
+            confirmation_msg=req.confirmation_msg or f"Сценарий '{title}' требует подтверждения администратора.",
+            context_data=req.context_data or {},
+        )
+        return state
+
+    @router.get("/session/{session_id}", response_model=DAGSessionState)
+    async def get_dag_session(session_id: str) -> DAGSessionState:
+        """Возвращает снимок состояния сессии и графа DAG из Checkpointer."""
+        state = dag_engine.get_session(session_id)
+        if not state:
+            raise HTTPException(status_code=404, detail=f"Сессия '{session_id}' не найдена в Checkpointer.")
+        return state
+
+    @router.post("/session/{session_id}/confirm", response_model=DAGSessionState)
+    async def confirm_dag_session(session_id: str, req: DAGConfirmRequest) -> DAGSessionState:
+        """Обрабатывает ответ администратора ('approve' или 'reject') и возобновляет сценарий."""
+        state = dag_engine.confirm_scenario(session_id=session_id, action=req.action)
+        if not state:
+            raise HTTPException(status_code=404, detail=f"Сессия '{session_id}' не найдена.")
+        return state
+
+    @router.get("/sessions", response_model=List[DAGSessionState])
+    async def list_dag_sessions() -> List[DAGSessionState]:
+        """Возвращает список всех активных и сохраненных сессий сценариев."""
+        return dag_engine.checkpointer.list_checkpoints()
 
     return router

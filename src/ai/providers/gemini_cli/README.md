@@ -96,7 +96,7 @@ from pathlib import Path
 from src.ai.providers.gemini_cli import GeminiCliProvider
 
 provider = GeminiCliProvider()
-project_dir = Path(r"C:\Users\onela\AppData\Local\AI-Windows-Admin")
+project_dir = Path(r"C:\Users\onela\AppData\Local\AI-TC")
 
 response = provider.run_agent(
     prompt="Проанализируй структуру проекта и перечисли основные модули в src/ai",

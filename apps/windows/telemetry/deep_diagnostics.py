@@ -17,7 +17,7 @@
 # Package: apps.windows.telemetry
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-12 06:50:00
+# Updated: 2026-10-20 09:19:00
 # =============================================================================
 
 """Модуль глубокой аппаратной и системной диагностики, поведенческой форензики и анализа утечек.
@@ -98,13 +98,22 @@ class DeepDiagnosticsEngine:
     """Движок глубокой системной диагностики и форензики."""
 
     def __init__(self) -> None:
-        """Инициализация Win32 API интерфейсов."""
+        """Инициализация Win32 API интерфейсов и кэшей медленных реестровых опросов."""
         self._user32 = getattr(ctypes.windll, 'user32', None) if os.name == 'nt' else None
         self._kernel32 = getattr(ctypes.windll, 'kernel32', None) if os.name == 'nt' else None
         self._psapi = getattr(ctypes.windll, 'psapi', None) if os.name == 'nt' else None
+        self._cached_cam_mic: Tuple[List[Dict[str, Any]], List[Dict[str, Any]]] = ([], [])
+        self._last_cam_mic_time: float = 0.0
+        self._cached_userassist: List[Dict[str, Any]] = []
+        self._last_userassist_time: float = 0.0
+        self._pid_name_cache: Dict[int, str] = {}
 
     def collect_process_leaks(self, limit: int = 100) -> ProcessLeakDiagnosticsReport:
         """Собрать метрики скрытых утечек процессов (Handles, GDI, USER, Page Faults).
+
+        Оптимизировано: `num_handles` и `num_page_faults` берутся напрямую из `psutil.process_iter`
+        (один системный вызов `NtQuerySystemInformation`), а тяжелый `OpenProcess` + `GetGuiResources`
+        выполняется только для процессов-кандидатов (с числом дескрипторов >= 300 или RAM >= 100 МБ).
 
         Args:
             limit: Максимальное количество процессов в общем списке.
@@ -114,9 +123,22 @@ class DeepDiagnosticsEngine:
         """
         if not PSUTIL_AVAILABLE:
             return ProcessLeakDiagnosticsReport()
+        from apps.windows.telemetry.telemetry_config import get_telemetry_config_manager
+        th = get_telemetry_config_manager().get_thresholds_config()
+        cand_handles = int(th.get('leak_candidate_handles', 250))
+        cand_mem_mb = float(th.get('leak_candidate_memory_mb', 80.0))
+        warn_handles = int(th.get('leak_warning_handles', 1500))
+        crit_handles = int(th.get('leak_critical_handles', 4000))
+        warn_gdi = int(th.get('leak_warning_gdi', 800))
+        crit_gdi = int(th.get('leak_critical_gdi', 2000))
+        warn_user = int(th.get('leak_warning_user_objects', 500))
+        high_pf = int(th.get('leak_high_page_faults', 2000000))
+        high_mem_mb = float(th.get('leak_high_memory_mb', 2048.0))
+
         items: List[ProcessLeakItem] = []
         suspicious_count = 0
-        for proc in psutil.process_iter(['pid', 'name', 'status', 'num_threads', 'cpu_percent', 'memory_info']):
+        handle_attr = 'num_handles' if os.name == 'nt' else 'num_fds'
+        for proc in psutil.process_iter(['pid', 'name', 'status', 'num_threads', 'cpu_percent', 'memory_info', handle_attr]):
             try:
                 info = proc.info
                 pid = info.get('pid')
@@ -128,21 +150,24 @@ class DeepDiagnosticsEngine:
                 cpu_percent = info.get('cpu_percent') or 0.0
                 mem_info = info.get('memory_info')
                 memory_mb = round(mem_info.rss / (1024 * 1024), 2) if mem_info else 0.0
-                handles_count = 0
+                handles_count = int(info.get(handle_attr) or 0)
+                page_faults = int(getattr(mem_info, 'num_page_faults', 0) or 0) if mem_info else 0
+                peak_ws_mb = round(getattr(mem_info, 'peak_wset', mem_info.rss if mem_info else 0) / (1024 * 1024), 2) if mem_info else memory_mb
                 gdi_objects = 0
                 user_objects = 0
-                page_faults = 0
-                peak_ws_mb = memory_mb
-                if self._kernel32 and self._user32:
+
+                # Открываем дескриптор процесса для чтения GDI/USER объектов только если процесс нетривиален
+                if self._kernel32 and self._user32 and (handles_count >= cand_handles or memory_mb >= cand_mem_mb):
                     h_process = self._kernel32.OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, False, pid)
                     if h_process:
                         try:
-                            dw_handles = wintypes.DWORD()
-                            if self._kernel32.GetProcessHandleCount(h_process, ctypes.byref(dw_handles)):
-                                handles_count = int(dw_handles.value)
+                            if handles_count == 0:
+                                dw_handles = wintypes.DWORD()
+                                if self._kernel32.GetProcessHandleCount(h_process, ctypes.byref(dw_handles)):
+                                    handles_count = int(dw_handles.value)
                             gdi_objects = int(self._user32.GetGuiResources(h_process, GR_GDIOBJECTS))
                             user_objects = int(self._user32.GetGuiResources(h_process, GR_USEROBJECTS))
-                            if self._psapi:
+                            if page_faults == 0 and self._psapi:
                                 counters = PROCESS_MEMORY_COUNTERS_EX()
                                 counters.cb = ctypes.sizeof(PROCESS_MEMORY_COUNTERS_EX)
                                 if self._psapi.GetProcessMemoryInfo(h_process, ctypes.byref(counters), counters.cb):
@@ -150,34 +175,30 @@ class DeepDiagnosticsEngine:
                                     peak_ws_mb = round(counters.PeakWorkingSetSize / (1024 * 1024), 2)
                         finally:
                             self._kernel32.CloseHandle(h_process)
-                if handles_count == 0:
-                    try:
-                        handles_count = proc.num_handles() if hasattr(proc, 'num_handles') else 0
-                    except Exception:
-                        handles_count = 0
+
                 risk_reasons: List[str] = []
                 risk_score = 'normal'
-                if handles_count >= 4000:
+                if handles_count >= crit_handles:
                     risk_score = 'critical'
                     risk_reasons.append(f'Критическое число дескрипторов: {handles_count}')
-                elif handles_count >= 1500:
+                elif handles_count >= warn_handles:
                     if risk_score != 'critical':
                         risk_score = 'warning'
                     risk_reasons.append(f'Высокое число дескрипторов: {handles_count}')
-                if gdi_objects >= 2000:
+                if gdi_objects >= crit_gdi:
                     risk_score = 'critical'
                     risk_reasons.append(f'Угроза исчерпания GDI пула: {gdi_objects} (лимит 10 000)')
-                elif gdi_objects >= 800:
+                elif gdi_objects >= warn_gdi:
                     if risk_score != 'critical':
                         risk_score = 'warning'
                     risk_reasons.append(f'Повышенное использование GDI: {gdi_objects}')
-                if user_objects >= 500:
+                if user_objects >= warn_user:
                     if risk_score != 'critical':
                         risk_score = 'warning'
                     risk_reasons.append(f'Много USER объектов: {user_objects}')
-                if page_faults >= 2000000:
+                if page_faults >= high_pf:
                     risk_reasons.append(f'Высокая нагрузка на подкачку ({page_faults:,} Hard Faults)')
-                if memory_mb >= 2048:
+                if memory_mb >= high_mem_mb:
                     risk_reasons.append(f'Высокое потребление памяти: {memory_mb:.1f} MB')
                 if risk_score != 'normal':
                     suspicious_count += 1
@@ -216,10 +237,22 @@ class DeepDiagnosticsEngine:
             all_processes=sorted_all,
         )
 
-    def collect_forensics_activity(self) -> ForensicsActivityReport:
-        """Собрать данные активности пользователя, активного окна, доступа к сенсорам и UserAssist."""
+    def get_foreground_window_fast(self) -> Tuple[Dict[str, Any], float]:
+        """Мгновенное получение активного окна и времени простоя пользователя (< 0.05 мс, без чтения реестра).
+
+        Returns:
+            Tuple[Dict[str, Any], float]: Словарь активного окна (title, process_name, pid) и время простоя в секундах.
+        """
         fg_window: Dict[str, Any] = {'title': 'Рабочий стол / Системный интерфейс', 'process_name': 'explorer.exe', 'pid': 0}
         idle_seconds = 0.0
+
+        enable_fg = True
+        try:
+            from apps.windows.telemetry.telemetry_config import TelemetryConfigManager
+            enable_fg = TelemetryConfigManager().get_enable_foreground_window()
+        except Exception:
+            pass
+
         if self._user32:
             try:
                 hwnd = self._user32.GetForegroundWindow()
@@ -227,14 +260,16 @@ class DeepDiagnosticsEngine:
                     length = self._user32.GetWindowTextLengthW(hwnd)
                     buff = ctypes.create_unicode_buffer(length + 1)
                     self._user32.GetWindowTextW(hwnd, buff, length + 1)
-                    title = buff.value.strip() or 'Без заголовка'
+                    raw_title = buff.value.strip() or 'Без заголовка'
+                    title = raw_title if enable_fg else '[Скрыто политикой конфиденциальности]'
                     lp_pid = wintypes.DWORD()
                     self._user32.GetWindowThreadProcessId(hwnd, ctypes.byref(lp_pid))
                     pid = int(lp_pid.value)
-                    proc_name = 'unknown'
-                    if PSUTIL_AVAILABLE and pid > 0:
+                    proc_name = self._pid_name_cache.get(pid, 'unknown')
+                    if proc_name == 'unknown' and PSUTIL_AVAILABLE and pid > 0:
                         try:
                             proc_name = psutil.Process(pid).name()
+                            self._pid_name_cache[pid] = proc_name
                         except Exception:
                             proc_name = f'PID {pid}'
                     fg_window = {'title': title, 'process_name': proc_name, 'pid': pid}
@@ -250,8 +285,31 @@ class DeepDiagnosticsEngine:
                     idle_seconds = round(idle_ms / 1000.0, 1)
             except Exception as ex:
                 logger.debug(f'Ошибка расчета UserIdleTime: {ex}')
-        cam_apps, mic_apps = self._get_camera_mic_access()
-        userassist_apps = self._get_userassist_apps(limit=15)
+        return fg_window, idle_seconds
+
+    def collect_forensics_activity(self, force_registry_scan: bool = False) -> ForensicsActivityReport:
+        """Собрать данные активности пользователя, активного окна, доступа к сенсорам и UserAssist.
+
+        Опрос реестра ConsentStore (камера/микрофон) кэшируется на 60 с, а тяжелое ROT13-декодирование
+        UserAssist — на 300 с, чтобы вызовы на каждом тике выполнялись мгновенно.
+        """
+        fg_window, idle_seconds = self.get_foreground_window_fast()
+        now = time.time()
+        from apps.windows.telemetry.telemetry_config import get_telemetry_config_manager
+        cfg_mgr = get_telemetry_config_manager()
+        consent_ttl = cfg_mgr.get_cache_ttl('forensics_consent_store_ttl_sec', 60.0)
+        ua_ttl = cfg_mgr.get_cache_ttl('forensics_userassist_ttl_sec', 300.0)
+
+        if force_registry_scan or not self._cached_cam_mic[0] and not self._cached_cam_mic[1] and self._last_cam_mic_time == 0.0 or (now - self._last_cam_mic_time >= consent_ttl):
+            self._cached_cam_mic = self._get_camera_mic_access()
+            self._last_cam_mic_time = now
+        cam_apps, mic_apps = self._cached_cam_mic
+
+        if force_registry_scan or not self._cached_userassist and self._last_userassist_time == 0.0 or (now - self._last_userassist_time >= ua_ttl):
+            self._cached_userassist = self._get_userassist_apps(limit=15)
+            self._last_userassist_time = now
+        userassist_apps = self._cached_userassist
+
         return ForensicsActivityReport(
             timestamp=datetime.now(timezone.utc).isoformat(),
             foreground_window=fg_window,
@@ -341,12 +399,12 @@ class DeepDiagnosticsEngine:
                     count_path = f'{ua_path}\\{guid_name}\\Count'
                     try:
                         with winreg.OpenKey(winreg.HKEY_CURRENT_USER, count_path, 0, winreg.KEY_READ) as count_key:
-                            num_vals, _, _ = winreg.QueryInfoKey(count_key)
+                            _, num_vals, _ = winreg.QueryInfoKey(count_key)
                             for v_idx in range(num_vals):
                                 try:
                                     val_name, val_data, val_type = winreg.EnumValue(count_key, v_idx)
                                     decoded_name = codecs.decode(val_name, 'rot_13')
-                                    if not decoded_name or not decoded_name.strip():
+                                    if not decoded_name or not decoded_name.strip() or decoded_name.startswith('UEME_'):
                                         continue
                                     # Раскрытие Known Folders GUID в путях
                                     resolved_name = decoded_name
@@ -405,10 +463,12 @@ class DeepDiagnosticsEngine:
                 interrupt_pct = round(getattr(cpu_times, 'interrupt', 0.0) or 0.0, 2)
             except Exception as ex:
                 logger.debug(f'Ошибка сбора cpu_times: {ex}')
+        from apps.windows.telemetry.telemetry_config import get_telemetry_config_manager
+        th = get_telemetry_config_manager().get_thresholds_config()
         dpc_status = 'optimal'
-        if dpc_pct > 5.0 or interrupt_pct > 3.0:
+        if dpc_pct > th.get('dpc_severe_pct', 5.0) or interrupt_pct > th.get('interrupt_severe_pct', 3.0):
             dpc_status = 'severe'
-        elif dpc_pct > 1.5 or interrupt_pct > 1.0:
+        elif dpc_pct > th.get('dpc_elevated_pct', 1.5) or interrupt_pct > th.get('interrupt_elevated_pct', 1.0):
             dpc_status = 'elevated'
         minidump_dir = Path(os.environ.get('SystemRoot', 'C:\\Windows')) / 'Minidump'
         if minidump_dir.exists() and minidump_dir.is_dir():
@@ -518,8 +578,8 @@ class DeepDiagnosticsEngine:
                                     pass
                     io_key = f'PhysicalDrive{dev_num_str}'
                     io = io_counters.get(io_key)
-                    bytes_read = io.read_bytes if io else (d.lifetime_read_bytes or 0)
-                    bytes_written = io.write_bytes if io else (d.lifetime_write_bytes or 0)
+                    bytes_read = (d.lifetime_read_bytes if d.lifetime_read_bytes and d.lifetime_read_bytes > 0 else (io.read_bytes if io else 0))
+                    bytes_written = (d.lifetime_write_bytes if d.lifetime_write_bytes and d.lifetime_write_bytes > 0 else (io.write_bytes if io else 0))
                     read_count = io.read_count if io else (d.read_errors_total or 0)
                     write_count = io.write_count if io else (d.write_errors_total or 0)
                     poh = d.power_on_hours
@@ -614,8 +674,10 @@ class DeepDiagnosticsEngine:
         return StorageBatteryWearReport(timestamp=datetime.now(timezone.utc).isoformat(), disks_wear=disks, battery_wear=battery_data)
 
     def collect_peripherals_network(self) -> PeripheralsNetworkReport:
-        """Собрать данные по USB устройствам, беспроводной сети Wi-Fi и аудиоустройствам."""
+        """Собрать данные по USB устройствам, беспроводной сети Wi-Fi, аудиоустройствам, Bluetooth и принтерам."""
         usb_devices: List[Dict[str, Any]] = []
+        bluetooth_devices: List[Dict[str, Any]] = []
+        printers: List[Dict[str, Any]] = []
         wifi_data: Dict[str, Any] = {
             'is_connected': False,
             'ssid': 'Не подключено',
@@ -628,11 +690,13 @@ class DeepDiagnosticsEngine:
         }
         audio_endpoints: List[Dict[str, Any]] = []
         try:
-            from apps.windows.telemetry.win32_ffi.setupapi import SetupAPI
+            from apps.windows.sdk.win32_ffi.setupapi import SetupAPI
             pnp = SetupAPI()
             devs = pnp.get_all_devices()
+            seen_bt = set()
             for d in devs:
                 hw_id = d.hardware_id or ''
+                # Сбор USB устройств
                 if 'USB' in hw_id.upper() or 'USB' in (d.device_class or '').upper():
                     vid_match = re.search('VID_([0-9A-Fa-f]{4})', hw_id)
                     pid_match = re.search('PID_([0-9A-Fa-f]{4})', hw_id)
@@ -647,8 +711,120 @@ class DeepDiagnosticsEngine:
                         'has_problem': d.has_problem,
                         'status': 'Error' if d.has_problem else 'Connected & Active',
                     })
+
+                # Сбор Bluetooth устройств
+                inst_id = (d.device_instance_id or '').upper()
+                cls = (d.device_class or '').upper()
+                name = (d.friendly_name or '').strip()
+                if name:
+                    is_bt = 'BTH' in inst_id or 'BTH' in hw_id.upper() or cls == 'BLUETOOTH' or 'BLUETOOTH' in name.upper()
+                    if is_bt and not inst_id.startswith('BTHENUM\\{') and not inst_id.startswith('BTHHFENUM\\'):
+                        n_lower = name.lower()
+                        skip_kw = ['служба', 'перечислитель', 'enumerator', 'protocol tdi', 'uarps', 'gatt', 'aap server', 'nearbysharing', 'icservice']
+                        if not any(k in n_lower for k in skip_kw):
+                            if any(k in n_lower for k in ['intel', 'adapter', 'контроллер', 'radio', 'адаптер']) or ('USB\\' in inst_id and 'BLUETOOTH' in cls):
+                                dev_type = 'Адаптер / Контроллер'
+                            elif any(k in n_lower for k in ['airpods', 'headset', 'наушник', 'hands-free', 'sound', 'аудио', 'speakers']):
+                                dev_type = 'Аудиогарнитура / Наушники'
+                            elif any(k in n_lower for k in ['galaxy', 'iphone', 'phone', 'телефон', 'android']) or 'DEV_' in inst_id:
+                                dev_type = 'Смартфон / Мобильное устройство'
+                            elif any(k in n_lower for k in ['mouse', 'мышь', 'keyboard', 'клавиатура']):
+                                dev_type = 'Устройство ввода (HID)'
+                            else:
+                                dev_type = 'Bluetooth устройство'
+
+                            mac_m = re.search(r'DEV_([0-9A-Fa-f]{12})', inst_id)
+                            mac = ':'.join([mac_m.group(1)[i:i+2] for i in range(0, 12, 2)]) if mac_m else '--'
+
+                            key = (name, dev_type)
+                            if key not in seen_bt:
+                                seen_bt.add(key)
+                                bluetooth_devices.append({
+                                    'name': name,
+                                    'type': dev_type,
+                                    'mac_address': mac,
+                                    'manufacturer': d.manufacturer or 'Стандартное устройство Bluetooth',
+                                    'has_problem': d.has_problem,
+                                    'status': 'Ошибка' if d.has_problem else 'Подключено / Готово',
+                                    'device_id': d.device_instance_id,
+                                })
         except Exception as ex:
-            logger.debug(f'Ошибка сбора USB через SetupAPI: {ex}')
+            logger.debug(f'Ошибка сбора USB/Bluetooth через SetupAPI: {ex}')
+
+        # Сбор принтеров (WMI Win32_Printer с fallback на PowerShell)
+        try:
+            if os.name == 'nt':
+                try:
+                    import pythoncom
+                    pythoncom.CoInitialize()
+                except Exception:
+                    pass
+                import win32com.client
+                wmi_obj = win32com.client.GetObject('winmgmts:')
+                for prn in wmi_obj.InstancesOf('Win32_Printer'):
+                    p_name = (getattr(prn, 'Name', '') or '').strip()
+                    if not p_name:
+                        continue
+                    drv_name = (getattr(prn, 'DriverName', '') or '').strip()
+                    port_name = (getattr(prn, 'PortName', '') or '').strip()
+                    is_def = bool(getattr(prn, 'Default', False))
+                    is_net = bool(getattr(prn, 'Network', False))
+                    status_p = (getattr(prn, 'Status', '') or 'OK').strip()
+
+                    port_upper = port_name.upper()
+                    if 'WSD' in port_upper:
+                        conn_type = 'Сеть (WSD)'
+                        is_net = True
+                    elif 'IP_' in port_upper or 'TCP' in port_upper or ('.' in port_name and any(c.isdigit() for c in port_name)):
+                        conn_type = 'Сеть (TCP/IP)'
+                        is_net = True
+                    elif 'USB' in port_upper:
+                        conn_type = 'Локальный (USB)'
+                    elif 'PORTPROMPT' in port_upper or 'PDF' in p_name.upper() or 'XPS' in p_name.upper():
+                        conn_type = 'Виртуальный (Файл/Пул)'
+                    elif is_net:
+                        conn_type = 'Сетевой принтер'
+                    else:
+                        conn_type = f'Локальный ({port_name})' if port_name else 'Локальный'
+
+                    printers.append({
+                        'name': p_name,
+                        'driver': drv_name,
+                        'port': port_name,
+                        'connection_type': conn_type,
+                        'is_network': is_net,
+                        'is_default': is_def,
+                        'status': status_p or 'OK',
+                    })
+        except Exception as prn_err:
+            logger.debug(f'Ошибка сбора принтеров через WMI: {prn_err}')
+            try:
+                ps_cmd = 'Get-Printer | Select-Object Name, PortName, DriverName, Type, Default | ConvertTo-Json -Compress'
+                res = subprocess.run(['powershell', '-NoProfile', '-Command', ps_cmd], capture_output=True, text=True, timeout=5)
+                if res.returncode == 0 and res.stdout.strip():
+                    import json
+                    raw_prn = json.loads(res.stdout)
+                    if isinstance(raw_prn, dict):
+                        raw_prn = [raw_prn]
+                    for p in raw_prn:
+                        p_name = p.get('Name') or ''
+                        if not p_name:
+                            continue
+                        p_port = p.get('PortName') or ''
+                        p_port_up = p_port.upper()
+                        is_net = 'WSD' in p_port_up or 'IP_' in p_port_up
+                        printers.append({
+                            'name': p_name,
+                            'driver': p.get('DriverName') or '',
+                            'port': p_port,
+                            'connection_type': 'Сеть (WSD)' if 'WSD' in p_port_up else ('Сеть (TCP/IP)' if 'IP_' in p_port_up else ('Локальный (USB)' if 'USB' in p_port_up else 'Локальный/Виртуальный')),
+                            'is_network': is_net,
+                            'is_default': bool(p.get('Default')),
+                            'status': 'OK',
+                        })
+            except Exception as ps_err:
+                logger.debug(f'Ошибка сбора принтеров через PowerShell: {ps_err}')
+
         try:
             res = subprocess.run('netsh wlan show interfaces', capture_output=True, text=True, timeout=4, shell=True)
             if res.returncode == 0 and res.stdout:
@@ -683,7 +859,14 @@ class DeepDiagnosticsEngine:
             audio_endpoints.append({'name': 'Основное устройство записи (Default Recording)', 'type': 'Microphone', 'is_default': True, 'status': 'Active'})
         except Exception:
             pass
-        return PeripheralsNetworkReport(timestamp=datetime.now(timezone.utc).isoformat(), usb_devices=usb_devices, wifi_telemetry=wifi_data, audio_endpoints=audio_endpoints)
+        return PeripheralsNetworkReport(
+            timestamp=datetime.now(timezone.utc).isoformat(),
+            usb_devices=usb_devices,
+            wifi_telemetry=wifi_data,
+            audio_endpoints=audio_endpoints,
+            bluetooth_devices=bluetooth_devices,
+            printers=printers,
+        )
 
     def collect_defender_telemetry(self) -> DefenderTelemetrySummary:
         """Собрать сводку телеметрии Windows Defender (CFA, ASR, исключения, угрозы)."""

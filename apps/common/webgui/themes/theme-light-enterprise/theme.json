@@ -1,0 +1,10 @@
+{
+  "id": "theme-light-enterprise",
+  "name": "Light Enterprise (Светлый корпоративный)",
+  "nameEn": "Light Enterprise",
+  "category": "light",
+  "icon": "bi-building",
+  "iconColor": "text-primary",
+  "description": "Чистый корпоративный светлый стиль (UI Kit v2.0)",
+  "baseType": "light"
+}

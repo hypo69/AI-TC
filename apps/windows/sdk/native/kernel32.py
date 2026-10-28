@@ -7,16 +7,16 @@
 #
 # Usage Examples:
 #   Python API:
-#     from apps.windows.telemetry.win32_ffi.kernel32 import PROCESSENTRY32
+#     from apps.windows.sdk.win32_ffi.kernel32 import PROCESSENTRY32
 #
 #     service = PROCESSENTRY32()
 #
 # File: kernel32.py
 # Project: ai-windows-admin
-# Package: apps.windows.telemetry.win32_ffi
+# Package: apps.windows.sdk.win32_ffi
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 22:28:45
+# Updated: 2026-10-15 00:16:00
 # =============================================================================
 
 """kernel32.dll wrapper for process enumeration and snapshot operations."""
@@ -47,6 +47,36 @@ class MODULEENTRY32(ctypes.Structure):
 
 class FILETIME(ctypes.Structure):
     _fields_ = [('dwLowDateTime', wintypes.DWORD), ('dwHighDateTime', wintypes.DWORD)]
+
+class IO_COUNTERS(ctypes.Structure):
+    """Win32 IO_COUNTERS структура для сбора метрик операций ввода-вывода процесса."""
+    _fields_ = [
+        ('ReadOperationCount', ctypes.c_uint64),
+        ('WriteOperationCount', ctypes.c_uint64),
+        ('OtherOperationCount', ctypes.c_uint64),
+        ('ReadTransferCount', ctypes.c_uint64),
+        ('WriteTransferCount', ctypes.c_uint64),
+        ('OtherTransferCount', ctypes.c_uint64),
+    ]
+
+@dataclass
+class ProcessIOCounters:
+    """Статистика дискового и файлового ввода-вывода процесса из Win32 IO_COUNTERS."""
+    read_operation_count: int
+    write_operation_count: int
+    other_operation_count: int
+    read_transfer_count: int   # bytes
+    write_transfer_count: int  # bytes
+    other_transfer_count: int  # bytes
+
+@dataclass
+class ProcessTimesInfo:
+    """Временные метрики процессора процесса (Win32 GetProcessTimes)."""
+    creation_time: float      # Unix timestamp создания
+    exit_time: float          # Unix timestamp завершения (или 0.0 если работает)
+    kernel_time_sec: float    # Время выполнения в режиме ядра (сек)
+    user_time_sec: float      # Время выполнения в пользовательском режиме (сек)
+    total_cpu_time_sec: float # Суммарное время CPU (сек)
 
 @dataclass
 class ProcessInfo:
@@ -103,6 +133,11 @@ class Kernel32API:
         self.kernel32.GetProcessTimes.restype = wintypes.BOOL
         self.kernel32.GetPriorityClass.argtypes = [wintypes.HANDLE]
         self.kernel32.GetPriorityClass.restype = wintypes.DWORD
+        self.kernel32.GetProcessIoCounters.argtypes = [wintypes.HANDLE, ctypes.POINTER(IO_COUNTERS)]
+        self.kernel32.GetProcessIoCounters.restype = wintypes.BOOL
+        if hasattr(self.kernel32, 'QueryProcessCycleTime'):
+            self.kernel32.QueryProcessCycleTime.argtypes = [wintypes.HANDLE, ctypes.POINTER(ctypes.c_uint64)]
+            self.kernel32.QueryProcessCycleTime.restype = wintypes.BOOL
 
     def enumerate_processes(self) -> List[ProcessInfo]:
         """
@@ -242,6 +277,105 @@ class Kernel32API:
         except Exception:
             return None
 
+    def get_process_times_info(self, pid: int) -> Optional[ProcessTimesInfo]:
+        """Получить детализированную информацию о времени CPU процесса (Kernel, User, Creation, Exit).
+
+        Args:
+            pid: Идентификатор процесса Windows (PID).
+
+        Returns:
+            Optional[ProcessTimesInfo]: Данные времени CPU или None при ошибке.
+        """
+        try:
+            handle = ctypes.windll.kernel32.OpenProcess(1024, False, pid)
+            if not handle:
+                return None
+            try:
+                creation_time = FILETIME()
+                exit_time = FILETIME()
+                kernel_time = FILETIME()
+                user_time = FILETIME()
+                if self.kernel32.GetProcessTimes(handle, ctypes.byref(creation_time), ctypes.byref(exit_time), ctypes.byref(kernel_time), ctypes.byref(user_time)):
+                    # Преобразование FILETIME (100-нс интервалы)
+                    EPOCH_DIFFERENCE_100NS = 116444736000000000
+                    raw_creation = (creation_time.dwHighDateTime << 32) | creation_time.dwLowDateTime
+                    raw_exit = (exit_time.dwHighDateTime << 32) | exit_time.dwLowDateTime
+                    raw_kernel = (kernel_time.dwHighDateTime << 32) | kernel_time.dwLowDateTime
+                    raw_user = (user_time.dwHighDateTime << 32) | user_time.dwLowDateTime
+
+                    c_ts = max(0.0, (raw_creation - EPOCH_DIFFERENCE_100NS) / 10_000_000.0) if raw_creation > EPOCH_DIFFERENCE_100NS else 0.0
+                    e_ts = max(0.0, (raw_exit - EPOCH_DIFFERENCE_100NS) / 10_000_000.0) if raw_exit > EPOCH_DIFFERENCE_100NS else 0.0
+                    k_sec = raw_kernel / 10_000_000.0
+                    u_sec = raw_user / 10_000_000.0
+
+                    return ProcessTimesInfo(
+                        creation_time=c_ts,
+                        exit_time=e_ts,
+                        kernel_time_sec=k_sec,
+                        user_time_sec=u_sec,
+                        total_cpu_time_sec=k_sec + u_sec,
+                    )
+                return None
+            finally:
+                self.kernel32.CloseHandle(handle)
+        except Exception:
+            return None
+
+    def get_process_io_counters(self, pid: int) -> Optional[ProcessIOCounters]:
+        """Получить Win32 IO_COUNTERS процесса (число операций и переданных байт чтения/записи/прочих).
+
+        Args:
+            pid: Идентификатор процесса Windows (PID).
+
+        Returns:
+            Optional[ProcessIOCounters]: Структура счетчиков ввода-вывода или None.
+        """
+        try:
+            handle = ctypes.windll.kernel32.OpenProcess(1024, False, pid)
+            if not handle:
+                return None
+            try:
+                io = IO_COUNTERS()
+                if self.kernel32.GetProcessIoCounters(handle, ctypes.byref(io)):
+                    return ProcessIOCounters(
+                        read_operation_count=int(io.ReadOperationCount),
+                        write_operation_count=int(io.WriteOperationCount),
+                        other_operation_count=int(io.OtherOperationCount),
+                        read_transfer_count=int(io.ReadTransferCount),
+                        write_transfer_count=int(io.WriteTransferCount),
+                        other_transfer_count=int(io.OtherTransferCount),
+                    )
+                return None
+            finally:
+                self.kernel32.CloseHandle(handle)
+        except Exception:
+            return None
+
+    def get_process_cycle_time(self, pid: int) -> Optional[int]:
+        """Получить общее количество процессорных тактов (cycles), затраченных процессом.
+
+        Args:
+            pid: Идентификатор процесса Windows (PID).
+
+        Returns:
+            Optional[int]: Число процессорных тактов или None при отсутствии поддержки.
+        """
+        if not hasattr(self.kernel32, 'QueryProcessCycleTime'):
+            return None
+        try:
+            handle = ctypes.windll.kernel32.OpenProcess(1024, False, pid)
+            if not handle:
+                return None
+            try:
+                cycles = ctypes.c_uint64(0)
+                if self.kernel32.QueryProcessCycleTime(handle, ctypes.byref(cycles)):
+                    return int(cycles.value)
+                return None
+            finally:
+                self.kernel32.CloseHandle(handle)
+        except Exception:
+            return None
+
 
 Kernel32 = Kernel32API
 
@@ -251,6 +385,9 @@ __all__ = [
     "ProcessInfo",
     "ThreadInfo",
     "ModuleInfo",
+    "ProcessIOCounters",
+    "ProcessTimesInfo",
+    "IO_COUNTERS",
     "PROCESSENTRY32",
     "THREADENTRY32",
     "MODULEENTRY32",

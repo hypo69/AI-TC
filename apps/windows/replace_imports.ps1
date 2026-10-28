@@ -14,7 +14,7 @@ Project: ai-windows-admin
 Package: apps/windows
 Author: hypo69
 Copyright: © 2026 hypo69
-Updated: 2026-10-10 17:35:00
+Updated: 2026-10-13 16:29:00
 =============================================================================
 #>
 
@@ -22,7 +22,7 @@ Get-ChildItem -Path 'C:/Users/onela/AppData/Local/AI-Windows-Admin/apps/windows'
     ForEach-Object {
         $path = $_.FullName
         $content = Get-Content $path -Raw
-        $new = $content -replace 'apps\.windows\.api\.', 'apps.windows.telemetry.win32_ffi.'
+        $new = $content -replace 'apps\.windows\.api\.', 'apps.windows.sdk.win32_ffi.'
         if ($new -ne $content) {
             Set-Content -Path $path -Value $new -Encoding utf8
             Write-Host "Updated imports in $path"

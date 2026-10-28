@@ -19,7 +19,7 @@
 # Package: apps.windows.telemetry
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-20 09:41:00
 # =============================================================================
 
 from __future__ import annotations
@@ -359,9 +359,11 @@ class DirectoryWatchEngine:
             events_to_save.append({
                 'pid': pid,
                 'process_name': proc_name,
+                'operation_type': action_type,
                 'action_type': action_type,
                 'target_directory': target_directory,
                 'file_path': full_path,
+                'bytes_transferred': bytes_affected,
                 'bytes_affected': bytes_affected,
                 'timestamp': now_ts,
                 'created_at': time.time(),

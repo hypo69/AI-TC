@@ -14,7 +14,7 @@ Project: ai-windows-admin
 Package: .skills/cert-installer/scripts
 Author: hypo69
 Copyright: © 2026 hypo69
-Updated: 2026-10-10 17:35:00
+Updated: 2026-10-27 23:03:00
 =============================================================================
 .SYNOPSIS
     Проверка, генерация и установка локальных SSL-сертификатов для ai-windows-admin
@@ -34,7 +34,7 @@ $certsDir  = Join-Path $env:USERPROFILE ".certs"
 $certPath  = Join-Path $certsDir "localhost+2.pem"
 $keyPath   = Join-Path $certsDir "localhost+2-key.pem"
 $rootDir   = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path) # Root of the skill
-$projectRoot = Split-Path -Parent (Split-Path -Parent $rootDir) # Path to AI-Windows-Admin
+$projectRoot = Split-Path -Parent (Split-Path -Parent $rootDir) # Path to ai-tc
 $pythonExe = Join-Path $projectRoot "venv\Scripts\python.exe"
 
 if (-not (Test-Path $certsDir)) {

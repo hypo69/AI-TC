@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 # =============================================================================
 # Process Name: AI-Windows-Admin Apps Windows Telemetry - Collector
 # =============================================================================
@@ -16,7 +16,7 @@
 # Package: apps.windows.telemetry
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-11 10:48:15
+# Updated: 2026-10-20 09:28:50
 # =============================================================================
 
 from __future__ import annotations
@@ -67,9 +67,10 @@ from .models import (
     WindowsUpdateInfo,
 )
 from .sensors import get_hardware_sensors
-from apps.windows.telemetry.analytics.hardware_auditor import HardwareAuditor
-from apps.windows.telemetry.analytics.hardware_history_manager import HardwareHistoryManager
-from apps.windows.telemetry.analytics.startup_history_manager import StartupHistoryManager
+from .hardware_collector import HardwareCollector
+from apps.windows.analytics.hardware_auditor import HardwareAuditor
+from apps.windows.analytics.hardware_history_manager import HardwareHistoryManager
+from apps.windows.analytics.startup_history_manager import StartupHistoryManager
 from .hardware_tree import HardwareTreeBuilder
 from .history_mixin import TelemetryHistoryMixin
 from .network_activity import NetworkActivityCollector
@@ -85,14 +86,16 @@ class SystemCollector(TelemetryHistoryMixin):
     def __init__(
         self,
         auditor: Optional[HardwareAuditor] = None,
+        hardware_collector: Optional[HardwareCollector] = None,
         history_manager: Optional[HardwareHistoryManager] = None,
         startup_history_manager: Optional[StartupHistoryManager] = None,
         storage: Optional[TelemetryStorage] = None,
     ) -> None:
-        """Initialize telemetry collector with timing, I/O baseline, hardware auditor, startup history, and storage."""
+        """Initialize telemetry collector with timing, I/O baseline, hardware collector/auditor, startup history, and storage."""
         self._last_disk_io = psutil.disk_io_counters() if PSUTIL_AVAILABLE else None
         self._last_net_io = psutil.net_io_counters(pernic=True) if PSUTIL_AVAILABLE else None
         self._last_time = time.time()
+        self._last_disk_time = self._last_time
         self._cpu_model_cached: Optional[str] = None
         self._identity_cached: Optional[Dict[str, Any]] = None
         self._monitors_cached: Optional[List[MonitorInfo]] = None
@@ -102,8 +105,13 @@ class SystemCollector(TelemetryHistoryMixin):
         self._physical_disks_cache_time: float = 0.0
         self._npus_cached: Optional[List[NpuMetrics]] = None
         self._npus_cache_time: float = 0.0
+        self._volume_meta_cache: Dict[str, Dict[str, Any]] = {}
+        self._net_usage_collector: Optional[Any] = None
+        self._last_net_adapter_stats: Dict[str, Any] = {}
+        self._last_net_adapter_stats_time: float = 0.0
         self.storage = storage or TelemetryStorage.get_instance()
-        self.auditor = auditor or HardwareAuditor(storage=self.storage)
+        self.hardware_collector = hardware_collector or HardwareCollector(storage=self.storage)
+        self.auditor = auditor or HardwareAuditor(collector=self.hardware_collector, storage=self.storage)
         self.history_manager = history_manager or HardwareHistoryManager()
         self._hardware_tree_builder = HardwareTreeBuilder(self)
         self._process_collector = ProcessMetricsCollector()
@@ -333,15 +341,70 @@ class SystemCollector(TelemetryHistoryMixin):
         return CpuMetrics(model=await self._resolve_cpu_model(), architecture=platform.machine(), physical_cores=physical_cores, logical_cores=logical_cores, total_percent=10.0, per_core_percent=[10.0] * logical_cores, frequency_mhz=2400.0)
 
     def get_memory_metrics(self) -> MemoryMetrics:
-        """Collect RAM and swap memory consumption.
+        """Collect RAM, swap, Commit Charge, and Kernel Pool memory consumption.
+
+        Использует нативный C-FFI вызов GetPerformanceInfo (psapi.dll) для получения
+        объема выделенной виртуальной памяти (CommitTotal / CommitLimit) и пулов ядра
+        (Paged / Non-Paged Pool) за < 0.02 мс.
 
         Returns:
             MemoryMetrics: Current memory usage statistics.
         """
+        commit_total_gb: Optional[float] = None
+        commit_limit_gb: Optional[float] = None
+        commit_pct: Optional[float] = None
+        pool_paged_mb: Optional[float] = None
+        pool_nonpaged_mb: Optional[float] = None
+
+        if os.name == 'nt':
+            try:
+                class PERFORMANCE_INFORMATION(ctypes.Structure):
+                    _fields_ = [
+                        ('cb', ctypes.c_ulong),
+                        ('CommitTotal', ctypes.c_size_t),
+                        ('CommitLimit', ctypes.c_size_t),
+                        ('CommitPeak', ctypes.c_size_t),
+                        ('PhysicalTotal', ctypes.c_size_t),
+                        ('PhysicalAvailable', ctypes.c_size_t),
+                        ('SystemCache', ctypes.c_size_t),
+                        ('KernelTotal', ctypes.c_size_t),
+                        ('KernelPaged', ctypes.c_size_t),
+                        ('KernelNonpaged', ctypes.c_size_t),
+                        ('PageSize', ctypes.c_size_t),
+                        ('HandleCount', ctypes.c_ulong),
+                        ('ProcessCount', ctypes.c_ulong),
+                        ('ThreadCount', ctypes.c_ulong),
+                    ]
+                perf = PERFORMANCE_INFORMATION()
+                perf.cb = ctypes.sizeof(PERFORMANCE_INFORMATION)
+                if ctypes.windll.psapi.GetPerformanceInfo(ctypes.byref(perf), perf.cb):
+                    page_sz = perf.PageSize or 4096
+                    commit_total_gb = round((perf.CommitTotal * page_sz) / (1024 ** 3), 2)
+                    commit_limit_gb = round((perf.CommitLimit * page_sz) / (1024 ** 3), 2)
+                    if perf.CommitLimit > 0:
+                        commit_pct = round((perf.CommitTotal / perf.CommitLimit) * 100.0, 1)
+                    pool_paged_mb = round((perf.KernelPaged * page_sz) / (1024 ** 2), 1)
+                    pool_nonpaged_mb = round((perf.KernelNonpaged * page_sz) / (1024 ** 2), 1)
+            except Exception:
+                pass
+
         if PSUTIL_AVAILABLE:
             vm = psutil.virtual_memory()
             sm = psutil.swap_memory()
-            return MemoryMetrics(total_gb=round(vm.total / 1024 ** 3, 2), available_gb=round(vm.available / 1024 ** 3, 2), used_gb=round((vm.total - vm.available) / 1024 ** 3, 2), percent=round(vm.percent, 1), swap_total_gb=round(sm.total / 1024 ** 3, 2), swap_used_gb=round(sm.used / 1024 ** 3, 2), swap_percent=round(sm.percent, 1))
+            return MemoryMetrics(
+                total_gb=round(vm.total / 1024 ** 3, 2),
+                available_gb=round(vm.available / 1024 ** 3, 2),
+                used_gb=round((vm.total - vm.available) / 1024 ** 3, 2),
+                percent=round(vm.percent, 1),
+                swap_total_gb=round(sm.total / 1024 ** 3, 2),
+                swap_used_gb=round(sm.used / 1024 ** 3, 2),
+                swap_percent=round(sm.percent, 1),
+                commit_total_gb=commit_total_gb,
+                commit_limit_gb=commit_limit_gb,
+                commit_percent=commit_pct,
+                pool_paged_mb=pool_paged_mb,
+                pool_nonpaged_mb=pool_nonpaged_mb,
+            )
         total_ram_gb = 16.0
         used_ram_gb = 8.0
         if os.name == 'nt':
@@ -356,10 +419,36 @@ class SystemCollector(TelemetryHistoryMixin):
                     avail_ram_gb = round(stat.ullAvailPhys / 1024 ** 3, 2)
                     used_ram_gb = round(total_ram_gb - avail_ram_gb, 2)
                     percent = round(stat.dwMemoryLoad, 1)
-                    return MemoryMetrics(total_gb=total_ram_gb, available_gb=avail_ram_gb, used_gb=used_ram_gb, percent=percent, swap_total_gb=round(stat.ullTotalPageFile / 1024 ** 3, 2), swap_used_gb=round((stat.ullTotalPageFile - stat.ullAvailPageFile) / 1024 ** 3, 2), swap_percent=round((1.0 - stat.ullAvailPageFile / max(stat.ullTotalPageFile, 1)) * 100, 1))
+                    return MemoryMetrics(
+                        total_gb=total_ram_gb,
+                        available_gb=avail_ram_gb,
+                        used_gb=used_ram_gb,
+                        percent=percent,
+                        swap_total_gb=round(stat.ullTotalPageFile / 1024 ** 3, 2),
+                        swap_used_gb=round((stat.ullTotalPageFile - stat.ullAvailPageFile) / 1024 ** 3, 2),
+                        swap_percent=round((1.0 - stat.ullAvailPageFile / max(stat.ullTotalPageFile, 1)) * 100, 1),
+                        commit_total_gb=commit_total_gb,
+                        commit_limit_gb=commit_limit_gb,
+                        commit_percent=commit_pct,
+                        pool_paged_mb=pool_paged_mb,
+                        pool_nonpaged_mb=pool_nonpaged_mb,
+                    )
             except Exception:
                 pass
-        return MemoryMetrics(total_gb=total_ram_gb, available_gb=total_ram_gb - used_ram_gb, used_gb=used_ram_gb, percent=50.0, swap_total_gb=16.0, swap_used_gb=2.0, swap_percent=12.5)
+        return MemoryMetrics(
+            total_gb=total_ram_gb,
+            available_gb=total_ram_gb - used_ram_gb,
+            used_gb=used_ram_gb,
+            percent=50.0,
+            swap_total_gb=16.0,
+            swap_used_gb=2.0,
+            swap_percent=12.5,
+            commit_total_gb=commit_total_gb,
+            commit_limit_gb=commit_limit_gb,
+            commit_percent=commit_pct,
+            pool_paged_mb=pool_paged_mb,
+            pool_nonpaged_mb=pool_nonpaged_mb,
+        )
 
     def get_gpu_metrics(self) -> List[GpuMetrics]:
         """Collect GPU accelerator load, VRAM, and capabilities.
@@ -464,10 +553,13 @@ class SystemCollector(TelemetryHistoryMixin):
         return list(npus)
 
     def get_disk_metrics(self) -> tuple[List[DiskPartitionMetrics], DiskIoMetrics]:
-        """Collect disk partitions capacity and read/write rates.
+        """Collect disk partitions capacity, read/write rates, and average I/O latency (ms/op).
+
+        Статические атрибуты разделов (метка тома, тип устройства через GetVolumeInformationW / QueryDosDeviceW)
+        кэшируются в памяти для исключения лишних системных вызовов на каждом тике.
 
         Returns:
-            tuple[List[DiskPartitionMetrics], DiskIoMetrics]: Partitions and I/O rates.
+            tuple[List[DiskPartitionMetrics], DiskIoMetrics]: Partitions and I/O rates with latency.
         """
         partitions: List[DiskPartitionMetrics] = []
         io_metrics = DiskIoMetrics()
@@ -475,38 +567,71 @@ class SystemCollector(TelemetryHistoryMixin):
             for part in psutil.disk_partitions(all=False):
                 try:
                     usage = psutil.disk_usage(part.mountpoint)
-                    vol_name = ''
-                    is_virtual = False
-                    drive_type = 'Fixed'
-                    if os.name == 'nt':
-                        try:
-                            import ctypes
-                            vol_buf = ctypes.create_unicode_buffer(1024)
-                            fs_buf = ctypes.create_unicode_buffer(1024)
-                            mount_root = part.mountpoint if part.mountpoint.endswith('\\') else f'{part.mountpoint}\\'
-                            if ctypes.windll.kernel32.GetVolumeInformationW(mount_root, vol_buf, 1024, None, None, None, fs_buf, 1024):
-                                vol_name = vol_buf.value
-                            dos_buf = ctypes.create_unicode_buffer(1024)
-                            clean_dev = part.device.rstrip('\\')
-                            ctypes.windll.kernel32.QueryDosDeviceW(clean_dev, dos_buf, 1024)
-                            dos_dev = dos_buf.value
-                            if 'google' in vol_name.lower() or '@' in vol_name or 'onedrive' in vol_name.lower() or ('dropbox' in vol_name.lower()) or ('volume{' in dos_dev.lower() and 'harddiskvolume' not in dos_dev.lower()):
-                                is_virtual = True
-                                drive_type = 'Google Drive' if 'google' in vol_name.lower() or '@' in vol_name else 'Cloud / Virtual'
-                        except Exception:
-                            pass
-                    partitions.append(DiskPartitionMetrics(device=part.device, mountpoint=part.mountpoint, fstype=part.fstype, total_gb=round(usage.total / 1024 ** 3, 2), used_gb=round(usage.used / 1024 ** 3, 2), free_gb=round(usage.free / 1024 ** 3, 2), percent=round(usage.percent, 1), volume_name=vol_name or None, is_virtual=is_virtual, drive_type=drive_type))
+                    cached_meta = self._volume_meta_cache.get(part.mountpoint)
+                    if cached_meta is None:
+                        vol_name = ''
+                        is_virtual = False
+                        drive_type = 'Fixed'
+                        if os.name == 'nt':
+                            try:
+                                vol_buf = ctypes.create_unicode_buffer(1024)
+                                fs_buf = ctypes.create_unicode_buffer(1024)
+                                mount_root = part.mountpoint if part.mountpoint.endswith('\\') else f'{part.mountpoint}\\'
+                                if ctypes.windll.kernel32.GetVolumeInformationW(mount_root, vol_buf, 1024, None, None, None, fs_buf, 1024):
+                                    vol_name = vol_buf.value
+                                dos_buf = ctypes.create_unicode_buffer(1024)
+                                clean_dev = part.device.rstrip('\\')
+                                ctypes.windll.kernel32.QueryDosDeviceW(clean_dev, dos_buf, 1024)
+                                dos_dev = dos_buf.value
+                                if 'google' in vol_name.lower() or '@' in vol_name or 'onedrive' in vol_name.lower() or ('dropbox' in vol_name.lower()) or ('volume{' in dos_dev.lower() and 'harddiskvolume' not in dos_dev.lower()):
+                                    is_virtual = True
+                                    drive_type = 'Google Drive' if 'google' in vol_name.lower() or '@' in vol_name else 'Cloud / Virtual'
+                            except Exception:
+                                pass
+                        cached_meta = {
+                            'vol_name': vol_name or None,
+                            'is_virtual': is_virtual,
+                            'drive_type': drive_type,
+                        }
+                        self._volume_meta_cache[part.mountpoint] = cached_meta
+
+                    partitions.append(DiskPartitionMetrics(
+                        device=part.device,
+                        mountpoint=part.mountpoint,
+                        fstype=part.fstype,
+                        total_gb=round(usage.total / 1024 ** 3, 2),
+                        used_gb=round(usage.used / 1024 ** 3, 2),
+                        free_gb=round(usage.free / 1024 ** 3, 2),
+                        percent=round(usage.percent, 1),
+                        volume_name=cached_meta['vol_name'],
+                        is_virtual=cached_meta['is_virtual'],
+                        drive_type=cached_meta['drive_type'],
+                    ))
                 except (PermissionError, OSError):
                     continue
             now = time.time()
-            elapsed = max(now - self._last_time, 0.1)
+            elapsed = max(now - getattr(self, '_last_disk_time', self._last_time), 0.1)
             current_io = psutil.disk_io_counters()
             if current_io and self._last_disk_io:
-                io_metrics.read_bytes_per_sec = max(0.0, (current_io.read_bytes - self._last_disk_io.read_bytes) / elapsed)
-                io_metrics.write_bytes_per_sec = max(0.0, (current_io.write_bytes - self._last_disk_io.write_bytes) / elapsed)
-                io_metrics.read_count_per_sec = max(0.0, (current_io.read_count - self._last_disk_io.read_count) / elapsed)
-                io_metrics.write_count_per_sec = max(0.0, (current_io.write_count - self._last_disk_io.write_count) / elapsed)
+                delta_rb = max(0, current_io.read_bytes - self._last_disk_io.read_bytes)
+                delta_wb = max(0, current_io.write_bytes - self._last_disk_io.write_bytes)
+                delta_rc = max(0, current_io.read_count - self._last_disk_io.read_count)
+                delta_wc = max(0, current_io.write_count - self._last_disk_io.write_count)
+                delta_rt = max(0, getattr(current_io, 'read_time', 0) - getattr(self._last_disk_io, 'read_time', 0))
+                delta_wt = max(0, getattr(current_io, 'write_time', 0) - getattr(self._last_disk_io, 'write_time', 0))
+
+                io_metrics.read_bytes_per_sec = delta_rb / elapsed
+                io_metrics.write_bytes_per_sec = delta_wb / elapsed
+                io_metrics.read_count_per_sec = delta_rc / elapsed
+                io_metrics.write_count_per_sec = delta_wc / elapsed
+                if delta_rc > 0:
+                    io_metrics.read_latency_ms = round(delta_rt / delta_rc, 2)
+                if delta_wc > 0:
+                    io_metrics.write_latency_ms = round(delta_wt / delta_wc, 2)
+                total_io_ms = delta_rt + delta_wt
+                io_metrics.busy_percent = round(min(100.0, (total_io_ms / (elapsed * 1000.0)) * 100.0), 1)
             self._last_disk_io = current_io
+            self._last_disk_time = now
         else:
             drive = 'C:\\' if os.name == 'nt' else '/'
             try:
@@ -524,20 +649,25 @@ class SystemCollector(TelemetryHistoryMixin):
             List[NetworkInterfaceMetrics]: Network adapters metrics.
         """
         interfaces: List[NetworkInterfaceMetrics] = []
-        adapter_stats_map = {}
-        try:
-            from apps.windows.network.network_usage import WindowsNetworkUsageCollector
-            usage_collector = WindowsNetworkUsageCollector()
-            stats_list = usage_collector.get_adapter_statistics()
-            adapter_stats_map = {s.name.lower(): s for s in stats_list}
-        except Exception as ex:
-            logger.debug(f'Failed to fetch adapter stats in SystemCollector: {ex}')
+        now = time.time()
+        from .telemetry_config import get_telemetry_config_manager
+        net_stats_ttl = get_telemetry_config_manager().get_cache_ttl('network_adapter_stats_ttl_sec', 15.0)
+        if not self._last_net_adapter_stats or (now - self._last_net_adapter_stats_time) >= net_stats_ttl:
+            try:
+                from apps.windows.network.network_usage import WindowsNetworkUsageCollector
+                if self._net_usage_collector is None:
+                    self._net_usage_collector = WindowsNetworkUsageCollector()
+                stats_list = self._net_usage_collector.get_adapter_statistics()
+                self._last_net_adapter_stats = {s.name.lower(): s for s in stats_list}
+                self._last_net_adapter_stats_time = now
+            except Exception as ex:
+                logger.debug(f'Failed to fetch adapter stats in SystemCollector: {ex}')
+        adapter_stats_map = self._last_net_adapter_stats
 
         if PSUTIL_AVAILABLE:
             addrs = psutil.net_if_addrs()
             stats = psutil.net_if_stats()
             current_net_io = psutil.net_io_counters(pernic=True)
-            now = time.time()
             elapsed = max(now - self._last_time, 0.1)
             for name, addr_list in addrs.items():
                 stat = stats.get(name)
@@ -561,6 +691,47 @@ class SystemCollector(TelemetryHistoryMixin):
                 host_ip = '127.0.0.1'
             interfaces.append(NetworkInterfaceMetrics(name='Primary Network Adapter', is_up=True, speed_mbps=1000, bytes_sent_per_sec=0.0, bytes_recv_per_sec=0.0, ip_addresses=[host_ip]))
         return interfaces
+
+    def get_network_profile_fast(self) -> Dict[str, Any]:
+        """Быстрое получение профиля сетевого подключения и статуса обнаружения без внешних подпроцессов.
+
+        Returns:
+            Dict[str, Any]: Словарь с характеристиками текущей сети (категория, имя, статус обнаружения).
+        """
+        category = "Public"
+        net_name = "Network"
+        if os.name == "nt":
+            try:
+                import winreg
+                key_path = r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\NetworkList\Profiles"
+                with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, key_path) as key:
+                    cnt, _, _ = winreg.QueryInfoKey(key)
+                    for i in range(cnt):
+                        sub = winreg.EnumKey(key, i)
+                        with winreg.OpenKey(key, sub) as sk:
+                            pname, _ = winreg.QueryValueEx(sk, "ProfileName")
+                            cat, _ = winreg.QueryValueEx(sk, "Category")
+                            category = "Public" if cat == 0 else ("Private" if cat == 1 else "Domain")
+                            net_name = pname
+                            break
+            except Exception:
+                pass
+
+        discovery_enabled = False
+        if os.name == "nt" and PSUTIL_AVAILABLE:
+            try:
+                s = psutil.win_service_get("FDResPub")
+                discovery_enabled = (s.status() == "running")
+            except Exception:
+                discovery_enabled = False
+
+        return {
+            "status": "ok",
+            "current_category": category,
+            "primary_interface_alias": net_name,
+            "primary_interface_index": None,
+            "is_discovery_enabled": discovery_enabled,
+        }
 
     def get_network_usage_report(self, period_minutes: int = 1440):
         """Получить глубокий отчет сетевого потребления за период для AI диагностики.
@@ -633,7 +804,9 @@ class SystemCollector(TelemetryHistoryMixin):
             List[PhysicalDiskHealth]: Список обнаруженных физических накопителей.
         """
         now = time.time()
-        if not force and self._physical_disks_cached is not None and now - self._physical_disks_cache_time < 43200.0:
+        from .telemetry_config import get_telemetry_config_manager
+        phys_disk_ttl = get_telemetry_config_manager().get_cache_ttl('physical_disks_health_ttl_sec', 43200.0)
+        if not force and self._physical_disks_cached is not None and now - self._physical_disks_cache_time < phys_disk_ttl:
             return self._physical_disks_cached
 
         # 1. Попытка прочитать физические диски из базы данных SQLite
@@ -1013,8 +1186,9 @@ class SystemCollector(TelemetryHistoryMixin):
             net_activity = self.get_process_network_activity(limit=40)
             batt = self.get_battery_metrics()
             alerts = self.get_health_alerts()
+            net_profile = self.get_network_profile_fast()
             self._last_time = now
-            return {'now': now, 'uptime': uptime, 'partitions': partitions, 'disk_io': disk_io, 'net_metrics': net_metrics, 'sensors': sensors, 'top_procs': top_procs, 'ident': ident, 'memory': mems, 'gpus': gpu_list, 'npus': npu_list, 'monitors': mon_list, 'updates': upd_info, 'office': off_info, 'onedrive': od_info, 'physical_disks': phys_disks, 'listening_ports': ports, 'net_activity': net_activity, 'battery': batt, 'alerts': alerts}
+            return {'now': now, 'uptime': uptime, 'partitions': partitions, 'disk_io': disk_io, 'net_metrics': net_metrics, 'sensors': sensors, 'top_procs': top_procs, 'ident': ident, 'memory': mems, 'gpus': gpu_list, 'npus': npu_list, 'monitors': mon_list, 'updates': upd_info, 'office': off_info, 'onedrive': od_info, 'physical_disks': phys_disks, 'listening_ports': ports, 'net_activity': net_activity, 'battery': batt, 'alerts': alerts, 'net_profile': net_profile}
         cpu_task = asyncio.create_task(self.get_cpu_metrics())
         ram_task = asyncio.create_task(self.get_ram_sticks())
         sync_task = asyncio.create_task(asyncio.to_thread(_collect_sync_telemetry))
@@ -1063,6 +1237,7 @@ class SystemCollector(TelemetryHistoryMixin):
             alerts=sync_data['alerts'],
             sensors=sync_data['sensors'],
             top_processes=sync_data['top_procs'],
+            network_profile=sync_data.get('net_profile', {}),
             hardware_audit=hardware_audit_dict
         )
 

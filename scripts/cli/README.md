@@ -30,6 +30,6 @@ free_port = find_available_port(start_port=port)
 
 | Платформа | `data_dir` | `certs_dir` |
 |---|---|---|
-| Windows | `%LOCALAPPDATA%\AI-Windows-Admin` | `%USERPROFILE%\.certs` |
-| Linux | `~/.local/share/AI-Windows-Admin` | `~/.local/share/ca-certificates` |
-| macOS | `~/Library/Application Support/AI-Windows-Admin` | `~/Library/Certs` |
+| Windows | `%LOCALAPPDATA%\ai-tc` | `%USERPROFILE%\.certs` |
+| Linux | `~/.local/share/ai-tc` | `~/.local/share/ca-certificates` |
+| macOS | `~/Library/Application Support/ai-tc` | `~/Library/Certs` |

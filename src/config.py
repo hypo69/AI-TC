@@ -4,20 +4,23 @@
 # =============================================================================
 # Description:
 #   Модуль основной системы (`config`).
+#   Определяет глобальные параметры конфигурации, загрузку config.json,
+#   разрешение рабочих путей (%LOCALAPPDATA%/<app_name>/data) и путей к логам
+#   и временным файлам (%APPDATA%/<app_name>/logs, %APPDATA%/<app_name>/tmp).
 #
 # Usage Examples:
 #   Python API:
+#     from src.config import app_name, app_dir, data_dir, logs_dir, tmp_dir
 #     from src.config import is_app_enabled
 #
-#     res = is_app_enabled()
-#     print(res)
+#     print(app_name, data_dir, logs_dir, tmp_dir)
 #
 # File: config.py
 # Project: ai-windows-admin
 # Package: src
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 19:41:00
+# Updated: 2026-10-27 23:02:00
 # =============================================================================
 
 """Модуль основной системы (`config`)."""
@@ -28,7 +31,8 @@ from types import SimpleNamespace
 from src.utils.jjson import j_loads_ns
 from header import __root__
 from logger import logger
-_cfg_env = os.getenv('AIWINDOWSADMIN_CONFIG') or os.getenv('CONFIG_FILE')
+
+_cfg_env = os.getenv('AITC_CONFIG') or os.getenv('AI_TC_CONFIG') or os.getenv('AIWINDOWSADMIN_CONFIG') or os.getenv('CONFIG_FILE')
 if _cfg_env:
     _cfg_path = Path(_cfg_env)
     if _cfg_path.is_absolute() and _cfg_path.exists():
@@ -43,9 +47,50 @@ if _cfg_env:
         CONFIG_FILE = __root__ / 'config.json'
 else:
     CONFIG_FILE = __root__ / 'config.json'
+
 if not CONFIG_FILE.exists() and (__root__ / 'config.json').exists():
     CONFIG_FILE = __root__ / 'config.json'
+
 global_settings = j_loads_ns(CONFIG_FILE)
+
+# Название рабочей директории и приложения
+app_name: str = (
+    getattr(global_settings, 'app_name', None)
+    or getattr(getattr(global_settings, 'app', None), 'app_name', None)
+    or os.getenv('APP_NAME')
+    or 'AI-TC'
+)
+APP_NAME: str = app_name
+os.environ['APP_NAME'] = APP_NAME
+
+# Базовые системные пути окружения
+localappdata_base: str = os.getenv('LOCALAPPDATA') or str(Path.home() / 'AppData' / 'Local')
+appdata_base: str = os.getenv('APPDATA') or str(Path.home() / 'AppData' / 'Roaming')
+
+# Рабочая директория: %LOCALAPPDATA% / app_name
+app_dir: Path = Path(localappdata_base) / APP_NAME
+if not app_dir.exists() and __root__.exists():
+    app_dir = __root__
+APP_DIR: Path = app_dir
+
+# Внутренний путь к хранилищу данных data
+data_dir: Path = app_dir / 'data' if (app_dir / 'data').exists() else (__root__ / 'data')
+DATA_DIR: Path = data_dir
+
+# Пути к логам и временным файлам tmp: %APPDATA% / app_name / logs и tmp
+appdata_dir: Path = Path(appdata_base) / APP_NAME
+logs_dir: Path = appdata_dir / 'logs'
+tmp_dir: Path = appdata_dir / 'tmp'
+LOGS_DIR: Path = logs_dir
+TMP_DIR: Path = tmp_dir
+
+# Автоматическое создание служебных каталогов
+for _dir in (data_dir, logs_dir, tmp_dir):
+    try:
+        _dir.mkdir(parents=True, exist_ok=True)
+    except Exception as _e:
+        logger.warning(f"Не удалось создать служебный каталог {_dir}: {_e}")
+
 server_cfg = getattr(global_settings, 'server', SimpleNamespace())
 
 # Для TC-режима (apps/windows/config.json) читаем ai_providers_and_models_configuration
@@ -58,33 +103,42 @@ tts_cfg = getattr(global_settings, 'tts', SimpleNamespace())
 logging_cfg = getattr(global_settings, 'logging', SimpleNamespace())
 pprint_cfg = getattr(global_settings, 'pprint', getattr(global_settings, 'printer', SimpleNamespace()))
 printer_cfg = pprint_cfg
-qbittorrent_cfg = getattr(global_settings, 'qbittorrent', SimpleNamespace())
-qbt_cfg = qbittorrent_cfg
 storage_cfg = getattr(global_settings, 'storage', SimpleNamespace())
+
 # Устанавливаем значение по умолчанию, если users_dir не задан
 if not getattr(storage_cfg, 'users_dir', None):
-    storage_cfg.users_dir = str(__root__ / 'data' / 'users')
+    storage_cfg.users_dir = str(data_dir / 'users')
 raw_dir = getattr(storage_cfg, 'users_dir', None)
-if isinstance(raw_dir, str) and '%APPDATA%' in raw_dir:
-    appdata_path = os.getenv('APPDATA')
-    if not appdata_path:
-        raise RuntimeError('Переменная окружения APPDATA не установлена')
-    resolved_dir = raw_dir.replace('%APPDATA%', appdata_path)
-    storage_cfg.users_dir = resolved_dir
-    logger.info(f'Resolved users_dir to {resolved_dir}')
-    # Если в конфигурации не задан users_dir, установить значение по умолчанию
+if isinstance(raw_dir, str):
+    if '%APPDATA%' in raw_dir:
+        appdata_path = os.getenv('APPDATA')
+        if not appdata_path:
+            raise RuntimeError('Переменная окружения APPDATA не установлена')
+        resolved_dir = raw_dir.replace('%APPDATA%', appdata_path)
+        storage_cfg.users_dir = resolved_dir
+        logger.info(f'Resolved users_dir to {resolved_dir}')
+    elif '%LOCALAPPDATA%' in raw_dir:
+        localappdata_path = os.getenv('LOCALAPPDATA')
+        if not localappdata_path:
+            raise RuntimeError('Переменная окружения LOCALAPPDATA не установлена')
+        resolved_dir = raw_dir.replace('%LOCALAPPDATA%', localappdata_path)
+        storage_cfg.users_dir = resolved_dir
+        logger.info(f'Resolved users_dir to {resolved_dir}')
+
     if not getattr(storage_cfg, 'users_dir', None):
-        storage_cfg.users_dir = str(__root__ / 'data' / 'users')
+        storage_cfg.users_dir = str(data_dir / 'users')
         logger.info(f'Default users_dir set to {storage_cfg.users_dir}')
+
 plugins_cfg = getattr(global_settings, 'plugins', SimpleNamespace())
 schedulers_cfg = getattr(global_settings, 'schedulers', getattr(global_settings, 'scheduler', SimpleNamespace()))
 apps_cfg = getattr(global_settings, 'apps', SimpleNamespace())
 
-def is_app_enabled(app_name: str) -> bool:
+
+def is_app_enabled(target_app_name: str) -> bool:
     """Проверяет, активно ли приложение согласно текущей конфигурации.
 
     Args:
-        app_name (str): Идентификатор приложения (например, 'wikipedia_research', 'network_terminal').
+        target_app_name (str): Идентификатор приложения (например, 'wikipedia_research', 'network_terminal').
 
     Returns:
         bool: True, если приложение разрешено и не находится в списке отключенных; иначе False.
@@ -96,13 +150,15 @@ def is_app_enabled(app_name: str) -> bool:
     disabled = getattr(apps_section, 'disabled', None)
     if disabled is not None:
         disabled_list = list(disabled) if hasattr(disabled, '__iter__') and (not isinstance(disabled, str)) else [disabled]
-        if app_name in disabled_list:
+        if target_app_name in disabled_list:
             return False
     if enabled is not None:
         enabled_list = list(enabled) if hasattr(enabled, '__iter__') and (not isinstance(enabled, str)) else [enabled]
         if len(enabled_list) > 0:
-            return app_name in enabled_list
+            return target_app_name in enabled_list
     return True
+
+
 def is_debug_mode() -> bool:
     """Проверяет, активен ли режим отладки (DEBUG / DEV).
 

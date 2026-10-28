@@ -11,7 +11,7 @@
 # Package: apps.windows.api.routers.chat
 # Author: hypo69
 # Copyright: c 2026 hypo69
-# Updated: 2026-10-12 06:20:00
+# Updated: 2026-10-22 13:30:00
 # =============================================================================
 
 from __future__ import annotations
@@ -267,9 +267,9 @@ def register_model_endpoints(router: APIRouter, chat_model, narrator_model, plug
                 elif hasattr(cached_instance, "system_prompt"):
                     setattr(cached_instance, "system_prompt", raw_instruction)
 
-            # 4. Сохранение на диск в файл prompts/chat/system_instruction.md по запросу
+            # 4. Сохранение на диск в файл apps/windows/prompts/chat/system_instruction.md по запросу
             if req.save_to_disk:
-                prompt_file = __root__ / 'prompts' / 'chat' / 'system_instruction.md'
+                prompt_file = __root__ / 'apps' / 'windows' / 'prompts' / 'chat' / 'system_instruction.md'
                 prompt_file.parent.mkdir(parents=True, exist_ok=True)
                 prompt_file.write_text(raw_instruction, encoding='utf-8')
 

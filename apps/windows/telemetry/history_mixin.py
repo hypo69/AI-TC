@@ -21,7 +21,7 @@
 # Package: apps.windows.telemetry
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-11 11:05:00
+# Updated: 2026-10-15 08:00:00
 # =============================================================================
 
 from __future__ import annotations
@@ -51,6 +51,8 @@ class TelemetryHistoryMixin:
         Returns:
             HardwareAuditReport: Complete hardware audit report.
         """
+        if hasattr(self, 'hardware_collector') and self.hardware_collector is not None:
+            return self.hardware_collector.collect_hardware_report()
         return self.auditor.audit_hardware()
 
     def archive_hardware_state(self, auto_diff: bool=True) -> HardwareArchiveEntry:
@@ -221,7 +223,7 @@ class TelemetryHistoryMixin:
         Returns:
             RebootAnalysisReport: Сводный аналитический отчет.
         """
-        from apps.windows.telemetry.analytics.reboot_analyzer import WindowsRebootAnalyzer
+        from apps.windows.analytics.reboot_analyzer import WindowsRebootAnalyzer
         analyzer = WindowsRebootAnalyzer(storage=self.storage)
         return analyzer.collect_reboot_history(limit=limit, hours=hours)
 
@@ -231,7 +233,7 @@ class TelemetryHistoryMixin:
         Returns:
             Optional[RebootSession]: Информация о последнем перезапуске.
         """
-        from apps.windows.telemetry.analytics.reboot_analyzer import WindowsRebootAnalyzer
+        from apps.windows.analytics.reboot_analyzer import WindowsRebootAnalyzer
         analyzer = WindowsRebootAnalyzer(storage=self.storage)
         return analyzer.analyze_current_boot()
 
@@ -241,7 +243,7 @@ class TelemetryHistoryMixin:
         Returns:
             ExtendedSystemAuditReport: Сводный отчет расширенного аудита.
         """
-        from apps.windows.telemetry.analytics.deep_diagnostics import DeepDiagnosticsEngine
+        from apps.windows.analytics.deep_diagnostics import DeepDiagnosticsEngine
         engine = DeepDiagnosticsEngine()
         report = engine.collect_extended_system_audit()
         try:

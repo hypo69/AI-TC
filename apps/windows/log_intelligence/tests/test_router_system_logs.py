@@ -13,7 +13,7 @@
 # Package: apps.windows.log_intelligence.tests
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:50:00
+# Updated: 2026-10-13 19:35:00
 # =============================================================================
 
 """Тесты эндпоинтов FastAPI роутера System Logs Viewer."""
@@ -63,6 +63,27 @@ def test_router_rag_build_and_query_endpoints(client: TestClient) -> None:
     assert isinstance(q_data['results'], list)
 
 
+def test_router_rag_chunks_and_activity(client: TestClient) -> None:
+    """Проверка выгрузки чанков для IndexedDB и журнала активности."""
+    # 1. Построение небольшого индекса
+    client.post('/api/v1/system_logs/rag/build?all_channels=true&hours=24&limit=10')
+
+    # 2. Выгрузка структурированных чанков
+    chunks_resp = client.get('/api/v1/system_logs/rag/chunks?limit=50')
+    assert chunks_resp.status_code == 200
+    c_data = chunks_resp.json()
+    assert 'chunks' in c_data
+    assert isinstance(c_data['chunks'], list)
+    assert 'count' in c_data
+
+    # 3. Выгрузка журнала активности
+    act_resp = client.get('/api/v1/system_logs/activity')
+    assert act_resp.status_code == 200
+    a_data = act_resp.json()
+    assert 'logs' in a_data
+    assert isinstance(a_data['logs'], list)
+
+
 def test_router_timeline_endpoint(client: TestClient) -> None:
     """Проверка эндпоинта /api/v1/system_logs/timeline с параметрами фильтрации и GitHub heatmap."""
     response = client.get('/api/v1/system_logs/timeline?channel=System&hours=24&limit=50')
@@ -76,5 +97,6 @@ def test_router_timeline_endpoint(client: TestClient) -> None:
     assert len(data['heatmap']) == 7
     assert len(data['heatmap'][0]) == 24
     assert data['summary']['total_events'] >= 0
+
 
 

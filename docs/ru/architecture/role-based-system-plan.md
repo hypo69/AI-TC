@@ -145,7 +145,7 @@ AI-Windows-Admin/
         "windows_defender",
         "windows_backup_manager",
         "hardware_monitor",
-        "librehardwaremonitor",
+        "hardware_sensors",
         "autolog_manager"
       ],
       "disabled_apps": [

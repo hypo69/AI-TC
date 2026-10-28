@@ -16,7 +16,7 @@
 # Package: apps.windows.sdk.modules.backup_manager.core
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-16 23:58:00
 # =============================================================================
 
 from __future__ import annotations
@@ -59,8 +59,16 @@ class FileHistoryManager:
         """
         try:
             cmd = ['sc.exe', 'query', 'fhsvc']
-            res = subprocess.run(cmd, capture_output=True, text=True, timeout=5)
-            output = res.stdout.upper()
+            res = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                encoding='oem',
+                errors='replace',
+                timeout=5,
+                check=False
+            )
+            output = (res.stdout or '').upper()
             status = ServiceState.UNKNOWN
             if 'RUNNING' in output:
                 status = ServiceState.RUNNING
@@ -74,8 +82,16 @@ class FileHistoryManager:
                 status = ServiceState.NOT_FOUND
             start_type = 'Manual'
             qc_cmd = ['sc.exe', 'qc', 'fhsvc']
-            qc_res = subprocess.run(qc_cmd, capture_output=True, text=True, timeout=5)
-            qc_out = qc_res.stdout.upper()
+            qc_res = subprocess.run(
+                qc_cmd,
+                capture_output=True,
+                text=True,
+                encoding='oem',
+                errors='replace',
+                timeout=5,
+                check=False
+            )
+            qc_out = (qc_res.stdout or '').upper()
             if 'AUTO_START' in qc_out:
                 start_type = 'Automatic'
             elif 'DEMAND_START' in qc_out:

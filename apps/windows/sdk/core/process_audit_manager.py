@@ -16,7 +16,7 @@
 # Package: apps.windows.sdk.core
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-13 16:25:00
 # =============================================================================
 
 from __future__ import annotations
@@ -27,7 +27,7 @@ import winreg
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Set
-from apps.windows.telemetry.win32_ffi.wevtapi import WevtAPI
+from apps.windows.sdk.win32_ffi.wevtapi import WevtAPI
 from logger import logger
 
 @dataclass

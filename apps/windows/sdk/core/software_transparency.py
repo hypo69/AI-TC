@@ -16,12 +16,13 @@
 # Package: apps.windows.sdk.core
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-20 16:15:00
 # =============================================================================
 
 from __future__ import annotations
 """Модуль инспекции прозрачности ПО, анализа конфигураций, мест хранения и сетевых доменов."""
 
+import asyncio
 import datetime
 import json
 import os
@@ -155,8 +156,25 @@ class SoftwareInventory:
             report = self._audit_engine.generate_audit_report()
             items: List[SoftwareItem] = []
             for app in report.apps:
-                slug = self._create_slug(app.name, app.version)
-                items.append(SoftwareItem(id=slug, name=app.name, version=app.version or 'Не указана', publisher=app.publisher or 'Неизвестен', install_location=app.install_location, executable_path=app.executable_path, architecture=app.architecture or 'x64', install_date=app.install_date, registry_key=app.source))
+                app_name = app.display_name or app.name
+                slug = self._create_slug(app_name, app.version)
+                exe_path = getattr(app, 'executable_path', None)
+                if not exe_path and getattr(app, 'execution_info', None):
+                    exe_path = getattr(app.execution_info, 'raw_path', None) or getattr(app.execution_info, 'executable_path', None)
+                reg_key = getattr(app, 'registry_key', '') or getattr(app, 'source', '')
+                items.append(
+                    SoftwareItem(
+                        id=slug,
+                        name=app_name,
+                        version=app.version or 'Не указана',
+                        publisher=app.publisher or 'Неизвестен',
+                        install_location=app.install_location or None,
+                        executable_path=exe_path,
+                        architecture=app.architecture or 'x64',
+                        install_date=app.install_date,
+                        registry_key=reg_key or None,
+                    )
+                )
             if items:
                 return items
         except Exception as ex:
@@ -168,49 +186,133 @@ class SoftwareInventory:
 
 class StorageAnalyzer:
     """Анализатор мест хранения пользовательских данных программ."""
-    ROOT_ENV_DIRS = [('%APPDATA%', os.getenv('APPDATA'), StorageCategory.CONFIG, 'Пользовательские настройки (Roaming)'), ('%LOCALAPPDATA%', os.getenv('LOCALAPPDATA'), StorageCategory.CACHE, 'Кэш и локальные данные'), ('%PROGRAMDATA%', os.getenv('PROGRAMDATA'), StorageCategory.CONFIG, 'Общие конфигурации всех пользователей')]
+    ROOT_ENV_DIRS = [
+        ('%APPDATA%', os.getenv('APPDATA'), StorageCategory.CONFIG, 'Пользовательские настройки (Roaming)'),
+        ('%LOCALAPPDATA%', os.getenv('LOCALAPPDATA'), StorageCategory.CACHE, 'Кэш и локальные данные'),
+        ('%PROGRAMDATA%', os.getenv('PROGRAMDATA'), StorageCategory.CONFIG, 'Общие конфигурации всех пользователей')
+    ]
+
+    def __init__(self) -> None:
+        self._dir_cache: Dict[str, Dict[str, str]] = {}
+        for _, bdir, _, _ in self.ROOT_ENV_DIRS:
+            if bdir and os.path.exists(bdir):
+                try:
+                    entries = [e for e in os.listdir(bdir) if os.path.isdir(os.path.join(bdir, e))]
+                    self._dir_cache[bdir] = {e.lower(): os.path.join(bdir, e) for e in entries}
+                except Exception:
+                    self._dir_cache[bdir] = {}
+
+    def reset_cache(self) -> None:
+        """Сброс кэша структуры директорий."""
+        self._dir_cache.clear()
+        for _, bdir, _, _ in self.ROOT_ENV_DIRS:
+            if bdir and os.path.exists(bdir):
+                try:
+                    entries = [e for e in os.listdir(bdir) if os.path.isdir(os.path.join(bdir, e))]
+                    self._dir_cache[bdir] = {e.lower(): os.path.join(bdir, e) for e in entries}
+                except Exception:
+                    self._dir_cache[bdir] = {}
 
     def discover_storage_for_app(self, app: SoftwareItem) -> List[StorageDirectory]:
         results: List[StorageDirectory] = []
+        existing_paths: Set[str] = set()
         aliases = self._get_search_aliases(app)
+
         if app.install_location and os.path.isdir(app.install_location):
             stats = self._get_dir_stats(app.install_location)
-            results.append(StorageDirectory(path=app.install_location, display_path=self._to_display_path(app.install_location), category=StorageCategory.BINARIES, description='Исполняемые файлы программы', file_count=stats['file_count'], total_size_bytes=stats['total_size'], status=EvidenceStatus.LOCAL_OBSERVED))
+            results.append(
+                StorageDirectory(
+                    path=app.install_location,
+                    display_path=self._to_display_path(app.install_location),
+                    category=StorageCategory.BINARIES,
+                    description='Исполняемые файлы программы',
+                    file_count=stats['file_count'],
+                    total_size_bytes=stats['total_size'],
+                    status=EvidenceStatus.LOCAL_OBSERVED,
+                )
+            )
+            existing_paths.add(app.install_location.lower())
+
         for _, base_dir, default_cat, base_desc in self.ROOT_ENV_DIRS:
             if not base_dir or not os.path.exists(base_dir):
                 continue
             matched_dir = self._find_matching_folder(base_dir, aliases)
-            if matched_dir and os.path.isdir(matched_dir):
+            if matched_dir and os.path.isdir(matched_dir) and matched_dir.lower() not in existing_paths:
+                existing_paths.add(matched_dir.lower())
                 stats = self._get_dir_stats(matched_dir)
                 category, desc = self._classify_directory(matched_dir, default_cat, base_desc)
-                results.append(StorageDirectory(path=matched_dir, display_path=self._to_display_path(matched_dir), category=category, description=desc, file_count=stats['file_count'], total_size_bytes=stats['total_size'], status=EvidenceStatus.LOCAL_OBSERVED))
+                results.append(
+                    StorageDirectory(
+                        path=matched_dir,
+                        display_path=self._to_display_path(matched_dir),
+                        category=category,
+                        description=desc,
+                        file_count=stats['file_count'],
+                        total_size_bytes=stats['total_size'],
+                        status=EvidenceStatus.LOCAL_OBSERVED,
+                    )
+                )
+
+        if not results:
+            logger.debug(f'Директории хранения для программы "{app.name}" не обнаружены в стандартных путях')
+
         return results
 
     def _get_search_aliases(self, app: SoftwareItem) -> List[str]:
         aliases = [app.name.lower()]
-        clean_name = re.sub('(?i)\\b(inc|llc|corp|ltd|gmbh|64-bit|32-bit|x64|x86)\\b', '', app.name).strip().lower()
+        clean_name = re.sub(r'(?i)\b(inc|llc|corp|corporation|ltd|gmbh|64-bit|32-bit|x64|x86)\b', '', app.name).strip()
+        clean_name = re.sub(r'[\(\[\{].*?[\)\]\}]', '', clean_name).strip().lower()
         if clean_name and clean_name not in aliases:
             aliases.append(clean_name)
+        # Очистка номеров версий (например, "python 3.14.7" -> "python")
+        name_no_ver = re.sub(r'\b\d+(\.\d+)*\b', '', clean_name).strip().lower()
+        if name_no_ver and name_no_ver not in aliases:
+            aliases.append(name_no_ver)
         if app.executable_path:
             exe_stem = Path(app.executable_path).stem.lower()
             if exe_stem not in aliases:
                 aliases.append(exe_stem)
-        return aliases
+        return [a for a in aliases if len(a) >= 2]
 
     def _find_matching_folder(self, base_path: str, aliases: List[str]) -> Optional[str]:
-        try:
-            entries = os.listdir(base_path)
-        except (OSError, PermissionError):
+        if not base_path or not os.path.exists(base_path):
             return None
-        entries_lower = {e.lower(): e for e in entries}
+        entries_lower = self._dir_cache.get(base_path)
+        if entries_lower is None:
+            try:
+                entries = [e for e in os.listdir(base_path) if os.path.isdir(os.path.join(base_path, e))]
+                entries_lower = {e.lower(): os.path.join(base_path, e) for e in entries}
+                self._dir_cache[base_path] = entries_lower
+            except (OSError, PermissionError):
+                return None
+
+        # 1. Поиск на 1-м уровне каталога
         for alias in aliases:
             if alias in entries_lower:
-                return os.path.join(base_path, entries_lower[alias])
-            for e_low, orig_name in entries_lower.items():
-                if len(alias) >= 4 and len(e_low) >= 4 and (alias in e_low or e_low in alias):
-                    return os.path.join(base_path, orig_name)
-        '# TODO: вернуть корректное значение'
-        logger.error('Функция _find_matching_folder вернула пустой результат')
+                return entries_lower[alias]
+            for e_low, orig_path in entries_lower.items():
+                if e_low.startswith(alias + ' ') or e_low.startswith(alias + '-') or e_low.startswith(alias + '_'):
+                    return orig_path
+
+        # 2. Поиск на 2-м уровне каталога (вложенные каталоги издателей/вендоров, например %LOCALAPPDATA%\Google\Chrome)
+        for parent_dir_name, parent_dir_path in entries_lower.items():
+            sub_map = self._dir_cache.get(parent_dir_path)
+            if sub_map is None:
+                try:
+                    sub_entries = [s for s in os.listdir(parent_dir_path) if os.path.isdir(os.path.join(parent_dir_path, s))]
+                    sub_map = {s.lower(): os.path.join(parent_dir_path, s) for s in sub_entries}
+                    self._dir_cache[parent_dir_path] = sub_map
+                except (OSError, PermissionError):
+                    self._dir_cache[parent_dir_path] = {}
+                    continue
+
+            for alias in aliases:
+                if alias in sub_map:
+                    return sub_map[alias]
+                for s_low, orig_sub in sub_map.items():
+                    if s_low.startswith(alias + ' ') or s_low.startswith(alias + '-') or s_low.startswith(alias + '_'):
+                        return orig_sub
+
         return None
 
     def _classify_directory(self, folder_path: str, default_cat: StorageCategory, default_desc: str) -> tuple[StorageCategory, str]:
@@ -225,9 +327,10 @@ class StorageAnalyzer:
         file_count = 0
         total_size = 0
         try:
-            for root, _, files in os.walk(dir_path):
-                if len(Path(root).relative_to(Path(dir_path)).parts) > 2:
-                    continue
+            for root, dirs, files in os.walk(dir_path):
+                rel_depth = root[len(dir_path):].count(os.sep)
+                if rel_depth >= 2:
+                    dirs.clear()
                 for f in files:
                     file_count += 1
                     fp = os.path.join(root, f)
@@ -235,6 +338,9 @@ class StorageAnalyzer:
                         total_size += os.path.getsize(fp)
                     except OSError:
                         pass
+                if file_count >= 500:
+                    dirs.clear()
+                    break
         except (OSError, PermissionError):
             pass
         return {'file_count': file_count, 'total_size': total_size}
@@ -263,9 +369,10 @@ class ConfigInspector:
             if not os.path.exists(d.path) or not os.path.isdir(d.path):
                 continue
             try:
-                for root, _, files in os.walk(d.path):
-                    if len(Path(root).relative_to(Path(d.path)).parts) > 3:
-                        continue
+                for root, dirs, files in os.walk(d.path):
+                    rel_depth = root[len(d.path):].count(os.sep)
+                    if rel_depth >= 2:
+                        dirs.clear()
                     for file in files:
                         if Path(file).suffix.lower() in self.CONFIG_EXTENSIONS:
                             cfg_item = self._process_config_file(os.path.join(root, file))
@@ -320,6 +427,13 @@ class NetworkTracker:
     DOMAIN_REGEX = re.compile('(?i)\\b(?:https?://)?([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.(?:[a-z0-9-]+\\.)+[a-z]{2,})\\b')
     POPULAR_DOMAINS: Dict[str, List[tuple[str, int, str, str]]] = {'chrome': [('clients2.google.com', 443, 'HTTPS', 'Safe Browsing'), ('update.googleapis.com', 443, 'HTTPS', 'Автообновления')], 'code': [('marketplace.visualstudio.com', 443, 'HTTPS', 'Каталог расширений VS Code')], 'python': [('pypi.org', 443, 'HTTPS', 'Репозиторий пакетов PyPI')]}
 
+    def __init__(self) -> None:
+        self._running_procs_map: Optional[Dict[str, List[Any]]] = None
+
+    def reset_cache(self) -> None:
+        """Сброс кэша запущенных процессов перед новым сканированием."""
+        self._running_procs_map = None
+
     def track_app_network(self, app: SoftwareItem, config_files: List[ConfigFile]) -> List[NetworkEndpoint]:
         endpoints: List[NetworkEndpoint] = []
         seen: Set[str] = set()
@@ -348,22 +462,37 @@ class NetworkTracker:
             return []
         results: List[NetworkEndpoint] = []
         target_name = Path(app.executable_path).name.lower() if app.executable_path else ''
-        try:
-            for proc in psutil.process_iter(['pid', 'name']):
-                try:
-                    pname = (proc.info.get('name') or '').lower()
-                    if target_name and pname == target_name:
-                        get_conns = getattr(proc, 'net_connections', None) or getattr(proc, 'connections', None)
-                        conns = get_conns(kind='inet') if get_conns else []
-                        for c in conns:
-                            if c.status == 'ESTABLISHED' and c.raddr:
-                                rip = c.raddr.ip
-                                if rip not in ('127.0.0.1', '::1', '0.0.0.0'):
-                                    results.append(NetworkEndpoint(domain_or_ip=rip, port=c.raddr.port, protocol='TCP' if c.type == 1 else 'UDP', source='active_socket', purpose=f'Активный сокет {pname} (PID {proc.pid})', status=EvidenceStatus.LOCAL_OBSERVED))
-                except (psutil.NoSuchProcess, psutil.AccessDenied):
-                    continue
-        except Exception:
-            pass
+        if not target_name:
+            return results
+
+        if self._running_procs_map is None:
+            self._running_procs_map = {}
+            try:
+                for proc in psutil.process_iter(['pid', 'name']):
+                    try:
+                        pname = (proc.info.get('name') or '').lower()
+                        if pname:
+                            self._running_procs_map.setdefault(pname, []).append(proc)
+                    except (psutil.NoSuchProcess, psutil.AccessDenied):
+                        continue
+            except Exception:
+                pass
+
+        matched_procs = self._running_procs_map.get(target_name, [])
+        for proc in matched_procs:
+            try:
+                pname = (proc.info.get('name') or '').lower()
+                get_conns = getattr(proc, 'net_connections', None) or getattr(proc, 'connections', None)
+                conns = get_conns(kind='inet') if get_conns else []
+                for c in conns:
+                    if c.status == 'ESTABLISHED' and c.raddr:
+                        rip = c.raddr.ip
+                        if rip not in ('127.0.0.1', '::1', '0.0.0.0'):
+                            results.append(NetworkEndpoint(domain_or_ip=rip, port=c.raddr.port, protocol='TCP' if c.type == 1 else 'UDP', source='active_socket', purpose=f'Активный сокет {pname} (PID {proc.pid})', status=EvidenceStatus.LOCAL_OBSERVED))
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
+                continue
+            except Exception:
+                pass
         return results
 
 class GeminiResearcher:
@@ -454,21 +583,28 @@ def _map_db_to_software_item(app_dict: Dict[str, Any]) -> SoftwareItem:
     )
 
 
-def init_software_transparency_router(chat_provider: Optional[Any] = None) -> APIRouter:
+def init_software_transparency_router(
+    chat_provider: Optional[Any] = None,
+    chat_model: Optional[Any] = None,
+    **kwargs: Any,
+) -> APIRouter:
     """Инициализация FastAPI роутера сканера прозрачности ПО на базе SQLite."""
+    active_model = chat_provider or chat_model
     router = APIRouter(prefix='/api/v1/software-scanner', tags=['AI Software Transparency Scanner'])
     storage = TelemetryStorage.get_instance()
     inventory = SoftwareInventory()
     storage_analyzer = StorageAnalyzer()
     config_inspector = ConfigInspector()
     network_tracker = NetworkTracker()
-    researcher = GeminiResearcher(chat_provider=chat_provider)
+    researcher = GeminiResearcher(chat_provider=active_model)
     _cache: Dict[str, SoftwareItem] = {}
     _last_summary: Optional[ScanSummary] = None
 
-    async def _execute_full_scan() -> FullScanReport:
+    def _execute_full_scan_sync(save_to_db: bool = False) -> FullScanReport:
         nonlocal _cache, _last_summary
         start_time = time.time()
+        storage_analyzer.reset_cache()
+        network_tracker.reset_cache()
         apps = inventory.scan_installed_software()
         _cache = {}
         total_configs = 0
@@ -534,16 +670,18 @@ def init_software_transparency_router(chat_provider: Optional[Any] = None) -> AP
 
             _cache[app.id] = app
 
-        # Сохранение в SQLite
-        try:
-            storage.save_software_inventory(
-                apps=inventory_records,
-                storage_locations=storage_locations,
-                config_files=config_files_records,
-                ai_research=ai_research_records,
-            )
-        except Exception as ex:
-            logger.debug(f'Ошибка сохранения инвентаря ПО в SQLite: {ex}')
+        # Сохранение в SQLite базы данных телеметрии выполняется только при явном флаге save_to_db=True
+        # По умолчанию аудит хранится исключительно в кэше браузера
+        if save_to_db:
+            try:
+                storage.save_software_inventory(
+                    apps=inventory_records,
+                    storage_locations=storage_locations,
+                    config_files=config_files_records,
+                    ai_research=ai_research_records,
+                )
+            except Exception as ex:
+                logger.debug(f'Ошибка сохранения инвентаря ПО в SQLite: {ex}')
 
         dur = round(time.time() - start_time, 2)
         _last_summary = ScanSummary(
@@ -567,15 +705,42 @@ def init_software_transparency_router(chat_provider: Optional[Any] = None) -> AP
 
     @router.get('/scan', response_model=FullScanReport)
     @router.post('/scan', response_model=FullScanReport)
-    async def run_full_scan(force_refresh: bool = Query(False, description='Принудительно пересканировать')) -> FullScanReport:
+    async def run_full_scan(
+        force_refresh: bool = Query(False, description='Принудительно пересканировать'),
+        save_to_db: bool = Query(False, description='Сохранять результат в базу данных телеметрии (по умолчанию False, хранится в кэше браузера)')
+    ) -> FullScanReport:
+        nonlocal _cache, _last_summary
         if not _cache or force_refresh:
-            return await _execute_full_scan()
+            if not force_refresh:
+                # 1. Быстрое чтение из базы данных телеметрии SQLite (< 10 мс)
+                db_apps = storage.get_software_inventory_from_db(limit=500)
+                if db_apps:
+                    for a in db_apps:
+                        details = storage.get_software_app_details_from_db(a.get('app_id', ''))
+                        if details:
+                            item = _map_db_to_software_item(details)
+                            _cache[item.id] = item
+                    if _cache:
+                        _last_summary = ScanSummary(
+                            total_apps=len(_cache),
+                            total_configs_found=sum(len(it.config_files) for it in _cache.values()),
+                            total_network_domains=sum(len(it.network_endpoints) for it in _cache.values()),
+                            total_storage_bytes=sum(sum(d.total_size_bytes for d in it.data_directories) for it in _cache.values()),
+                            scan_duration_sec=0.01,
+                            last_scan_time=time.strftime('%Y-%m-%dT%H:%M:%S'),
+                        )
+                        return FullScanReport(summary=_last_summary, apps=list(_cache.values()))
+
+            # 2. Сканирование по требованию в рабочем потоке при force_refresh=True или пустой БД
+            return await asyncio.to_thread(_execute_full_scan_sync, save_to_db)
         return FullScanReport(summary=_last_summary or ScanSummary(total_apps=len(_cache)), apps=list(_cache.values()))
 
     @router.post('/refresh')
-    async def refresh_software() -> Dict[str, Any]:
-        """Принудительное пересканирование ПО с сохранением в SQLite."""
-        report = await _execute_full_scan()
+    async def refresh_software(
+        save_to_db: bool = Query(False, description='Сохранять в базу данных телеметрии (по умолчанию False)')
+    ) -> Dict[str, Any]:
+        """Принудительное пересканирование ПО (по умолчанию без записи в SQLite)."""
+        report = await asyncio.to_thread(_execute_full_scan_sync, save_to_db)
         return {'status': 'ok', 'message': 'Инвентаризация ПО обновлена', 'total_apps': report.summary.total_apps}
 
     @router.get('/apps', response_model=List[SoftwareItem])

@@ -22,7 +22,7 @@
  * Package: windows/api/webgui/js
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-10 17:35:00
+ * Updated: 2026-10-20 18:15:00
  * =============================================================================
  */
 
@@ -39,6 +39,12 @@ const pendingRequests = new Map();
 export async function loadPanelData(panelId, options = {}) {
   if (!panelId) return null;
   const cleanId = panelId.trim();
+
+  // Вкладка «О системе» обслуживается исключительно единым эндпоинтом /api/v1/about-system/bundle.
+  // Разрозненные запросы отдельных панелей строго запрещены.
+  if (cleanId.startsWith('panel-about-') || cleanId.startsWith('about_system-')) {
+    return null;
+  }
 
   // Если уже выполняется запрос для этого panelId, возвращаем существующий промис
   if (pendingRequests.has(cleanId) && !options.force) {
@@ -118,11 +124,37 @@ export function registerPanelRenderer(panelId, renderFn) {
  */
 export function initPanels(container = document) {
   if (!container || typeof container.querySelectorAll !== 'function') return;
+
+  // Если весь переданный контейнер - вкладка "О системе", "Инспектор процессов" или "System Logs", пропускаем целиком
+  if (container.id === 'tab-about-system' || (container.classList && container.classList.contains('about-sys-wrapper')) ||
+      container.id === 'tab-processes-load-inspector' || (container.classList && container.classList.contains('sys-container')) ||
+      container.id === 'tab-system-control' || (container.classList && (container.classList.contains('slc-container') || container.classList.contains('scc-container'))) ||
+      container.querySelector?.('#processes-subtabs-nav') || container.querySelector?.('#slc-source-tabs')) {
+    return;
+  }
+
   const elements = container.querySelectorAll('[id^="panel-"], [data-panel-id]');
   const processedIds = new Set();
 
   elements.forEach((el) => {
+    // Панели вкладки "О системе", "Инспектор процессов" и "System Control" не опрашивают универсальный SQL API
+    if (el.closest('#tab-about-system') || el.closest('.about-sys-wrapper') ||
+        el.closest('#tab-processes-load-inspector') || el.closest('#processes-load-inspector-container') ||
+        el.closest('#tab-system-control') || el.closest('.slc-container') || el.closest('.scc-container')) {
+      return;
+    }
+
+    // Если элемент находится в неактивной вкладке, не запрашиваем его
+    const tabPane = el.closest('.tab-pane');
+    if (tabPane && !tabPane.classList.contains('active')) {
+      return;
+    }
+
     const panelId = el.getAttribute('data-panel-id') || el.id;
+    if (panelId && (panelId.startsWith('panel-about-') || panelId.startsWith('about_system-') || panelId.startsWith('panel-system-') || panelId.startsWith('panel-slc-') || panelId.startsWith('panel-throttling-'))) {
+      return;
+    }
+
     if (panelId && !processedIds.has(panelId)) {
       processedIds.add(panelId);
       loadPanelData(panelId);
@@ -136,10 +168,10 @@ if (typeof window !== 'undefined') {
   window.registerPanelRenderer = registerPanelRenderer;
   window.initPanels = initPanels;
 
-  // Автоматический опрос панелей при активации вкладки
+  // Автоматический опрос панелей при активации вкладки (кроме tab-about-system)
   document.addEventListener('tab:activated', (e) => {
     const tabId = e.detail?.tabId;
-    if (tabId) {
+    if (tabId && tabId !== 'tab-about-system') {
       const tabPane = document.getElementById(tabId);
       if (tabPane) {
         initPanels(tabPane);

@@ -16,7 +16,7 @@
 # Package: apps.windows.sdk.core
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-15 14:32:00
 # =============================================================================
 
 """Normalized data models for Windows system information"""
@@ -317,7 +317,17 @@ class SoftwareAuditReport:
     apps: List[InstalledAppInfo] = field(default_factory=list)
 
     def to_dict(self) -> Dict[str, Any]:
-        return {'timestamp': self.timestamp.isoformat(), 'total_apps': self.total_apps, 'active_apps_count': self.active_apps_count, 'unused_apps_count': self.unused_apps_count, 'categories_breakdown': self.categories_breakdown, 'recently_launched': [a.to_dict() for a in self.recently_launched[:10]], 'top_launched': [a.to_dict() for a in self.top_launched[:10]], 'never_launched_or_dormant_count': len(self.never_launched_or_dormant)}
+        return {
+            'timestamp': self.timestamp.isoformat(),
+            'total_apps': self.total_apps,
+            'active_apps_count': self.active_apps_count,
+            'unused_apps_count': self.unused_apps_count,
+            'categories_breakdown': self.categories_breakdown,
+            'recently_launched': [a.to_dict() for a in self.recently_launched[:15]],
+            'top_launched': [a.to_dict() for a in self.top_launched[:15]],
+            'never_launched_or_dormant': [a.to_dict() for a in self.never_launched_or_dormant[:20]],
+            'never_launched_or_dormant_count': len(self.never_launched_or_dormant),
+        }
 
 @dataclass
 class SystemState:

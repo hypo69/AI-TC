@@ -1,6 +1,6 @@
 <#
 =============================================================================
-Process Name: AI-Windows-Admin Automation - Show Tlm
+Process Name: AI-TC Automation - Show Tlm
 =============================================================================
 Description:
   Лончер веб-интерфейса аналитики и визуализации системной телеметрии (show-tlm).
@@ -13,15 +13,15 @@ Description:
     3. Контроль окружения: автоматический поиск подходящего Python/venv и проверка портов.
 
 File: show-tlm.ps1
-Project: ai-windows-admin
+Project: ai-tc
 Package: root
 Author: hypo69
 Copyright: © 2026 hypo69
-Updated: 2026-10-10 17:35:00
+Updated: 2026-10-28 00:10:00
 =============================================================================
 
 .SYNOPSIS
-    Запуск Web GUI сервера исследования системной телеметрии AI Windows Admin.
+    Запуск Web GUI сервера исследования системной телеметрии ai-tc.
 
 .DESCRIPTION
     Инициализирует и запускает веб-сервер модуля telemetry_research,
@@ -101,6 +101,9 @@ if (Test-Path $venvPython) {
 
 $targetModule = Join-Path $scriptDir 'apps\windows\telemetry\analytics\main.py'
 if (-not (Test-Path $targetModule)) {
+    $targetModule = Join-Path $scriptDir 'apps\windows\telemetry_research\main.py'
+}
+if (-not (Test-Path $targetModule)) {
     Write-Error "Модуль telemetry_research не найден по пути: $targetModule"
     exit 1
 }
@@ -109,7 +112,7 @@ $url = "http://${HostAddress}:${Port}"
 
 Write-Host ""
 Write-Host "=================================================================" -ForegroundColor Cyan
-Write-Host "  🔬 AI-Windows-Admin: Исследование телеметрии Windows (Web GUI)" -ForegroundColor Green
+Write-Host "  🔬 AI-TC: Исследование телеметрии Windows (Web GUI)" -ForegroundColor Green
 Write-Host "=================================================================" -ForegroundColor Cyan
 Write-Host "  • URL веб-интерфейса: $url" -ForegroundColor Yellow
 Write-Host "  • Интерпретатор:      $pythonExe" -ForegroundColor Gray

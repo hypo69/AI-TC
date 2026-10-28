@@ -20,7 +20,7 @@
 # Package: apps.windows.sdk.modules.storage_manager.core
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-13 14:20:00
 # =============================================================================
 
 from __future__ import annotations
@@ -59,6 +59,9 @@ IOCTL_DISK_GET_DRIVE_GEOMETRY_EX = 0x000700A0
 IOCTL_DISK_GET_DRIVE_LAYOUT_EX = 0x00070050
 IOCTL_STORAGE_QUERY_PROPERTY = 0x002D1400
 IOCTL_STORAGE_PROTOCOL_COMMAND = 0x002D1480
+IOCTL_SCSI_PASS_THROUGH = 0x0004d004
+IOCTL_STORAGE_PREDICT_FAILURES = 0x002D1100
+SMART_RCV_DRIVE_DATA = 0x0007c088
 FSCTL_LOCK_VOLUME = 0x00090018
 FSCTL_UNLOCK_VOLUME = 0x0009001C
 FSCTL_DISMOUNT_VOLUME = 0x00090020
@@ -443,6 +446,232 @@ class WindowsRawDiskIO:
 
         return result
 
+    def query_sat_ata_smart_health(self, disk_id: int) -> Dict[str, Any]:
+        """Запрос показателей здоровья и наработки SATA/ATA накопителя через SAT ATA Pass-Through (16).
+
+        Выполняет низкоуровневую отправку команды ATA SMART READ DATA (0xB0, feature 0xD0)
+        через SCSI Pass-Through интерфейс (IOCTL_SCSI_PASS_THROUGH), что позволяет
+        получать полные SMART-атрибуты для накопителей SATA/HDD/SSD за любыми типами
+        контроллеров (AHCI, Storport, RAID/VMD), когда стандартные WMI/CIM счетчики недоступны.
+
+        Args:
+            disk_id: Номер накопителя (0 для PhysicalDrive0).
+
+        Returns:
+            Dict[str, Any]: Словарь с нормализованными SMART-показателями
+            (power_on_hours, temperature_c, percentage_used, power_cycles, reallocated_sectors, smart_attributes).
+        """
+        result: Dict[str, Any] = {
+            'temperature_c': None,
+            'percentage_used': None,
+            'power_on_hours': None,
+            'power_cycles': None,
+            'reallocated_sectors': None,
+            'smart_attributes': {},
+            'raw_ata_available': False,
+        }
+        if not self.is_win32 or not self._kernel32:
+            return result
+
+        with self.open_disk(disk_id, write_access=True) as handle:
+            if not handle:
+                return result
+
+            header_len = 56
+            sense_len = 32
+            data_len = 512
+            sense_offset = header_len
+            data_offset = header_len + sense_len
+            total_buf_len = data_offset + data_len
+
+            buf = bytearray(total_buf_len)
+            struct.pack_into('<H', buf, 0, header_len)
+            buf[6] = 16  # CdbLength = 16
+            buf[7] = sense_len
+            buf[8] = 1   # SCSI_IOCTL_DATA_IN = 1
+            struct.pack_into('<I', buf, 12, data_len)
+            struct.pack_into('<I', buf, 16, 5)  # TimeOutValue = 5s
+            struct.pack_into('<Q', buf, 24, data_offset)
+            struct.pack_into('<I', buf, 32, sense_offset)
+
+            # CDB: ATA PASS-THROUGH (16) = 0x85
+            cdb = [0x85, 0x08, 0x2E, 0x00, 0xD0, 0x00, 0x01, 0x00, 0x00, 0x00, 0x4F, 0x00, 0xC2, 0x00, 0xB0, 0x00]
+            for i, b_val in enumerate(cdb):
+                buf[36 + i] = b_val
+
+            c_buf = (ctypes.c_ubyte * total_buf_len).from_buffer_copy(buf)
+            returned = wintypes.DWORD(0)
+            ok = self._kernel32.DeviceIoControl(
+                handle,
+                IOCTL_SCSI_PASS_THROUGH,
+                ctypes.byref(c_buf),
+                total_buf_len,
+                ctypes.byref(c_buf),
+                total_buf_len,
+                ctypes.byref(returned),
+                None,
+            )
+
+            if ok and returned.value >= data_offset + 362:
+                raw_res = bytes(c_buf)
+                data = raw_res[data_offset : data_offset + 512]
+                attrs: Dict[int, Dict[str, Any]] = {}
+
+                for i in range(30):
+                    entry = data[2 + i * 12 : 2 + (i + 1) * 12]
+                    attr_id = entry[0]
+                    if attr_id == 0:
+                        continue
+                    flags = struct.unpack('<H', entry[1:3])[0]
+                    val = entry[3]
+                    worst = entry[4]
+                    raw_val = int.from_bytes(entry[5:11], byteorder='little')
+                    attrs[attr_id] = {
+                        'id': attr_id,
+                        'val': val,
+                        'worst': worst,
+                        'raw': raw_val,
+                        'flags': flags,
+                    }
+
+                result['smart_attributes'] = attrs
+                result['raw_ata_available'] = True
+
+                # Извлечение Power-On Hours (ID 9)
+                if 9 in attrs and attrs[9]['raw'] > 0:
+                    result['power_on_hours'] = attrs[9]['raw']
+
+                # Извлечение циклов включения / запусков (ID 12 / ID 4)
+                if 12 in attrs:
+                    result['power_cycles'] = attrs[12]['raw']
+                elif 4 in attrs:
+                    result['power_cycles'] = attrs[4]['raw']
+
+                # Извлечение переназначенных секторов (ID 5)
+                if 5 in attrs:
+                    result['reallocated_sectors'] = attrs[5]['raw']
+
+                # Извлечение температуры (ID 194 / ID 190)
+                if 194 in attrs:
+                    t_val = attrs[194]['raw'] & 0xFF
+                    if 5 <= t_val <= 100:
+                        result['temperature_c'] = float(t_val)
+                elif 190 in attrs:
+                    t_val = attrs[190]['raw'] & 0xFF
+                    if 5 <= t_val <= 100:
+                        result['temperature_c'] = float(t_val)
+
+                # Извлечение износа SSD (ID 202 = Percent Lifetime Used, ID 231 = SSD Life Left)
+                if 202 in attrs:
+                    result['percentage_used'] = float(attrs[202]['raw'])
+                elif 231 in attrs:
+                    result['percentage_used'] = max(0.0, min(100.0, 100.0 - float(attrs[231]['val'])))
+
+            # Fallback на SMART_RCV_DRIVE_DATA, если SAT вернул пустые атрибуты (например, на NVMe эмуляции)
+            if not result['smart_attributes']:
+                in_params = bytearray(32)
+                struct.pack_into('<I', in_params, 0, 512)
+                in_params[4] = 0xD0
+                in_params[5] = 1
+                in_params[6] = 1
+                in_params[7] = 0x4F
+                in_params[8] = 0xC2
+                in_params[9] = 0xA0
+                in_params[10] = 0xB0
+                in_params[11] = 0
+                in_buf = (ctypes.c_ubyte * len(in_params)).from_buffer_copy(in_params)
+                out_buf = (ctypes.c_ubyte * (16 + 512))()
+                returned_smart = wintypes.DWORD(0)
+                ok_smart = self._kernel32.DeviceIoControl(
+                    handle,
+                    SMART_RCV_DRIVE_DATA,
+                    ctypes.byref(in_buf),
+                    len(in_buf),
+                    ctypes.byref(out_buf),
+                    len(out_buf),
+                    ctypes.byref(returned_smart),
+                    None,
+                )
+                if ok_smart and returned_smart.value >= 16 + 362:
+                    raw_smart = bytes(out_buf)[16 : 16 + 512]
+                    attrs_fb: Dict[int, Dict[str, Any]] = {}
+                    for i in range(30):
+                        entry = raw_smart[2 + i * 12 : 2 + (i + 1) * 12]
+                        attr_id = entry[0]
+                        if attr_id == 0:
+                            continue
+                        flags = struct.unpack('<H', entry[1:3])[0]
+                        val = entry[3]
+                        worst = entry[4]
+                        raw_val = int.from_bytes(entry[5:11], byteorder='little')
+                        attrs_fb[attr_id] = {
+                            'id': attr_id,
+                            'val': val,
+                            'worst': worst,
+                            'raw': raw_val,
+                            'flags': flags,
+                        }
+                    result['smart_attributes'] = attrs_fb
+                    result['raw_ata_available'] = True
+                    if 9 in attrs_fb and attrs_fb[9]['raw'] > 0:
+                        result['power_on_hours'] = attrs_fb[9]['raw']
+                    if 12 in attrs_fb:
+                        result['power_cycles'] = attrs_fb[12]['raw']
+                    elif 4 in attrs_fb:
+                        result['power_cycles'] = attrs_fb[4]['raw']
+                    if 5 in attrs_fb:
+                        result['reallocated_sectors'] = attrs_fb[5]['raw']
+                    if 194 in attrs_fb:
+                        t_val = attrs_fb[194]['raw'] & 0xFF
+                        if 5 <= t_val <= 100:
+                            result['temperature_c'] = float(t_val)
+                    elif 190 in attrs_fb:
+                        t_val = attrs_fb[190]['raw'] & 0xFF
+                        if 5 <= t_val <= 100:
+                            result['temperature_c'] = float(t_val)
+                    if 202 in attrs_fb:
+                        result['percentage_used'] = float(attrs_fb[202]['raw'])
+                    elif 231 in attrs_fb:
+                        result['percentage_used'] = max(0.0, min(100.0, 100.0 - float(attrs_fb[231]['val'])))
+
+        return result
+
+    def query_smart_health(self, disk_id: int, bus_type: Optional[str] = None) -> Dict[str, Any]:
+        """Универсальный опрос показателей здоровья и наработки SMART физического накопителя.
+
+        Автоматически определяет тип накопителя (NVMe или SATA/ATA) и выбирает
+        соответствующий низкоуровневый WinAPI IOCTL протокол:
+        1. NVMe Storage Protocol Command (NVME_LOG_PAGE_HEALTH_INFO)
+        2. SAT ATA Pass-Through (16) через SCSI Pass-Through (0x85)
+        3. Корректный fallback при частичной поддержке
+
+        Args:
+            disk_id: Номер физического накопителя (0, 1, ... для PhysicalDriveN).
+            bus_type: Опциональный тип шины ('NVMe', 'SATA', 'RAID', 'USB' и др.).
+
+        Returns:
+            Dict[str, Any]: Словарь с нормализованными SMART-показателями
+            (power_on_hours, temperature_c, percentage_used, power_cycles, reallocated_sectors и др.).
+        """
+        b_type = (bus_type or "").upper()
+        if "NVME" in b_type:
+            nvme_res = self.query_nvme_smart_health(disk_id)
+            if nvme_res.get("raw_nvme_available") and (nvme_res.get("power_on_hours") is not None or nvme_res.get("temperature_c") is not None):
+                return nvme_res
+
+        # Попытка через SAT ATA Pass-Through (для SATA / RAID / USB накопителей)
+        sat_res = self.query_sat_ata_smart_health(disk_id)
+        if sat_res.get("raw_ata_available") and (sat_res.get("power_on_hours") is not None or sat_res.get("temperature_c") is not None):
+            return sat_res
+
+        # Если не указан bus_type или SAT не вернул данных, пробуем NVMe как fallback
+        if not ("NVME" in b_type):
+            nvme_res = self.query_nvme_smart_health(disk_id)
+            if nvme_res.get("raw_nvme_available") and (nvme_res.get("power_on_hours") is not None or nvme_res.get("temperature_c") is not None):
+                return nvme_res
+
+        return sat_res if sat_res.get("raw_ata_available") else self.query_nvme_smart_health(disk_id)
+
     def get_geometry(self, disk_id: int) -> DiskGeometryInfo:
         """Получение геометрии и точного размера диска через IOCTL_DISK_GET_DRIVE_GEOMETRY_EX."""
         info = DiskGeometryInfo(bytes_per_sector=512)
@@ -825,7 +1054,7 @@ class WindowsRawDiskIO:
             geom = self.get_geometry(disk_id)
             if geom.disk_size_bytes > 0:
                 prop = self.query_storage_device_property(disk_id)
-                smart = self.query_nvme_smart_health(disk_id)
+                smart = self.query_smart_health(disk_id, prop.get('bus_type'))
                 disks.append({
                     'disk_id': disk_id,
                     'device_path': self.get_disk_device_path(disk_id),

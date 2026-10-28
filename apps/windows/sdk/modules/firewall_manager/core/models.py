@@ -16,11 +16,11 @@
 # Package: apps.windows.sdk.modules.firewall_manager.core
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-13 14:28:00
 # =============================================================================
 
 from __future__ import annotations
-"""# Description:"""
+"""Модели данных Pydantic для модуля управления брандмауэром Windows."""
 
 from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field
@@ -42,12 +42,17 @@ class FirewallRule(BaseModel):
     enabled: bool = True
     protocol: str = 'TCP'
     local_port: Optional[str] = None
+    remote_port: Optional[str] = None
+    profile: Optional[str] = None
     program: Optional[str] = None
 
 
 class FirewallReport(BaseModel):
     """Сводный отчет состояния брандмауэра."""
     profiles: List[FirewallProfile] = Field(default_factory=list)
+    domain_profile: str = 'ON'
+    private_profile: str = 'ON'
+    public_profile: str = 'ON'
     total_rules: int = 0
     active_inbound_rules: int = 0
     active_outbound_rules: int = 0
@@ -58,7 +63,7 @@ class FirewallReport(BaseModel):
 class FirewallRuleActionRequest(BaseModel):
     """Запрос на добавление, удаление или изменение правила."""
     rule_name: str
-    action: str  # add, delete, enable, disable
+    action: str  # add, delete, enable, disable, enable_rule, disable_rule, reset_defaults
     direction: Optional[str] = 'In'
     rule_action: Optional[str] = 'Allow'
     port: Optional[str] = None

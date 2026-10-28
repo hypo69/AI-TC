@@ -26,7 +26,7 @@
  * 
  * Usage:
  *   const loader = new LazyTabLoader();
- *   loader.registerTab('chat', '/html/chat/index.html', '/html/chat/main.js');
+ *   loader.registerTab('chat', '/html/tab_chat/index.html', '/html/tab_chat/main.js');
  *   await loader.loadTab('chat');  // Загружает вкладку
  *   loader.isLoaded('chat');       // true
  */
@@ -260,3 +260,4 @@ class LazyTabLoader {
 window.LazyTabLoader = LazyTabLoader;
 
 export default LazyTabLoader;
+

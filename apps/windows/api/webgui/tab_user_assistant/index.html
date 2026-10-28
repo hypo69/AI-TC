@@ -1,0 +1,159 @@
+<!--
+=============================================================================
+Process Name: Windows Web Interface - Index View
+=============================================================================
+Description:
+  Шаблон клиентского веб-интерфейса index.
+
+Usage Examples:
+    Web Route:
+      /windows/api/webgui/tab_user_assistant/index.html
+
+    Tab Frame Integration:
+      <iframe src="/windows/api/webgui/tab_user_assistant/index.html" class="w-100 h-100 border-0"></iframe>
+
+File: index.html
+Project: ai-windows-admin
+Package: windows/api/webgui/tab_user_assistant
+Author: hypo69
+Copyright: © 2026 hypo69
+Updated: 2026-10-20 10:55:00
+=============================================================================
+-->
+
+<!-- User Assistant Application Tab -->
+<style>
+  .assistant-container {
+    padding: 1rem;
+  }
+  .assistant-card {
+    background: var(--surface-1) !important;
+    border: 1.5px solid var(--border-color) !important;
+    border-radius: var(--radius-md, 8px);
+    padding: var(--kpi-padding, 0.75rem 1rem);
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    box-shadow: var(--shadow-xs, 0 1px 3px rgba(0, 0, 0, 0.08));
+  }
+  .assistant-label {
+    font-size: var(--kpi-label-size, 0.72rem);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+    color: var(--text-muted);
+  }
+  .assistant-value {
+    font-size: var(--kpi-val-size, 1.35rem);
+    font-weight: 700;
+    color: var(--text-color);
+    font-family: var(--font-mono, monospace);
+  }
+  .assistant-panel {
+    background: var(--surface-1) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: var(--radius-md, 8px);
+    overflow: hidden;
+    box-shadow: var(--shadow-xs, 0 1px 3px rgba(0, 0, 0, 0.08));
+  }
+  .assistant-panel-header {
+    background: var(--surface-2) !important;
+    border-bottom: 1px solid var(--border-color) !important;
+    padding: 0.6rem 0.9rem;
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--text-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .assistant-list-item {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border-subtle, rgba(128, 128, 128, 0.2));
+    transition: background 0.15s ease;
+    color: var(--text-color);
+  }
+  .assistant-list-item:hover {
+    background: rgba(56, 189, 248, 0.06);
+  }
+</style>
+<div class="assistant-container">
+  <!-- Заголовок вкладки -->
+  <div class="tab-header d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+    <div class="d-flex align-items-center gap-2">
+      <span class="tab-header-icon fs-4 text-warning">🗓️</span>
+      <div>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+          <h3 class="tab-header-title panel-header mb-0">Персональный ассистент пользователя</h3>
+          <span class="badge rounded-pill bg-success-subtle text-success border border-success px-3 py-2" id="assistant-status-badge">
+        ● Готов к работе
+      </span>
+        </div>
+        <small class="tab-header-subtitle text-secondary">Интеллектуальные напоминания, мониторинг рабочего времени, автоматизация рутинных задач и фокус</small>
+      </div>
+    </div>
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+        <button class="btn btn-sm btn-outline-info rounded-pill px-3" id="btn-assistant-refresh">
+<i class="bi bi-arrow-clockwise me-1"></i> Обновить
+      </button>
+        <button class="btn btn-sm btn-outline-warning rounded-pill px-3" id="btn-assistant-config">
+<i class="bi bi-gear-fill me-1"></i> Настройки (config.json)
+      </button>
+      </div>
+  </div>
+<!-- Top Metrics Bar -->
+<div class="row g-3 mb-3">
+<div class="col-md-3 col-sm-6">
+<div class="assistant-card">
+<span class="assistant-label">Событий на сегодня</span>
+<span class="assistant-value text-info" id="assistant-events-count">0</span>
+</div>
+</div>
+<div class="col-md-3 col-sm-6">
+<div class="assistant-card">
+<span class="assistant-label">Непрочитанных писем</span>
+<span class="assistant-value text-warning" id="assistant-unread-count">0</span>
+</div>
+</div>
+<div class="col-md-3 col-sm-6">
+<div class="assistant-card">
+<span class="assistant-label">Недавних файлов</span>
+<span class="assistant-value text-success" id="assistant-files-count">0</span>
+</div>
+</div>
+<div class="col-md-3 col-sm-6">
+<div class="assistant-card">
+<span class="assistant-label">Рабочее пространство</span>
+<span class="assistant-value text-body" id="assistant-workspace-status" style="font-size: 1.05rem;">Активно</span>
+</div>
+</div>
+</div>
+<!-- Main Content Panels Grid -->
+<div class="row g-3">
+<!-- Calendar & Agenda Panel -->
+<div class="col-lg-6">
+<div class="assistant-panel h-100">
+<div class="assistant-panel-header">
+<span>📅 Повестка дня и ближайшие события</span>
+<span class="badge bg-secondary" id="assistant-events-badge">0 событий</span>
+</div>
+<div class="p-0" id="assistant-events-list" style="max-height: 450px; overflow-y: auto;">
+<div class="p-3 text-muted text-center small">Загрузка повестки дня...</div>
+</div>
+</div>
+</div>
+<!-- Email Triage Panel -->
+<div class="col-lg-6">
+<div class="assistant-panel h-100">
+<div class="assistant-panel-header">
+<span>✉️ Непрочитанные сообщения</span>
+<span class="badge bg-secondary" id="assistant-mail-badge">0 писем</span>
+</div>
+<div class="p-0" id="assistant-mail-list" style="max-height: 450px; overflow-y: auto;">
+<div class="p-3 text-muted text-center small">Загрузка почты...</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+

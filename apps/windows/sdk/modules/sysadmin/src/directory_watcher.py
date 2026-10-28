@@ -16,7 +16,7 @@
 # Package: apps.windows.sdk.modules.sysadmin.src
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-13 14:15:00
 # =============================================================================
 
 from __future__ import annotations
@@ -633,14 +633,14 @@ _global_watcher: Optional[DirectoryWatcher] = None
 def get_directory_watcher(
     watch_dirs: Optional[Union[str, List[str]]] = None,
     exclusions: Optional[Union[WatcherExclusions, Dict[str, Any]]] = None,
-    auto_start: bool = False,
+    auto_start: bool = True,
 ) -> DirectoryWatcher:
     """Получить глобальный экземпляр DirectoryWatcher.
 
     Args:
         watch_dirs: Путь или список путей для мониторинга. Если не указаны, используются пути из config.json.
         exclusions: Настройки исключений. Если не указаны, загружаются из config.json.
-        auto_start: Автоматически запустить поток мониторинга (по умолчанию False, сбор возложен на tlm.ps1).
+        auto_start: Автоматически запустить поток мониторинга (по умолчанию True).
 
     Returns:
         DirectoryWatcher: Экземпляр наблюдателя.
@@ -661,14 +661,19 @@ def get_directory_watcher(
                             custom_paths = cfg_data.get('watch_directories')
                             if isinstance(custom_paths, list) and custom_paths:
                                 valid_paths = [p for p in custom_paths if isinstance(p, str) and os.path.isdir(p)]
+                                cwd_str = str(Path.cwd().resolve())
+                                if cwd_str not in valid_paths:
+                                    valid_paths.insert(0, cwd_str)
                                 if valid_paths:
                                     watch_dirs = valid_paths
                         if exclusions is None and 'exclusions' in cfg_data:
                             cfg_exclusions = cfg_data.get('exclusions')
             except Exception as e:
                 logger.debug(f'Не удалось загрузить параметры из config.json при первом создании: {e}')
+        if not watch_dirs:
+            watch_dirs = [str(Path.cwd().resolve())]
         active_exclusions = exclusions if exclusions is not None else cfg_exclusions
         _global_watcher = DirectoryWatcher(watch_dirs=watch_dirs, exclusions=active_exclusions)
-        if auto_start:
-            _global_watcher.start()
+    if auto_start and not _global_watcher._is_running:
+        _global_watcher.start()
     return _global_watcher

@@ -55,7 +55,7 @@
 | Параметр | Тип | По умолчанию | Описание |
 |---|---|---|---|
 | `interval_seconds` | `float / string` | `6.0` | Базовый интервал опроса легковесных метрик (CPU, RAM, сеть, быстрые датчики). |
-| `heavy_interval_seconds` | `float / string` | `90.0` | Интервал опроса тяжелых датчиков (WMI, SMART дисков, LibreHardwareMonitor). |
+| `heavy_interval_seconds` | `float / string` | `90.0` | Интервал опроса тяжелых датчиков (WMI/CIM, SMART накопителей). |
 | `fast_interval_seconds` | `float / string` | `30.0` | Интервал быстрого режима при детальной диагностике. |
 | `fast_duration_days` | `integer` | `2` | Максимальная длительность быстрого режима (в днях). |
 | `aggregation_interval_seconds` | `float / string` | `3600` | Интервал почасовой агрегации показаний сенсоров в БД (1 час). |
@@ -97,7 +97,7 @@
 |---|---|---|
 | `system_inspector` | `5 seconds` | Инспектор системных ресурсов и общей нагрузки ОС. |
 | `hardware_monitor` | `5 seconds` | Монитор аппаратных компонентов и датчиков. |
-| `librehardwaremonitor` | `5 seconds` | Интеграция с LibreHardwareMonitor DLL / OpenHardwareMonitor. |
+| `hardware_sensors` | `5 seconds` | Нативный опрос сенсоров оборудования WMI/CIM и ACPI. |
 | `windows_sysadmin` | `1 minute` | Мониторинг служб, задач и системного окружения. |
 | `windows_defender` | `1 hour` | Состояние антивируса и журнала угроз Defender. |
 | `windows_startup_auditor` | `1 hour` | Аудит программ автозагрузки, планировщика и сервисов. |

@@ -1,9 +1,10 @@
 ---
 name: windows-system-controller
-description: Autonomous Windows OS diagnostics, full telemetry, powershell/ssh execution and management controller
+# Updated: 2026-10-27 23:36:00
+description: "Autonomous Windows OS diagnostics, full telemetry, powershell/ssh execution and management controller"
 description_i18n:
-  en: Autonomous Windows OS diagnostics, full telemetry, powershell/ssh execution and management controller
-  ru: Автономный полноправный контроллер Windows OS: диагностика, телеметрия, PowerShell/SSH и прямое управление через SDK
+  en: "Autonomous Windows OS diagnostics, full telemetry, powershell/ssh execution and management controller"
+  ru: "Автономный полноправный контроллер Windows OS: диагностика, телеметрия, PowerShell/SSH и прямое управление через SDK"
 ---
 
 # 🖥️ Навык: Windows System Controller (Full Control & SDK Plane)
@@ -58,7 +59,7 @@ apps/windows/sdk/
     ├── explorer_manager/     # Shell расширения, настройки Проводника
     ├── firewall_manager/     # Правила сетевого экрана, профили, порты
     ├── focus_policy/         # Уведомления, режим «Не беспокоить»
-    ├── hardware/             # Сенсоры (CPU, GPU, RAM, материнская плата, LibreHardwareMonitor)
+    ├── hardware/             # Сенсоры (CPU, GPU, RAM, материнская плата, Hardware Monitor)
     ├── network/              # Адаптеры, IP, DNS, сокеты, таблица маршрутов
     ├── performance_tracing/  # Мониторинг узких мест и нагрузки
     ├── personalization/      # Темы, параметры рабочего стола

@@ -14,7 +14,7 @@
 # Package: apps.windows.telemetry
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-20 09:14:30
 # =============================================================================
 
 """Модуль `IncidentDetector`.
@@ -29,7 +29,6 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
-# logger import handling
 try:
     from logger import logger
 except ImportError:
@@ -37,6 +36,7 @@ except ImportError:
 
 from apps.windows.telemetry.models import TelemetryIncident
 from apps.windows.telemetry.ring_buffer import TelemetryRingBuffer
+from apps.windows.telemetry.telemetry_config import TelemetryConfigManager, get_telemetry_config_manager
 
 
 class IncidentDetector:
@@ -44,25 +44,80 @@ class IncidentDetector:
 
     def __init__(
         self,
-        cpu_threshold: float = 90.0,
-        disk_write_burst_mb: float = 100.0,
-        net_burst_mb: float = 50.0,
+        cpu_threshold: Optional[float] = None,
+        disk_write_burst_mb: Optional[float] = None,
+        net_burst_mb: Optional[float] = None,
         ring_buffer: Optional[TelemetryRingBuffer] = None,
+        sampling_controller: Optional[Any] = None,
+        storage: Optional[Any] = None,
+        config_manager: Optional[TelemetryConfigManager] = None,
     ) -> None:
-        """Инициализирует детектор пороговыми значениями и ссылкой на кольцевой буфер.
+        """Инициализирует детектор пороговыми значениями из конфигурации и ссылкой на кольцевой буфер.
 
         Args:
-            cpu_threshold: Порог срабатывания по CPU % (по умолчанию 90.0).
-            disk_write_burst_mb: Порог дисковой записи в МБ/с (по умолчанию 100.0).
-            net_burst_mb: Порог сетевого трафика в МБ/с (по умолчанию 50.0).
+            cpu_threshold: Порог срабатывания по CPU % (если не передано — из config.json).
+            disk_write_burst_mb: Порог дисковой записи в МБ/с (если не передано — из config.json).
+            net_burst_mb: Порог сетевого трафика в МБ/с (если не передано — из config.json).
             ring_buffer: Ссылка на экземпляр кольцевого буфера памяти.
+            sampling_controller: Опциональная ссылка на SamplingController для активации режима INCIDENT.
+            storage: Опциональная ссылка на TelemetryStorage для сохранения инцидентов.
+            config_manager: Экземпляр TelemetryConfigManager.
         """
-        self.cpu_threshold = cpu_threshold
-        self.disk_write_burst_mb = disk_write_burst_mb
-        self.net_burst_mb = net_burst_mb
+        self._config_manager = config_manager or get_telemetry_config_manager()
+        th = self._config_manager.get_thresholds_config()
+
+        self.cpu_threshold = float(cpu_threshold if cpu_threshold is not None else th.get("incident_cpu_pct", 90.0))
+        self.cpu_critical_threshold = float(th.get("incident_cpu_critical_pct", 95.0))
+        self.disk_write_burst_mb = float(disk_write_burst_mb if disk_write_burst_mb is not None else th.get("incident_disk_write_burst_mb_s", 100.0))
+        self.net_burst_mb = float(net_burst_mb if net_burst_mb is not None else th.get("incident_net_burst_mb_s", 50.0))
+        self.suspicious_temp_cpu_pct = float(th.get("suspicious_temp_cpu_pct", 15.0))
+        self.suspicious_temp_critical_cpu_pct = float(th.get("suspicious_temp_critical_cpu_pct", 30.0))
+        self.individual_process_high_cpu_pct = float(th.get("individual_process_high_cpu_pct", 50.0))
+        self._cooldown_seconds = float(th.get("incident_cooldown_seconds", 60.0))
+        self._window_before_seconds = float(th.get("incident_window_before_seconds", 300.0))
+
         self.ring_buffer = ring_buffer or TelemetryRingBuffer()
+        self.sampling_controller = sampling_controller
+        self.storage = storage
         self._last_incident_epoch: float = 0.0
-        self._cooldown_seconds: float = 60.0  # Не спамить одинаковыми инцидентами чаще раза в минуту
+
+    def evaluate_snapshot(self, snapshot: Any) -> Optional[TelemetryIncident]:
+        """Оценивает объект SystemSnapshot на наличие аномалий и при обнаружении сохраняет инцидент.
+
+        Args:
+            snapshot: Экземпляр SystemSnapshot или словарь метрик.
+
+        Returns:
+            Optional[TelemetryIncident]: Зафиксированный инцидент или None.
+        """
+        if hasattr(snapshot, "model_dump"):
+            snap_dict = snapshot.model_dump()
+        elif isinstance(snapshot, dict):
+            snap_dict = snapshot
+        else:
+            return None
+
+        cpu_obj = snap_dict.get("cpu") or {}
+        disk_io_obj = snap_dict.get("disk_io") or {}
+        nets = snap_dict.get("network") or []
+        top_procs = snap_dict.get("top_processes") or []
+
+        flat_snap = {
+            "cpu_total_percent": cpu_obj.get("total_percent", snap_dict.get("cpu_total_percent", 0.0)),
+            "disk_write_bytes_sec": disk_io_obj.get("write_bytes_per_sec", snap_dict.get("disk_write_bytes_sec", 0.0)),
+            "network_sent_bytes_sec": sum(float(n.get("bytes_sent_per_sec") or 0.0) for n in nets if isinstance(n, dict)),
+            "network_recv_bytes_sec": sum(float(n.get("bytes_recv_per_sec") or 0.0) for n in nets if isinstance(n, dict)),
+        }
+        inc = self.check_anomaly(flat_snap, processes=top_procs)
+        if inc is not None:
+            if self.sampling_controller and hasattr(self.sampling_controller, "trigger_incident_mode"):
+                self.sampling_controller.trigger_incident_mode()
+            if self.storage and hasattr(self.storage, "save_incident"):
+                try:
+                    self.storage.save_incident(inc)
+                except Exception as st_err:
+                    logger.debug(f"Ошибка сохранения инцидента в БД: {st_err}")
+        return inc
 
     def check_anomaly(
         self,
@@ -95,7 +150,7 @@ class IncidentDetector:
         # 1. Проверка CPU Spike
         if cpu_pct >= self.cpu_threshold:
             trigger_type = "cpu_spike"
-            severity = "critical" if cpu_pct >= 95.0 else "warning"
+            severity = "critical" if cpu_pct >= self.cpu_critical_threshold else "warning"
             title = f"Критическая нагрузка на процессор: {cpu_pct:.1f}%"
             description = f"Общая загрузка CPU превысила порог {self.cpu_threshold}%, достигнув {cpu_pct:.1f}%."
 
@@ -121,7 +176,7 @@ class IncidentDetector:
                 is_suspicious_location = any(
                     loc in exe_path for loc in ("\\temp\\", "\\appdata\\local\\temp", "\\users\\public\\")
                 )
-                if is_suspicious_location and (p_cpu > 15.0 or trigger_type is not None):
+                if is_suspicious_location and (p_cpu > self.suspicious_temp_cpu_pct or trigger_type is not None):
                     suspects.append({
                         "pid": p.get("pid"),
                         "name": p.get("name"),
@@ -130,13 +185,13 @@ class IncidentDetector:
                         "memory_mb": p.get("memory_mb"),
                         "reason": "Запуск из временного каталога с повышенной активностью",
                     })
-                    if trigger_type is None and p_cpu > 30.0:
+                    if trigger_type is None and p_cpu > self.suspicious_temp_critical_cpu_pct:
                         trigger_type = "suspicious_process"
                         severity = "critical"
                         title = f"Подозрительный процесс из Temp: {p.get('name')} (PID {p.get('pid')})"
                         description = f"Процесс {p.get('name')} выполняется из {exe_path} и потребляет {p_cpu:.1f}% CPU."
 
-                elif p_cpu >= 50.0:
+                elif p_cpu >= self.individual_process_high_cpu_pct:
                     suspects.append({
                         "pid": p.get("pid"),
                         "name": p.get("name"),
@@ -170,8 +225,8 @@ class IncidentDetector:
         self._last_incident_epoch = now
         inc_id = f"INC-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}-{uuid.uuid4().hex[:4].upper()}"
 
-        # Захватываем срез из кольцевого буфера (например, 5 минут до события)
-        raw_window = self.ring_buffer.get_window(center_timestamp=now, before_seconds=300.0, after_seconds=0.0)
+        # Захватываем срез из кольцевого буфера
+        raw_window = self.ring_buffer.get_window(center_timestamp=now, before_seconds=self._window_before_seconds, after_seconds=0.0)
 
         incident = TelemetryIncident(
             incident_id=inc_id,

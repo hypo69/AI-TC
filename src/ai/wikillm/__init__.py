@@ -40,9 +40,11 @@ from .normalizer import CanonicalKeyNormalizer
 from .router import init_router, router
 from .storage import WikiStorage
 from .telemetry_bridge import TelemetryWikiBridge
+from .client import WikiLLMClient
 
 __all__ = [
     "WikiLLMEngine",
+    "WikiLLMClient",
     "WikiStorage",
     "WikiLLMConfig",
     "load_config",

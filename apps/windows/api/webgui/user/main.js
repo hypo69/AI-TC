@@ -14,7 +14,7 @@
  * Package: windows/api/webgui/user
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-10 17:35:00
+ * Updated: 2026-10-16 14:55:00
  * =============================================================================
  */
 
@@ -147,15 +147,15 @@ function onTabSwitched(targetId) {
 
 // Карта конфигураций вкладок
 const USER_TAB_DEFS = {
-  'chat': { html: '/html/chat/index.html', js: '/html/chat/main.js' },
-  'rag': { html: '/html/rag_tab/index.html', js: '/html/rag_tab/main.js' },
-  'telegram-rag': { html: '/html/telegram_rag_tab/index.html', js: '/html/telegram_rag_tab/main.js' },
-  'news': { html: '/html/news_tab/index.html', js: '/html/news_tab/main.js' },
-  'tts': { html: '/html/tts_tab/index.html', js: '/html/tts_tab/main.js' },
-  'voice': { html: '/html/voice_tab/index.html', js: '/html/voice_tab/main.js' },
-  'skills': { html: '/html/skills_tab/index.html', js: '/html/skills_tab/main.js' },
-  'plugins': { html: '/html/plugins_tab/index.html', js: '/html/plugins_tab/main.js' },
-  'user-directories': { html: '/html/user_directories_tab/index.html', js: '/html/user_directories_tab/main.js' },
+  'chat': { html: '/html/tab_chat/index.html', js: '/html/tab_chat/main.js' },
+  'rag': { html: '/html/tab_rag/index.html', js: '/html/tab_rag/main.js' },
+  'telegram-rag': { html: '/html/tab_telegram_rag/index.html', js: '/html/tab_telegram_rag/main.js' },
+  'news': { html: '/html/tab_news/index.html', js: '/html/tab_news/main.js' },
+  'tts': { html: '/html/tab_tts/index.html', js: '/html/tab_tts/main.js' },
+  'voice': { html: '/html/tab_voice/index.html', js: '/html/tab_voice/main.js' },
+  'skills': { html: '/html/tab_skills/index.html', js: '/html/tab_skills/main.js' },
+  'plugins': { html: '/html/tab_plugins/index.html', js: '/html/tab_plugins/main.js' },
+  'user-directories': { html: '/html/tab_user_directories/index.html', js: '/html/tab_user_directories/main.js' },
 };
 
 const loadedUserTabs = new Set();
@@ -397,9 +397,7 @@ async function loadTabContent(tabName, url, jsOverrideSrc) {
     
     await new Promise((resolve) => {
       const script = document.createElement('script');
-      if (tabName === 'instructions' || tabName === 'rag') {
-        script.type = 'module';
-      }
+      script.type = 'module';
       script.src = scriptSrc;
       script.onload = () => {
         console.log(`[User] Loaded JS for ${tabName}`);

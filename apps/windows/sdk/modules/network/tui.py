@@ -16,7 +16,7 @@
 # Package: apps.windows.sdk.modules.network
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 22:22:30
+# Updated: 2026-10-20 13:23:00
 # =============================================================================
 
 from __future__ import annotations
@@ -33,6 +33,38 @@ try:
     from apps.tshark import AIDetector, AnomalyReport, CaptureFilter, NetworkInterface, PacketSummary, TSharkWrapper, TrafficAnalyzer, TrafficStats
 except ImportError:
     AIDetector, AnomalyReport, CaptureFilter, NetworkInterface, PacketSummary, TSharkWrapper, TrafficAnalyzer, TrafficStats = (None,) * 8
+
+
+class _FallbackTSharkWrapper:
+    """Резервная заглушка TSharkWrapper при отсутствии пакета apps.tshark."""
+    tshark_path: Optional[str] = None
+
+    def is_available(self) -> bool:
+        return False
+
+    def list_interfaces(self) -> list:
+        return []
+
+    async def live_capture_stream(self, *args: Any, **kwargs: Any) -> Any:
+        if False:
+            yield None
+
+
+class _FallbackTrafficAnalyzer:
+    """Резервная заглушка TrafficAnalyzer при отсутствии пакета apps.tshark."""
+
+    def compute_stats(self, packets: Any) -> Any:
+        return TrafficStats() if TrafficStats is not None else None
+
+    def detect_heuristics(self, packets: Any) -> List[str]:
+        return []
+
+
+class _FallbackAIDetector:
+    """Резервная заглушка AIDetector при отсутствии пакета apps.tshark."""
+
+    async def diagnose_traffic(self, packets: Any, stats: Any, heuristics: Any) -> Any:
+        return AnomalyReport() if AnomalyReport is not None else None
 try:
     from rich.console import Console
     from rich.layout import Layout
@@ -63,9 +95,9 @@ class NetworkTerminalState:
         """
         self.interface: str = interface
         self.display_filter: str = display_filter
-        self.wrapper: TSharkWrapper = TSharkWrapper()
-        self.analyzer: TrafficAnalyzer = TrafficAnalyzer()
-        self.ai_detector: AIDetector = AIDetector()
+        self.wrapper: Any = TSharkWrapper() if TSharkWrapper is not None else _FallbackTSharkWrapper()
+        self.analyzer: Any = TrafficAnalyzer() if TrafficAnalyzer is not None else _FallbackTrafficAnalyzer()
+        self.ai_detector: Any = AIDetector() if AIDetector is not None else _FallbackAIDetector()
         self.packet_buffer: Deque[PacketSummary] = deque(maxlen=max_buffer_packets)
         self.total_packets_captured: int = 0
         self.total_bytes_captured: int = 0
@@ -89,11 +121,16 @@ class NetworkTerminalState:
 
     def compute_stats(self) -> TrafficStats:
         """Compute rolling traffic statistics from current packet buffer."""
-        return self.analyzer.compute_stats(list(self.packet_buffer))
+        if hasattr(self.analyzer, 'compute_stats'):
+            return self.analyzer.compute_stats(list(self.packet_buffer))
+        return TrafficStats() if TrafficStats is not None else None
 
     def evaluate_security(self) -> None:
         """Run heuristics evaluation over current sliding window."""
-        self.latest_heuristics = self.analyzer.detect_heuristics(list(self.packet_buffer))
+        if hasattr(self.analyzer, 'detect_heuristics'):
+            self.latest_heuristics = self.analyzer.detect_heuristics(list(self.packet_buffer))
+        else:
+            self.latest_heuristics = []
 
 def render_ui(state: NetworkTerminalState) -> Any:
     """Render Rich dashboard layout for network monitoring.

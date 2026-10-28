@@ -18,7 +18,7 @@
 # Package: src.ai.providers.agy
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-15 11:27:00
 # =============================================================================
 
 """Antigravity SDK chat connection and request routing adapter.
@@ -210,13 +210,99 @@ class AgyChatBase:
             if self._agent is not None and is_started and (self._active_system_prompt == sys_prompt):
                 return self._agent
             await self._close_agent_unlocked()
-            from google.antigravity import Agent, LocalAgentConfig, CapabilitiesConfig
-            config = LocalAgentConfig(model=self.model_id, system_instructions=sys_prompt, api_key=self.api_key, tools=[], policies=[], capabilities=CapabilitiesConfig(enable_subagents=False, enabled_tools=[]))
+            try:
+                from google.antigravity import Agent, LocalAgentConfig, CapabilitiesConfig
+                from google.antigravity.types import RetryConfig, ModelAPIRetryConfig, ModelOutputRetryConfig
+            except ImportError as exc:
+                err_text = (
+                    "Пакет 'google-antigravity' не установлен в окружении Python. "
+                    "Выполните команду: pip install google-antigravity"
+                )
+                logger.error(f"[AgyChatBase] {err_text}: {exc}")
+                raise RuntimeError(err_text) from exc
+
+            retry_config = RetryConfig(
+                api_retry=ModelAPIRetryConfig(max_retries=0),
+                model_output_retry=ModelOutputRetryConfig(max_retries=0),
+            )
+            config = LocalAgentConfig(
+                model=self.model_id,
+                system_instructions=sys_prompt,
+                api_key=self.api_key,
+                tools=[],
+                policies=[],
+                capabilities=CapabilitiesConfig(enable_subagents=False, enabled_tools=[]),
+                retry_config=retry_config,
+            )
             agent = Agent(config)
             await agent.__aenter__()
             self._agent = agent
             self._active_system_prompt = sys_prompt
             return self._agent
+
+    def _handle_agy_error(self, ex: Exception) -> RuntimeError:
+        """Обрабатывает и регистрирует ошибки Antigravity SDK, закрывая сессию и формируя исключение.
+
+        При ошибках перегрузки модели (503 UNAVAILABLE / high demand) или аварийном завершении
+        процесса harness (WS close code 1006) фиксирует модель как исчерпанную и формирует
+        окончательное исключение, прерывающее выполнение без скрытых повторов.
+
+        Args:
+            ex (Exception): Исходное исключение от SDK или WebSocket.
+
+        Returns:
+            RuntimeError: Исключение с описанием ошибки для возврата клиенту.
+        """
+        err_str = str(ex)
+        low = err_str.lower()
+
+        is_503 = (
+            '503' in err_str
+            or 'unavailable' in low
+            or 'high demand' in low
+            or 'unreachable' in low
+            or 'stream_handler.go' in low
+            or 'planner output' in low
+        )
+        is_harness_crash = (
+            'close code 1006' in low
+            or 'harness process exited' in low
+        )
+
+        from src.ai.orchestration.model_error_hub import record_model_error
+
+        if is_503 or is_harness_crash:
+            from src.ai.orchestration.model_pool_state import mark_model_exhausted
+            record_model_error(
+                provider='agy',
+                model_name=self.model_id,
+                error=err_str,
+                status_code=503 if is_503 else 500,
+                action_taken='switch_model'
+            )
+            mark_model_exhausted('agy', self.model_id, force=True)
+            if is_503:
+                msg = (
+                    f"Ошибка провайдера agy ({self.model_id}): Модель временно недоступна из-за высокой нагрузки "
+                    f"(503 UNAVAILABLE / High demand). Harness process exited (WS close code 1006)."
+                )
+            else:
+                msg = (
+                    f"Ошибка провайдера agy ({self.model_id}): Процесс harness завершился непредвиденно "
+                    f"(WS close code 1006)."
+                )
+            logger.error(f"[AgyChatBase] {msg}: {err_str}", exc_info=True)
+            return RuntimeError(msg)
+
+        if any((x in err_str for x in ('404', 'NOT_FOUND', 'not supported', 'is no longer available', 'not found'))):
+            from src.ai.model_manager import add_unsupported_model
+            add_unsupported_model('agy', self.model_id, reason=err_str)
+            add_unsupported_model('gemini', self.model_id, reason=err_str)
+
+        record_model_error(provider='agy', model_name=self.model_id, error=err_str, action_taken='failed')
+        msg = f"Ошибка провайдера agy ({self.model_id}): {err_str}"
+        logger.error(f"[AgyChatBase] {msg}", exc_info=True)
+        return RuntimeError(msg)
 
     async def ask(self, q: str, system_instruction: Optional[str]='', temperature: Optional[float]=0.0, max_tokens: Optional[int]=0, **kwargs) -> str:
         """Send single request to agent.
@@ -245,24 +331,8 @@ class AgyChatBase:
             from src.config import is_debug_mode
             if is_debug_mode():
                 logger.critical(f'[DEBUG MODE] Ошибка Antigravity SDK ask ({self.model_id}): {e}')
-                raise e
-            err_str = str(e)
-            if '503' in err_str or 'UNAVAILABLE' in err_str:
-                from src.ai.orchestration.model_error_hub import record_model_error
-                from src.ai.orchestration.model_pool_state import mark_model_exhausted, switch_model
-                record_model_error(provider='agy', model_name=self.model_id, error=err_str, status_code=503, action_taken='switch_model')
-                mark_model_exhausted('agy', self.model_id)
-                err_msg = f'Error in AgyChatBase.ask (503 UNAVAILABLE): {err_str}'
-                logger.error(err_msg, exc_info=True)
-                raise
-            if any((x in err_str for x in ('404', 'NOT_FOUND', 'not supported', 'is no longer available', 'not found'))):
-                from src.ai.model_manager import add_unsupported_model
-                add_unsupported_model('agy', self.model_id, reason=err_str)
-                add_unsupported_model('gemini', self.model_id, reason=err_str)
-            from src.ai.orchestration.model_error_hub import record_model_error
-            record_model_error(provider='agy', model_name=self.model_id, error=err_str, action_taken='failed')
-            logger.error(f'Error in AgyChatBase.ask: {err_str}', exc_info=True)
-            raise
+            err_to_raise = self._handle_agy_error(e)
+            raise err_to_raise from e
 
     async def chat(self, q: str, history: Optional[List[Dict]]=[], system_instruction: Optional[str]='', save_history: bool=True, temperature: Optional[float]=0.0, max_tokens: Optional[int]=0, **kwargs) -> str:
         """Send chat request with conversation history.
@@ -315,23 +385,5 @@ class AgyChatBase:
             from src.config import is_debug_mode
             if is_debug_mode():
                 logger.critical(f'[DEBUG MODE] Ошибка Antigravity SDK chat_stream ({self.model_id}): {e}')
-                raise e
-            err_str = str(e)
-            if '503' in err_str or 'UNAVAILABLE' in err_str:
-                from src.ai.orchestration.model_error_hub import record_model_error
-                from src.ai.orchestration.model_pool_state import mark_model_exhausted, switch_model
-                record_model_error(provider='agy', model_name=self.model_id, error=err_str, status_code=503, action_taken='switch_model')
-                mark_model_exhausted('agy', self.model_id)
-                err_msg = f'Error Antigravity SDK (503 UNAVAILABLE): {err_str}'
-                logger.error(err_msg, exc_info=True)
-                yield err_msg
-                return
-            if any((x in err_str for x in ('404', 'NOT_FOUND', 'not supported', 'is no longer available', 'not found'))):
-                from src.ai.model_manager import add_unsupported_model
-                add_unsupported_model('agy', self.model_id, reason=err_str)
-                add_unsupported_model('gemini', self.model_id, reason=err_str)
-            from src.ai.orchestration.model_error_hub import record_model_error
-            record_model_error(provider='agy', model_name=self.model_id, error=err_str, action_taken='failed')
-            err_msg = f'Error Antigravity SDK: {err_str}'
-            logger.error(err_msg, exc_info=True)
-            yield err_msg
+            err_to_raise = self._handle_agy_error(e)
+            raise err_to_raise from e

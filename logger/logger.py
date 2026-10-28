@@ -21,7 +21,7 @@
 # Package: logger
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-12 06:41:00
+# Updated: 2026-10-27 23:32:00
 # =============================================================================
 
 from __future__ import annotations
@@ -82,13 +82,16 @@ BG_COLORS: Dict[str, str] = {
     'light_cyan': colorama.Back.LIGHTCYAN_EX,
 }
 
+CONSOLE_LEVEL: int = 25
+logging.addLevelName(CONSOLE_LEVEL, 'CONSOLE')
+
 # =============================================================================
 # Декларативная карта маршрутизации логов по подсистемам
 # =============================================================================
 SUBSYSTEM_ROUTING_MAP: List[Tuple[Tuple[str, ...], str]] = [
     # 1. Стек Windows (apps/windows)
     (('apps/windows/api', 'apps\\windows\\api', 'router_tc', 'internal_app'), 'windows_api.log'),
-    (('apps/windows/telemetry', 'apps\\windows\\telemetry', 'analytics', 'lhm'), 'telemetry.log'),
+    (('apps/windows/telemetry', 'apps\\windows\\telemetry', 'analytics'), 'telemetry.log'),
     (('apps/windows/wikillm', 'apps\\windows\\wikillm'), 'wikillm.log'),
     (('apps/windows', 'apps\\windows', 'src/ai/agents/windows_tools', 'src\\ai\\agents\\windows_tools', 'windows_admin'), 'windows.log'),
 
@@ -120,7 +123,7 @@ SUBSYSTEM_ROUTING_MAP: List[Tuple[Tuple[str, ...], str]] = [
     (('apps/google_user_desktop', 'apps\\google_user_desktop'), 'google_user_desktop.log'),
     (('apps/wikipedia_research', 'apps\\wikipedia_research'), 'wikipedia_research.log'),
     (('apps/tshark', 'apps\\tshark', 'network_analyzer'), 'network.log'),
-    (('playwright', 'torrent_playwright'), 'playwright.log'),
+    (('playwright',), 'playwright.log'),
     (('yt_dlp', 'yt-dlp'), 'yt_dlp.log'),
 
     # 5. Основной сервер и роутеры
@@ -244,7 +247,20 @@ class PrettyConsoleFormatter(logging.Formatter):
 
     def format(self, record: logging.LogRecord) -> str:
         from src.utils.printer import pformat
+        orig_levelname = record.levelname
         try:
+            if getattr(record, 'is_console_only', False) or record.levelno == CONSOLE_LEVEL:
+                if record.levelno in (logging.INFO, CONSOLE_LEVEL):
+                    record.levelname = 'CONSOLE'
+                elif record.levelno == logging.DEBUG:
+                    record.levelname = 'CONSOLE:DEBUG'
+                elif record.levelno == logging.WARNING:
+                    record.levelname = 'CONSOLE:WARNING'
+                elif record.levelno in (logging.ERROR, logging.CRITICAL):
+                    record.levelname = 'CONSOLE:ERROR'
+                else:
+                    record.levelname = 'CONSOLE'
+
             orig_msg = record.getMessage()
             formatted_msg = pformat(orig_msg)
             orig_record_msg = record.msg
@@ -257,6 +273,23 @@ class PrettyConsoleFormatter(logging.Formatter):
             return result
         except Exception:
             return super().format(record)
+        finally:
+            record.levelname = orig_levelname
+
+
+def _get_app_name() -> str:
+    """Возвращает название приложения из окружения, конфигурации или по умолчанию 'AI-TC'."""
+    if os.environ.get('APP_NAME'):
+        return os.environ['APP_NAME']
+    try:
+        cfg = __root__ / 'config.json'
+        if cfg.exists():
+            with open(cfg, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                return data.get('app_name') or data.get('app', {}).get('app_name') or 'AI-TC'
+    except Exception:
+        pass
+    return 'AI-TC'
 
 
 class Logger(metaclass=SingletonMeta):
@@ -265,6 +298,8 @@ class Logger(metaclass=SingletonMeta):
     Обеспечивает цветной консольный вывод, JSON-журналирование и автоматическую
     маршрутизацию в отдельные файлы подсистем с ротацией.
     """
+
+    CONSOLE: int = CONSOLE_LEVEL
 
     def __init__(
         self,
@@ -276,13 +311,14 @@ class Logger(metaclass=SingletonMeta):
         self._lock = threading.Lock()
         self._module_loggers: Dict[str, logging.Logger] = {}
 
-        env_dir = os.environ.get('AI_WINDOWS_ADMIN_LOGS_DIR') or os.environ.get('LOG_DIR')
+        env_dir = os.environ.get('AITC_LOGS_DIR') or os.environ.get('AI_TC_LOGS_DIR') or os.environ.get('AI_WINDOWS_ADMIN_LOGS_DIR') or os.environ.get('LOG_DIR')
         if env_dir:
             self.log_files_path = Path(env_dir)
         else:
+            app_name = _get_app_name()
             appdata = os.environ.get('APPDATA') or os.environ.get('LOCALAPPDATA')
             base_dir = Path(appdata) if appdata and os.path.exists(appdata) else Path.home() / '.config'
-            self.log_files_path = base_dir / 'AI-Windows-Admin' / 'logs'
+            self.log_files_path = base_dir / app_name / 'logs'
 
         self.info_log_path: Path = self.log_files_path / (info_log_path or 'info.log')
         self.debug_log_path: Path = self.log_files_path / (debug_log_path or 'debug.log')
@@ -622,9 +658,12 @@ class Logger(metaclass=SingletonMeta):
         exc_info: bool = False,
         text_color: str = '',
         bg_color: str = '',
-        level: int = logging.INFO,
+        level: int = CONSOLE_LEVEL,
     ) -> None:
         """Выводит сообщение исключительно в консоль без записи в файлы логов.
+
+        Содержит собственную метку уровня CONSOLE для однозначной идентификации
+        вывода только в консоль.
 
         Args:
             message (Any): Первое сообщение или объект для вывода.
@@ -634,9 +673,9 @@ class Logger(metaclass=SingletonMeta):
             exc_info (bool): Флаг включения трассировки стека исключения.
             text_color (str): Цвет текста (из TEXT_COLORS). По умолчанию без изменения цвета.
             bg_color (str): Цвет фона (из BG_COLORS). По умолчанию без фона.
-            level (int): Уровень логирования (по умолчанию logging.INFO).
+            level (int): Уровень логирования (по умолчанию CONSOLE_LEVEL).
         """
-        if level == logging.DEBUG and (not self.is_debug_mode):
+        if (level == logging.DEBUG or level == 10) and (not self.is_debug_mode):
             return
 
         if args:
@@ -651,7 +690,13 @@ class Logger(metaclass=SingletonMeta):
         colored_message = self._format_message(combined_message, ex, color)
         if self.logger_console:
             try:
-                self.logger_console.log(level, colored_message, exc_info=exc_info)
+                rec_level = CONSOLE_LEVEL if level in (logging.INFO, CONSOLE_LEVEL) else level
+                self.logger_console.log(
+                    rec_level,
+                    colored_message,
+                    exc_info=exc_info,
+                    extra={'is_console_only': True, 'console_tag': 'CONSOLE'},
+                )
             except Exception:
                 pass
 
@@ -680,13 +725,14 @@ def get_uvicorn_log_config(log_filename: str = 'fastapi.log') -> Dict[str, Any]:
     """
     try:
         import uvicorn.config
-        env_dir = os.environ.get('AI_WINDOWS_ADMIN_LOGS_DIR') or os.environ.get('LOG_DIR')
+        env_dir = os.environ.get('AITC_LOGS_DIR') or os.environ.get('AI_TC_LOGS_DIR') or os.environ.get('AI_WINDOWS_ADMIN_LOGS_DIR') or os.environ.get('LOG_DIR')
         if env_dir:
             logs_dir = Path(env_dir)
         else:
+            app_name = _get_app_name()
             appdata = os.environ.get('APPDATA') or os.environ.get('LOCALAPPDATA')
             base_dir = Path(appdata) if appdata and os.path.exists(appdata) else Path.home() / '.config'
-            logs_dir = base_dir / 'AI-Windows-Admin' / 'logs'
+            logs_dir = base_dir / app_name / 'logs'
 
         logs_dir.mkdir(parents=True, exist_ok=True)
         target_path = str(logs_dir / log_filename)

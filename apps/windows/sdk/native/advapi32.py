@@ -7,16 +7,16 @@
 #
 # Usage Examples:
 #   Python API:
-#     from apps.windows.telemetry.win32_ffi.advapi32 import SYSTEMTIME
+#     from apps.windows.sdk.win32_ffi.advapi32 import SYSTEMTIME
 #
 #     service = SYSTEMTIME()
 #
 # File: advapi32.py
 # Project: ai-windows-admin
-# Package: apps.windows.telemetry.win32_ffi
+# Package: apps.windows.sdk.win32_ffi
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 22:28:45
+# Updated: 2026-10-13 16:25:00
 # =============================================================================
 
 """advapi32.dll wrapper for registry, services, and security functions."""

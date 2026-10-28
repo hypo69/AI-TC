@@ -1,0 +1,10 @@
+{
+  "id": "theme-dark-slate",
+  "name": "Dark Slate (Тёмный сланец)",
+  "nameEn": "Dark Slate",
+  "category": "dark",
+  "icon": "bi-moon-fill",
+  "iconColor": "text-primary",
+  "description": "Глубокий сланец для комфортной работы в ночное время (UI Kit v2.0)",
+  "baseType": "dark"
+}

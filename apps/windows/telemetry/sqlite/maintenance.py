@@ -3,7 +3,8 @@
 # Process Name: AI-Windows-Admin Apps Windows Telemetry Sqlite - Maintenance
 # =============================================================================
 # Description:
-#   Обслуживание, очистка, агрегация и контроль размера базы данных SQLite.
+#   Обслуживание, очистка, агрегация и контроль размера базы данных SQLite
+#   в архитектуре 12 базовых таблиц.
 #
 # Usage Examples:
 #   Python API:
@@ -17,21 +18,22 @@
 # Package: apps.windows.telemetry.sqlite
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-20 09:53:00
 # =============================================================================
 
 from __future__ import annotations
 
-"""Методы обслуживания, очистки старых записей, дефрагментации и агрегации телеметрии в SQLite."""
+"""Методы обслуживания, очистки старых записей, дефрагментации и агрегации телеметрии в SQLite (12 таблиц)."""
 
+import json
 import sqlite3
-import time
 from collections import defaultdict
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from .connection import TelemetryConnectionManager
+from .delta_tracker import SNAPSHOT_FIELDS, VOLATILE_FIELDS
 
 try:
     from logger import logger
@@ -64,27 +66,27 @@ class TelemetryMaintenance:
         self.max_db_size_mb = max(1.0, float(max_db_size_mb))
         self.retention_days = max(1, int(retention_days))
         self.auto_vacuum_enabled = bool(auto_vacuum_enabled)
-        self.buffer_file_path = buffer_file_path or (self._cm.db_path.parent / 'telemetry_buffer.jsonl')
+        self.buffer_file_path = buffer_file_path or (self._cm.db_path.parent / "telemetry_buffer.jsonl")
 
     def get_db_file_sizes(self) -> Dict[str, int]:
         """Возвращает физические размеры файлов БД на диске (DB, WAL, SHM) в байтах."""
         db_path = self._cm.db_path
         db_bytes = db_path.stat().st_size if db_path.exists() else 0
-        wal_path = db_path.with_name(db_path.name + '-wal')
-        shm_path = db_path.with_name(db_path.name + '-shm')
+        wal_path = db_path.with_name(db_path.name + "-wal")
+        shm_path = db_path.with_name(db_path.name + "-shm")
         wal_bytes = wal_path.stat().st_size if wal_path.exists() else 0
         shm_bytes = shm_path.stat().st_size if shm_path.exists() else 0
         return {
-            'db_bytes': db_bytes,
-            'wal_bytes': wal_bytes,
-            'shm_bytes': shm_bytes,
-            'total_bytes': db_bytes + wal_bytes + shm_bytes,
+            "db_bytes": db_bytes,
+            "wal_bytes": wal_bytes,
+            "shm_bytes": shm_bytes,
+            "total_bytes": db_bytes + wal_bytes + shm_bytes,
         }
 
     def get_total_db_size_mb(self) -> float:
         """Возвращает совокупный физический размер файлов БД в МБ."""
         sizes = self.get_db_file_sizes()
-        return round(sizes['total_bytes'] / (1024.0 * 1024.0), 3)
+        return round(sizes["total_bytes"] / (1024.0 * 1024.0), 3)
 
     def checkpoint_wal(self) -> bool:
         """Сбрасывает WAL-журнал в основной файл базы данных."""
@@ -93,10 +95,10 @@ class TelemetryMaintenance:
         with self._cm.lock:
             try:
                 with self._cm.get_connection() as conn:
-                    conn.execute('PRAGMA wal_checkpoint(TRUNCATE);')
+                    conn.execute("PRAGMA wal_checkpoint(TRUNCATE);")
                 return True
             except Exception as e:
-                logger.debug(f'Ошибка сброса WAL-журнала: {e}')
+                logger.debug(f"Ошибка сброса WAL-журнала: {e}")
                 return False
 
     def vacuum(self) -> bool:
@@ -108,229 +110,318 @@ class TelemetryMaintenance:
             try:
                 conn = sqlite3.connect(str(self._cm.db_path), timeout=30.0, isolation_level=None)
                 try:
-                    conn.execute('VACUUM;')
+                    conn.execute("PRAGMA incremental_vacuum(2000);")
+                    conn.execute("VACUUM;")
                 finally:
                     conn.close()
-                logger.info(f'Выполнен VACUUM для базы данных телеметрии ({self._cm.db_path})')
+                self.checkpoint_wal()
+                logger.info(f"Выполнен VACUUM для базы данных телеметрии ({self._cm.db_path})")
                 return True
             except Exception as e:
-                logger.warning(f'Ошибка при выполнении VACUUM: {e}')
+                logger.warning(f"Ошибка при выполнении VACUUM: {e}")
                 return False
 
-    def get_storage_stats(self, buffered_count: int = 0, buffer_mode: str = 'memory', buffer_size: int = 50, flush_interval_seconds: float = 30.0) -> Dict[str, Any]:
-        """Возвращает агрегированную статистику таблиц, размера и параметров."""
+    def get_storage_stats(
+        self,
+        buffered_count: int = 0,
+        buffer_mode: str = "memory",
+        buffer_size: int = 50,
+        flush_interval_seconds: float = 30.0,
+    ) -> Dict[str, Any]:
+        """Возвращает агрегированную статистику 12 базовых таблиц, размера и параметров."""
         with self._cm.lock, self._cm.get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute('SELECT COUNT(*) FROM system_snapshots;')
-            snap_count = cursor.fetchone()[0]
-            cursor.execute('SELECT COUNT(*) FROM process_snapshots;')
-            proc_count = cursor.fetchone()[0]
-            cursor.execute('SELECT COUNT(*) FROM sensor_polls;')
-            sensors_count = cursor.fetchone()[0]
-            cursor.execute('SELECT COUNT(*) FROM telemetry_events;')
-            events_count = cursor.fetchone()[0]
-            cursor.execute('SELECT COUNT(*) FROM hardware_audits;')
-            audits_count = cursor.fetchone()[0]
-            cursor.execute('SELECT COUNT(*) FROM app_polls;')
-            app_polls_count = cursor.fetchone()[0]
-            cursor.execute('SELECT COUNT(*) FROM app_events;')
-            app_events_count = cursor.fetchone()[0]
-            cursor.execute('SELECT COUNT(*) FROM app_param_changes;')
-            app_params_count = cursor.fetchone()[0]
-            cursor.execute('SELECT COUNT(*) FROM custom_records;')
-            custom_count = cursor.fetchone()[0]
-            cursor.execute('SELECT COUNT(*) FROM device_events;')
-            device_events_count = cursor.fetchone()[0]
-            cursor.execute('SELECT COUNT(*) FROM device_inventory;')
-            device_inventory_count = cursor.fetchone()[0]
-            cursor.execute('SELECT COUNT(*) FROM w64_events;')
-            w64_events_count = cursor.fetchone()[0]
-            cursor.execute('SELECT COUNT(*) FROM process_outliers;')
-            outliers_count = cursor.fetchone()[0]
-            cursor.execute('SELECT COUNT(*) FROM process_rollups_2min;')
-            rollups_2min_count = cursor.fetchone()[0]
-            cursor.execute('SELECT COUNT(*) FROM process_rollups_daily;')
-            rollups_daily_count = cursor.fetchone()[0]
-            cursor.execute('SELECT COUNT(*) FROM incidents;')
-            incidents_count = cursor.fetchone()[0]
-            cursor.execute('SELECT COUNT(*) FROM telemetry_rollups;')
-            rollups_count = cursor.fetchone()[0]
 
-            def _safe_count(table: str) -> int:
+            def _q_int(sql: str, params: tuple = ()) -> int:
                 try:
-                    cursor.execute(f'SELECT COUNT(*) FROM {table};')
-                    return cursor.fetchone()[0]
+                    cursor.execute(sql, params)
+                    r = cursor.fetchone()
+                    return int(r[0] or 0) if r else 0
                 except Exception:
                     return 0
 
-            telemetry_hourly_count = _safe_count('telemetry_hourly')
-            telemetry_daily_count = _safe_count('telemetry_daily')
-            telemetry_weekly_count = _safe_count('telemetry_weekly')
-            telemetry_monthly_count = _safe_count('telemetry_monthly')
-            telemetry_yearly_count = _safe_count('telemetry_yearly')
-            telemetry_spikes_count = _safe_count('telemetry_spikes')
-            disk_inventory_count = _safe_count('disk_inventory')
-            volume_inventory_count = _safe_count('volume_inventory')
-            disk_health_count = _safe_count('disk_health_snapshots')
-            disk_perf_count = _safe_count('disk_performance_samples')
-            disk_io_count = _safe_count('disk_io_events')
-            cpu_inventory_count = _safe_count('cpu_inventory')
-            ram_module_inventory_count = _safe_count('ram_module_inventory')
-            gpu_inventory_count = _safe_count('gpu_inventory')
-            network_adapter_inventory_count = _safe_count('network_adapter_inventory')
-            cpu_samples_count = _safe_count('cpu_telemetry_samples')
-            ram_samples_count = _safe_count('ram_telemetry_samples')
-            gpu_samples_count = _safe_count('gpu_telemetry_samples')
-            network_samples_count = _safe_count('network_adapter_samples')
+            snap_count = _q_int("SELECT COUNT(*) FROM system_snapshots;")
+            proc_count = _q_int("SELECT COUNT(*) FROM process_snapshots WHERE sample_type = 'snapshot';")
+            outliers_count = _q_int("SELECT COUNT(*) FROM process_snapshots WHERE sample_type = 'outlier' OR is_outlier = 1;")
+            sensors_count = _q_int("SELECT COUNT(*) FROM sensor_polls;")
+            rollups_count = _q_int("SELECT COUNT(*) FROM telemetry_rollups;")
+            rollups_2min_count = _q_int("SELECT COUNT(*) FROM telemetry_rollups WHERE tier = 'proc_2min';")
+            rollups_daily_count = _q_int("SELECT COUNT(*) FROM telemetry_rollups WHERE tier = 'proc_daily';")
+            telemetry_hourly_count = _q_int("SELECT COUNT(*) FROM telemetry_rollups WHERE tier = 'hourly';")
+            telemetry_daily_count = _q_int("SELECT COUNT(*) FROM telemetry_rollups WHERE tier = 'daily';")
+            telemetry_weekly_count = _q_int("SELECT COUNT(*) FROM telemetry_rollups WHERE tier = 'weekly';")
+            telemetry_monthly_count = _q_int("SELECT COUNT(*) FROM telemetry_rollups WHERE tier = 'monthly';")
+            telemetry_yearly_count = _q_int("SELECT COUNT(*) FROM telemetry_rollups WHERE tier = 'yearly';")
+
+            incidents_count = _q_int("SELECT COUNT(*) FROM incidents WHERE domain = 'incident';")
+            events_count = _q_int("SELECT COUNT(*) FROM incidents WHERE domain = 'telemetry_event';")
+            app_polls_count = _q_int("SELECT COUNT(*) FROM incidents WHERE domain = 'app_poll';")
+            app_events_count = _q_int("SELECT COUNT(*) FROM incidents WHERE domain = 'app_event';")
+            device_events_count = _q_int("SELECT COUNT(*) FROM incidents WHERE domain = 'device_event';")
+            telemetry_spikes_count = _q_int("SELECT COUNT(*) FROM incidents WHERE domain = 'spike';")
+
+            app_params_count = _q_int("SELECT COUNT(*) FROM inventory_changes WHERE domain LIKE 'app_params:%';")
+            w64_events_count = _q_int("SELECT COUNT(*) FROM process_file_events WHERE details_json LIKE '%etw%' OR details_json LIKE '%w64%' OR operation_type LIKE 'w64:%';")
+            disk_io_count = _q_int("SELECT COUNT(*) FROM process_file_events WHERE operation_type LIKE 'disk_%';")
+
+            audits_count = _q_int("SELECT COUNT(*) FROM hardware_components WHERE category = 'hardware_audit';")
+            device_inventory_count = _q_int("SELECT COUNT(*) FROM hardware_components WHERE category = 'pnp_device';")
+            disk_inventory_count = _q_int("SELECT COUNT(*) FROM hardware_components WHERE category = 'disk';")
+            volume_inventory_count = _q_int("SELECT COUNT(*) FROM hardware_components WHERE category = 'volume';")
+            cpu_inventory_count = _q_int("SELECT COUNT(*) FROM hardware_components WHERE category = 'cpu';")
+            ram_module_inventory_count = _q_int("SELECT COUNT(*) FROM hardware_components WHERE category = 'ram';")
+            gpu_inventory_count = _q_int("SELECT COUNT(*) FROM hardware_components WHERE category = 'gpu';")
+            network_adapter_inventory_count = _q_int("SELECT COUNT(*) FROM hardware_components WHERE category = 'network';")
+
+            disk_health_count = _q_int("SELECT COUNT(*) FROM sensor_polls WHERE sensor_category = 'disk_health';")
+            disk_perf_count = _q_int("SELECT COUNT(*) FROM sensor_polls WHERE sensor_category = 'disk_perf';")
+            cpu_samples_count = _q_int("SELECT COUNT(*) FROM sensor_polls WHERE sensor_category = 'cpu_sample';")
+            ram_samples_count = _q_int("SELECT COUNT(*) FROM sensor_polls WHERE sensor_category = 'ram_sample';")
+            gpu_samples_count = _q_int("SELECT COUNT(*) FROM sensor_polls WHERE sensor_category = 'gpu_sample';")
+            network_samples_count = _q_int("SELECT COUNT(*) FROM sensor_polls WHERE sensor_category = 'net_sample';")
 
             file_sizes = self.get_db_file_sizes()
-            size_mb = round(file_sizes['db_bytes'] / (1024 * 1024), 2)
-            wal_size_mb = round(file_sizes['wal_bytes'] / (1024 * 1024), 2)
-            total_size_mb = round(file_sizes['total_bytes'] / (1024 * 1024), 2)
+            size_mb = round(file_sizes["db_bytes"] / (1024 * 1024), 2)
+            wal_size_mb = round(file_sizes["wal_bytes"] / (1024 * 1024), 2)
+            total_size_mb = round(file_sizes["total_bytes"] / (1024 * 1024), 2)
             buffer_file_size = self.buffer_file_path.stat().st_size if self.buffer_file_path.exists() else 0
 
             return {
-                'db_path': str(self._cm.db_path),
-                'snapshots_count': snap_count,
-                'process_snapshots_count': proc_count,
-                'process_outliers_count': outliers_count,
-                'process_rollups_2min_count': rollups_2min_count,
-                'process_rollups_daily_count': rollups_daily_count,
-                'incidents_count': incidents_count,
-                'telemetry_rollups_count': rollups_count,
-                'telemetry_hourly_count': telemetry_hourly_count,
-                'telemetry_daily_count': telemetry_daily_count,
-                'telemetry_weekly_count': telemetry_weekly_count,
-                'telemetry_monthly_count': telemetry_monthly_count,
-                'telemetry_yearly_count': telemetry_yearly_count,
-                'telemetry_spikes_count': telemetry_spikes_count,
-                'disk_inventory_count': disk_inventory_count,
-                'volume_inventory_count': volume_inventory_count,
-                'disk_health_count': disk_health_count,
-                'disk_perf_count': disk_perf_count,
-                'disk_io_count': disk_io_count,
-                'cpu_inventory_count': cpu_inventory_count,
-                'ram_module_inventory_count': ram_module_inventory_count,
-                'gpu_inventory_count': gpu_inventory_count,
-                'network_adapter_inventory_count': network_adapter_inventory_count,
-                'cpu_samples_count': cpu_samples_count,
-                'ram_samples_count': ram_samples_count,
-                'gpu_samples_count': gpu_samples_count,
-                'network_samples_count': network_samples_count,
-                'sensor_polls_count': sensors_count,
-                'events_count': events_count,
-                'hardware_audits_count': audits_count,
-                'app_polls_count': app_polls_count,
-                'app_events_count': app_events_count,
-                'app_param_changes_count': app_params_count,
-                'custom_records_count': custom_count,
-                'device_events_count': device_events_count,
-                'device_inventory_count': device_inventory_count,
-                'w64_events_count': w64_events_count,
-                'file_size_mb': size_mb,
-                'wal_size_mb': wal_size_mb,
-                'total_size_mb': total_size_mb,
-                'max_db_size_mb': self.max_db_size_mb,
-                'retention_days': self.retention_days,
-                'size_limit_exceeded': total_size_mb > self.max_db_size_mb,
-                'buffer_mode': buffer_mode,
-                'buffered_count': buffered_count,
-                'buffer_size': buffer_size,
-                'flush_interval_seconds': flush_interval_seconds,
-                'buffer_file_path': str(self.buffer_file_path),
-                'buffer_file_size_bytes': buffer_file_size,
+                "db_path": str(self._cm.db_path),
+                "snapshots_count": snap_count,
+                "process_snapshots_count": proc_count,
+                "process_outliers_count": outliers_count,
+                "process_rollups_2min_count": rollups_2min_count,
+                "process_rollups_daily_count": rollups_daily_count,
+                "incidents_count": incidents_count,
+                "telemetry_rollups_count": rollups_count,
+                "telemetry_hourly_count": telemetry_hourly_count,
+                "telemetry_daily_count": telemetry_daily_count,
+                "telemetry_weekly_count": telemetry_weekly_count,
+                "telemetry_monthly_count": telemetry_monthly_count,
+                "telemetry_yearly_count": telemetry_yearly_count,
+                "telemetry_spikes_count": telemetry_spikes_count,
+                "disk_inventory_count": disk_inventory_count,
+                "volume_inventory_count": volume_inventory_count,
+                "disk_health_count": disk_health_count,
+                "disk_perf_count": disk_perf_count,
+                "disk_io_count": disk_io_count,
+                "cpu_inventory_count": cpu_inventory_count,
+                "ram_module_inventory_count": ram_module_inventory_count,
+                "gpu_inventory_count": gpu_inventory_count,
+                "network_adapter_inventory_count": network_adapter_inventory_count,
+                "cpu_samples_count": cpu_samples_count,
+                "ram_samples_count": ram_samples_count,
+                "gpu_samples_count": gpu_samples_count,
+                "network_samples_count": network_samples_count,
+                "sensor_polls_count": sensors_count,
+                "events_count": events_count,
+                "hardware_audits_count": audits_count,
+                "app_polls_count": app_polls_count,
+                "app_events_count": app_events_count,
+                "app_param_changes_count": app_params_count,
+                "custom_records_count": 0,
+                "device_events_count": device_events_count,
+                "device_inventory_count": device_inventory_count,
+                "w64_events_count": w64_events_count,
+                "file_size_mb": size_mb,
+                "wal_size_mb": wal_size_mb,
+                "total_size_mb": total_size_mb,
+                "max_db_size_mb": self.max_db_size_mb,
+                "retention_days": self.retention_days,
+                "size_limit_exceeded": total_size_mb > self.max_db_size_mb,
+                "buffer_mode": buffer_mode,
+                "buffered_count": buffered_count,
+                "buffer_size": buffer_size,
+                "flush_interval_seconds": flush_interval_seconds,
+                "buffer_file_path": str(self.buffer_file_path),
+                "buffer_file_size_bytes": buffer_file_size,
             }
 
+    @staticmethod
+    def _locf_anchor_ids(cursor: sqlite3.Cursor) -> List[int]:
+        """Возвращает id снимков, хранящих последнее известное значение статических полей."""
+        fields = [f for f in SNAPSHOT_FIELDS if f not in VOLATILE_FIELDS] + ["raw_json"]
+        cols = ", ".join(f"MAX(CASE WHEN {f} IS NOT NULL AND {f} != '' THEN id END)" for f in fields)
+        row = cursor.execute(f"SELECT {cols} FROM system_snapshots").fetchone()
+        return sorted({i for i in (row or []) if i is not None})
+
     def cleanup_old_records(self, retention_days: Optional[int] = None, vacuum_after: bool = False) -> int:
-        """Удаляет устаревшие записи телеметрии."""
+        """Удаляет устаревшие записи телеметрии из 12 базовых таблиц (LOCF-якоря статических полей сохраняются)."""
         if self._cm.read_only:
             return 0
         days = retention_days if retention_days is not None else self.retention_days
         threshold_epoch = datetime.now(timezone.utc).timestamp() - (float(days) * 86400.0 if days > 0 else -1.0)
         with self._cm.lock, self._cm.get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute('SELECT id FROM system_snapshots WHERE created_at < ?', (threshold_epoch,))
-            old_ids = [row[0] for row in cursor.fetchall()]
+            anchors = set(self._locf_anchor_ids(cursor))
+            cursor.execute("SELECT id FROM system_snapshots WHERE created_at < ?", (threshold_epoch,))
+            old_ids = [row[0] for row in cursor.fetchall() if row[0] not in anchors]
             if old_ids:
-                cursor.execute('DELETE FROM process_snapshots WHERE snapshot_id IN (SELECT id FROM system_snapshots WHERE created_at < ?)', (threshold_epoch,))
-                cursor.execute('DELETE FROM system_snapshots WHERE created_at < ?', (threshold_epoch,))
-            cursor.execute('DELETE FROM sensor_polls WHERE created_at < ?', (threshold_epoch,))
-            cursor.execute('DELETE FROM telemetry_events WHERE created_at < ?', (threshold_epoch,))
-            cursor.execute('DELETE FROM app_polls WHERE created_at < ?', (threshold_epoch,))
-            cursor.execute('DELETE FROM app_events WHERE created_at < ?', (threshold_epoch,))
-            cursor.execute('DELETE FROM app_param_changes WHERE created_at < ?', (threshold_epoch,))
-            cursor.execute('DELETE FROM custom_records WHERE created_at < ?', (threshold_epoch,))
-            cursor.execute('DELETE FROM w64_events WHERE created_at < ?', (threshold_epoch,))
-            cursor.execute('DELETE FROM process_outliers WHERE created_at < ?', (threshold_epoch,))
-            cursor.execute('DELETE FROM device_events WHERE created_at < ?', (threshold_epoch,))
-            cursor.execute('DELETE FROM system_extended_audits WHERE created_at < ?', (threshold_epoch,))
-            cursor.execute('DELETE FROM disk_io_events WHERE created_at < ?', (threshold_epoch,))
-            cursor.execute('DELETE FROM disk_performance_samples WHERE created_at < ?', (threshold_epoch,))
-            cursor.execute('DELETE FROM disk_health_snapshots WHERE created_at < ?', (threshold_epoch,))
-            cursor.execute('DELETE FROM cpu_telemetry_samples WHERE created_at < ?', (threshold_epoch,))
-            cursor.execute('DELETE FROM ram_telemetry_samples WHERE created_at < ?', (threshold_epoch,))
-            cursor.execute('DELETE FROM gpu_telemetry_samples WHERE created_at < ?', (threshold_epoch,))
-            cursor.execute('DELETE FROM network_adapter_samples WHERE created_at < ?', (threshold_epoch,))
+                cursor.execute(
+                    "DELETE FROM process_snapshots WHERE snapshot_id IN (SELECT id FROM system_snapshots WHERE created_at < ?)",
+                    (threshold_epoch,),
+                )
+                placeholders = ",".join("?" for _ in anchors) or "NULL"
+                cursor.execute(
+                    f"DELETE FROM system_snapshots WHERE created_at < ? AND id NOT IN ({placeholders})",
+                    (threshold_epoch, *anchors),
+                )
+            cursor.execute("DELETE FROM process_snapshots WHERE created_at < ? AND sample_type != 'audit'", (threshold_epoch,))
+            cursor.execute("DELETE FROM sensor_polls WHERE created_at < ?", (threshold_epoch,))
+            cursor.execute("DELETE FROM incidents WHERE created_at < ?", (threshold_epoch,))
+            cursor.execute("DELETE FROM inventory_changes WHERE created_at < ?", (threshold_epoch,))
 
-            # Очистка посекундных снимков process_pid_snapshots и файловых событий старше 24 часов
             pid_snap_threshold_str = (datetime.now(timezone.utc) - timedelta(days=min(days, 1))).isoformat()
-            cursor.execute('DELETE FROM process_pid_snapshots WHERE timestamp < ?', (pid_snap_threshold_str,))
-            cursor.execute('DELETE FROM process_file_events WHERE timestamp < ?', (pid_snap_threshold_str,))
+            cursor.execute("DELETE FROM process_file_events WHERE timestamp < ? OR created_at < ?", (pid_snap_threshold_str, threshold_epoch))
 
             conn.commit()
             deleted_count = len(old_ids)
-            logger.info(f'Очищено {deleted_count} устаревших снимков телеметрии (старше {days} дн.)')
+            logger.info(f"Очищено {deleted_count} устаревших снимков телеметрии (старше {days} дн.)")
 
         if vacuum_after and self.auto_vacuum_enabled:
             self.vacuum()
 
         return deleted_count
 
+    def purge_log_tables(self, vacuum: bool = True) -> Dict[str, int]:
+        """Очистка записей журналов событий Windows (domain='security_event' в таблице incidents)."""
+        if self._cm.read_only:
+            return {}
+
+        stats: Dict[str, int] = {}
+        with self._cm.lock, self._cm.get_connection() as conn:
+            cursor = conn.cursor()
+            try:
+                cursor.execute("SELECT COUNT(*) FROM incidents WHERE domain = 'security_event';")
+                count = cursor.fetchone()[0]
+                if count > 0:
+                    cursor.execute("DELETE FROM incidents WHERE domain = 'security_event';")
+                    stats["security_events"] = count
+                    stats["incidents(security_event)"] = count
+            except Exception as ex:
+                logger.debug(f"Пропуск очистки событий безопасности: {ex}")
+            conn.commit()
+
+        if stats:
+            logger.info(f"Очищены записи журналов телеметрии: {stats}")
+        else:
+            logger.debug("Очищены записи журналов телеметрии: устаревших событий безопасности не обнаружено (0)")
+        if vacuum:
+            self.vacuum()
+        return stats
+
+    def purge_live_stream_tables(self, vacuum: bool = True) -> Dict[str, int]:
+        """Полная очистка потоковых данных режима live stream при переходе или работе в режиме аудита.
+
+        Данные глубокого аудита процессов (process_lifecycle_sessions и process_snapshots с sample_type='audit')
+        сохраняются без изменений.
+        """
+        if self._cm.read_only:
+            return {}
+
+        stats: Dict[str, int] = {}
+        with self._cm.lock, self._cm.get_connection() as conn:
+            cursor = conn.cursor()
+
+            # 1. Снимки процессов (сохраняем sample_type = 'audit')
+            cursor.execute("SELECT COUNT(*) FROM process_snapshots WHERE sample_type != 'audit';")
+            ps_cnt = cursor.fetchone()[0]
+            if ps_cnt > 0:
+                cursor.execute("DELETE FROM process_snapshots WHERE sample_type != 'audit';")
+                stats["process_snapshots"] = ps_cnt
+
+            # 2. Снимки системы, сенсоры, агрегаты и файловые события
+            for tbl in ("system_snapshots", "sensor_polls", "telemetry_rollups", "process_file_events"):
+                try:
+                    cursor.execute(f"SELECT COUNT(*) FROM {tbl};")
+                    count = cursor.fetchone()[0]
+                    if count > 0:
+                        cursor.execute(f"DELETE FROM {tbl};")
+                        stats[tbl] = count
+                except Exception as ex:
+                    logger.debug(f"Пропуск очистки таблицы {tbl}: {ex}")
+
+            # 3. Потоковые события и всплески в incidents
+            cursor.execute(
+                "SELECT COUNT(*) FROM incidents WHERE domain IN ('spike', 'app_poll', 'app_event', 'device_event', 'telemetry_event');"
+            )
+            inc_cnt = cursor.fetchone()[0]
+            if inc_cnt > 0:
+                cursor.execute(
+                    "DELETE FROM incidents WHERE domain IN ('spike', 'app_poll', 'app_event', 'device_event', 'telemetry_event');"
+                )
+                stats["incidents"] = inc_cnt
+
+            conn.commit()
+
+        total_purged = sum(stats.values())
+        logger.info(f"Таблицы live stream очищены ({total_purged} записей удалено): {stats}")
+
+        if vacuum:
+            self.vacuum()
+        else:
+            self.checkpoint_wal()
+
+        return stats
+
     def enforce_size_limit(self, max_size_mb: Optional[float] = None, target_ratio: float = 0.85) -> Dict[str, Any]:
         """Ограничивает совокупный размер БД телеметрии."""
         if self._cm.read_only:
-            return {'pruned': False, 'read_only': True}
+            return {"pruned": False, "read_only": True}
         limit_mb = max_size_mb if max_size_mb is not None else self.max_db_size_mb
         initial_sizes = self.get_db_file_sizes()
-        initial_size_mb = round(initial_sizes['total_bytes'] / (1024.0 * 1024.0), 3)
+        initial_size_mb = round(initial_sizes["total_bytes"] / (1024.0 * 1024.0), 3)
 
         if initial_size_mb <= limit_mb:
             return {
-                'pruned': False,
-                'initial_size_mb': initial_size_mb,
-                'final_size_mb': initial_size_mb,
-                'max_size_mb': limit_mb,
-                'deleted_snapshots': 0,
-                'deleted_records': 0,
+                "pruned": False,
+                "initial_size_mb": initial_size_mb,
+                "final_size_mb": initial_size_mb,
+                "max_size_mb": limit_mb,
+                "deleted_snapshots": 0,
+                "deleted_records": 0,
             }
 
         target_mb = max(0.5, limit_mb * target_ratio)
-        logger.warning(f'⚠️ Превышен лимит размера базы данных: {initial_size_mb:.2f} МБ > {limit_mb:.2f} МБ.')
+        logger.warning(f"⚠️ Превышен лимит размера базы данных: {initial_size_mb:.2f} МБ > {limit_mb:.2f} МБ.")
 
+        self.purge_log_tables(vacuum=False)
         total_deleted_snaps = self.cleanup_old_records(retention_days=self.retention_days, vacuum_after=False)
         self.checkpoint_wal()
 
         with self._cm.lock, self._cm.get_connection() as conn:
             cursor = conn.cursor()
+            try:
+                cursor.execute(
+                    "DELETE FROM process_snapshots WHERE id NOT IN (SELECT id FROM process_snapshots ORDER BY id DESC LIMIT 5000);"
+                )
+                cursor.execute(
+                    "DELETE FROM process_lifecycle_sessions WHERE instance_id NOT IN (SELECT instance_id FROM process_lifecycle_sessions ORDER BY created_ts DESC LIMIT 5000);"
+                )
+                conn.commit()
+            except Exception as e:
+                logger.debug(f"Усечение сэмплов: {e}")
+
             while True:
-                cursor.execute('SELECT COUNT(*) FROM system_snapshots;')
+                cursor.execute("SELECT COUNT(*) FROM system_snapshots;")
                 snap_count = cursor.fetchone()[0]
                 if not snap_count or snap_count <= 5:
                     break
                 batch_size = max(5, int(snap_count * 0.25))
-                cursor.execute('SELECT id, created_at FROM system_snapshots ORDER BY created_at ASC LIMIT ?', (batch_size,))
-                rows = cursor.fetchall()
+                anchors = set(self._locf_anchor_ids(cursor))
+                cursor.execute("SELECT id, created_at FROM system_snapshots ORDER BY created_at ASC LIMIT ?", (batch_size,))
+                rows = [r for r in cursor.fetchall() if r[0] not in anchors]
                 if not rows:
                     break
                 ids_to_del = [r[0] for r in rows]
                 cutoff_t = rows[-1][1]
-                placeholders = ','.join('?' for _ in ids_to_del)
-                cursor.execute(f'DELETE FROM process_snapshots WHERE snapshot_id IN ({placeholders})', ids_to_del)
-                cursor.execute(f'DELETE FROM system_snapshots WHERE id IN ({placeholders})', ids_to_del)
-                cursor.execute('DELETE FROM sensor_polls WHERE created_at <= ?', (cutoff_t,))
-                cursor.execute('DELETE FROM w64_events WHERE created_at <= ?', (cutoff_t,))
-                cursor.execute('DELETE FROM app_polls WHERE created_at <= ?', (cutoff_t,))
-                cursor.execute('DELETE FROM custom_records WHERE created_at <= ?', (cutoff_t,))
+                placeholders = ",".join("?" for _ in ids_to_del)
+                cursor.execute(f"DELETE FROM process_snapshots WHERE snapshot_id IN ({placeholders})", ids_to_del)
+                cursor.execute(f"DELETE FROM system_snapshots WHERE id IN ({placeholders})", ids_to_del)
+                cursor.execute("DELETE FROM sensor_polls WHERE created_at <= ?", (cutoff_t,))
+                cursor.execute("DELETE FROM process_file_events WHERE created_at <= ?", (cutoff_t,))
+                cursor.execute("DELETE FROM incidents WHERE created_at <= ? AND domain != 'incident'", (cutoff_t,))
                 conn.commit()
                 total_deleted_snaps += len(ids_to_del)
                 if snap_count - len(ids_to_del) <= 5:
@@ -342,133 +433,216 @@ class TelemetryMaintenance:
             self.checkpoint_wal()
 
         final_sizes = self.get_db_file_sizes()
-        final_size_mb = round(final_sizes['total_bytes'] / (1024.0 * 1024.0), 3)
+        final_size_mb = round(final_sizes["total_bytes"] / (1024.0 * 1024.0), 3)
 
         return {
-            'pruned': True,
-            'initial_size_mb': initial_size_mb,
-            'final_size_mb': final_size_mb,
-            'max_size_mb': limit_mb,
-            'target_size_mb': target_mb,
-            'deleted_snapshots': total_deleted_snaps,
+            "pruned": True,
+            "initial_size_mb": initial_size_mb,
+            "final_size_mb": final_size_mb,
+            "max_size_mb": limit_mb,
+            "target_size_mb": target_mb,
+            "deleted_snapshots": total_deleted_snaps,
         }
 
     def aggregate_process_metrics_2min(self, cutoff_seconds: int = 120, outlier_cpu_threshold: float = 30.0) -> Dict[str, int]:
-        """Обобщает процессы старше двух минут по средним показателям."""
+        """Обобщает процессы старше двух минут по средним показателям в telemetry_rollups (tier='proc_2min')."""
         if self._cm.read_only:
-            return {'rollups_created': 0, 'outliers_saved': 0, 'raw_deleted': 0}
+            return {"rollups_created": 0, "outliers_saved": 0, "raw_deleted": 0}
         now_epoch = datetime.now(timezone.utc).timestamp()
         cutoff_epoch = now_epoch - cutoff_seconds
         with self._cm.lock, self._cm.get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute('''
+            cursor.execute(
+                '''
                 SELECT p.id, p.snapshot_id, p.timestamp, p.pid, p.name, p.status,
                        p.cpu_percent, p.memory_mb, p.memory_percent, p.num_threads,
                        p.username, s.created_at as snap_epoch
                 FROM process_snapshots p
                 JOIN system_snapshots s ON p.snapshot_id = s.id
-                WHERE s.created_at < ?
+                WHERE p.sample_type = 'snapshot' AND s.created_at < ?
                 ORDER BY p.name, p.pid, s.created_at ASC
-            ''', (cutoff_epoch,))
+                ''',
+                (cutoff_epoch,),
+            )
             raw_rows = cursor.fetchall()
             if not raw_rows:
-                return {'rollups_created': 0, 'outliers_saved': 0, 'raw_deleted': 0}
+                return {"rollups_created": 0, "outliers_saved": 0, "raw_deleted": 0}
 
             outlier_rows = []
             for r in raw_rows:
-                cpu_val = float(r['cpu_percent'] or 0.0)
+                cpu_val = float(r["cpu_percent"] or 0.0)
                 if cpu_val >= outlier_cpu_threshold:
                     outlier_rows.append((
-                        r['snapshot_id'], r['timestamp'], r['snap_epoch'], r['pid'], r['name'],
-                        r['status'] or 'running', cpu_val, float(r['memory_mb'] or 0.0),
-                        float(r['memory_percent'] or 0.0), int(r['num_threads'] or 1),
-                        r['username'] or '', f'Outlier: CPU={cpu_val:.1f}%',
+                        r["snapshot_id"],
+                        r["timestamp"],
+                        r["snap_epoch"],
+                        r["pid"],
+                        r["name"],
+                        r["status"] or "running",
+                        cpu_val,
+                        float(r["memory_mb"] or 0.0),
+                        float(r["memory_percent"] or 0.0),
+                        int(r["num_threads"] or 1),
+                        r["username"] or "",
+                        json.dumps({"details": f"Outlier: CPU={cpu_val:.1f}%"}, ensure_ascii=False),
                     ))
             outliers_saved = 0
             if outlier_rows:
-                cursor.executemany('''
-                    INSERT INTO process_outliers (
-                        snapshot_id, timestamp, created_at, pid, name, status,
-                        cpu_percent, memory_mb, memory_percent, num_threads, username, details
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ''', outlier_rows)
+                cursor.executemany(
+                    '''
+                    INSERT INTO process_snapshots (
+                        sample_type, snapshot_id, timestamp, created_at, pid, name, status,
+                        cpu_percent, memory_mb, memory_percent, num_threads, username, is_outlier, raw_json
+                    ) VALUES ('outlier', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
+                    ''',
+                    outlier_rows,
+                )
                 outliers_saved = len(outlier_rows)
 
             grouped = defaultdict(list)
             for r in raw_rows:
-                grouped[(r['name'], r['pid'])].append(r)
+                grouped[(r["name"], r["pid"])].append(r)
 
             rollup_rows = []
             for (p_name, p_pid), procs in grouped.items():
                 cnt = len(procs)
-                cpus = [float(p['cpu_percent'] or 0.0) for p in procs]
-                mems = [float(p['memory_mb'] or 0.0) for p in procs]
-                threads = [int(p['num_threads'] or 1) for p in procs]
+                cpus = [float(p["cpu_percent"] or 0.0) for p in procs]
+                mems = [float(p["memory_mb"] or 0.0) for p in procs]
+                threads = [int(p["num_threads"] or 1) for p in procs]
                 proc_outliers = sum(1 for c in cpus if c >= outlier_cpu_threshold)
+                p_start_ep = float(procs[0]["snap_epoch"])
+                p_end_ep = float(procs[-1]["snap_epoch"])
+                payload = {
+                    "period_start": procs[0]["timestamp"],
+                    "period_end": procs[-1]["timestamp"],
+                    "period_start_epoch": p_start_ep,
+                    "period_end_epoch": p_end_ep,
+                    "name": p_name,
+                    "pid": p_pid,
+                    "username": procs[-1]["username"] or "",
+                    "sample_count": cnt,
+                    "avg_cpu_percent": round(sum(cpus) / cnt, 2),
+                    "max_cpu_percent": round(max(cpus), 2),
+                    "min_cpu_percent": round(min(cpus), 2),
+                    "avg_memory_mb": round(sum(mems) / cnt, 2),
+                    "max_memory_mb": round(max(mems), 2),
+                    "min_memory_mb": round(min(mems), 2),
+                    "avg_num_threads": round(sum(threads) / cnt, 1),
+                    "outliers_count": proc_outliers,
+                }
                 rollup_rows.append((
-                    procs[0]['timestamp'], procs[-1]['timestamp'], procs[0]['snap_epoch'], procs[-1]['snap_epoch'],
-                    p_name, p_pid, procs[-1]['username'] or '', cnt, round(sum(cpus) / cnt, 2),
-                    round(max(cpus), 2), round(min(cpus), 2), round(sum(mems) / cnt, 2),
-                    round(max(mems), 2), round(min(mems), 2), round(sum(threads) / cnt, 1), proc_outliers,
+                    f"{p_name}:{p_pid}",
+                    p_start_ep,
+                    procs[0]["timestamp"],
+                    procs[-1]["timestamp"],
+                    p_start_ep,
+                    p_end_ep,
+                    cnt,
+                    payload["avg_cpu_percent"],
+                    payload["max_cpu_percent"],
+                    payload["avg_memory_mb"],
+                    payload["max_memory_mb"],
+                    json.dumps(payload, ensure_ascii=False),
+                    p_end_ep,
                 ))
 
             if rollup_rows:
-                cursor.executemany('''
-                    INSERT INTO process_rollups_2min (
-                        period_start, period_end, period_start_epoch, period_end_epoch,
-                        name, pid, username, sample_count, avg_cpu_percent, max_cpu_percent,
-                        min_cpu_percent, avg_memory_mb, max_memory_mb, min_memory_mb,
-                        avg_num_threads, outliers_count
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ''', rollup_rows)
+                cursor.executemany(
+                    '''
+                    INSERT OR REPLACE INTO telemetry_rollups (
+                        tier, sensor_id, bucket_start, period_start, period_end,
+                        period_start_epoch, period_end_epoch, sample_count,
+                        cpu_avg, cpu_max, ram_avg, ram_max, payload_json, created_at
+                    ) VALUES ('proc_2min', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ''',
+                    rollup_rows,
+                )
 
-            raw_ids = [r['id'] for r in raw_rows]
-            cursor.execute(f'''
-                DELETE FROM process_snapshots WHERE id IN ({','.join(['?'] * len(raw_ids))})
-            ''', raw_ids)
+            raw_ids = [r["id"] for r in raw_rows]
+            cursor.execute(
+                f"DELETE FROM process_snapshots WHERE id IN ({','.join(['?'] * len(raw_ids))})",
+                raw_ids,
+            )
             conn.commit()
-            return {'rollups_created': len(rollup_rows), 'outliers_saved': outliers_saved, 'raw_deleted': len(raw_ids)}
+            return {"rollups_created": len(rollup_rows), "outliers_saved": outliers_saved, "raw_deleted": len(raw_ids)}
 
     def aggregate_process_metrics_daily(self, cutoff_days: int = 1) -> Dict[str, int]:
-        """Обобщает агрегаты процессов в суточную статистику."""
+        """Обобщает 2-минутные агрегаты процессов в суточную статистику (tier='proc_daily')."""
         if self._cm.read_only:
-            return {'daily_rollups_created': 0, '2min_rollups_cleaned': 0}
+            return {"daily_rollups_created": 0, "2min_rollups_cleaned": 0}
         now_epoch = datetime.now(timezone.utc).timestamp()
         cutoff_epoch = now_epoch - cutoff_days * 86400
         with self._cm.lock, self._cm.get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute('SELECT * FROM process_rollups_2min WHERE period_end_epoch < ? ORDER BY name, period_start_epoch ASC', (cutoff_epoch,))
+            cursor.execute(
+                "SELECT * FROM telemetry_rollups WHERE tier = 'proc_2min' AND period_end_epoch < ? ORDER BY sensor_id, period_start_epoch ASC",
+                (cutoff_epoch,),
+            )
             old_rollups = cursor.fetchall()
             if not old_rollups:
-                return {'daily_rollups_created': 0, '2min_rollups_cleaned': 0}
+                return {"daily_rollups_created": 0, "2min_rollups_cleaned": 0}
 
             grouped_daily = defaultdict(list)
             for r in old_rollups:
-                d_str = r['period_start'][:10] if len(r['period_start']) >= 10 else 'unknown'
-                grouped_daily[(d_str, r['name'])].append(r)
+                d = dict(r)
+                pl = json.loads(d["payload_json"]) if d.get("payload_json") else {}
+                p_start = str(d.get("period_start") or pl.get("period_start") or "")
+                d_str = p_start[:10] if len(p_start) >= 10 else "unknown"
+                p_name = pl.get("name") or str(d.get("sensor_id") or "").split(":")[0]
+                grouped_daily[(d_str, p_name)].append({**d, **pl})
 
             daily_rows = []
             for (d_str, p_name), items in grouped_daily.items():
-                total_samples = sum(int(it['sample_count']) for it in items)
+                total_samples = sum(int(it.get("sample_count") or 1) for it in items)
                 if total_samples <= 0:
                     continue
-                weighted_cpu = sum(float(it['avg_cpu_percent']) * int(it['sample_count']) for it in items) / total_samples
-                weighted_mem = sum(float(it['avg_memory_mb']) * int(it['sample_count']) for it in items) / total_samples
+                weighted_cpu = sum(float(it.get("avg_cpu_percent") or it.get("cpu_avg") or 0.0) * int(it.get("sample_count") or 1) for it in items) / total_samples
+                weighted_mem = sum(float(it.get("avg_memory_mb") or it.get("ram_avg") or 0.0) * int(it.get("sample_count") or 1) for it in items) / total_samples
+                max_cpu = max(float(it.get("max_cpu_percent") or it.get("cpu_max") or 0.0) for it in items)
+                max_mem = max(float(it.get("max_memory_mb") or it.get("ram_max") or 0.0) for it in items)
+                out_cnt = sum(int(it.get("outliers_count") or 0) for it in items)
+                last_seen = max(str(it.get("period_end") or "") for it in items)
+                try:
+                    b_start = float(int(d_str.replace("-", "")))
+                except ValueError:
+                    b_start = now_epoch
+                payload = {
+                    "date": d_str,
+                    "name": p_name,
+                    "sample_count": total_samples,
+                    "avg_cpu_percent": round(weighted_cpu, 2),
+                    "max_cpu_percent": round(max_cpu, 2),
+                    "avg_memory_mb": round(weighted_mem, 2),
+                    "max_memory_mb": round(max_mem, 2),
+                    "outliers_count": out_cnt,
+                    "last_seen": last_seen,
+                }
                 daily_rows.append((
-                    d_str, p_name, total_samples, round(weighted_cpu, 2), round(max(float(it['max_cpu_percent']) for it in items), 2),
-                    round(weighted_mem, 2), round(max(float(it['max_memory_mb']) for it in items), 2),
-                    sum(int(it['outliers_count'] or 0) for it in items), max(it['period_end'] for it in items),
+                    p_name,
+                    b_start,
+                    d_str,
+                    last_seen,
+                    total_samples,
+                    payload["avg_cpu_percent"],
+                    payload["max_cpu_percent"],
+                    payload["avg_memory_mb"],
+                    payload["max_memory_mb"],
+                    json.dumps(payload, ensure_ascii=False),
+                    now_epoch,
                 ))
 
             if daily_rows:
-                cursor.executemany('''
-                    INSERT INTO process_rollups_daily (
-                        date, name, sample_count, avg_cpu_percent, max_cpu_percent,
-                        avg_memory_mb, max_memory_mb, outliers_count, last_seen
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ''', daily_rows)
+                cursor.executemany(
+                    '''
+                    INSERT OR REPLACE INTO telemetry_rollups (
+                        tier, sensor_id, bucket_start, period_start, period_end,
+                        sample_count, cpu_avg, cpu_max, ram_avg, ram_max, payload_json, created_at
+                    ) VALUES ('proc_daily', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ''',
+                    daily_rows,
+                )
 
-            del_ids = [r['id'] for r in old_rollups]
-            cursor.execute(f'DELETE FROM process_rollups_2min WHERE id IN ({','.join(['?'] * len(del_ids))})', del_ids)
+            del_ids = [r["id"] for r in old_rollups]
+            cursor.execute(f"DELETE FROM telemetry_rollups WHERE id IN ({','.join(['?'] * len(del_ids))})", del_ids)
             conn.commit()
-            return {'daily_rollups_created': len(daily_rows), '2min_rollups_cleaned': len(del_ids)}
+            return {"daily_rollups_created": len(daily_rows), "2min_rollups_cleaned": len(del_ids)}

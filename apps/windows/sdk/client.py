@@ -25,7 +25,7 @@
 # Package: apps.windows.sdk
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 19:20:00
+# Updated: 2026-10-16 20:35:00
 # =============================================================================
 
 from __future__ import annotations
@@ -111,14 +111,22 @@ class ModulesSubsystem:
     @property
     def hardware(self) -> Any:
         """Модуль мониторинга и диагностики оборудования."""
-        from apps.windows.sdk.modules.hardware.hardware_monitor import HardwareMonitor
-        return HardwareMonitor()
+        from apps.windows.telemetry.collector import SystemCollector
+        return SystemCollector()
 
     @property
     def network(self) -> Any:
         """Модуль сетевого аудита и сокетов."""
         from apps.windows.sdk.modules.network.network_usage import WindowsNetworkUsageCollector
         return WindowsNetworkUsageCollector()
+
+    @property
+    def network_discovery(self) -> Any:
+        """Модуль управления сетевым обнаружением и категориями сетей (Public/Private)."""
+        if not hasattr(self, "_network_discovery") or self._network_discovery is None:
+            from apps.windows.sdk.modules.network.discovery import NetworkDiscoveryManager
+            self._network_discovery = NetworkDiscoveryManager()
+        return self._network_discovery
 
     @property
     def storage(self) -> Any:
@@ -179,6 +187,14 @@ class ModulesSubsystem:
         """Модуль глубокого сканирования следов ПО и спящих программ."""
         from apps.windows.sdk.software_scanner import DeepSoftwareScanner
         return DeepSoftwareScanner()
+
+    @property
+    def regional(self) -> Any:
+        """Модуль региональных параметров, языковых пакетов, часовых поясов и локалей."""
+        if not hasattr(self, "_regional") or self._regional is None:
+            from apps.windows.sdk.modules.regional import RegionalManager
+            self._regional = RegionalManager()
+        return self._regional
 
 
 class WindowsSDK:

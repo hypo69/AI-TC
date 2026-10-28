@@ -1,0 +1,62 @@
+<!--
+=============================================================================
+Process Name: Windows Web Interface - Terminal View
+=============================================================================
+Description:
+  Сетевой терминал Windows Admin (tab-terminal).
+  Стили интегрированы с переменными Bootstrap (var(--bs-body-color), var(--bs-body-bg)).
+  Конфигурация запрашивается по маршруту /terminal/config.json.
+
+Usage Examples:
+  Web Route:
+    /html/terminal/index.html
+    /windows/api/webgui/terminal/index.html
+
+File: index.html
+Project: ai-windows-admin
+Package: windows/api/webgui/terminal
+Author: hypo69
+Copyright: © 2026 hypo69
+Updated: 2026-10-13 15:47:00
+=============================================================================
+-->
+<div class="terminal-wrapper h-100 d-flex flex-column" id="tab-terminal-container" style="color: var(--bs-body-color); background-color: var(--bs-body-bg);">
+  <div class="terminal-toolbar p-2 border-bottom d-flex justify-content-between align-items-center" style="border-color: var(--bs-border-color) !important;">
+    <div class="d-flex align-items-center gap-2">
+      <span class="badge bg-primary" id="terminal-session-badge"><i class="bi bi-terminal me-1"></i>PowerShell</span>
+      <small class="text-secondary" id="terminal-status-info">Подключение...</small>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      <button class="btn btn-sm btn-outline-secondary" id="btn-terminal-clear" title="Очистить терминал">
+        <i class="bi bi-trash"></i>
+      </button>
+      <button class="btn btn-sm btn-outline-primary" id="btn-terminal-reconnect" title="Переподключиться">
+        <i class="bi bi-arrow-clockwise"></i>
+      </button>
+    </div>
+  </div>
+  <div class="terminal-viewport flex-grow-1 p-2" id="terminal-screen" style="min-height: 400px; color: var(--bs-body-color); background-color: var(--bs-body-bg);">
+    <div class="terminal-output font-monospace small" id="terminal-output" style="color: var(--bs-body-color);">
+      Windows PowerShell [Version 10.0.26100]<br/>
+      (c) Корпорация Майкрософт (Microsoft Corporation). Все права защищены.<br/><br/>
+    </div>
+    <div class="terminal-input-row d-flex align-items-center mt-2">
+      <span class="terminal-prompt text-success fw-bold me-2">PS &gt;</span>
+      <input type="text" id="terminal-cmd-input" class="form-control form-control-sm border-0 font-monospace flex-grow-1" style="color: var(--bs-body-color); background: transparent; outline: none; box-shadow: none;" placeholder="Введите команду PowerShell..."/>
+    </div>
+  </div>
+</div>
+<script>
+  (async function initTerminal() {
+    try {
+      const res = await fetch('/terminal/config.json');
+      if (res.ok) {
+        const cfg = await res.json();
+        const statusEl = document.getElementById('terminal-status-info');
+        if (statusEl) statusEl.textContent = 'Готов (Сессия активна)';
+      }
+    } catch (e) {
+      console.debug('[Terminal] Ошибка получения config.json:', e);
+    }
+  })();
+</script>

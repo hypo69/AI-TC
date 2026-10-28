@@ -7,7 +7,7 @@
 Вместо простых манипуляций над дескрипторами `HWND` (`MoveWindow()`, `ShowWindow()`), модуль реализует **Control Plane системных параметров** Windows 10/11, охватывая **295 системных параметров** в 15 ключевых категориях.
 
 ```
-FastAPI REST API (/api/v1/window-management/*)
+FastAPI REST API (/api/v1/user-environment-settings/*)
                      │
                      ▼
        WindowManagementControlPlane (manager.py)
@@ -60,16 +60,16 @@ FastAPI REST API (/api/v1/window-management/*)
 
 | Метод | Путь | Описание |
 |---|---|---|
-| `GET` | `/api/v1/window-management/summary` | Сводная статистика по 295 параметрам, бэкендам и рискам |
-| `GET` | `/api/v1/window-management/categories` | Список 15 категорий с перечнем входящих параметров |
-| `GET` | `/api/v1/window-management/catalog` | Полнотекстовый поиск и фильтрация параметров |
-| `GET` | `/api/v1/window-management/settings/{id}` | Метаданные параметра и текущее живое значение |
-| `GET` | `/api/v1/window-management/categories/{id}/live` | Пакетное чтение живых значений всей категории |
-| `POST` | `/api/v1/window-management/settings/{id}/preview` | Dry-run симуляция изменения параметра |
-| `POST` | `/api/v1/window-management/settings/{id}/apply` | Безопасное применение изменения параметра |
-| `POST` | `/api/v1/window-management/batch-apply` | Пакетное применение группы параметров |
-| `GET` | `/api/v1/window-management/history` | Журнал аудита примененных изменений |
-| `POST` | `/api/v1/window-management/rollback/{id}` | Откат изменения к предыдущему значению |
+| `GET` | `/api/v1/user-environment-settings` | Список всех настроек пользовательского окружения (15 категорий) |
+| `GET` | `/api/v1/user-environment-settings/summary` | Сводная статистика по 295 параметрам, бэкендам и рискам |
+| `GET` | `/api/v1/user-environment-settings/catalog` | Полнотекстовый поиск и фильтрация параметров |
+| `GET` | `/api/v1/user-environment-settings/settings/{id}` | Метаданные параметра и текущее живое значение |
+| `GET` | `/api/v1/user-environment-settings/categories/{id}/live` | Пакетное чтение живых значений всей категории |
+| `POST` | `/api/v1/user-environment-settings/settings/{id}/preview` | Dry-run симуляция изменения параметра |
+| `POST` | `/api/v1/user-environment-settings/settings/{id}/apply` | Безопасное применение изменения параметра |
+| `POST` | `/api/v1/user-environment-settings/batch-apply` | Пакетное применение группы параметров |
+| `GET` | `/api/v1/user-environment-settings/history` | Журнал аудита примененных изменений |
+| `POST` | `/api/v1/user-environment-settings/rollback/{id}` | Откат изменения к предыдущему значению |
 
 ---
 

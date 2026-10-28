@@ -14,7 +14,7 @@
  * Package: windows/api/webgui/css
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-10 17:35:00
+ * Updated: 2026-10-18 23:15:00
  * =============================================================================
  */
 
@@ -23,10 +23,32 @@
    Базовые стили страницы, скроллбары и контейнеры вкладок
    ═══════════════════════════════════════════════════════════════════════════ */
 
-/* Базовый шрифт — увеличен на 2pt для улучшения читаемости */
+/* Базовый шрифт и цвет фона страницы */
 html {
   font-size: calc(14px + 2pt);
   height: 100%;
+  background-color: var(--bg-color);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   МАСШТАБИРОВАНИЕ СВЕТЛОЙ ТЕМЫ (+10% / ЭКВИВАЛЕНТ ЗУМА БРАУЗЕРА 110%)
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root[data-bs-theme="light"],
+:root[data-theme="light"],
+:root[data-theme="brick"],
+:root[data-theme="theme-light-enterprise"],
+html[data-bs-theme="light"],
+html[data-theme="light"],
+html[data-theme="brick"],
+html[data-theme="theme-light-enterprise"],
+html.theme-light {
+  zoom: 1.1;
+}
+
+/* Fallback для изолированных страниц, где класс светлой темы установлен только на body */
+html:not([data-bs-theme="light"]):not([data-theme="light"]):not([data-theme="brick"]):not([data-theme="theme-light-enterprise"]):not(.theme-light) body.theme-light,
+html:not([data-bs-theme="light"]):not([data-theme="light"]):not([data-theme="brick"]):not([data-theme="theme-light-enterprise"]):not(.theme-light) body.theme-light-enterprise {
+  zoom: 1.1;
 }
 
 body {
@@ -34,7 +56,7 @@ body {
   flex-direction: column;
   height: 100%;
   min-height: 100vh;
-  background: var(--bg-color);
+  background-color: var(--bg-color) !important;
   color: var(--text-color);
   font-size: 0.9375rem; /* ≈ 13.125px */
   line-height: 1.5;

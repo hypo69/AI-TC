@@ -3,64 +3,97 @@
 # Process Name: AI-Windows-Admin Apps Windows Telemetry - Main
 # =============================================================================
 # Description:
-#   Главная точка входа для сервиса сбора телеметрии Windows.
+#   Главная точка входа для автономной службы системной телеметрии Windows.
+#   Осуществляет непрерывный и периодический опрос метрик оборудования, ОС,
+#   активности процессов, накопителей и безопасности с записью в telemetry.db.
 #
 # Usage Examples:
 #   CLI:
-#     python -m apps.windows.telemetry.main
-#   Python API:
-#     from apps.windows.telemetry.main import parse_arguments
-#
-#     res = parse_arguments()
+#     python -m apps.windows.telemetry.main --mode hybrid
+#     python -m apps.windows.telemetry.main --once
+#     ./tlm.ps1 -Foreground
 #
 # File: main.py
 # Project: ai-windows-admin
 # Package: apps.windows.telemetry
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-12 07:25:00
+# Updated: 2026-10-22 03:07:00
 # =============================================================================
 
 from __future__ import annotations
-"""Главная точка входа для сервиса сбора телеметрии Windows."""
+"""Главная точка входа для службы системной телеметрии Windows."""
 
 import argparse
+import logging
 import os
+import platform
+from typing import Optional
 import signal
 import sys
 import threading
 import time
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional
-_project_root = str(Path(__file__).resolve().parents[3])
-if _project_root not in sys.path:
-    sys.path.insert(0, _project_root)
+from typing import Any, Dict, List, Optional, Tuple
+
+# 1. Настройка кодировки UTF-8 для консоли Windows
+if sys.stdout and hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8')
+if sys.stderr and hasattr(sys.stderr, 'reconfigure'):
+    sys.stderr.reconfigure(encoding='utf-8')
+os.environ["PYTHONUTF8"] = "1"
+os.environ["PYTHONIOENCODING"] = "utf-8"
+
+# 2. Определение базовой директории проекта
+current_path = Path(__file__).resolve().parent
+PROJECT_ROOT = current_path
+for candidate in [current_path] + list(current_path.parents):
+    if (candidate / 'pyproject.toml').is_file() or (candidate / 'apps').is_dir():
+        PROJECT_ROOT = candidate
+        break
+
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
 if __package__ in (None, ''):
     __package__ = 'apps.windows.telemetry'
+
 try:
     from logger import logger
 except ImportError:
-    from logger import logger
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+        handlers=[logging.StreamHandler(sys.stdout)]
+    )
+    logger = logging.getLogger("telemetry_service")
+
 _stop_event = threading.Event()
 
+
 def parse_arguments() -> argparse.Namespace:
-    """Парсит аргументы командной строки.
+    """Парсит аргументы командной строки службы телеметрии.
 
     Returns:
-        argparse.Namespace: Распарсенные аргументы.
+        argparse.Namespace: Распарсенные аргументы запуска.
     """
-    parser = argparse.ArgumentParser(description='Windows Telemetry Service (Minimal, Hybrid, Full)', formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser = argparse.ArgumentParser(
+        description="AI-Windows-Admin Telemetry Service Entrypoint",
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     parser.add_argument('--mode', choices=['minimal', 'hybrid', 'full'], default=None, help='Режим работы: minimal (легковесный), hybrid (минимал + тяжелые периодически), full (полный стек)')
     parser.add_argument('--minimal', action='store_true', help='Запустить в легковесном режиме (эквивалентно --mode minimal)')
-    parser.add_argument('--interval', type=float, default=None, help='Интервал сбора быстрой телеметрии в секундах (по умолчанию из config.json)')
+    parser.add_argument('--interval', '-i', type=float, default=None, help='Интервал сбора быстрой телеметрии в секундах (по умолчанию из config.json)')
     parser.add_argument('--heavy-interval', type=float, default=None, help='Интервал сбора тяжелых сенсоров для hybrid режима в секундах (по умолчанию из config.json)')
     parser.add_argument('--top-processes', type=int, default=None, help='Количество сохраняемых процессов с наибольшей нагрузкой (по умолчанию 10)')
-    parser.add_argument('--config', type=str, default=None, help='Путь к файлу конфигурации config.json')
     parser.add_argument('--log-dir', type=str, default=None, help='Путь к директории для логов и SQLite БД телеметрии')
     parser.add_argument('--verbose', '-v', action='store_true', help='Включить подробный вывод (DEBUG)')
     parser.add_argument('--once', action='store_true', help='Выполнить однократный опрос метрик и завершить работу')
+    parser.add_argument('--config', '-C', type=str, default=None, help='Путь к файлу конфигурации config.json / tc.json')
     return parser.parse_args()
+
+
 
 def signal_handler(signum: int, frame: Optional[object]) -> None:
     """Обработчик сигналов для корректной остановки сервиса.
@@ -146,15 +179,18 @@ def run_telemetry_service(
         try:
             from .sensor_collector import SensorCollector
             sensor_collector = SensorCollector(config_manager=cfg_mgr)
-            logger.debug('SensorCollector (LHM/Hardware) инициализирован для тяжелых опросов')
+            logger.debug('SensorCollector (Hardware/WMI) инициализирован для тяжелых опросов')
         except Exception as sc_err:
             logger.debug(f'SensorCollector не доступен: {sc_err}')
 
     system_collector = None
     deep_diag = None
     try:
-        from .collector import SystemCollector
-        from apps.windows.telemetry.analytics.deep_diagnostics import DeepDiagnosticsEngine
+        try:
+            from apps.windows.telemetry.deep_diagnostics import DeepDiagnosticsEngine
+        except ImportError:
+            from apps.windows.analytics.deep_diagnostics import DeepDiagnosticsEngine
+        from apps.windows.telemetry.collector import SystemCollector
         system_collector = SystemCollector(storage=storage)
         deep_diag = DeepDiagnosticsEngine()
     except Exception as init_err:
@@ -164,24 +200,24 @@ def run_telemetry_service(
     w64_collector = None
     w64_etw_collector = None
     w64_cfg = cfg_mgr.get_config().get('w64_collector', {}) if cfg_mgr else {}
-    if w64_cfg.get('enabled', True):
+    if w64_cfg.get('enabled', False):
         try:
             from .w64_collector import AIW64Collector
             from .w64_etw_collector import AIW64ETWCollector
             w64_collector = AIW64Collector(
                 storage=storage,
-                enable_file_monitoring=w64_cfg.get('enable_file_monitoring', True),
-                enable_process_monitoring=w64_cfg.get('enable_process_monitoring', True),
-                enable_registry_monitoring=w64_cfg.get('enable_registry_monitoring', True),
-                enable_network_monitoring=w64_cfg.get('enable_network_monitoring', True),
-                enable_event_log_monitoring=w64_cfg.get('enable_event_log_monitoring', True),
+                enable_file_monitoring=w64_cfg.get('enable_file_monitoring', False),
+                enable_process_monitoring=w64_cfg.get('enable_process_monitoring', False),
+                enable_registry_monitoring=w64_cfg.get('enable_registry_monitoring', False),
+                enable_network_monitoring=w64_cfg.get('enable_network_monitoring', False),
+                enable_event_log_monitoring=False,
             )
             w64_etw_collector = AIW64ETWCollector(
                 storage=storage,
-                enable_process_trace=w64_cfg.get('enable_process_trace', True),
-                enable_disk_trace=w64_cfg.get('enable_disk_trace', True),
-                enable_network_trace=w64_cfg.get('enable_network_trace', True),
-                enable_registry_trace=w64_cfg.get('enable_registry_trace', True),
+                enable_process_trace=w64_cfg.get('enable_process_trace', False),
+                enable_disk_trace=w64_cfg.get('enable_disk_trace', False),
+                enable_network_trace=w64_cfg.get('enable_network_trace', False),
+                enable_registry_trace=w64_cfg.get('enable_registry_trace', False),
             )
         except Exception as w64_err:
             logger.debug(f'Не удалось создать W64 сборщики: {w64_err}')
@@ -201,6 +237,14 @@ def run_telemetry_service(
     cached_gpu_metrics: List[GpuMetrics] = []
     last_partition_check: float = 0.0
     cached_part_list: List[Any] = []
+    cached_physical_disks: List[Any] = []
+    cached_identity: Dict[str, Any] = {}
+    cached_monitors: List[Any] = []
+    cached_updates: Optional[Any] = None
+    cached_office: Optional[Any] = None
+    cached_onedrive: Optional[Any] = None
+    cached_ram_sticks: List[Any] = []
+    cached_battery: Optional[Any] = None
     last_heavy_time = time.time()
     last_heavy_disk_scan_time = time.time()
     heavy_mode_start_time: Optional[float] = time.time() if mode.lower() in ('full', 'heavy') else None
@@ -212,28 +256,58 @@ def run_telemetry_service(
     aggregation_interval_sec = getattr(cfg_mgr, 'get_aggregation_interval', lambda: 300.0)() if cfg_mgr else 300.0
     last_aggregation_time = time.time()
     known_pids: Dict[int, str] = {}
-    flashing_log_path = Path(resolved_log_dir) / 'flashing_processes.log'
+    last_forensics_window: Optional[Tuple[str, int]] = None
+    last_forensics_time: float = 0.0
 
     def _execute_heavy_poll_job(is_startup: bool = False) -> None:
-        nonlocal last_heavy_disk_scan_time, heavy_poll_running, startup_surveys_done
+        nonlocal last_heavy_disk_scan_time, heavy_poll_running, startup_surveys_done, cached_physical_disks, cached_identity, cached_monitors, cached_updates, cached_office, cached_onedrive, cached_ram_sticks, cached_battery
         heavy_start = time.time()
         try:
             # 1. Поочередные стартовые тяжелые опросы (выполняются в фоне один за другим при старте)
             if is_startup and not startup_surveys_done:
-                # Этап 1. Идентификация хоста и локали
+                # Этап 1. Идентификация хоста, локали, мониторов и ПО
                 if system_collector:
                     try:
-                        identity = system_collector.get_system_identity()
-                        logger.info(f"💻 Хост: {identity.get('hostname')} | Пользователь: {identity.get('username')} | ОС: Windows {identity.get('os_build')}")
-                        logger.info(f"🌐 Язык: {identity.get('system_language')} | Локаль: {identity.get('user_locale')} | Раскладки: {', '.join(identity.get('input_languages', []))}")
+                        cached_identity = system_collector.get_system_identity()
+                        logger.info(f"💻 Хост: {cached_identity.get('hostname')} | Пользователь: {cached_identity.get('username')} | ОС: Windows {cached_identity.get('os_build')}")
+                        logger.info(f"🌐 Язык: {cached_identity.get('system_language')} | Локаль: {cached_identity.get('user_locale')} | Раскладки: {', '.join(cached_identity.get('input_languages', []))}")
                     except Exception as id_err:
                         logger.debug(f"Ошибка сбора идентификации системы: {id_err}")
+
+                    try:
+                        cached_monitors = system_collector.get_monitors()
+                        logger.info(f"🖥️ Обнаружено активных мониторов: {len(cached_monitors)}")
+                    except Exception as mon_err:
+                        logger.debug(f"Ошибка сбора мониторов: {mon_err}")
+
+                    try:
+                        cached_updates = system_collector.get_updates_info()
+                    except Exception as upd_err:
+                        logger.debug(f"Ошибка сбора обновлений: {upd_err}")
+
+                    try:
+                        cached_office = system_collector.get_ms_office_info()
+                        cached_onedrive = system_collector.get_onedrive_info()
+                    except Exception as sw_err:
+                        logger.debug(f"Ошибка сбора ПО: {sw_err}")
+
+                    try:
+                        import asyncio
+                        cached_ram_sticks = asyncio.run(system_collector.get_ram_sticks())
+                    except Exception as ram_err:
+                        logger.debug(f"Ошибка сбора RAM SPD: {ram_err}")
+
+                    try:
+                        cached_battery = system_collector.get_battery_metrics()
+                    except Exception as batt_err:
+                        logger.debug(f"Ошибка сбора батареи: {batt_err}")
 
                 # Этап 2. Опрос физических накопителей и SMART (PowerShell/CIM)
                 if system_collector and h_collectors.get('storage_smart', True):
                     try:
                         disks_health = system_collector.get_physical_disks_health(force=True)
                         if disks_health:
+                            cached_physical_disks = disks_health
                             d_summary = ", ".join([f"{d.model} ({d.media_type}, {d.size_gb}GB, SMART:{d.health_status})" for d in disks_health])
                             logger.info(f"💾 Накопители SMART (Опрос при запуске): {d_summary}")
                         last_heavy_disk_scan_time = time.time()
@@ -247,12 +321,14 @@ def run_telemetry_service(
                         hw_tree = asyncio.run(system_collector.get_hardware_tree_async(force=True))
                         if hw_tree:
                             logger.info(f"🖥️ [АППАРАТНАЯ КОНФИГУРАЦИЯ] Спецификация всего железа ПК определена ({len(hw_tree)} компонентов)")
+                            if isinstance(storage, TelemetryStorage):
+                                storage.sync_hardware_components_lifecycle(hw_tree)
                     except Exception as hw_err:
                         logger.debug(f"Ошибка сбора дерева оборудования: {hw_err}")
 
                 # Этап 4. Проверка критических аудитов при запуске
                 try:
-                    from apps.windows.telemetry.analytics.audit_startup_checker import run_startup_audit
+                    from apps.windows.analytics.audit_startup_checker import run_startup_audit
                     startup_audit = run_startup_audit(
                         check_integrity=True,
                         check_performance=True,
@@ -270,12 +346,71 @@ def run_telemetry_service(
                         logger.warning(
                             f"⚠️ STARTUP AUDIT: Предупреждения: {startup_audit.warning_count} ({startup_audit.duration_ms}ms)"
                         )
+                        for finding in startup_audit.findings:
+                            logger.warning(f"  - [{finding['severity'].upper()}] {finding['domain']}: {finding['title']}")
                     else:
                         logger.info(f"✅ STARTUP AUDIT: Все проверки пройдены ({startup_audit.duration_ms}ms)")
+
+                    # Сохранение выявленных проблем и предупреждений аудита запуска в БД
+                    if storage and startup_audit.findings:
+                        for finding in startup_audit.findings:
+                            storage.save_event(
+                                event_type=f"startup_audit_{finding.get('domain', 'system')}",
+                                event_details=finding,
+                                severity=finding.get('severity', 'warning')
+                            )
+                        storage.flush()
                 except Exception as audit_err:
                     logger.debug(f"Проверка аудитов при запуске: {audit_err}")
 
-                # Этап 5. Запуск W64/ETW сборщиков системных событий
+                # Этап 5. Аудит точек автозапуска Windows (Autoruns)
+                if system_collector:
+                    try:
+                        startup_entry = system_collector.archive_startup_state(auto_diff=True)
+                        if startup_entry and startup_entry.report:
+                            rep = startup_entry.report
+                            score = getattr(rep.summary, 'health_score', 100) if hasattr(rep, 'summary') else 100
+                            total_items = getattr(rep.summary, 'total_entries', len(rep.entries)) if hasattr(rep, 'summary') else len(rep.entries)
+                            logger.info(
+                                f"🚀 [АВТОЗАПУСК] Снимок автозагрузки зафиксирован в телеметрии: "
+                                f"{total_items} элементов (Health Score: {score}/100, изменений: {startup_entry.changes_count})"
+                            )
+                    except Exception as st_err:
+                        logger.debug(f"Ошибка сбора снимка автозапуска при старте телеметрии: {st_err}")
+
+                # Этап 6. Инвентаризация установленного ПО и аудит спящих программ
+                try:
+                    from apps.windows.sdk.core.software_audit import SoftwareAuditEngine
+                    sw_engine = SoftwareAuditEngine()
+                    sw_report = sw_engine.generate_audit_report(save_to_db=True)
+                    if sw_report:
+                        logger.info(
+                            f"📦 [ИНВЕНТАРИЗАЦИЯ ПО] Программное обеспечение просканировано и сохранено в телеметрию: "
+                            f"всего {sw_report.total_apps} программ (активных: {sw_report.active_apps_count}, спящих: {sw_report.unused_apps_count})"
+                        )
+                except Exception as sw_scan_err:
+                    logger.debug(f"Ошибка инвентаризации ПО при старте телеметрии: {sw_scan_err}")
+
+                # Прогрев быстрого отчета сканера ПО (DeepSoftwareScanner) и сохранение в telemetry.db
+                try:
+                    from apps.windows.sdk.software_scanner.controller import DeepSoftwareScanner
+                    from apps.windows.sdk.software_scanner.models import ScanMode
+                    import apps.windows.sdk.software_scanner.router as sw_router_mod
+                    from apps.windows.telemetry.sqlite import TelemetryStorage
+                    quick_scanner = DeepSoftwareScanner()
+                    scanner_report = quick_scanner.run_scan(mode=ScanMode.QUICK)
+                    if scanner_report:
+                        sw_router_mod._last_report = scanner_report
+                        # storage already initialized earlier
+                        storage.save_software_scanner_report(scanner_report)
+                        logger.info(
+                            f"🔍 [СКАНЕР ПО] Отчет сканера ПО сохранен в telemetry.db ({len(scanner_report.inventory)} программ, "
+                            f"{scanner_report.stats.dormant_count} спящих, {scanner_report.stats.orphan_count} сирот)"
+                        )
+                except Exception as sc_err:
+                    logger.debug(f"Ошибка прогрева быстрого сканера ПО и сохранения в telemetry.db: {sc_err}")
+
+                # Этап 7. Запуск W64/ETW сборщиков системных событий
                 if w64_collector:
                     try:
                         w64_collector.start()
@@ -291,9 +426,9 @@ def run_telemetry_service(
 
                 startup_surveys_done = True
 
-            # 2. Периодический опрос сенсоров LHM, портов, утечек и безопасности
+            # 2. Периодический опрос системных сенсоров WMI/CIM, SMART, портов, утечек и безопасности
             if mode in ('hybrid', 'full') or is_startup:
-                logger.info("🔥 [ТЯЖЕЛЫЙ ОПРОС] Запуск периодического опроса сенсоров LHM, SMART, портов и утечек...")
+                logger.info("🔥 [ТЯЖЕЛЫЙ ОПРОС] Запуск периодического опроса сенсоров WMI/CIM, SMART, портов и утечек...")
                 heavy_readings_total = []
                 if sensor_collector and h_collectors.get('hardware_sensors', True):
                     heavy_readings = sensor_collector.collect_all_sensors()
@@ -304,21 +439,21 @@ def run_telemetry_service(
                         except Exception as sp_err:
                             logger.debug(f'Ошибка сохранения sensor_polls в БД: {sp_err}')
 
-                        # Разгруппировка и красивый вывод LHM сенсоров в консоль
-                        lhm_temps = [f"{s.get('sensor_name')}: {s.get('value')}{s.get('unit')}" for s in heavy_readings if s.get('sensor_category') in ('Temperatures', 'Temperature')]
-                        lhm_powers = [f"{s.get('sensor_name')}: {s.get('value')}{s.get('unit')}" for s in heavy_readings if s.get('sensor_category') in ('Powers', 'Power')]
-                        lhm_fans = [f"{s.get('sensor_name')}: {s.get('value')}{s.get('unit')}" for s in heavy_readings if s.get('sensor_category') in ('Fans', 'Fan')]
-                        lhm_clocks = [f"{s.get('sensor_name')}: {s.get('value')}{s.get('unit')}" for s in heavy_readings if s.get('sensor_category') in ('Clocks', 'Clock')]
+                        # Разгруппировка и красивый вывод аппаратных сенсоров в консоль
+                        hw_temps = [f"{s.get('sensor_name')}: {s.get('value')}{s.get('unit')}" for s in heavy_readings if s.get('sensor_category') in ('Temperatures', 'Temperature')]
+                        hw_powers = [f"{s.get('sensor_name')}: {s.get('value')}{s.get('unit')}" for s in heavy_readings if s.get('sensor_category') in ('Powers', 'Power')]
+                        hw_fans = [f"{s.get('sensor_name')}: {s.get('value')}{s.get('unit')}" for s in heavy_readings if s.get('sensor_category') in ('Fans', 'Fan')]
+                        hw_clocks = [f"{s.get('sensor_name')}: {s.get('value')}{s.get('unit')}" for s in heavy_readings if s.get('sensor_category') in ('Clocks', 'Clock')]
 
-                        logger.info(f"🌡️ [LHM СЕНСОРЫ] Опрошено {len(heavy_readings)} аппаратных датчиков:")
-                        if lhm_temps:
-                            logger.info(f"   ├─ Температуры ({len(lhm_temps)}): {', '.join(lhm_temps[:8])}")
-                        if lhm_powers:
-                            logger.info(f"   ├─ Энергопотребление ({len(lhm_powers)}): {', '.join(lhm_powers[:6])}")
-                        if lhm_fans:
-                            logger.info(f"   ├─ Вентиляторы ({len(lhm_fans)}): {', '.join(lhm_fans)}")
-                        if lhm_clocks:
-                            logger.info(f"   └─ Частоты ({len(lhm_clocks)}): {', '.join(lhm_clocks[:6])}")
+                        logger.info(f"🌡️ [АППАРАТНЫЕ СЕНСОРЫ] Опрошено {len(heavy_readings)} аппаратных датчиков:")
+                        if hw_temps:
+                            logger.info(f"   ├─ Температуры ({len(hw_temps)}): {', '.join(hw_temps[:8])}")
+                        if hw_powers:
+                            logger.info(f"   ├─ Энергопотребление ({len(hw_powers)}): {', '.join(hw_powers[:6])}")
+                        if hw_fans:
+                            logger.info(f"   ├─ Вентиляторы ({len(hw_fans)}): {', '.join(hw_fans)}")
+                        if hw_clocks:
+                            logger.info(f"   └─ Частоты ({len(hw_clocks)}): {', '.join(hw_clocks[:6])}")
 
                 # Детальный аудит портов, сетевых соединений и утечек дескрипторов
                 if system_collector:
@@ -330,19 +465,22 @@ def run_telemetry_service(
                     except Exception:
                         pass
                     try:
-                        net_conns = system_collector.get_process_network_activity(limit=5, only_internet=True)
+                        net_conns = system_collector.get_process_network_activity(limit=50, only_internet=False)
                         if net_conns:
-                            c_str = ", ".join([f"{c.name}->{c.remote_address} ({c.service_type})" for c in net_conns[:3]])
-                            logger.info(f"📡 [ТЯЖЕЛЫЙ ОПРОС] Активные соединения с Интернет ({len(net_conns)}): {c_str}")
-                    except Exception:
-                        pass
+                            if isinstance(storage, TelemetryStorage):
+                                storage.save_process_network_snapshot(f"snap_net_{int(time.time())}", net_conns)
+                            ext_conns = [c for c in net_conns if getattr(c, 'is_internet', False)]
+                            c_str = ", ".join([f"{c.name}->{c.remote_address} ({c.service_type})" for c in ext_conns[:3]])
+                            logger.info(f"📡 [ТЯЖЕЛЫЙ ОПРОС] Активные соединения ({len(net_conns)}, Интернет: {len(ext_conns)}): {c_str}")
+                    except Exception as net_err:
+                        logger.debug(f"Ошибка сбора/сохранения сетевой активности: {net_err}")
 
-                if deep_diag:
+                if storage:
                     try:
-                        leaks = deep_diag.collect_process_leaks(limit=5)
-                        if leaks and leaks.top_handle_hogs:
-                            top_h = leaks.top_handle_hogs[0]
-                            logger.info(f"🔍 [ТЯЖЕЛЫЙ ОПРОС] Топ процесса по дескрипторам: {top_h.name} (PID:{top_h.pid}) -> {top_h.handles_count} handles, {top_h.gdi_objects} GDI, {top_h.user_objects} USER")
+                        leaks = storage.get_latest_process_leak_report(limit=5)
+                        if leaks and leaks.get("top_handle_hogs"):
+                            top_h = leaks["top_handle_hogs"][0]
+                            logger.info(f"🔍 [ТЯЖЕЛЫЙ ОПРОС] Топ процесса по дескрипторам: {top_h.get('name')} (PID:{top_h.get('pid')}) -> {top_h.get('handles_count')} handles, {top_h.get('gdi_objects')} GDI, {top_h.get('user_objects')} USER")
                     except Exception:
                         pass
 
@@ -352,25 +490,15 @@ def run_telemetry_service(
                     try:
                         heavy_disks = system_collector.get_physical_disks_health(force=True)
                         if heavy_disks:
+                            cached_physical_disks = heavy_disks
                             d_summary = ", ".join([f"{d.model} ({d.media_type}, {d.size_gb}GB, SMART:{d.health_status})" for d in heavy_disks])
                             logger.info(f"💾 [ТЯЖЕЛЫЙ ОПРОС (SMART)] Накопители SMART: {d_summary}")
                         last_heavy_disk_scan_time = h_now
                     except Exception as d_err:
                         logger.debug(f"Ошибка тяжелого сканирования накопителей: {d_err}")
 
-                # Инкрементальный сбор событий журнала безопасности Windows (Security.evtx и Defender)
-                if h_collectors.get('security_events', True):
-                    try:
-                        from apps.windows.telemetry.security_collector import WindowsSecurityCollector
-                        sec_coll = WindowsSecurityCollector(storage=storage)
-                        sec_rep = sec_coll.collect_incremental(channel='Security', batch_size=500, max_records=2000, save_raw=False)
-                        if sec_rep.total_events_ingested > 0:
-                            logger.info(f"🛡️ [SECURITY LOG] Инкрементально собрано {sec_rep.total_events_ingested} событий безопасности (RecordID: {sec_rep.last_record_id})")
-                        def_rep = sec_coll.collect_defender_events(batch_size=200, max_records=1000, save_raw=False)
-                        if def_rep.total_events_ingested > 0:
-                            logger.info(f"🛡️ [DEFENDER LOG] Инкрементально собрано {def_rep.total_events_ingested} событий Defender (RecordID: {def_rep.last_record_id})")
-                    except Exception as sec_err:
-                        logger.debug(f"Ошибка сбора событий безопасности: {sec_err}")
+                # Сбор журналов событий Windows в SQLite исключен: чтение логов выполняется
+                # на лету через веб-интерфейс (WevtAPI), предотвращая неконтролируемый рост БД.
 
                 # Синхронизация паспортов и активности процессов в SQLite (process_definition, process_instance, process_sample)
                 try:
@@ -447,7 +575,8 @@ def run_telemetry_service(
             mem = psutil.virtual_memory()
             mem_metrics = MemoryMetrics(total_gb=round(mem.total / (1024 ** 3), 2), used_gb=round(mem.used / (1024 ** 3), 2), available_gb=round(mem.available / (1024 ** 3), 2), percent=mem.percent)
             now_sec = time.time()
-            if last_gpu_probe_time is None or now_sec - last_gpu_probe_time >= 10.0:
+            gpu_ttl = cfg_mgr.get_cache_ttl('gpu_probe_ttl_sec', 10.0)
+            if last_gpu_probe_time is None or now_sec - last_gpu_probe_time >= gpu_ttl:
                 try:
                     gpu_data = gpu_prober.probe()
                     cached_gpu_metrics = [
@@ -480,13 +609,19 @@ def run_telemetry_service(
             gpu_metrics_list = cached_gpu_metrics
             io_elapsed = max(0.001, now_sec - prev_io_time)
             cur_disk_io = psutil.disk_io_counters()
+            disk_io_metrics = DiskIoMetrics()
             disk_read_kb = 0.0
             disk_write_kb = 0.0
             if cur_disk_io and prev_disk_io:
-                disk_read_kb = round((cur_disk_io.read_bytes - prev_disk_io.read_bytes) / 1024.0 / io_elapsed, 1)
-                disk_write_kb = round((cur_disk_io.write_bytes - prev_disk_io.write_bytes) / 1024.0 / io_elapsed, 1)
+                disk_io_metrics.read_bytes_per_sec = max(0.0, (cur_disk_io.read_bytes - prev_disk_io.read_bytes) / io_elapsed)
+                disk_io_metrics.write_bytes_per_sec = max(0.0, (cur_disk_io.write_bytes - prev_disk_io.write_bytes) / io_elapsed)
+                disk_io_metrics.read_count_per_sec = max(0.0, (cur_disk_io.read_count - prev_disk_io.read_count) / io_elapsed)
+                disk_io_metrics.write_count_per_sec = max(0.0, (cur_disk_io.write_count - prev_disk_io.write_count) / io_elapsed)
+                disk_read_kb = round(disk_io_metrics.read_bytes_per_sec / 1024.0, 1)
+                disk_write_kb = round(disk_io_metrics.write_bytes_per_sec / 1024.0, 1)
             prev_disk_io = cur_disk_io
-            if not cached_part_list or now_sec - last_partition_check >= 60.0:
+            part_ttl = cfg_mgr.get_cache_ttl('disk_partitions_ttl_sec', 60.0)
+            if not cached_part_list or now_sec - last_partition_check >= part_ttl:
                 try:
                     cached_part_list = psutil.disk_partitions(all=False)
                     last_partition_check = now_sec
@@ -507,7 +642,15 @@ def run_telemetry_service(
                 net_sent_kb = round((cur_net_io.bytes_sent - prev_net_io.bytes_sent) / 1024.0 / io_elapsed, 1)
             prev_net_io = cur_net_io
             prev_io_time = now_sec
-            net_metrics_list = [NetworkInterfaceMetrics(interface_name='total', bytes_sent_sec=net_sent_kb * 1024.0, bytes_recv_sec=net_recv_kb * 1024.0, packets_sent_sec=0.0, packets_recv_sec=0.0, errors_in=cur_net_io.errin if cur_net_io else 0, errors_out=cur_net_io.errout if cur_net_io else 0)]
+            net_metrics_list = [
+                NetworkInterfaceMetrics(
+                    name='total',
+                    is_up=True,
+                    speed_mbps=1000,
+                    bytes_sent_per_sec=net_sent_kb * 1024.0,
+                    bytes_recv_per_sec=net_recv_kb * 1024.0,
+                )
+            ]
             raw_procs = []
             current_proc_map: Dict[int, Dict[str, Any]] = {}
             for p in psutil.process_iter(['pid', 'name', 'memory_info', 'username']):
@@ -522,42 +665,51 @@ def run_telemetry_service(
                 except (psutil.NoSuchProcess, psutil.AccessDenied):
                     continue
 
-            # Детектор вспыхивающих процессов (новые PID, зарегистрированные на текущем тике)
+            # Аккумулирование вспыхивающих / новых процессов в буфер телеметрии
             if tick > 1:
                 new_pids = set(current_proc_map.keys()) - set(known_pids.keys())
                 if new_pids:
+                    flash_events = []
                     for n_pid in new_pids:
                         p_entry = current_proc_map[n_pid]
                         p_obj = p_entry['proc']
                         p_name = p_entry['name']
-                        exe_path = 'N/A'
-                        cmdline_str = 'N/A'
-                        parent_info = 'N/A'
+                        exe_path = None
+                        cmdline_str = None
+                        ppid = None
+                        parent_name = None
                         try:
                             exe_path = p_obj.exe()
                         except Exception:
                             pass
                         try:
-                            cmdline_str = " ".join(p_obj.cmdline())
+                            cmdline_list = p_obj.cmdline()
+                            if cmdline_list:
+                                cmdline_str = " ".join(cmdline_list)
                         except Exception:
                             pass
                         try:
                             ppid = p_obj.ppid()
-                            parent_name = psutil.Process(ppid).name() if ppid else 'Unknown'
-                            parent_info = f"{parent_name} (PID: {ppid})"
+                            if ppid:
+                                parent_name = psutil.Process(ppid).name()
                         except Exception:
                             pass
-                        
-                        alert_msg = (
-                            f"⚡ [ВСПЫШКА / НОВЫЙ ПРОЦЕСС] PID: {n_pid} | {p_name} | "
-                            f"Путь: {exe_path} | Родитель: {parent_info} | Команда: {cmdline_str}"
-                        )
-                        logger.warning(alert_msg)
-                        try:
-                            with open(flashing_log_path, 'a', encoding='utf-8') as f_out:
-                                f_out.write(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] PID: {n_pid} | {p_name} | Exe: {exe_path} | Parent: {parent_info} | Cmd: {cmdline_str}\n")
-                        except Exception:
-                            pass
+
+                        flash_events.append({
+                            'event_type': 'ProcessCreated',
+                            'pid': n_pid,
+                            'ppid': ppid,
+                            'name': p_name,
+                            'executable_path': exe_path,
+                            'command_line': cmdline_str,
+                            'parent_name': parent_name,
+                            'source': 'telemetry_detector',
+                            'launch_reason': 'FlashProcess',
+                            'timestamp': now_iso,
+                        })
+
+                    if flash_events and storage:
+                        storage.save_process_provenance_batch(flash_events)
 
             known_pids = {pid: data['name'] for pid, data in current_proc_map.items()}
 
@@ -643,83 +795,86 @@ def run_telemetry_service(
                     window_title=win_titles[0] if win_titles else None,
                 ))
 
+            if not cached_physical_disks and system_collector:
+                try:
+                    cached_physical_disks = system_collector.get_physical_disks_health(force=False)
+                except Exception:
+                    pass
+
             snapshot = SystemSnapshot(
                 timestamp=now_iso,
-                hostname=hostname,
+                hostname=cached_identity.get('hostname') or hostname,
+                workgroup=cached_identity.get('workgroup') or 'WORKGROUP',
+                username=clean_user or cached_identity.get('username') or '',
+                os_name=cached_identity.get('os_name') or f"{platform.system()} {platform.release()}",
+                os_build=cached_identity.get('os_build') or platform.version(),
+                system_language=cached_identity.get('system_language') or 'ru-RU',
+                os_install_language=cached_identity.get('os_install_language') or 'ru-RU',
+                user_locale=cached_identity.get('user_locale') or 'ru-RU',
+                system_locale=cached_identity.get('system_locale') or 'ru-RU',
+                timezone=cached_identity.get('timezone') or 'UTC+03:00',
+                codepage=cached_identity.get('codepage') or 'UTF-8',
+                input_languages=cached_identity.get('input_languages') or [],
+                os_install_date=cached_identity.get('os_install_date') or '',
                 uptime_seconds=round(time.time() - boot_time, 1),
                 cpu=cpu_metrics,
                 memory=mem_metrics,
+                ram_sticks=cached_ram_sticks,
                 gpus=gpu_metrics_list,
+                monitors=cached_monitors,
+                updates=cached_updates,
+                office=cached_office,
+                onedrive=cached_onedrive,
                 disks=disk_partitions,
+                disk_io=disk_io_metrics,
+                physical_disks=cached_physical_disks,
                 network=net_metrics_list,
+                battery=cached_battery,
                 top_processes=top_procs,
                 apps_count=apps_count,
                 background_count=bg_count,
                 windows_count=win_count,
             )
-            try:
-                storage.save_snapshot(snapshot, top_n=top_processes)
-            except Exception as db_err:
-                logger.warning(f'Ошибка сохранения снимка в SQLite: {db_err}')
+            if cfg_mgr.is_streaming_enabled():
+                try:
+                    storage.save_snapshot(snapshot, top_n=top_processes)
+                except Exception as db_err:
+                    logger.warning(f'Ошибка сохранения снимка в SQLite: {db_err}')
+
+            # Сбор и сохранение среза утечек ресурсов процессов (Handles, GDI, USER, Page Faults) по расписанию из config.json
+            leaks_every_n = max(1, int(cfg_mgr.get_threshold('leaks_scan_every_n_ticks', 10.0)))
+            if deep_diag and storage and (tick == 1 or tick % leaks_every_n == 0):
+                try:
+                    leaks_rep = deep_diag.collect_process_leaks(limit=100)
+                    snap_leaks_id = f"snap_leaks_{int(time.time())}"
+                    storage.save_process_leak_snapshot(snap_leaks_id, leaks_rep)
+                except Exception as leak_err:
+                    logger.debug(f'Ошибка сбора/сохранения утечек процессов на тике: {leak_err}')
 
             # Формирование информативного пошагового лога тика и сохранение форензики
-            active_win_str = "N/A (Фоновый режим)"
             if deep_diag:
                 try:
-                    forensics = deep_diag.collect_forensics_activity()
-                    win_info = forensics.foreground_window
-                    if win_info and win_info.get('title'):
-                        active_win_str = f"\"{win_info.get('title')}\" ({win_info.get('process_name') or 'N/A'}, PID:{win_info.get('pid', 0)}) | Простой: {forensics.user_idle_seconds:.1f}с"
-                    # Сохранение снимка форензики в SQLite
-                    snap_forensics_id = f"snap_forensics_{int(time.time())}_{win_info.get('pid', 0) if win_info else 0}"
-                    storage.save_forensics_snapshot(snap_forensics_id, {
-                        "foreground_window_title": win_info.get("title", "") if win_info else "",
-                        "foreground_process_name": win_info.get("process_name", "") if win_info else "",
-                        "foreground_pid": win_info.get("pid", 0) if win_info else 0,
-                        "user_idle_seconds": int(forensics.user_idle_seconds),
-                        "camera_active_apps": forensics.camera_active_apps,
-                        "microphone_active_apps": forensics.microphone_active_apps,
-                        "userassist_top_apps": forensics.userassist_top_apps,
-                    })
+                    win_info, idle_sec = deep_diag.get_foreground_window_fast()
+                    forensics_hb_ttl = cfg_mgr.get_cache_ttl('forensics_userassist_ttl_sec', 300.0)
+                    cur_win_key = (win_info.get("title", "") if win_info else "", win_info.get("pid", 0) if win_info else 0)
+                    if cur_win_key != last_forensics_window or (now_sec - last_forensics_time >= forensics_hb_ttl):
+                        forensics = deep_diag.collect_forensics_activity()
+                        snap_forensics_id = f"snap_forensics_{int(time.time())}_{win_info.get('pid', 0) if win_info else 0}"
+                        storage.save_forensics_snapshot(snap_forensics_id, {
+                            "foreground_window_title": win_info.get("title", "") if win_info else "",
+                            "foreground_process_name": win_info.get("process_name", "") if win_info else "",
+                            "foreground_pid": win_info.get("pid", 0) if win_info else 0,
+                            "user_idle_seconds": int(idle_sec),
+                            "camera_active_apps": forensics.camera_active_apps,
+                            "microphone_active_apps": forensics.microphone_active_apps,
+                            "userassist_top_apps": forensics.userassist_top_apps,
+                        })
+                        last_forensics_window = cur_win_key
+                        last_forensics_time = now_sec
                 except Exception as f_err:
                     logger.debug(f'Ошибка сбора/сохранения форензики: {f_err}')
 
-            disk_vol_str = ", ".join([f"{d.mountpoint} {d.used_gb:.0f}/{d.total_gb:.0f}GB ({d.percent}%)" for d in disk_partitions[:3]]) or "N/A"
-
-            # Формирование информативной сводки по Apps и Background processes
-            def _format_group_summary(groups: Dict[str, List[Dict[str, Any]]], top_n: int = 4) -> str:
-                sorted_g = sorted(
-                    groups.items(),
-                    key=lambda item: sum(x['mem_rss'] for x in item[1]),
-                    reverse=True
-                )[:top_n]
-                items = []
-                for name, p_list in sorted_g:
-                    total_mb = sum(x['mem_rss'] for x in p_list) / (1024 * 1024)
-                    cnt_str = f" ({len(p_list)})" if len(p_list) > 1 else ""
-                    friendly = classifier._get_friendly_name(name)
-                    if total_mb >= 1024:
-                        mem_str = f"{total_mb / 1024:.1f} GB"
-                    else:
-                        mem_str = f"{total_mb:.0f} MB"
-                    items.append(f"{friendly}{cnt_str} [{mem_str}]")
-                return ", ".join(items) if items else "Нет процессов"
-
-            apps_summary = _format_group_summary(app_groups, top_n=4)
-            bg_summary = _format_group_summary(bg_groups, top_n=3)
-            win_summary = _format_group_summary(win_groups, top_n=2)
-
-            logger.info(f"📊 [ТЕЛЕМЕТРИЯ #{tick}] Режим: {mode.upper()} | {datetime.now().strftime('%H:%M:%S')}")
-            logger.info(f"   ├─ 🖥️ CPU: {cpu_pct:.1f}% @ {freq_mhz:.0f}MHz ({cpu_metrics.physical_cores}P/{cpu_metrics.logical_cores}L) | RAM: {mem_metrics.used_gb:.1f}/{mem_metrics.total_gb:.1f}GB ({mem_metrics.percent}%)")
-            if gpu_metrics_list:
-                g0 = gpu_metrics_list[0]
-                logger.info(f"   ├─ 🎮 GPU: {g0.name} | Нагрузка: {g0.load_percent or 0.0}% | Температура: {g0.temperature_celsius or 0.0}°C")
-            logger.info(f"   ├─ 💾 Диски: Чтение {disk_read_kb:.1f} KB/s | Запись {disk_write_kb:.1f} KB/s | Занято: {disk_vol_str}")
-            logger.info(f"   ├─ 📡 Сеть: ↓{net_recv_kb:.1f} KB/s | ↑{net_sent_kb:.1f} KB/s | Активность: {active_win_str}")
-            logger.info(f"   ├─ 📱 Apps ({apps_count}): {apps_summary}")
-            logger.info(f"   ├─ ⚙️  Background ({bg_count}): {bg_summary}")
-            logger.info(f"   ├─ 🪟 Windows ({win_count}): {win_summary}")
-            logger.info(f"   └─ 📥 Буфер БД: снимок #{tick} добавлен (в буфере: {storage.get_buffered_count()} записей, БД: {Path(db_path).name})")
+            logger.console(f"тик {tick} ")
 
             # Асинхронный запуск тяжелых стартовых опросов сразу после завершения первого тика
             if tick == 1 and not once:
@@ -809,7 +964,7 @@ def run_minimal_telemetry(interval: float=5.0, top_processes: int=10, log_dir: O
     return run_telemetry_service(mode='minimal', interval=interval, top_processes=top_processes, log_dir=log_dir)
 
 def main() -> int:
-    """Главная точка входа сервиса телеметрии.
+    """Главная точка входа службы системной телеметрии Windows.
 
     Returns:
         int: Код завершения.
@@ -817,6 +972,7 @@ def main() -> int:
     args = parse_arguments()
     if args.verbose:
         logger.setLevel('DEBUG')
+
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
     from .telemetry_config import TelemetryConfigManager
@@ -835,8 +991,19 @@ def main() -> int:
         mode = 'hybrid'
     interval = args.interval or (config_manager.get_interval_seconds() if config_manager else 5.0)
     heavy_interval = args.heavy_interval or (config_manager.get_heavy_interval_seconds() if config_manager else 60.0)
-    top_processes = args.top_processes or (config_manager.get_top_processes() if config_manager else 10)
+    top_processes = args.top_processes or (config_manager.get_effective_process_limit() if config_manager else 10)
     heavy_collectors = config_manager.get_heavy_collectors() if config_manager else None
-    return run_telemetry_service(mode=mode, interval=interval, heavy_interval=heavy_interval, top_processes=top_processes, heavy_collectors=heavy_collectors, log_dir=args.log_dir, config_path=args.config, once=args.once)
+    return run_telemetry_service(
+        mode=mode,
+        interval=interval,
+        heavy_interval=heavy_interval,
+        top_processes=top_processes,
+        heavy_collectors=heavy_collectors,
+        log_dir=args.log_dir,
+        config_path=args.config,
+        once=args.once,
+    )
+
+
 if __name__ == '__main__':
     sys.exit(main())

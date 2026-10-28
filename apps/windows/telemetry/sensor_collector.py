@@ -16,7 +16,7 @@
 # Package: apps.windows.telemetry
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-20 09:17:00
 # =============================================================================
 
 from __future__ import annotations
@@ -31,17 +31,14 @@ try:
     from logger import logger
 except ImportError:
     from logger import logger
-from .telemetry_config import TelemetryConfigManager
+from .telemetry_config import TelemetryConfigManager, get_telemetry_config_manager
 from .sensor_registry import SensorDeduplicator, SensorProvider
 try:
-    from apps.windows.sdk.modules.hardware.hardware_monitor import HardwareMonitor
-    from apps.windows.sdk.modules.hardware.lhm_service import LhmService
     from .internet_speed import InternetSpeedSensor
 except ImportError as e:
     logger.warning(f'Не удалось импортировать зависимости сенсоров: {e}')
-    HardwareMonitor = None
-    LhmService = None
     InternetSpeedSensor = None
+
 
 class SensorCollector:
     """Коллектор данных со всех сенсоров с нормализованной схемой датчиков."""
@@ -49,47 +46,101 @@ class SensorCollector:
     def __init__(
         self,
         config_manager: Optional[TelemetryConfigManager] = None,
-        lhm_service: Optional[Any] = None,
     ) -> None:
         """Инициализирует коллектор сенсоров.
 
         Args:
             config_manager: Менеджер конфигурации для настройки сенсоров.
-            lhm_service: Сервис LibreHardwareMonitor (опционально).
         """
-        self.config_manager = config_manager
-        self._lhm_service = lhm_service or (LhmService() if LhmService else None)
-        self._hardware_monitor = HardwareMonitor() if HardwareMonitor else None
+        self.config_manager = config_manager or get_telemetry_config_manager()
+        self._hardware_monitor = None
         self._internet_speed_sensor = InternetSpeedSensor() if InternetSpeedSensor else None
         self._last_hardware_snapshot: Optional[Dict[str, Any]] = None
+        self._last_internet_data: Optional[Dict[str, Any]] = None
+        self._last_internet_measure_time: float = 0.0
+        self._internet_speed_ttl_sec: float = self.config_manager.get_cache_ttl('internet_speed_ttl_sec', 1800.0)
         self._lock = threading.Lock()
 
     def _get_hardware_data(self) -> Dict[str, Any]:
-        """Получает данные от HardwareMonitor.
+        """Получает реальные данные аппаратных сенсоров (CPU, RAM, GPU, Storage, Network, ACPI).
 
         Returns:
-            Dict[str, Any]: Данные HardwareMonitor.
+            Dict[str, Any]: Данные сенсоров оборудования.
         """
-        if self._hardware_monitor is None:
-            return {}
+        data: Dict[str, Any] = {}
         try:
-            snapshot = self._hardware_monitor.get_snapshot(include_smart=True)
-            return snapshot.to_dict()
-        except Exception as e:
-            logger.error(f'Ошибка получения данных от HardwareMonitor: {e}')
-            return {}
+            import psutil
+            from .sensors import get_hardware_sensors
 
-    def _get_internet_speed_data(self) -> Dict[str, Any]:
-        """Получает данные о скорости интернета и задержке через FAST.com.
+            per_core = psutil.cpu_percent(interval=None, percpu=True)
+            total_cpu = round(sum(per_core) / max(len(per_core), 1), 1) if per_core else 0.0
+            cf = psutil.cpu_freq()
+            data['cpu'] = {
+                'model': 'System Processor',
+                'utilization_pct': total_cpu,
+                'per_core_pct': per_core,
+                'frequency_current_mhz': round(cf.current, 1) if cf else 0.0,
+            }
+
+            vm = psutil.virtual_memory()
+            sm = psutil.swap_memory()
+            data['memory'] = {
+                'utilization_pct': round(vm.percent, 1),
+                'swap_utilization_pct': round(sm.percent, 1),
+            }
+
+            try:
+                from apps.windows.sdk.modules.hardware.gpu_prober import GpuProber
+                gpus_raw = GpuProber().probe_all()
+                data['gpus'] = [
+                    {
+                        'index': idx,
+                        'name': g.name,
+                        'temperature_gpu_c': g.temperature_gpu_c,
+                        'utilization_gpu_pct': g.utilization_gpu_pct,
+                        'memory_used_mb': g.memory_used_mb,
+                        'memory_total_mb': g.memory_total_mb,
+                        'engines': g.engines or {},
+                    }
+                    for idx, g in enumerate(gpus_raw)
+                ]
+            except Exception:
+                data['gpus'] = []
+
+            hw_sensors = get_hardware_sensors(include_internet_speed=False)
+            data['sensors'] = [
+                {
+                    'id': s.sensor_id,
+                    'hardware_name': getattr(s, 'hardware_name', 'System'),
+                    'hardware_type': getattr(s, 'hardware_type', s.category),
+                    'sensor_category': s.category,
+                    'sensor_name': s.name,
+                    'unit': s.unit,
+                    'value': s.value,
+                }
+                for s in hw_sensors
+            ]
+        except Exception as ex:
+            logger.debug(f'Ошибка получения аппаратных данных в SensorCollector: {ex}')
+        return data
+
+    def _get_internet_speed_data(self, force: bool = False) -> Dict[str, Any]:
+        """Получает данные о скорости интернета и задержке через FAST.com с соблюдением TTL кэша.
+
+        Args:
+            force: Принудительно запустить сетевой замер скорости.
 
         Returns:
             Dict[str, Any]: Данные скорости интернета (download, upload, ping, bufferbloat, loaded latency).
         """
         if self._internet_speed_sensor is None:
             return {'available': False, 'error': 'InternetSpeedSensor not available'}
+        now = time.time()
+        if not force and self._last_internet_data is not None and (now - self._last_internet_measure_time) < self._internet_speed_ttl_sec:
+            return self._last_internet_data
         try:
             metrics = self._internet_speed_sensor.measure_internet_speed()
-            return {
+            res = {
                 'available': metrics.get('available', True),
                 'ping_ms': metrics.get('ping_ms', 0.0),
                 'download_mbps': metrics.get('download_mbps', 0.0),
@@ -102,6 +153,9 @@ class SensorCollector:
                 'ip': metrics.get('ip', ''),
                 'isp': metrics.get('isp', ''),
             }
+            self._last_internet_data = res
+            self._last_internet_measure_time = now
+            return res
         except Exception as e:
             logger.error(f'Ошибка получения данных скорости интернета: {e}')
             return {'available': False, 'error': str(e)}
@@ -465,65 +519,6 @@ class SensorCollector:
             if deduplicator.add(sensor_id, provider, value):
                 unique_readings.append(reading)
 
-        # Обогащение из LibreHardwareMonitor (добавляются ТОЛЬКО сенсоры, отсутствующие в базовом пуле CIM/WMI)
-        if self._lhm_service and self._lhm_service.is_running():
-            try:
-                lhm_items = self._lhm_service.get_flattened_sensors()
-                existing_ids = {str(r.get('id', '')) for r in unique_readings}
-                for item in lhm_items:
-                    hw_name = item.get("hardware_name", "Hardware")
-                    hw_type = item.get("hardware_type", "sensor")
-                    cat = item.get("sensor_category", "General")
-                    s_name = item.get("sensor_name", "Sensor")
-                    
-                    if "Distance to TjMax" in s_name:
-                        continue
-                        
-                    val_num = item.get("value_num")
-                    if val_num is None:
-                        continue
-                        
-                    vraw = str(item.get("value_raw") or "").lower()
-                    unit = ""
-                    if "°c" in vraw or "c" in vraw:
-                        unit = "°C"
-                    elif "%" in vraw:
-                        unit = "%"
-                    elif "rpm" in vraw:
-                        unit = "RPM"
-                    elif "v" in vraw and "w" not in vraw:
-                        unit = "V"
-                    elif "w" in vraw:
-                        unit = "W"
-                    elif "mhz" in vraw:
-                        unit = "MHz"
-                    elif "b/s" in vraw:
-                        unit = "B/s"
-                    elif "gb" in vraw:
-                        unit = "GB"
-
-                    clean_hw = re.sub(r'[^a-zA-Z0-9]+', '_', hw_name.lower()).strip('_')
-                    clean_name = re.sub(r'[^a-zA-Z0-9]+', '_', s_name.lower()).strip('_')
-                    sid = f"lhm_{clean_hw}_{clean_name}"
-
-                    # Пропускаем, если такой датчик уже есть или это дубликат общей нагрузки CPU/RAM
-                    if sid in existing_ids or (cat == "Load" and "total" in clean_name and any("util_total" in eid for eid in existing_ids)):
-                        continue
-
-                    existing_ids.add(sid)
-                    unique_readings.append({
-                        'id': sid,
-                        'hardware_name': hw_name,
-                        'hardware_type': hw_type,
-                        'sensor_category': cat,
-                        'sensor_name': s_name,
-                        'unit': unit,
-                        'value': float(val_num),
-                        '_provider': SensorProvider.LHM_ENRICHED,
-                    })
-            except Exception as lhm_err:
-                logger.debug(f'Ошибка обогащения сенсорами LHM: {lhm_err}')
-        
         return unique_readings
 
     def get_hardware_snapshot(self) -> Dict[str, Any]:
@@ -563,47 +558,3 @@ class SensorCollector:
             internet_data = self._get_internet_speed_data()
             return self.extract_sensor_readings(hardware_data, internet_data)
 
-    def collect_lhm_cpu_readings(self) -> List[Dict[str, Any]]:
-        """Извлекает нормализованные показания температур ядер CPU и Package из LHM.
-
-        Returns:
-            List[Dict[str, Any]]: Список показаний датчиков температур.
-        """
-        from apps.windows.sdk.modules.hardware.lhm_service import LhmService
-        lhm = self._lhm_service or LhmService()
-        items = lhm.get_flattened_sensors()
-        results: List[Dict[str, Any]] = []
-        core_idx = 0
-        for item in items:
-            if item.get("hardware_type") != "cpu" or item.get("sensor_category") != "Temperatures":
-                continue
-            name = item.get("sensor_name", "")
-            if "Distance to TjMax" in name:
-                continue
-            val = item.get("value_num")
-            if val is None:
-                continue
-            if "Package" in name:
-                results.append({
-                    "id": "cpu_package_temp",
-                    "hardware_name": item.get("hardware_name", "CPU"),
-                    "hardware_type": "cpu",
-                    "sensor_category": "Temperatures",
-                    "sensor_name": name,
-                    "unit": "°C",
-                    "value": val,
-                    "value_num": val,
-                })
-            elif "Core" in name:
-                results.append({
-                    "id": f"cpu_core_{core_idx}_temp",
-                    "hardware_name": item.get("hardware_name", "CPU"),
-                    "hardware_type": "cpu",
-                    "sensor_category": "Temperatures",
-                    "sensor_name": name,
-                    "unit": "°C",
-                    "value": val,
-                    "value_num": val,
-                })
-                core_idx += 1
-        return results

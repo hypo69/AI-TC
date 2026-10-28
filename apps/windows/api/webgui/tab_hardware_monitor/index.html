@@ -1,0 +1,295 @@
+<!--
+=============================================================================
+Process Name: Windows Web Interface - Index View
+=============================================================================
+Description:
+  Шаблон клиентского веб-интерфейса index.
+
+Usage Examples:
+    Web Route:
+      /windows/api/webgui/tab_hardware_monitor/index.html
+
+    Tab Frame Integration:
+      <iframe src="/windows/api/webgui/tab_hardware_monitor/index.html" class="w-100 h-100 border-0"></iframe>
+
+File: index.html
+Project: ai-windows-admin
+Package: windows/api/webgui/tab_hardware_monitor
+Author: hypo69
+Copyright: © 2026 hypo69
+Updated: 2026-10-20 10:55:00
+=============================================================================
+-->
+
+<!-- Hardware & Sensors Monitor Tab -->
+<style>
+  .hw-container {
+    padding: 0.5rem 0.75rem;
+  }
+  .hw-card {
+    background: var(--surface-1) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 8px;
+    padding: 0.45rem 0.75rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100%;
+    min-height: 60px;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .hw-card:hover {
+    border-color: var(--nav-active) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  }
+  .hw-card-label {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    font-weight: 600;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    line-height: 1.1;
+  }
+  .hw-card-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    line-height: 1.15;
+    color: var(--text-color);
+  }
+  .hw-card-sub {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    line-height: 1.1;
+  }
+
+  .hw-panel {
+    background: var(--surface-1) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    margin-bottom: 0.75rem;
+    display: flex;
+    flex-direction: column;
+  }
+  .hw-panel-header {
+    background: var(--surface-2) !important;
+    border-bottom: 1px solid var(--border-color) !important;
+    padding: 0.45rem 0.85rem;
+    font-weight: 600;
+    font-size: 0.82rem;
+    color: var(--nav-active);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .hw-scrollable {
+    height: auto;
+    min-height: 100px;
+    max-height: clamp(280px, 52vh, 620px);
+    overflow-y: auto;
+    overflow-x: auto;
+    scrollbar-width: thin;
+  }
+  .hw-table {
+    margin-bottom: 0;
+    font-size: 0.8rem;
+    width: 100%;
+  }
+  .hw-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+  }
+  .hw-table th {
+    background: var(--surface-2);
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border-color);
+    padding: 0.45rem 0.6rem;
+  }
+  .hw-table td {
+    border-bottom: 1px solid var(--border-color);
+    padding: 0.45rem 0.6rem;
+    vertical-align: middle;
+  }
+</style>
+
+<div class="hw-container">
+  <!-- Заголовок вкладки -->
+  <div class="tab-header d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+    <div class="d-flex align-items-center gap-2">
+      <span class="tab-header-icon fs-4 text-warning">⚡</span>
+      <div>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+          <h3 class="tab-header-title panel-header mb-0">Мониторинг оборудования и датчиков</h3>
+          
+        </div>
+        <small class="tab-header-subtitle text-secondary">Телеметрия CPU, RAM, GPU, термодатчиков, кулеров, напряжений и диагностика накопителей S.M.A.R.T.</small>
+      </div>
+    </div>
+    
+  </div>
+<div class="d-flex align-items-center gap-2">
+      <select class="form-select form-select-sm poll-freq-select" id="hw-poll-freq" data-poll-id="hw_monitor" title="Частота опроса: Оборудование и сенсоры">
+        <option value="start">Только при старте</option>
+        <option value="manual" selected>По запросу</option>
+        <option value="3">Каждые 3 сек</option>
+        <option value="5">Каждые 5 сек</option>
+        <option value="10">Каждые 10 сек</option>
+        <option value="30">Каждые 30 сек</option>
+        <option value="60">Каждые 60 сек</option>
+        <option value="120">Каждые 120 сек</option>
+      </select>
+      <button class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1" id="hw-btn-refresh">
+        <i class="bi bi-arrow-clockwise"></i>
+        <span>Обновить</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- KPI Stats Row -->
+  <div class="row g-2 mb-2">
+    <div class="col-6 col-md-3">
+      <div class="hw-card">
+        <div class="hw-card-label">
+          <span>Процессор (CPU)</span>
+          <span class="badge bg-primary" id="hw-cpu-cores">- cores</span>
+        </div>
+        <div class="hw-card-value text-info" id="hw-val-cpu">- %</div>
+        <div class="hw-card-sub text-truncate" id="hw-sub-cpu">Загрузка процессора</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="hw-card">
+        <div class="hw-card-label">
+          <span>Память (RAM)</span>
+          <span class="badge bg-success" id="hw-ram-total">- GB</span>
+        </div>
+        <div class="hw-card-value text-success" id="hw-val-ram">- %</div>
+        <div class="hw-card-sub text-truncate" id="hw-sub-ram">Занято памяти</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="hw-card">
+        <div class="hw-card-label">
+          <span>Видеокарта (GPU)</span>
+          <span class="badge bg-warning text-dark" id="hw-gpu-count">0 GPU</span>
+        </div>
+        <div class="hw-card-value text-warning" id="hw-val-gpu">- %</div>
+        <div class="hw-card-sub text-truncate" id="hw-sub-gpu">Загрузка GPU</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="hw-card">
+        <div class="hw-card-label">
+          <span>Сенсоры и Температура</span>
+          <span class="badge bg-info text-dark" id="hw-sensor-count">0 шт.</span>
+        </div>
+        <div class="hw-card-value text-danger" id="hw-val-temp">- °C</div>
+        <div class="hw-card-sub text-truncate" id="hw-sub-temp">Максимальная t°</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Panels Grid -->
+  <div class="row g-2">
+    <!-- Left Column: CPU/RAM/GPU Detailed Specs & Disks -->
+    <div class="col-12 col-lg-6">
+      <!-- Disks & Storage Panel -->
+      <div class="hw-panel">
+        <div class="hw-panel-header">
+          <span class="d-flex align-items-center gap-1.5">
+            <i class="bi bi-hdd-network text-info"></i>
+            <span>Диски и накопители</span>
+          </span>
+          <span class="badge bg-body-secondary text-body" id="hw-disks-count">0 дисков</span>
+        </div>
+        <div class="table-responsive hw-scrollable">
+          <table class="table table-hover hw-table">
+            <thead>
+              <tr>
+                <th>Диск</th>
+                <th>ФС / Тип</th>
+                <th>Всего / Свободно</th>
+                <th>Использование</th>
+              </tr>
+            </thead>
+            <tbody id="hw-disks-body">
+              <tr>
+                <td colspan="4" class="text-center py-3 text-muted">Загрузка дисков...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- GPU Telemetry Panel -->
+      <div class="hw-panel">
+        <div class="hw-panel-header">
+          <span class="d-flex align-items-center gap-1.5">
+            <i class="bi bi-gpu-card text-warning"></i>
+            <span>Графические ускорители (GPU)</span>
+          </span>
+        </div>
+        <div class="p-2.5 hw-scrollable" id="hw-gpu-container" style="font-size: 0.8rem;">
+          <div class="text-center py-3 text-muted">Загрузка информации GPU...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column: Sensors & SMART -->
+    <div class="col-12 col-lg-6">
+      <!-- Hardware Sensors Panel -->
+      <div class="hw-panel">
+        <div class="hw-panel-header">
+          <span class="d-flex align-items-center gap-1.5">
+            <i class="bi bi-thermometer-half text-danger"></i>
+            <span>Аппаратные сенсоры (Температура, Вентиляторы, Вольтаж)</span>
+          </span>
+          <span class="badge bg-body-secondary text-body" id="hw-sensors-total">0 сенсоров</span>
+        </div>
+        <div class="table-responsive hw-scrollable">
+          <table class="table table-hover hw-table">
+            <thead>
+              <tr>
+                <th>Датчик / Компонент</th>
+                <th>Тип</th>
+                <th>Значение</th>
+                <th>Статус</th>
+              </tr>
+            </thead>
+            <tbody id="hw-sensors-body">
+              <tr>
+                <td colspan="4" class="text-center py-3 text-muted">Опрос аппаратных сенсоров...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- S.M.A.R.T. Health Status -->
+      <div class="hw-panel">
+        <div class="hw-panel-header">
+          <span class="d-flex align-items-center gap-1.5">
+            <i class="bi bi-shield-shaded text-success"></i>
+            <span>S.M.A.R.T. Здоровье накопителей</span>
+          </span>
+        </div>
+        <div class="p-2.5 hw-scrollable" id="hw-smart-container" style="font-size: 0.8rem;">
+          <div class="text-center py-3 text-muted">Загрузка S.M.A.R.T. телеметрии...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+

@@ -18,7 +18,7 @@
 # Package: apps.windows.api.routers
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 19:41:00
+# Updated: 2026-10-15 10:46:00
 # =============================================================================
 
 from __future__ import annotations
@@ -29,11 +29,13 @@ from fastapi import APIRouter
 
 from .admin import (  # noqa: F401 - импорт регистрирует эндпойнты на общих роутерах
     apps,
+    google_accounts,
     instructions,
     plugins,
     rag_search,
     schedulers,
     skills,
+    user_directories,
     users,
     windows_users,
 )
@@ -41,6 +43,14 @@ from .admin.routers import plugins_router, router, router_apps, skills_router, w
 
 
 def init_router() -> APIRouter:
+    """Возвращает основной административный роутер (/api/admin)."""
+    return router
+
+def init_agents_router() -> APIRouter:
+    """Возвращает роутер агентов (/api/agents)."""
+    from .router_agents import init_router as agents_init
+    return agents_init()
+
     """Возвращает основной административный роутер (/api/admin)."""
     return router
 

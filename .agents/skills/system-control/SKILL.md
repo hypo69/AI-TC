@@ -1,9 +1,10 @@
 ---
 name: system-control
-description: Windows System Control Center, maintenance, post-install setup and SafeOps parameter management
+# Updated: 2026-10-25 18:35:00
+description: "Windows System Control Center, maintenance, post-install setup and SafeOps parameter management"
 description_i18n:
-  en: Windows System Control Center, maintenance, post-install setup and SafeOps parameter management
-  ru: Центр управления системой Windows: регламентное обслуживание, SafeOps параметры и точки восстановления
+  en: "Windows System Control Center, maintenance, post-install setup and SafeOps parameter management"
+  ru: "Центр управления системой Windows: регламентное обслуживание, SafeOps параметры и точки восстановления"
 ---
 
 # ⚙️ Навык: Windows System Control Center (Maintenance & SafeOps)

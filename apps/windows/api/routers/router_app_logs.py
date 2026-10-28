@@ -19,7 +19,7 @@
 # Package: apps.windows.api.routers
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 19:37:00
+# Updated: 2026-10-28 04:40:00
 # =============================================================================
 
 from __future__ import annotations
@@ -57,9 +57,9 @@ def get_logs_dir() -> Path:
 
     appdata = os.environ.get("APPDATA") or os.environ.get("LOCALAPPDATA")
     if appdata and os.path.exists(appdata):
-        return Path(appdata) / "AI-Windows-Admin" / "logs"
+        return Path(appdata) / "ai-tc" / "logs"
 
-    return Path.home() / ".config" / "AI-Windows-Admin" / "logs"
+    return Path.home() / ".config" / "ai-tc" / "logs"
 
 
 def _format_size(size_bytes: int) -> str:

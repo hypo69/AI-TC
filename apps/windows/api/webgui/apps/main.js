@@ -14,7 +14,7 @@
  * Package: windows/api/webgui/apps
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-10 17:35:00
+ * Updated: 2026-10-20 15:25:00
  * =============================================================================
  */
 
@@ -61,7 +61,7 @@ async function lazyLoad(tabId) {
     loadedTabs.add(normId);
     applyTranslations();
     const pane = document.getElementById(normId);
-    if (pane) {
+    if (pane && normId !== 'tab-about-system') {
       initPanels(pane);
     }
   } catch (err) {
@@ -76,9 +76,188 @@ async function lazyLoad(tabId) {
 const _switchTab = switchTab;
 export async function switchAppTab(tabId) {
   if (!tabId) return;
+
+  const rawClean = String(tabId).replace(/^#/, '');
+  const parts = rawClean.split('#');
+  const baseTab = parts[0];
+  const subPanel = parts[1] || null;
+  tabId = baseTab;
+
+  // Редирект Брандмауэр -> Defender (суб-панель Firewall)
+  if (tabId === 'tab-firewall-manager' || tabId === 'firewall-manager') {
+    tabId = 'tab-defender-firewall';
+    setTimeout(() => {
+      if (typeof window.switchDefenderSubTab === 'function') {
+        window.switchDefenderSubTab('firewall');
+      } else {
+        const btn = document.getElementById('subtab-firewall-btn');
+        if (btn && window.bootstrap) {
+          new window.bootstrap.Tab(btn).show();
+        }
+      }
+    }, 70);
+  } else if (tabId === 'tab-defender' || tabId === 'defender') {
+    tabId = 'tab-defender-firewall';
+  } else if (tabId === 'tab-windows-backup' || tabId === 'windows-backup' || tabId === 'tab-accounts-identity' || tabId === 'accounts-identity') {
+    tabId = 'tab-windows-admin';
+  } else if (tabId === 'tab-security-acl' || tabId === 'security-acl') {
+    tabId = 'tab-windows-admin';
+    setTimeout(() => {
+      if (typeof window.switchWindowsAdminSubTab === 'function') {
+        window.switchWindowsAdminSubTab('acl');
+      } else {
+        const btn = document.getElementById('subtab-winadmin-acl-btn');
+        if (btn && window.bootstrap) {
+          new window.bootstrap.Tab(btn).show();
+        }
+      }
+    }, 70);
+  } else if (tabId === 'tab-software-monitor' || tabId === 'software-monitor' || tabId === 'tab-software-scanner' || tabId === 'software-scanner') {
+    tabId = 'tab-software-monitor';
+  } else if (tabId === 'tab-software-audit' || tabId === 'software-audit') {
+    tabId = 'tab-software-monitor';
+    setTimeout(() => {
+      if (typeof window.switchSoftwareSubTab === 'function') {
+        window.switchSoftwareSubTab('inventory');
+      }
+    }, 70);
+  } else if (tabId === 'tab-software-manager' || tabId === 'software-manager') {
+    tabId = 'tab-software-monitor';
+    setTimeout(() => {
+      if (typeof window.switchSoftwareSubTab === 'function') {
+        window.switchSoftwareSubTab('packages');
+      }
+    }, 70);
+  } else if (tabId === 'tab-ninite-updater' || tabId === 'ninite-updater') {
+    tabId = 'tab-software-monitor';
+    setTimeout(() => {
+      if (typeof window.switchSoftwareSubTab === 'function') {
+        window.switchSoftwareSubTab('ninite');
+      }
+    }, 70);
+  } else if (tabId === 'tab-startup-auditor' || tabId === 'startup-auditor' || tabId === 'windows_startup_auditor') {
+    tabId = 'tab-software-monitor';
+    setTimeout(() => {
+      if (typeof window.switchSoftwareSubTab === 'function') {
+        window.switchSoftwareSubTab('startup');
+      }
+    }, 70);
+  } else if (tabId === 'tab-software-transparency' || tabId === 'software-transparency' || tabId === 'tab-software-transparency-scanner' || tabId === 'software_transparency_scanner') {
+    tabId = 'tab-software-monitor';
+    setTimeout(() => {
+      if (typeof window.switchSoftwareSubTab === 'function') {
+        window.switchSoftwareSubTab('transparency');
+      }
+    }, 70);
+  } else if (tabId === 'tab-storage-wear' || tabId === 'storage-wear') {
+    tabId = 'tab-storage-management';
+    setTimeout(() => {
+      if (typeof window.switchStorageSubTab === 'function') {
+        window.switchStorageSubTab('wear');
+      }
+    }, 70);
+  } else if (tabId === 'tab-storage-manager' || tabId === 'storage-manager') {
+    tabId = 'tab-storage-management';
+    setTimeout(() => {
+      if (typeof window.switchStorageSubTab === 'function') {
+        window.switchStorageSubTab('volumes');
+      }
+    }, 70);
+  } else if (tabId === 'tab-agents' || tabId === 'agents') {
+    tabId = 'tab-ai-ecosystem';
+    setTimeout(() => {
+      if (typeof window.switchAiEcosystemSubTab === 'function') {
+        window.switchAiEcosystemSubTab('agents');
+      }
+    }, 70);
+  } else if (tabId === 'tab-skills' || tabId === 'skills') {
+    tabId = 'tab-ai-ecosystem';
+    setTimeout(() => {
+      if (typeof window.switchAiEcosystemSubTab === 'function') {
+        window.switchAiEcosystemSubTab('skills');
+      }
+    }, 70);
+  } else if (tabId === 'tab-mcp' || tabId === 'mcp') {
+    tabId = 'tab-ai-ecosystem';
+    setTimeout(() => {
+      if (typeof window.switchAiEcosystemSubTab === 'function') {
+        window.switchAiEcosystemSubTab('mcp');
+      }
+    }, 70);
+  } else if (tabId === 'tab-models' || tabId === 'models') {
+    tabId = 'tab-app-internals';
+    subPanel = subPanel || 'models';
+  } else if (tabId === 'tab-telemetry-config' || tabId === 'telemetry-config' || tabId === 'tab-telemetry-control' || tabId === 'telemetry-control') {
+    tabId = 'tab-app-internals';
+    subPanel = subPanel || 'telemetry';
+  } else if (tabId === 'tab-system-logs' || tabId === 'system-logs' || tabId === 'tab-app-logs' || tabId === 'app-logs') {
+    tabId = 'tab-app-internals';
+    subPanel = subPanel || 'logs';
+  } else if (tabId === 'tab-performance-tracing' || tabId === 'performance-tracing') {
+    tabId = 'tab-app-internals';
+    subPanel = subPanel || 'etw';
+  } else if (tabId === 'tab-log-settings' || tabId === 'log-settings') {
+    tabId = 'tab-app-internals';
+    subPanel = subPanel || 'settings';
+  } else if (tabId === 'tab-wikillm' || tabId === 'wikillm' || tabId === 'tab-wikillm-settings' || tabId === 'wikillm-settings') {
+    tabId = 'tab-app-internals';
+    subPanel = subPanel || 'wikillm-db';
+  } else if (tabId === 'tab-instruments' || tabId === 'instruments' || tabId === 'tab-instruments-db' || tabId === 'instruments-db') {
+    tabId = 'tab-app-internals';
+    subPanel = subPanel || 'instruments';
+  } else if (tabId === 'tab-process-leaks' || tabId === 'process-leaks') {
+    tabId = 'tab-processes-load-inspector';
+    setTimeout(() => {
+      if (typeof window.switchProcessesSubTab === 'function') {
+        window.switchProcessesSubTab('leaks');
+      }
+    }, 70);
+  } else if (tabId === 'tab-process-manager' || tabId === 'process-manager') {
+    tabId = 'tab-processes-load-inspector';
+    subPanel = subPanel || 'manager';
+    setTimeout(() => {
+      if (typeof window.switchProcessesSubTab === 'function') {
+        window.switchProcessesSubTab('manager');
+      }
+    }, 70);
+  }
+
+  // Мгновенная отмена висящих сетевых запросов предыдущей вкладки (01_FRONTEND.md)
+  if (window.IndexedDBCache && typeof window.IndexedDBCache.getFreshAbortSignal === 'function') {
+    try {
+      window.IndexedDBCache.getFreshAbortSignal();
+    } catch (_) {}
+  }
+
   const normId = tabId.startsWith('tab-') ? tabId : `tab-${tabId}`;
   await lazyLoad(normId);
-  _switchTab(normId);
+  _switchTab(subPanel ? `${normId}#${subPanel}` : normId);
+
+  if (subPanel && normId === 'tab-processes-load-inspector') {
+    setTimeout(() => {
+      if (typeof window.switchProcessesSubTab === 'function') {
+        window.switchProcessesSubTab(subPanel, false);
+      }
+    }, 70);
+  } else if (subPanel && normId === 'tab-system-control') {
+    setTimeout(() => {
+      if (typeof window.switchSystemControlSource === 'function') {
+        window.switchSystemControlSource(subPanel);
+      }
+    }, 70);
+  } else if (subPanel && (normId === 'tab-software-monitor' || normId === 'software-monitor' || normId === 'tab-software-scanner' || normId === 'software-scanner')) {
+    setTimeout(() => {
+      if (typeof window.switchSoftwareSubTab === 'function') {
+        window.switchSoftwareSubTab(subPanel);
+      }
+    }, 70);
+  } else if (subPanel && (normId === 'tab-app-internals' || normId === 'app-internals')) {
+    setTimeout(() => {
+      if (typeof window.switchAppInternalsSubTab === 'function') {
+        window.switchAppInternalsSubTab(subPanel, false);
+      }
+    }, 70);
+  }
 }
 window.switchTab = switchAppTab;
 window.switchToTab = switchAppTab;
@@ -86,21 +265,74 @@ window.switchToTab = switchAppTab;
 // ── МЕНЮ ─────────────────────────────────────────────────────────────────────
 
 /**
- * Создает DOM-элемент иконки для кнопок и редактора (поддерживает bi-* и эмодзи)
+ * Словарь сопоставления эмодзи с классами Bootstrap Icons
+ */
+const EMOJI_TO_BI = {
+  'ℹ️': 'bi-info-circle',
+  'ℹ': 'bi-info-circle',
+  '💬': 'bi-chat-dots',
+  '🎙️': 'bi-mic',
+  '🎙': 'bi-mic',
+  '📋': 'bi-clipboard-check',
+  '🔍': 'bi-search',
+  '⏱️': 'bi-stopwatch',
+  '⏱': 'bi-stopwatch',
+  '⚡': 'bi-lightning-charge',
+  '🗝️': 'bi-key',
+  '🗝': 'bi-key',
+  '🔌': 'bi-plug',
+  '🌐': 'bi-globe2',
+  '🚀': 'bi-rocket-takeoff',
+  '📁': 'bi-folder2',
+  '🧠': 'bi-cpu',
+  '🖼️': 'bi-image',
+  '🖼': 'bi-image',
+  '💽': 'bi-hdd',
+  '🤖': 'bi-robot',
+  '📦': 'bi-box-seam',
+  '🛠️': 'bi-tools',
+  '🛠': 'bi-tools',
+  '🔬': 'bi-binoculars',
+  '⚙️': 'bi-gear',
+  '⚙': 'bi-gear',
+  '📅': 'bi-calendar3',
+  '📌': 'bi-pin-angle',
+  '🗂️': 'bi-archive',
+  '🗂': 'bi-archive',
+  '🍳': 'bi-code-square',
+  '🗺️': 'bi-diagram-3',
+  '🗺': 'bi-diagram-3',
+  '📄': 'bi-file-earmark-text',
+  '📜': 'bi-journal-text',
+  '🖥️': 'bi-display',
+  '🖥': 'bi-display',
+  '🛡️': 'bi-shield-lock',
+  '🛡': 'bi-shield-lock',
+  '📰': 'bi-newspaper',
+  '📚': 'bi-book',
+  '🧩': 'bi-puzzle',
+  '⏳': 'bi-hourglass-split'
+};
+
+/**
+ * Создает DOM-элемент HTML-иконки из фреймворка Bootstrap Icons
  * @param {string} iconStr
  * @param {string} defaultIcon
  * @returns {HTMLElement}
  */
-function createIconElement(iconStr, defaultIcon = '📄') {
-  const icon = iconStr || defaultIcon;
+function createIconElement(iconStr, defaultIcon = 'bi-app') {
+  let icon = (iconStr || defaultIcon).trim();
+  if (EMOJI_TO_BI[icon]) {
+    icon = EMOJI_TO_BI[icon];
+  }
   if (/^bi-[a-z0-9-]+$/.test(icon) || icon.startsWith('bi-')) {
     const i = document.createElement('i');
     i.className = `bi ${icon}`;
     return i;
   }
-  const span = document.createElement('span');
-  span.textContent = icon;
-  return span;
+  const i = document.createElement('i');
+  i.className = 'bi bi-app';
+  return i;
 }
 
 /**
@@ -110,7 +342,7 @@ function createIconElement(iconStr, defaultIcon = '📄') {
  */
 async function executeLaunchItem(item, iconEl = null) {
   const origContent = iconEl ? iconEl.innerHTML : '';
-  if (iconEl) iconEl.innerHTML = '⏳';
+  if (iconEl) iconEl.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span>';
   try {
     const res = await fetch('/api/recovery/launch', { method: 'POST' });
     const data = await res.json();
@@ -215,7 +447,7 @@ async function buildMenu(appsMap = {}, customCfg = null) {
       btn.className = 'list-group-item list-group-item-action d-flex align-items-center gap-2 py-2 px-3';
       btn.type = 'button';
 
-      const iconEl = createIconElement(item.icon, '📄');
+      const iconEl = createIconElement(item.icon, 'bi-file-earmark-text');
       iconEl.classList.add('fs-6');
       const label = document.createElement('span');
       label.className = 'fw-medium';
@@ -231,6 +463,12 @@ async function buildMenu(appsMap = {}, customCfg = null) {
           e.preventDefault();
           e.stopPropagation();
           await executeLaunchItem(item, iconEl);
+        };
+      } else if (item.id === 'ai_assistant' || item.tab === 'tab-ai-assistant') {
+        btn.title = 'Перейти в приложение Умная история файлов';
+        btn.onclick = (e) => {
+          e.preventDefault();
+          window.location.href = '/ai_assistant';
         };
       } else {
         btn.dataset.tab = item.tab;
@@ -363,7 +601,7 @@ function initMenuEditor(cfg, appsMap = {}) {
           const iconContainer = document.createElement('div');
           iconContainer.className = 'item-icon d-flex align-items-center justify-content-center px-1 text-center';
           iconContainer.style.minWidth = '28px';
-          const iconEl = createIconElement(item.icon, '📄');
+          const iconEl = createIconElement(item.icon, 'bi-file-earmark-text');
           iconContainer.appendChild(iconEl);
 
           // 4. Информация об элементе
@@ -609,12 +847,21 @@ async function init() {
 
   applyTranslations();
 
-  // Активировать вкладку по hash, defaultTab из конфига или первую доступную
-  const hash = location.hash.replace('#', '');
-  const defaultTab = cfg?.settings?.defaultTab;
-  const first = document.querySelector('#appsNavTabs [data-tab]') || document.querySelector('[data-tab]');
-  const initialTab = hash || (defaultTab && document.querySelector(`[data-tab="${defaultTab}"]`) ? defaultTab : first?.dataset.tab || 'tab-about-system');
-  await switchAppTab(initialTab);
+  // Вкладка tab-about-system загружается первой, если хэш не задан
+  const hash = location.hash.replace(/^#/, '');
+  if (!hash) {
+    await switchAppTab('tab-about-system');
+    location.hash = 'tab-about-system';
+  } else {
+    await switchAppTab(hash);
+  }
+
+  window.addEventListener('hashchange', async () => {
+    const h = location.hash.replace(/^#/, '');
+    if (h) {
+      await switchAppTab(h);
+    }
+  });
 }
 
 document.readyState === 'loading'

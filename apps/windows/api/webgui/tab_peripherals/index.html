@@ -1,0 +1,238 @@
+<!--
+=============================================================================
+Process Name: Windows Web Interface - Index View
+=============================================================================
+Description:
+  Шаблон клиентского веб-интерфейса index.
+
+Usage Examples:
+    Web Route:
+      /windows/api/webgui/tab_peripherals/index.html
+
+    Tab Frame Integration:
+      <iframe src="/windows/api/webgui/tab_peripherals/index.html" class="w-100 h-100 border-0"></iframe>
+
+ * File: index.html
+ * Project: ai-windows-admin
+ * Package: windows/api/webgui/tab_peripherals
+ * Author: hypo69
+ * Copyright: © 2026 hypo69
+ * Updated: 2026-10-20 10:55:00
+ * =============================================================================
+-->
+<style>
+  .peripherals-tab-wrapper {
+    padding: 0.75rem;
+    color: var(--text-color);
+  }
+  .diag-panel {
+    background: var(--surface-1);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .diag-panel-header {
+    background: var(--surface-2);
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--border-color);
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--nav-active);
+  }
+  .about-sys-spec-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+  .about-sys-spec-table td {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border-color);
+    vertical-align: middle;
+  }
+  .about-sys-spec-key {
+    color: var(--text-muted);
+    width: 200px;
+    font-size: 0.82rem;
+    font-weight: 500;
+  }
+  .about-sys-spec-val {
+    color: var(--text-color);
+    font-weight: 500;
+    font-size: 0.82rem;
+  }
+</style>
+<div class="peripherals-tab-wrapper">
+  <!-- Заголовок вкладки -->
+  <div class="tab-header d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+    <div class="d-flex align-items-center gap-2">
+      <span class="tab-header-icon fs-4 text-warning">🔌</span>
+      <div>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+          <h3 class="tab-header-title panel-header mb-0">Периферийные устройства и USB</h3>
+          
+        </div>
+        <small class="tab-header-subtitle text-secondary">Инспекция подключенных USB-устройств, Bluetooth-адаптеров, сетевых контроллеров и аудио-интерфейсов</small>
+      </div>
+    </div>
+    
+  </div>
+<div class="d-flex align-items-center gap-2 flex-wrap">
+<select class="form-select form-select-sm poll-freq-select" data-poll-id="peripherals" id="diag-peripherals-poll-freq" title="Частота опроса: Сеть и периферия">
+<option value="start">Только при старте</option>
+<option selected="" value="manual">По запросу</option>
+<option value="3">Каждые 3 сек</option>
+<option value="5">Каждые 5 сек</option>
+<option value="10">Каждые 10 сек</option>
+<option value="30">Каждые 30 сек</option>
+<option value="60">Каждые 60 сек</option>
+<option value="120">Каждые 120 сек</option>
+</select>
+<button class="btn btn-sm btn-outline-info rounded-pill px-3 py-1 fw-semibold d-flex align-items-center gap-1" id="btn-diag-peripherals-refresh">
+<i class="bi bi-arrow-clockwise"></i> Обновить
+          </button>
+</div>
+</div>
+</div>
+</div>
+<div class="row g-2 mb-3">
+<!-- Wi-Fi Telemetry Panel -->
+<div class="col-12 col-lg-5">
+<div class="diag-panel h-100" data-panel-id="panel-peripherals-1" id="panel-peripherals-1">
+<div class="diag-panel-header d-flex justify-content-between align-items-center">
+<div class="d-flex align-items-center gap-2">
+<i class="bi bi-wifi text-info"></i>
+<span class="text-body">Беспроводная сеть Wi-Fi (RF &amp; Security)</span>
+</div>
+<span class="badge bg-success-subtle text-success border border-success" id="diag-wifi-status-badge">Wi-Fi Active</span>
+</div>
+<div class="p-3">
+<table class="about-sys-spec-table">
+<tbody>
+<tr>
+<td class="about-sys-spec-key"><i class="bi bi-broadcast me-1.5 text-info"></i>Сеть (SSID)</td>
+<td class="about-sys-spec-val fw-bold text-body" id="diag-wifi-ssid">--</td>
+</tr>
+<tr>
+<td class="about-sys-spec-key"><i class="bi bi-router me-1.5 text-primary"></i>Точка доступа (BSSID)</td>
+<td class="about-sys-spec-val font-monospace" id="diag-wifi-bssid">--</td>
+</tr>
+<tr>
+<td class="about-sys-spec-key"><i class="bi bi-reception-4 me-1.5 text-success"></i>Сигнал (RSSI)</td>
+<td class="about-sys-spec-val" id="diag-wifi-signal">0% (-- dBm)</td>
+</tr>
+<tr>
+<td class="about-sys-spec-key"><i class="bi bi-hash me-1.5 text-warning"></i>Радиоканал</td>
+<td class="about-sys-spec-val" id="diag-wifi-channel">--</td>
+</tr>
+<tr>
+<td class="about-sys-spec-key"><i class="bi bi-cpu me-1.5 text-info"></i>Стандарт связи</td>
+<td class="about-sys-spec-val font-monospace" id="diag-wifi-radio">--</td>
+</tr>
+<tr>
+<td class="about-sys-spec-key"><i class="bi bi-shield-lock me-1.5 text-success"></i>Безопасность</td>
+<td class="about-sys-spec-val text-truncate" id="diag-wifi-auth">--</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<!-- Audio Endpoints Panel -->
+<div class="col-12 col-lg-7">
+<div class="diag-panel h-100" data-panel-id="panel-peripherals-2" id="panel-peripherals-2">
+<div class="diag-panel-header d-flex justify-content-between align-items-center">
+<div class="d-flex align-items-center gap-2">
+<i class="bi bi-volume-up-fill text-warning"></i>
+<span class="text-body">Аудиоустройства и конечные точки (Audio Endpoints)</span>
+</div>
+<span class="badge bg-secondary" id="diag-audio-count">0 устройств</span>
+</div>
+<div class="p-2" id="diag-audio-container" style="max-height: 260px; overflow-y: auto;">
+<div class="text-center py-4 text-muted small">Опрос аудиоустройств...</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Bluetooth Devices Table -->
+<div class="diag-panel mb-3" data-panel-id="panel-peripherals-bluetooth" id="panel-peripherals-bluetooth">
+<div class="diag-panel-header d-flex justify-content-between align-items-center">
+<div class="d-flex align-items-center gap-2">
+<i class="bi bi-bluetooth text-primary"></i>
+<span class="text-body">Беспроводные Bluetooth-устройства и радиомодули</span>
+</div>
+<span class="badge bg-secondary" id="diag-bt-count">0 устройств</span>
+</div>
+<div class="table-responsive" style="max-height: 320px; overflow-y: auto;">
+<table class="table table-hover table-sm mb-0" style="font-size: 0.80rem; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;">
+<thead>
+<tr>
+<th>Устройство</th>
+<th style="width: 220px;">Тип / Профиль</th>
+<th style="width: 170px;">MAC-адрес</th>
+<th style="width: 200px;">Производитель</th>
+<th style="width: 140px;">Статус</th>
+<th>Device Instance ID</th>
+</tr>
+</thead>
+<tbody id="diag-bt-tbody">
+<tr><td class="text-center py-4 text-muted" colspan="6">Опрос Bluetooth устройств...</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- Printers and Print Queues Table -->
+<div class="diag-panel mb-3" data-panel-id="panel-peripherals-printers" id="panel-peripherals-printers">
+<div class="diag-panel-header d-flex justify-content-between align-items-center">
+<div class="d-flex align-items-center gap-2">
+<i class="bi bi-printer text-success"></i>
+<span class="text-body">Подключенные принтеры и службы печати (Network, USB, Virtual)</span>
+</div>
+<span class="badge bg-secondary" id="diag-printers-count">0 принтеров</span>
+</div>
+<div class="table-responsive" style="max-height: 320px; overflow-y: auto;">
+<table class="table table-hover table-sm mb-0" style="font-size: 0.80rem; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;">
+<thead>
+<tr>
+<th>Принтер</th>
+<th style="width: 160px;">Тип подключения</th>
+<th style="width: 220px;">Порт подключения</th>
+<th style="width: 220px;">Драйвер печати</th>
+<th style="width: 130px;">Статус</th>
+<th style="width: 120px;" class="text-center">По умолчанию</th>
+</tr>
+</thead>
+<tbody id="diag-printers-tbody">
+<tr><td class="text-center py-4 text-muted" colspan="6">Опрос принтеров и очередей печати...</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- PnP USB Devices Table -->
+<div class="diag-panel" data-panel-id="panel-peripherals-3" id="panel-peripherals-3">
+<div class="diag-panel-header d-flex justify-content-between align-items-center">
+<div class="d-flex align-items-center gap-2">
+<i class="bi bi-usb-symbol text-info"></i>
+<span class="text-body">Подключенные PnP USB-устройства и концентраторы</span>
+</div>
+<span class="badge bg-secondary" id="diag-usb-count">0 устройств</span>
+</div>
+<div class="table-responsive" style="max-height: 480px; overflow-y: auto;">
+<table class="table table-hover table-sm mb-0" style="font-size: 0.80rem; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;">
+<thead>
+<tr>
+<th>Устройство</th>
+<th style="width: 100px;">Vendor ID</th>
+<th style="width: 100px;">Product ID</th>
+<th style="width: 160px;">Класс устройства</th>
+<th style="width: 140px;">Статус</th>
+<th>Device Instance ID</th>
+</tr>
+</thead>
+<tbody id="diag-usb-tbody">
+<tr><td class="text-center py-4 text-muted" colspan="6">Загрузка USB периферии...</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+

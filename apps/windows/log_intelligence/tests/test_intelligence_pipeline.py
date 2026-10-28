@@ -14,7 +14,7 @@
 # Package: apps.windows.log_intelligence.tests
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-13 16:25:00
 # =============================================================================
 
 """Тесты Log Intelligence и In-Memory RAG семантического поиска по логам Windows."""
@@ -110,7 +110,7 @@ def test_multi_channel_rag_indexing() -> None:
 
 def test_wevtapi_channel_enumeration() -> None:
     """Проверка нативного перечисления каналов через WevtAPI."""
-    from apps.windows.telemetry.win32_ffi.wevtapi import WevtAPI
+    from apps.windows.sdk.win32_ffi.wevtapi import WevtAPI
     api = WevtAPI()
     channels = api.enumerate_channels()
     assert len(channels) >= 10

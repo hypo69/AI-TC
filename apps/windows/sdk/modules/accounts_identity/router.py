@@ -14,7 +14,7 @@
 # Package: apps.windows.sdk.modules.accounts_identity
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-13 18:00:00
 # =============================================================================
 
 """FastAPI роутер для Accounts & Identity."""
@@ -172,8 +172,39 @@ async def resolve_identity(identifier: str) -> Dict[str, Any]:
 
 @router.get("/explain/{identifier}", response_model=Principal)
 async def explain_identity(identifier: str) -> Principal:
-    """Формирует полное досье Principal (пользователь, группы, LSA-права, сессии, процессы, профиль, аудит)."""
-    return _service.explain(identifier)
+    """Формирует полное досье Principal (пользователь, группы, LSA-права, сессии, процессы, профиль, аудит и ИИ-анализ) (18.5)."""
+    principal = _service.explain(identifier)
+    try:
+        from roadmap.patches import explain_windows_principal_details
+        ai_data = explain_windows_principal_details(
+            principal_name=principal.name,
+            principal_data={
+                "sid": principal.sid,
+                "is_admin": principal.is_admin,
+                "is_locked": principal.account.locked if principal.account else False,
+                "groups": [g.name for g in principal.groups],
+            }
+        )
+        principal.ai_copilot = ai_data
+    except Exception:
+        pass
+    return principal
+
+
+@router.get("/explain/{identifier}/copilot")
+async def get_principal_copilot(identifier: str) -> Dict[str, Any]:
+    """ИИ-Copilot досье субъекта безопасности: оценка риска, анализ прав и рекомендуемые действия (18.5)."""
+    principal = _service.explain(identifier)
+    from roadmap.patches import explain_windows_principal_details
+    return explain_windows_principal_details(
+        principal_name=principal.name,
+        principal_data={
+            "sid": principal.sid,
+            "is_admin": principal.is_admin,
+            "is_locked": principal.account.locked if principal.account else False,
+            "groups": [g.name for g in principal.groups],
+        }
+    )
 
 
 @router.get("/who-is-admin")

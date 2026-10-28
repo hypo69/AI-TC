@@ -1,0 +1,625 @@
+/**
+ * =============================================================================
+ * Process Name: Windows Web Styles - Overrides Stylesheet
+ * =============================================================================
+ * Description:
+ *   Таблица стилей стиля и оформления интерфейса (overrides).
+ *   Адаптивные переопределения Bootstrap и специфичных компонентов для тем оформления.
+ *
+ * Usage Examples:
+ *   HTML Link Tag:
+ *     <link rel="stylesheet" href="/windows/api/webgui/css/overrides.css?v=20261004_v17">
+ *
+ * File: overrides.css
+ * Project: ai-windows-admin
+ * Package: windows/api/webgui/css
+ * Author: hypo69
+ * Copyright: © 2026 hypo69
+ * Updated: 2026-10-20 12:27:00
+ * =============================================================================
+ */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   THEME OVERRIDES & COMPATIBILITY — AI Windows Admin WebGUI
+   Адаптивные переопределения Bootstrap и компонентов для светлых и тёмных тем
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Light & Brick Themes — Переопределения Bootstrap и утилит ─────────────── */
+[data-theme="light"],
+[data-theme="nightview"],
+[data-theme="theme-light-enterprise"],
+[data-theme="brick"],
+:root[data-bs-theme="light"],
+html[data-bs-theme="light"] {
+  --bs-body-bg: var(--bg-color);
+  --bs-body-bg-rgb: 226, 232, 240;
+  --bs-card-bg: var(--surface-1);
+  --bs-modal-bg: var(--modal-bg, var(--surface-1));
+  --bs-offcanvas-bg: var(--surface-1);
+  --bs-tertiary-bg: var(--surface-2);
+  --bs-tertiary-bg-rgb: 219, 226, 234;
+  --bs-secondary-bg: var(--surface-2);
+  --bs-secondary-bg-rgb: 219, 226, 234;
+  --bs-list-group-bg: var(--surface-1);
+  --bs-dropdown-bg: var(--surface-1);
+}
+
+[data-theme="light"] body,
+[data-theme="nightview"] body,
+[data-theme="theme-light-enterprise"] body,
+[data-theme="brick"] body,
+html[data-bs-theme="light"] body {
+  background-color: var(--bg-color) !important;
+}
+
+[data-theme="light"],
+[data-theme="nightview"],
+[data-theme="theme-light-enterprise"],
+[data-theme="brick"] {
+  /* Инпуты, к которым JS или Bootstrap добавил bg-dark (терминал PowerShell консоли исключен) */
+  input.bg-dark,
+  textarea.bg-dark:not(.uai-cmd-input),
+  select.bg-dark,
+  .form-control.bg-dark:not(.uai-cmd-input),
+  .form-select.bg-dark {
+    background-color: var(--surface-1) !important;
+    color: var(--text-color) !important;
+    border-color: var(--border-color) !important;
+  }
+
+  /* div/section с bg-dark (не кнопки, не бейджи и не окно терминала) */
+  div.bg-dark:not(.uai-terminal-window):not(.uai-terminal-header):not(.uai-terminal-body):not(.uai-terminal-settings-panel),
+  section.bg-dark,
+  aside.bg-dark,
+  article.bg-dark {
+    background-color: var(--surface-1) !important;
+    color: var(--text-color) !important;
+  }
+
+  /* Bootstrap bg-dark / bg-black (терминальные окна консоли сохраняют аутентичный темный стиль) */
+  .bg-dark:not(.btn):not(.badge):not(.navbar):not(.uai-terminal-window):not(.uai-terminal-header):not(.uai-terminal-body):not(.uai-term-btn):not(.uai-term-btn-run) {
+    background-color: var(--surface-1) !important;
+    color: var(--text-color) !important;
+    border-color: var(--border-color) !important;
+  }
+
+  .bg-black:not(.btn):not(.uai-terminal-window):not(.uai-terminal-body) {
+    background-color: var(--bg-color) !important;
+    color: var(--text-color) !important;
+  }
+
+  /* Bootstrap bg-white, bg-light, bg-body заменяются на комфортную светло-серую поверхность темы NightView */
+  .bg-white:not(.btn):not(.badge),
+  .bg-light:not(.btn):not(.badge),
+  .bg-body:not(.btn):not(.badge) {
+    background-color: var(--surface-1) !important;
+  }
+
+  .bg-body-tertiary:not(.btn):not(.badge),
+  .bg-body-secondary:not(.btn):not(.badge) {
+    background-color: var(--surface-2) !important;
+  }
+
+  /* Карточки, модальные окна, оффканвас и списки */
+  .card:not(.btn):not(.badge),
+  .modal-content,
+  .offcanvas,
+  .list-group-item,
+  .dropdown-menu {
+    background-color: var(--surface-1) !important;
+    color: var(--text-color) !important;
+    border-color: var(--border-color) !important;
+  }
+
+  .form-control:not(.bg-dark):not(.uai-cmd-input),
+  .form-select:not(.bg-dark):not(.uai-opt-shell):not(.uai-opt-timeout) {
+    background-color: var(--surface-1) !important;
+    color: var(--text-color) !important;
+    border-color: var(--border-color) !important;
+  }
+
+  /* Высококонтрастные читаемые цвета текста в светлой теме NightView / Brick */
+  .text-info {
+    color: #0369a1 !important; /* глубокий читаемый океанский синий */
+  }
+  .text-warning {
+    color: #b43418 !important; /* выразительный теплый красновато-янтарный (с акцентом красного) */
+  }
+  .text-success {
+    color: #166534 !important; /* сочный читаемый изумрудно-зеленый */
+  }
+  .text-danger {
+    color: #b91c1c !important; /* глубокий читаемый рубиновый/алый */
+  }
+  .text-primary {
+    color: #1d4ed8 !important; /* четкий читаемый сапфировый */
+  }
+
+  /* Кнопки с контуром (Outline Buttons) высокой контрастности */
+  .btn-outline-light {
+    color: var(--text-color) !important;
+    border-color: var(--border-strong) !important;
+    background-color: transparent !important;
+  }
+  .btn-outline-light:hover,
+  .btn-outline-light:focus,
+  .btn-outline-light.active,
+  .btn-check:checked + .btn-outline-light,
+  .btn-check:active + .btn-outline-light {
+    background-color: var(--surface-2) !important;
+    color: var(--text-color) !important;
+    border-color: var(--border-contrast) !important;
+  }
+
+  .btn-outline-secondary {
+    color: var(--text-color) !important;
+    border-color: var(--border-strong) !important;
+    background-color: transparent !important;
+  }
+  .btn-outline-secondary:hover,
+  .btn-outline-secondary:focus,
+  .btn-outline-secondary.active,
+  .btn-check:checked + .btn-outline-secondary,
+  .btn-check:active + .btn-outline-secondary {
+    background-color: #64748b !important;
+    color: #ffffff !important;
+    border-color: #64748b !important;
+  }
+
+  .btn-outline-info {
+    color: #0369a1 !important;
+    border-color: #0284c7 !important;
+    background-color: transparent !important;
+  }
+  .btn-outline-info:hover,
+  .btn-outline-info:focus,
+  .btn-outline-info.active,
+  .btn-check:checked + .btn-outline-info,
+  .btn-check:active + .btn-outline-info {
+    background-color: #0284c7 !important;
+    color: #ffffff !important;
+    border-color: #0284c7 !important;
+  }
+
+  .btn-outline-warning {
+    color: #92400e !important;
+    border-color: #d97706 !important;
+    background-color: transparent !important;
+  }
+  .btn-outline-warning:hover,
+  .btn-outline-warning:focus,
+  .btn-outline-warning.active,
+  .btn-check:checked + .btn-outline-warning,
+  .btn-check:active + .btn-outline-warning {
+    background-color: #d97706 !important;
+    color: #ffffff !important;
+    border-color: #d97706 !important;
+  }
+
+  .btn-outline-primary {
+    color: #1d4ed8 !important;
+    border-color: #2563eb !important;
+    background-color: transparent !important;
+  }
+  .btn-outline-primary:hover,
+  .btn-outline-primary:focus,
+  .btn-outline-primary.active,
+  .btn-check:checked + .btn-outline-primary,
+  .btn-check:active + .btn-outline-primary {
+    background-color: #2563eb !important;
+    color: #ffffff !important;
+    border-color: #2563eb !important;
+  }
+
+  .btn-outline-danger {
+    color: #991b1b !important;
+    border-color: #dc2626 !important;
+    background-color: transparent !important;
+  }
+  .btn-outline-danger:hover,
+  .btn-outline-danger:focus,
+  .btn-outline-danger.active,
+  .btn-check:checked + .btn-outline-danger,
+  .btn-check:active + .btn-outline-danger {
+    background-color: #dc2626 !important;
+    color: #ffffff !important;
+    border-color: #dc2626 !important;
+  }
+
+  /* text-white / text-light в карточках и панелях */
+  .card .text-white,
+  .card .text-light,
+  [class*="-panel"] .text-white,
+  [class*="-panel"] .text-light,
+  [class*="-card"] .text-white,
+  [class*="-card"] .text-light,
+  .tab-pane .text-white,
+  .tab-pane .text-light,
+  .tab-pane .text-white:not(.btn):not(.badge),
+  .card .text-white:not(.btn):not(.badge),
+  .sys-container .text-white:not(.btn):not(.badge),
+  .sys-container .text-light:not(.btn):not(.badge) {
+    color: var(--text-color) !important;
+  }
+
+  /* Заголовки панелей .panel-header (размер H3) */
+  .panel-header,
+  h3.panel-header,
+  .panel-header h3,
+  .ui-panel-header,
+  .about-sys-panel-header,
+  .diag-panel-header,
+  .wb-panel-header,
+  .winadmin-panel-header,
+  .assistant-panel-header,
+  .sys-panel-header {
+    font-size: var(--panel-header-font-size, 1.75rem) !important;
+    color: var(--panel-header-color, var(--text-color)) !important;
+    background: var(--panel-header-bg, var(--surface-2)) !important;
+  }
+
+  .panel-header > div > span,
+  .panel-header > span,
+  .panel-header h3,
+  h3.panel-header,
+  .ui-panel-header h3,
+  .about-sys-panel-header h3,
+  .diag-panel-header h3 {
+    font-size: var(--panel-header-font-size, 1.75rem) !important;
+    color: var(--panel-header-color, var(--text-color)) !important;
+  }
+
+  /* Заголовки страниц и вкладок .tab-header */
+  .tab-header,
+  .ui-tab-header {
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+  }
+
+  .tab-header-title,
+  .tab-header h3,
+  .ui-tab-header h3,
+  .tab-header h3.panel-header,
+  .ui-tab-header h3.panel-header,
+  .tab-header .panel-header,
+  .tab-header > div > div > h3 {
+    font-size: var(--tab-header-title-size, 1.35rem) !important;
+    font-weight: var(--tab-header-title-weight, 700) !important;
+    color: var(--tab-header-title-color, var(--text-color)) !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+  }
+
+  .tab-header-subtitle,
+  .tab-header small,
+  .ui-tab-header small {
+    font-size: var(--tab-header-subtitle-size, 0.82rem) !important;
+    color: var(--tab-header-subtitle-color, var(--text-muted)) !important;
+  }
+
+  /* Бейджи bg-dark и статусных оттенков */
+  .badge.bg-dark {
+    background-color: var(--surface-2) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-color) !important;
+  }
+  .badge.bg-info-subtle {
+    background-color: #e0f2fe !important;
+    color: #0369a1 !important;
+    border-color: #7dd3fc !important;
+  }
+  .badge.bg-warning-subtle {
+    background-color: #fff1f0 !important;
+    color: #b43418 !important;
+    border-color: #fca5a5 !important;
+  }
+  .badge.bg-success-subtle {
+    background-color: #dcfce7 !important;
+    color: #166534 !important;
+    border-color: #86efac !important;
+  }
+  .badge.bg-danger-subtle {
+    background-color: #fee2e2 !important;
+    color: #b91c1c !important;
+    border-color: #f87171 !important;
+  }
+
+  /* pre/code без явного светлого фона */
+  pre:not(.prompt-dump-details pre) {
+    background-color: var(--surface-2) !important;
+    color: var(--text-color) !important;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+  }
+
+  code.bg-dark {
+    background-color: var(--surface-2) !important;
+    color: var(--text-color) !important;
+    border: 1px solid var(--border-color);
+  }
+
+  /* Прогресс-бар: трек */
+  .progress:not([style]),
+  .progress {
+    background-color: var(--border-color) !important;
+  }
+
+  /* ── Системный инспектор, трейдинг, сеть и дерево компонентов ── */
+  .sys-card,
+  .sys-panel,
+  .sys-panel-header,
+  .sys-tree-node,
+  .sys-tree-body,
+  .sys-proc-table th {
+    background-color: var(--surface-1) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-color) !important;
+  }
+
+  .sys-card-header-bar {
+    background-color: var(--surface-2) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-color) !important;
+  }
+
+  .sys-core-section-title {
+    color: var(--text-color) !important;
+    border-color: var(--border-subtle) !important;
+  }
+
+  .sys-core-card {
+    background-color: var(--surface-2) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-color) !important;
+    box-shadow: var(--shadow-xs) !important;
+  }
+
+  .sys-core-title {
+    color: var(--text-color) !important;
+  }
+
+  .sys-core-param-key {
+    color: var(--text-muted) !important;
+  }
+
+  .sys-core-param-row {
+    border-color: var(--border-subtle) !important;
+  }
+
+  .sys-sensor-widget-item {
+    background-color: var(--surface-2) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-color) !important;
+  }
+
+  .sys-sensor-name,
+  .sys-sensor-value {
+    color: var(--text-color) !important;
+  }
+
+  .sys-temp-slider-track {
+    background-color: var(--border-color) !important;
+  }
+
+  .sys-temp-slider-thumb {
+    border-color: var(--surface-1) !important;
+  }
+
+  .sys-cpu-specs-card,
+  .sys-gpu-specs-card {
+    background-color: var(--surface-1) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-color) !important;
+  }
+
+  .sys-cpu-details-accordion-btn,
+  .sys-gpu-details-accordion-btn {
+    background: var(--surface-2) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-color) !important;
+  }
+
+  /* Переопределение жестко закодированных темных плашек в светлой теме */
+  div[style*="background: rgba(0, 0, 0"],
+  div[style*="background:rgba(0,0,0"],
+  div[style*="background: linear-gradient(180deg, #182238"],
+  div[style*="background:linear-gradient(180deg,#182238"] {
+    background: var(--surface-2) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-color) !important;
+  }
+
+  .sys-panel-header {
+    background-color: var(--surface-2) !important;
+    color: var(--nav-active) !important;
+  }
+
+  .sys-tree-title {
+    color: var(--text-color) !important;
+    background: transparent !important;
+  }
+
+  .sys-tree-body {
+    background-color: var(--bg-color) !important;
+  }
+
+  .sys-proc-table th {
+    background-color: var(--surface-2) !important;
+    color: var(--text-muted) !important;
+  }
+
+  .sys-proc-table td {
+    color: var(--text-color) !important;
+  }
+
+  .sys-value {
+    color: var(--text-color) !important;
+  }
+
+  /* ── Карточки агентов, моделей, плагинов ── */
+  .agent-card,
+  .model-card,
+  .plugin-card,
+  [class$="-card"]:not(.btn):not(.badge) {
+    background-color: var(--surface-1) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-color) !important;
+  }
+
+  /* ── card-header с тёмным фоном ── */
+  .card-header.bg-dark,
+  .card-header[style*="background"],
+  .card-header[style*="#0"],
+  .card-header[style*="#1"] {
+    background-color: var(--surface-2) !important;
+    color: var(--text-color) !important;
+    border-color: var(--border-color) !important;
+  }
+
+  /* ── Логи ── */
+  #media-log,
+  [id$="-log"]:not(canvas),
+  .log-output {
+    background-color: var(--surface-2) !important;
+    color: var(--text-color) !important;
+    border-color: var(--border-color) !important;
+  }
+
+  /* ── Stripe-полосы в таблицах ── */
+  .table-striped > tbody > tr:nth-of-type(odd) {
+    --bs-table-bg-type: var(--surface-2);
+  }
+
+  /* ── Таблицы с классами .table-dark в светлых темах ── */
+  .table-dark,
+  .table-dark > thead,
+  .table-dark > tbody,
+  .table-dark > tfoot,
+  .table-dark tr,
+  .table-dark th,
+  .table-dark td {
+    --bs-table-bg: var(--surface-1) !important;
+    --bs-table-striped-bg: var(--surface-2) !important;
+    --bs-table-hover-bg: rgba(56, 189, 248, 0.08) !important;
+    --bs-table-color: var(--text-color) !important;
+    --bs-table-border-color: var(--border-color) !important;
+    background-color: var(--surface-1) !important;
+    color: var(--text-color) !important;
+    border-color: var(--border-color) !important;
+  }
+
+  .table-dark thead,
+  .table-dark thead th,
+  thead.table-dark,
+  thead.table-dark th {
+    background-color: var(--surface-2) !important;
+    color: var(--text-muted) !important;
+    border-color: var(--border-color) !important;
+  }
+
+  /* ── border-secondary ── */
+  .border-secondary {
+    border-color: var(--border-color) !important;
+  }
+}
+
+/* ── Светлые темы (Light / NightView) — увеличение шрифта бейджей на 1pt ─────────── */
+[data-theme="light"] .badge,
+[data-theme="light"] .ui-badge,
+[data-theme="light"] .status-badge-unified,
+[data-theme="light"] .about-sys-badge-ok,
+[data-theme="light"] .about-sys-badge-warn,
+[data-theme="light"] .diag-badge-critical,
+[data-theme="light"] .diag-badge-warning,
+[data-theme="light"] .diag-badge-normal,
+[data-theme="nightview"] .badge,
+[data-theme="nightview"] .ui-badge,
+[data-theme="nightview"] .status-badge-unified,
+[data-theme="nightview"] .about-sys-badge-ok,
+[data-theme="nightview"] .about-sys-badge-warn,
+[data-theme="nightview"] .diag-badge-critical,
+[data-theme="nightview"] .diag-badge-warning,
+[data-theme="nightview"] .diag-badge-normal {
+  font-size: calc(0.72rem + 1pt);
+}
+
+/* ── Dark & Terminal Themes — Высококонтрастные переопределения ─────────────── */
+[data-theme="dark"],
+[data-theme="terminal"] {
+  .card-header.bg-light,
+  .card-footer.bg-light,
+  .modal-header.bg-light,
+  .modal-footer.bg-light {
+    background-color: var(--surface-2) !important;
+    color: var(--text-color) !important;
+    border-color: var(--border-color) !important;
+  }
+
+  .bg-light:not(.btn):not(.badge) {
+    background-color: var(--surface-1) !important;
+    color: var(--text-color) !important;
+  }
+
+  .text-dark {
+    color: var(--text-color) !important;
+  }
+
+  .border-light {
+    border-color: var(--border-color) !important;
+  }
+
+  /* Логи */
+  #media-log,
+  [id$="-log"]:not(canvas),
+  .log-output {
+    background-color: var(--surface-1) !important;
+    color: var(--text-color) !important;
+    border: 1px solid var(--border-color) !important;
+  }
+}
+
+/* ── Специфика темы «Терминал» (Terminal / CRT Glow) ────────────────────────── */
+[data-theme="terminal"] {
+  .card,
+  .modal-content,
+  .offcanvas {
+    border-color: var(--border-color);
+    box-shadow: 0 0 10px rgba(0, 255, 102, 0.12);
+  }
+
+  .card-header,
+  .modal-header {
+    border-bottom: 1px solid var(--border-strong);
+    color: var(--nav-active);
+  }
+
+  pre, code, kbd, samp {
+    color: #39ff14 !important;
+    background-color: #060a06 !important;
+    border: 1px solid #1a4223;
+  }
+
+  .form-control,
+  .form-select {
+    border-color: var(--border-color);
+    color: var(--text-color);
+    background-color: #0b120c;
+  }
+
+  .form-control:focus,
+  .form-select:focus {
+    border-color: #00ff66;
+    box-shadow: 0 0 8px rgba(0, 255, 102, 0.4);
+    background-color: #0b120c;
+    color: #ffffff;
+  }
+
+  .table th {
+    color: #39ff14 !important;
+    border-bottom: 2px solid #00ff66 !important;
+  }
+}

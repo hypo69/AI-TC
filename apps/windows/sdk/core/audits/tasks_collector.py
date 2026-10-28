@@ -16,7 +16,7 @@
 # Package: apps.windows.sdk.core.audits
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-13 16:25:00
 # =============================================================================
 
 from __future__ import annotations
@@ -27,7 +27,7 @@ import subprocess
 import time
 from typing import Any, Dict, List
 from logger import logger
-from apps.windows.telemetry.win32_ffi.tasksched import TaskSchedulerAPI
+from apps.windows.sdk.win32_ffi.tasksched import TaskSchedulerAPI
 from apps.windows.sdk.core.models import ActionType, AuditFinding, DomainAuditResult, RemediationAction, RiskLevel
 
 class TasksCollector:

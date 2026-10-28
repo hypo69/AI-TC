@@ -17,7 +17,7 @@
 # Package: src.ai.orchestration
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-15 11:27:00
 # =============================================================================
 
 from __future__ import annotations
@@ -184,12 +184,13 @@ def load_model_pool(provider: str) -> List[Dict[str, Any]]:
         result.append({'model_name': model_name, 'status': model_info.get('status', 'active'), 'exhausted_at': model_info.get('exhausted_at', ''), 'retry_count': model_info.get('retry_count', 0)})
     return result
 
-def mark_model_exhausted(provider: str, model_name: str) -> None:
+def mark_model_exhausted(provider: str, model_name: str, force: bool = False) -> None:
     """Mark a model as exhausted due to 503 error.
 
     Args:
         provider (str): Provider name.
         model_name (str): Model identifier to mark as exhausted.
+        force (bool): Force immediate status change to exhausted without waiting for max retries.
     """
     pools = _load_pools_file()
     if provider not in pools:
@@ -202,7 +203,7 @@ def mark_model_exhausted(provider: str, model_name: str) -> None:
     model_info = models[model_name]
     retry_count = model_info.get('retry_count', 0) + 1
     model_info['retry_count'] = retry_count
-    if retry_count >= _MAX_RETRY_ATTEMPTS:
+    if force or retry_count >= _MAX_RETRY_ATTEMPTS:
         model_info['status'] = 'exhausted'
         model_info['exhausted_at'] = _now_iso()
         model_info['retry_count'] = 0

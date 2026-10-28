@@ -7,17 +7,17 @@
 #
 # Usage Examples:
 #   Python API:
-#     from apps.windows.telemetry.win32_ffi.psapi import PROCESS_MEMORY_COUNTERS
+#     from apps.windows.sdk.win32_ffi.psapi import PROCESS_MEMORY_COUNTERS
 #
 #     service = PROCESS_MEMORY_COUNTERS()
 #
 # File: psapi.py
 # Project: ai-windows-admin
-# Package: apps.windows.telemetry.win32_ffi
+# Package: apps.windows.sdk.win32_ffi
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
-# =============================================================================
+# Updated: 2026-10-15 00:15:00
+# =============================================================
 
 """psapi.dll wrapper for process memory and module enumeration."""
 
@@ -34,6 +34,22 @@ SIZE_T = getattr(wintypes, 'SIZE_T', ctypes.c_size_t)
 class PROCESS_MEMORY_COUNTERS(ctypes.Structure):
     _fields_ = [('cb', wintypes.DWORD), ('PageFaultCount', wintypes.DWORD), ('PeakWorkingSetSize', SIZE_T), ('WorkingSetSize', SIZE_T), ('QuotaPeakPagedPoolUsage', SIZE_T), ('QuotaPagedPoolUsage', SIZE_T), ('QuotaPeakNonPagedPoolUsage', SIZE_T), ('QuotaNonPagedPoolUsage', SIZE_T), ('PagefileUsage', SIZE_T), ('PeakPagefileUsage', SIZE_T)]
 
+class PROCESS_MEMORY_COUNTERS_EX(ctypes.Structure):
+    """Расширенная структура счетчиков памяти процесса Win32 PSAPI с Private Bytes."""
+    _fields_ = [
+        ('cb', wintypes.DWORD),
+        ('PageFaultCount', wintypes.DWORD),
+        ('PeakWorkingSetSize', SIZE_T),
+        ('WorkingSetSize', SIZE_T),
+        ('QuotaPeakPagedPoolUsage', SIZE_T),
+        ('QuotaPagedPoolUsage', SIZE_T),
+        ('QuotaPeakNonPagedPoolUsage', SIZE_T),
+        ('QuotaNonPagedPoolUsage', SIZE_T),
+        ('PagefileUsage', SIZE_T),
+        ('PeakPagefileUsage', SIZE_T),
+        ('PrivateUsage', SIZE_T),
+    ]
+
 @dataclass
 class MemoryInfo:
     """Process memory statistics from psapi."""
@@ -46,6 +62,20 @@ class MemoryInfo:
     nonpaged_pool_usage: int
     pagefile_usage: int
     pagefile_peak: int
+
+@dataclass
+class ProcessMemoryInfoEx:
+    """Расширенная статистика оперативной и виртуальной памяти процесса из psapi."""
+    page_faults: int
+    peak_working_set: int
+    working_set: int
+    paged_pool_peak: int
+    paged_pool_usage: int
+    nonpaged_pool_peak: int
+    nonpaged_pool_usage: int
+    pagefile_usage: int  # Commit Size
+    pagefile_peak: int   # Peak Commit Size
+    private_usage: int   # Private Bytes
 
 class PsapiAPI:
     """Wrapper for psapi process memory and module functions."""
@@ -103,6 +133,42 @@ class PsapiAPI:
                 pmc.cb = ctypes.sizeof(PROCESS_MEMORY_COUNTERS)
                 if self.psapi.GetProcessMemoryInfo(handle, ctypes.byref(pmc), ctypes.sizeof(pmc)):
                     return MemoryInfo(page_faults=pmc.PageFaultCount, peak_working_set=pmc.PeakWorkingSetSize, working_set=pmc.WorkingSetSize, paged_pool_peak=pmc.QuotaPeakPagedPoolUsage, paged_pool_usage=pmc.QuotaPagedPoolUsage, nonpaged_pool_peak=pmc.QuotaPeakNonPagedPoolUsage, nonpaged_pool_usage=pmc.QuotaNonPagedPoolUsage, pagefile_usage=pmc.PagefileUsage, pagefile_peak=pmc.PeakPagefileUsage)
+                return None
+            finally:
+                ctypes.windll.kernel32.CloseHandle(handle)
+        except Exception:
+            return None
+
+    def get_process_memory_info_ex(self, pid: int) -> Optional[ProcessMemoryInfoEx]:
+        """Получить расширенную статистику памяти процесса, включая Private Bytes и Commit Size.
+
+        Args:
+            pid: Идентификатор процесса Windows (PID).
+
+        Returns:
+            Optional[ProcessMemoryInfoEx]: Объект с метриками или None при ошибке доступа.
+        """
+        try:
+            # PROCESS_QUERY_INFORMATION (0x0400) | PROCESS_VM_READ (0x0010)
+            handle = ctypes.windll.kernel32.OpenProcess(1024 | 16, False, pid)
+            if not handle:
+                return None
+            try:
+                pmc_ex = PROCESS_MEMORY_COUNTERS_EX()
+                pmc_ex.cb = ctypes.sizeof(PROCESS_MEMORY_COUNTERS_EX)
+                if self.psapi.GetProcessMemoryInfo(handle, ctypes.byref(pmc_ex), ctypes.sizeof(pmc_ex)):
+                    return ProcessMemoryInfoEx(
+                        page_faults=int(pmc_ex.PageFaultCount),
+                        peak_working_set=int(pmc_ex.PeakWorkingSetSize),
+                        working_set=int(pmc_ex.WorkingSetSize),
+                        paged_pool_peak=int(pmc_ex.QuotaPeakPagedPoolUsage),
+                        paged_pool_usage=int(pmc_ex.QuotaPagedPoolUsage),
+                        nonpaged_pool_peak=int(pmc_ex.QuotaPeakNonPagedPoolUsage),
+                        nonpaged_pool_usage=int(pmc_ex.QuotaNonPagedPoolUsage),
+                        pagefile_usage=int(pmc_ex.PagefileUsage),
+                        pagefile_peak=int(pmc_ex.PeakPagefileUsage),
+                        private_usage=int(pmc_ex.PrivateUsage),
+                    )
                 return None
             finally:
                 ctypes.windll.kernel32.CloseHandle(handle)
@@ -172,4 +238,7 @@ __all__ = [
     "PsapiAPI",
     "Psapi",
     "PROCESS_MEMORY_COUNTERS",
+    "PROCESS_MEMORY_COUNTERS_EX",
+    "MemoryInfo",
+    "ProcessMemoryInfoEx",
 ]

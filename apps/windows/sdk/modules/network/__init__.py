@@ -13,7 +13,7 @@
 # Package: apps.windows.sdk.modules.network
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-15 05:21:00
 # =============================================================================
 
 """Network Analyzer Terminal standalone application."""
@@ -26,6 +26,8 @@ _LAZY_EXPORTS = {
     'WindowsNetworkUsageCollector': ('apps.windows.sdk.modules.network.network_usage', 'WindowsNetworkUsageCollector'),
     'WindowsLanScanner': ('apps.windows.sdk.modules.network.lan_scanner', 'WindowsLanScanner'),
     'LanDevice': ('apps.windows.sdk.modules.network.lan_scanner', 'LanDevice'),
+    'NetworkDiscoveryManager': ('apps.windows.sdk.modules.network.discovery', 'NetworkDiscoveryManager'),
+    'WindowsNetworkDiscovery': ('apps.windows.sdk.modules.network.discovery', 'WindowsNetworkDiscovery'),
 }
 
 def __getattr__(name: str):
@@ -46,4 +48,6 @@ __all__ = [
     'WindowsNetworkUsageCollector',
     'WindowsLanScanner',
     'LanDevice',
+    'NetworkDiscoveryManager',
+    'WindowsNetworkDiscovery',
 ]

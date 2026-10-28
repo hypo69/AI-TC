@@ -11,7 +11,8 @@
 #     from apps.windows.telemetry.sqlite.delta_tracker import DeltaStateTracker, LocfReconstructor
 #
 #     tracker = DeltaStateTracker()
-#     delta_data, has_changes = tracker.filter_snapshot_delta(snap_dict)
+#     tracker.ensure_seeded(cursor)
+#     delta_data, has_static_changes = tracker.filter_snapshot_delta(snap_dict)
 #
 #     reconstructor = LocfReconstructor()
 #     full_snap = reconstructor.reconstruct_snapshot_row(row, conn)
@@ -21,7 +22,7 @@
 # Package: apps.windows.telemetry.sqlite
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 18:26:00
+# Updated: 2026-10-14 00:55:00
 # =============================================================================
 
 from __future__ import annotations
@@ -81,6 +82,27 @@ SNAPSHOT_FIELDS: Tuple[str, ...] = (
     "hardware_audit",
 )
 
+# Быстро меняющиеся метрики: их изменение не считается изменением конфигурации
+# (не порождает повторную запись raw_json).
+VOLATILE_FIELDS: frozenset = frozenset({
+    "uptime_seconds",
+    "battery_json",
+    "alerts_json",
+    "cpu_total_percent",
+    "cpu_frequency_mhz",
+    "memory_used_gb",
+    "memory_percent",
+    "swap_percent",
+    "gpu_load_percent",
+    "gpu_temp_c",
+    "disk_read_bytes_sec",
+    "disk_write_bytes_sec",
+    "disk_read_count_sec",
+    "disk_write_count_sec",
+    "network_sent_bytes_sec",
+    "network_recv_bytes_sec",
+})
+
 
 class DeltaStateTracker:
     """Отслеживает предыдущие состояния параметров телеметрии и фильтрует неизменившиеся значения."""
@@ -92,6 +114,31 @@ class DeltaStateTracker:
         self._last_sensor_values: Dict[str, Any] = {}
         self._last_app_polls: Dict[str, Any] = {}
         self._last_proc_metrics: Dict[int, Dict[str, Any]] = {}
+        self._seeded = False
+
+    def ensure_seeded(self, cursor: sqlite3.Cursor) -> None:
+        """Однократно восстанавливает последнее известное состояние полей снимка из БД (LOCF).
+
+        Без этого после каждого рестарта сервиса все статические параметры
+        (диски, мониторы, ОС, RAM и т.д.) записывались бы заново.
+
+        Args:
+            cursor: Курсор активного соединения SQLite.
+        """
+        with self._lock:
+            if self._seeded:
+                return
+            self._seeded = True
+            for field in SNAPSHOT_FIELDS:
+                try:
+                    row = cursor.execute(
+                        f"SELECT {field} FROM system_snapshots WHERE {field} IS NOT NULL AND {field} != '' "
+                        f"ORDER BY id DESC LIMIT 1"
+                    ).fetchone()
+                except sqlite3.Error:
+                    return
+                if row and row[0] is not None:
+                    self._last_snapshot_state[field] = row[0]
 
     def reset(self) -> None:
         """Сбрасывает зафиксированные состояния (принудительная полная запись на следующем тике)."""
@@ -108,38 +155,28 @@ class DeltaStateTracker:
             fields_dict: Словарь подготовленных значений колонок снимка.
 
         Returns:
-            Tuple[Dict[str, Any], bool]: (словарь с дельтами/NULL, флаг наличия хотя бы одного изменения).
+            Tuple[Dict[str, Any], bool]: (словарь с дельтами/NULL, флаг изменения хотя бы одного
+            статического, не входящего в VOLATILE_FIELDS, параметра).
         """
         with self._lock:
             delta_dict: Dict[str, Any] = {}
-            has_changes = False
-            is_initial = len(self._last_snapshot_state) == 0
+            has_static_changes = False
 
             for field in SNAPSHOT_FIELDS:
                 new_val = fields_dict.get(field)
-                old_val = self._last_snapshot_state.get(field)
-
-                if is_initial:
-                    # При первом снимке сохраняем все имеющиеся поля
+                if self._is_value_changed(self._last_snapshot_state.get(field), new_val):
                     delta_dict[field] = new_val
-                    if new_val is not None and new_val != "":
-                        self._last_snapshot_state[field] = new_val
-                        has_changes = True
+                    self._last_snapshot_state[field] = new_val
+                    has_static_changes = has_static_changes or field not in VOLATILE_FIELDS
                 else:
-                    # Проверяем фактическое изменение
-                    if self._is_value_changed(old_val, new_val):
-                        delta_dict[field] = new_val
-                        self._last_snapshot_state[field] = new_val
-                        has_changes = True
-                    else:
-                        # Значение не изменилось -> в БД сохраняется None (NULL)
-                        delta_dict[field] = None
+                    # Значение не изменилось -> в БД сохраняется None (NULL)
+                    delta_dict[field] = None
 
             # Обязательные временные маркеры тика сохраняются всегда
             delta_dict["timestamp"] = fields_dict.get("timestamp")
             delta_dict["created_at"] = fields_dict.get("created_at")
 
-            return delta_dict, has_changes
+            return delta_dict, has_static_changes
 
     def filter_sensor_poll(self, sensor_id: str, value: Any) -> bool:
         """Проверяет, изменилось ли значение датчика.

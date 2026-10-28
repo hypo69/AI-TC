@@ -1,9 +1,10 @@
 ---
 name: windows-admin-toolkit
-description: Windows System Administration toolkit for AD, local users, SSH/WinRM remoting and security management
+# Updated: 2026-10-25 18:35:00
+description: "Windows System Administration toolkit for AD, local users, SSH/WinRM remoting and security management"
 description_i18n:
-  en: Windows System Administration toolkit for AD, local users, SSH/WinRM remoting and security management
-  ru: Инструментарий системного администратора Windows: AD, локальные пользователи, SSH/WinRM сессии и безопасность
+  en: "Windows System Administration toolkit for AD, local users, SSH/WinRM remoting and security management"
+  ru: "Инструментарий системного администратора Windows: AD, локальные пользователи, SSH/WinRM сессии и безопасность"
 ---
 
 # 🛠️ Навык: Windows Admin Toolkit (SysAdmin & Remoting Engine)

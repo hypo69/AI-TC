@@ -1,0 +1,740 @@
+<!--
+=============================================================================
+Process Name: Windows Web Interface - Windows Sysadmin & Identity Tab
+=============================================================================
+Description:
+  Объединенная панель системного администрирования Windows и управления учетными
+  записями (Sysadmin & Identity):
+  - Метрики хоста, Active Directory, токена безопасности и аудита
+  - Контроль устройств (Privacy Radar: камера и микрофон)
+  - Резервное копирование Windows Backup (File History)
+  - Управление локальными пользователями, сессиями, скрытыми аккаунтами
+  - Группы безопасности и граф членства
+  - Общий журнал событий безопасности (Security Log) с быстрыми фильтрами
+  - Быстрый аудит привилегий (Who is Admin?, SeServiceLogon, RDP, Orphaned)
+  - Политика паролей SAM
+  - Инспектор процессов по PID (Security Context & Token Dossier)
+  - Реестр OS-level операций каталога Accounts & Identity (~180)
+
+File: index.html
+Project: ai-windows-admin
+Package: windows/api/webgui/tab_windows_admin
+Author: hypo69
+Copyright: © 2026 hypo69
+Updated: 2026-10-20 19:00:00
+=============================================================================
+-->
+<style>
+  .winadmin-container {
+    padding: 0.5rem 0.75rem;
+  }
+  .winadmin-card {
+    background: var(--surface-1, #1e293b);
+    border: 1px solid var(--border-color, #334155);
+    border-radius: 6px;
+    padding: 0.5rem 0.75rem;
+  }
+  .winadmin-label {
+    font-size: 0.72rem;
+    color: var(--text-muted, #94a3b8);
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .winadmin-value {
+    font-size: 1.1rem;
+    font-weight: 700;
+    font-family: var(--font-mono, monospace);
+  }
+  .winadmin-value-sm {
+    font-size: 0.95rem;
+  }
+  .winadmin-sub-label {
+    font-size: 0.72rem;
+  }
+  .winadmin-meter-card {
+    background: var(--surface-2, rgba(15, 23, 42, 0.5));
+    border: 1px solid var(--border-color, #334155);
+  }
+  .winadmin-header-strip {
+    background: var(--surface-2, rgba(15, 23, 42, 0.5));
+  }
+  .winadmin-side-strip {
+    background: var(--surface-2, rgba(15, 23, 42, 0.6));
+  }
+  .winadmin-audit-box {
+    background: var(--surface-2, rgba(15, 23, 42, 0.5));
+    border: 1px solid var(--border-color, #334155);
+    min-height: 200px;
+    max-height: 380px;
+    overflow-y: auto;
+  }
+  .winadmin-dossier-box {
+    background: var(--surface-2, rgba(15, 23, 42, 0.6));
+    border: 1px solid var(--border-color, #334155);
+    white-space: pre-wrap;
+    display: none;
+  }
+  .winadmin-console-box {
+    background: var(--surface-2, rgba(15, 23, 42, 0.7));
+    color: var(--text-color, #f8fafc);
+    border: 1px solid var(--border-color, #334155);
+    max-height: 220px;
+    min-height: 120px;
+    overflow-y: auto;
+    font-size: 0.76rem;
+  }
+  .winadmin-panel {
+    background: var(--surface-1, #1e293b);
+    border: 1px solid var(--border-color, #334155);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .winadmin-panel-header {
+    background: var(--surface-2, #0f172a);
+    padding: 0.4rem 0.75rem;
+    font-weight: 600;
+    font-size: 0.85rem;
+    border-bottom: 1px solid var(--border-color, #334155);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .winadmin-table {
+    width: 100%;
+    font-size: 0.78rem;
+    font-family: var(--font-mono, monospace);
+    border-collapse: collapse;
+  }
+  .winadmin-table th {
+    background: var(--surface-2, #0f172a);
+    padding: 5px 8px;
+    color: var(--text-muted, #94a3b8);
+    font-weight: 600;
+    border-bottom: 1px solid var(--border-color, #334155);
+  }
+  .winadmin-table td {
+    padding: 4px 8px;
+    border-bottom: 1px solid var(--border-subtle, rgba(51, 65, 85, 0.4));
+    vertical-align: middle;
+  }
+  .winadmin-filter-btn.active {
+    background-color: var(--color-primary, #3b82f6) !important;
+    color: var(--text-on-primary, #fff) !important;
+    border-color: var(--color-primary, #3b82f6) !important;
+  }
+  .badge-hidden {
+    background-color: var(--bs-secondary-bg-subtle, rgba(100, 116, 139, 0.2));
+    color: var(--bs-secondary-text-emphasis, #94a3b8);
+    border: 1px solid var(--bs-border-color, rgba(148, 163, 184, 0.3));
+  }
+  .badge-admin {
+    background-color: var(--bs-warning-bg-subtle, rgba(234, 88, 12, 0.2));
+    color: var(--bs-warning-text-emphasis, #f59e0b);
+    border: 1px solid var(--bs-warning-border-subtle, rgba(245, 158, 11, 0.4));
+  }
+  .badge-disabled {
+    background-color: var(--bs-danger-bg-subtle, rgba(239, 68, 68, 0.2));
+    color: var(--bs-danger-text-emphasis, #f87171);
+    border: 1px solid var(--bs-danger-border-subtle, rgba(239, 68, 68, 0.4));
+    font-weight: bold;
+  }
+</style>
+
+<div class="winadmin-container theme-sysadmin" id="windows-admin-root">
+  <!-- Заголовок вкладки -->
+  <div class="tab-header d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+    <div class="d-flex align-items-center gap-2">
+      <span class="tab-header-icon fs-4 text-warning">🛡️</span>
+      <div>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+          <h3 class="tab-header-title panel-header mb-0">Панель Windows Sysadmin &amp; Identity</h3>
+        </div>
+        <small class="tab-header-subtitle text-secondary">Контроль контекста безопасности, камеры, микрофона, привилегий токенов процессов и сетевой изоляции</small>
+      </div>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      <button class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1 shadow-sm" id="btn-winadmin-refresh" data-term="winadmin-refresh" data-ai-tooltip="true" data-placement="top" title="Обновить все данные">
+        <i class="bi bi-arrow-clockwise"></i>
+        <span>Обновить</span>
+      </button>
+      <button class="btn btn-sm btn-primary d-flex align-items-center gap-1 shadow-sm" id="btn-open-create-user-modal" data-term="winadmin-create-user" data-ai-tooltip="true" data-placement="top">
+        <i class="bi bi-person-plus-fill"></i>
+        <span>Создать пользователя</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Отдельный блок меню суб-вкладок ПОД названием вкладки, расположен слева -->
+  <div class="d-flex align-items-center mb-3 pb-2 border-bottom border-secondary border-opacity-25 flex-wrap gap-2">
+    <div class="d-flex align-items-center gap-1 flex-wrap" id="winadmin-subtabs" role="tablist">
+      <button class="btn btn-sm btn-outline-primary active d-flex align-items-center gap-1.5 py-1 px-2.5 rounded" id="subtab-winadmin-users-btn" data-term="winadmin-users" data-ai-tooltip="true" data-placement="top" data-bs-toggle="pill" data-bs-target="#subtab-winadmin-users" type="button" role="tab">
+        <i class="bi bi-people-fill text-primary"></i>
+        <span>Учетные записи и сессии</span>
+      </button>
+      <button class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1.5 py-1 px-2.5 rounded" id="subtab-winadmin-groups-btn" data-term="winadmin-groups" data-ai-tooltip="true" data-placement="top" data-bs-toggle="pill" data-bs-target="#subtab-winadmin-groups" type="button" role="tab">
+        <i class="bi bi-diagram-3 text-info"></i>
+        <span>Группы безопасности</span>
+      </button>
+      <button class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1.5 py-1 px-2.5 rounded" id="subtab-winadmin-events-btn" data-term="winadmin-events" data-ai-tooltip="true" data-placement="top" data-bs-toggle="pill" data-bs-target="#subtab-winadmin-events" type="button" role="tab">
+        <i class="bi bi-shield-shaded text-warning"></i>
+        <span>Журнал безопасности</span>
+      </button>
+      <button class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1.5 py-1 px-2.5 rounded" id="subtab-winadmin-security-btn" data-term="winadmin-security" data-ai-tooltip="true" data-placement="top" data-bs-toggle="pill" data-bs-target="#subtab-winadmin-security" type="button" role="tab">
+        <i class="bi bi-shield-check text-success"></i>
+        <span>Аудит доступа и SAM</span>
+      </button>
+      <button class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1.5 py-1 px-2.5 rounded" id="subtab-winadmin-pid-btn" data-term="winadmin-pid" data-ai-tooltip="true" data-placement="top" data-bs-toggle="pill" data-bs-target="#subtab-winadmin-pid" type="button" role="tab">
+        <i class="bi bi-cpu text-primary"></i>
+        <span>Инспектор процесса (PID)</span>
+      </button>
+      <button class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1.5 py-1 px-2.5 rounded" id="subtab-winadmin-catalog-btn" data-term="winadmin-catalog" data-ai-tooltip="true" data-placement="top" data-bs-toggle="pill" data-bs-target="#subtab-winadmin-catalog" type="button" role="tab">
+        <i class="bi bi-journal-code text-info"></i>
+        <span>Каталог операций (~180)</span>
+      </button>
+      <button class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1.5 py-1 px-2.5 rounded" id="subtab-winadmin-acl-btn" data-term="winadmin-acl" data-ai-tooltip="true" data-placement="top" data-bs-toggle="pill" data-bs-target="#subtab-winadmin-acl" type="button" role="tab">
+        <i class="bi bi-shield-lock text-warning"></i>
+        <span>Управление ACL и правами доступа</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Содержимое подразделов (Subtabs Content) -->
+  <div class="tab-content" id="winadmin-subtabs-content">
+    
+    <!-- 1. Подраздел: Учетные записи и сессии -->
+    <div class="tab-pane fade show active" id="subtab-winadmin-users" role="tabpanel">
+      <!-- Top Metrics Bar (Сетка ключевых метрик) -->
+  <div class="row g-2 mb-2">
+    <div class="col-6 col-md-3">
+      <div class="winadmin-card">
+        <span class="winadmin-label">Хост / Домен</span>
+        <div class="d-flex align-items-baseline justify-content-between mt-1">
+          <span class="winadmin-value winadmin-value-sm text-truncate" id="winadmin-hostname">-</span>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="winadmin-card">
+        <span class="winadmin-label">Active Directory</span>
+        <div class="d-flex align-items-baseline justify-content-between mt-1">
+          <span class="winadmin-value winadmin-value-sm text-info text-truncate" id="winadmin-ad-status">Локальный хост</span>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="winadmin-card">
+        <span class="winadmin-label">Пользователи (Все / Онлайн)</span>
+        <div class="d-flex align-items-baseline justify-content-between mt-1">
+          <span class="winadmin-value text-success" id="winadmin-user-count">0</span>
+          <span class="ui-badge ui-badge-neutral small" id="winadmin-user-breakdown">0 скрытых</span>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="winadmin-card">
+        <span class="winadmin-label">События безопасности (24ч)</span>
+        <div class="d-flex align-items-baseline justify-content-between mt-1">
+          <span class="winadmin-value text-warning" id="winadmin-events-count">0</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Privacy Radar & Windows Backup Widgets Row -->
+  <div class="row g-2 mb-3">
+    <!-- Privacy Radar Panel -->
+    <div class="col-12 col-lg-6">
+      <div class="card border border-secondary shadow-sm h-100" id="privacy-radar-widget" data-term="winadmin-privacy-radar" data-ai-tooltip="true" data-placement="top">
+        <div class="panel-header d-flex justify-content-between align-items-center py-1.5 px-3">
+          <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-radar text-info fs-6"></i>
+            <h3 class="panel-header mb-0">Контроль камеры и микрофона (Privacy Radar)</h3>
+          </div>
+          <span class="ui-badge ui-badge-info font-monospace small" id="privacy-radar-status">Live Focus</span>
+        </div>
+        <div class="card-body p-2">
+          <div class="row g-2">
+            <div class="col-md-6">
+              <div class="p-2 rounded border border-secondary winadmin-meter-card small">
+                <div class="text-muted mb-0.5"><i class="bi bi-camera-video me-1 text-info"></i>Камера:</div>
+                <div class="fw-semibold text-body text-truncate" id="camera-active-apps-text">Нет активных обращений</div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="p-2 rounded border border-secondary winadmin-meter-card small">
+                <div class="text-muted mb-0.5"><i class="bi bi-mic me-1 text-info"></i>Микрофон:</div>
+                <div class="fw-semibold text-body text-truncate" id="mic-active-apps-text">Нет активных обращений</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Windows Backup Panel -->
+    <div class="col-12 col-lg-6">
+      <div class="card border border-secondary shadow-sm h-100" id="windows-backup-widget" data-term="winadmin-backup" data-ai-tooltip="true" data-placement="top">
+        <div class="panel-header d-flex justify-content-between align-items-center py-1.5 px-3">
+          <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-archive-fill text-info fs-6"></i>
+            <h3 class="panel-header mb-0">Резервное копирование (Windows Backup)</h3>
+          </div>
+          <span class="ui-badge ui-badge-success font-monospace small" id="sysadmin-backup-badge">File History: Active</span>
+        </div>
+        <div class="card-body p-2">
+          <div class="d-flex justify-content-between align-items-center small mb-1">
+            <span class="text-muted">Последняя копия:</span>
+            <span class="fw-semibold text-body font-monospace" id="sysadmin-last-backup-time">—</span>
+            <span class="text-muted ms-2">Целевой накопитель:</span>
+            <span class="fw-semibold text-info font-monospace text-truncate" id="sysadmin-backup-target" style="max-width: 140px;">—</span>
+            <button class="btn btn-xs btn-outline-info py-0 px-2 fw-semibold ms-2" onclick="triggerWindowsBackup()">
+              <i class="bi bi-play-fill me-1"></i>Архивация
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+      <div class="winadmin-panel" data-panel-id="panel-winadmin-users" id="panel-winadmin-users">
+        <div class="winadmin-panel-header flex-wrap gap-2">
+          <div class="d-flex align-items-center gap-2">
+            <span><i class="bi bi-people-fill me-1 text-primary"></i> Учетные записи и сессии Windows</span>
+            <span class="ui-badge ui-badge-neutral" id="winadmin-users-badge">0 аккаунтов</span>
+          </div>
+          <div class="d-flex align-items-center gap-2 flex-wrap">
+            <div class="btn-group btn-group-sm" id="winadmin-user-filters" role="group">
+              <button class="btn btn-outline-secondary py-0 px-2 winadmin-filter-btn active" data-filter="all" type="button">Все</button>
+              <button class="btn btn-outline-secondary py-0 px-2 winadmin-filter-btn" data-filter="active" type="button">В сети</button>
+              <button class="btn btn-outline-secondary py-0 px-2 winadmin-filter-btn" data-filter="hidden" data-term="winadmin-filter-hidden" data-ai-tooltip="true" data-placement="top" type="button">Скрытые</button>
+              <button class="btn btn-outline-secondary py-0 px-2 winadmin-filter-btn" data-filter="admins" data-term="winadmin-filter-admins" data-ai-tooltip="true" data-placement="top" type="button">Админы</button>
+            </div>
+            <div class="input-group input-group-sm" style="width: 220px;">
+              <span class="input-group-text"><i class="bi bi-search"></i></span>
+              <input class="form-control" id="filter-users-input" placeholder="Поиск пользователя..." type="text"/>
+            </div>
+          </div>
+        </div>
+        <div class="p-0 table-responsive" style="max-height: 480px; overflow-y: auto;">
+          <table class="winadmin-table">
+            <thead class="sticky-top">
+              <tr>
+                <th>Учетная запись</th>
+                <th>Полное имя / Описание</th>
+                <th>Группы / SID</th>
+                <th>Профиль / Диск</th>
+                <th>Ресурсы</th>
+                <th>Статус</th>
+                <th style="text-align: right;">Действия</th>
+              </tr>
+            </thead>
+            <tbody id="winadmin-users-tbody">
+              <tr><td class="text-center text-muted p-3" colspan="7">Загрузка пользователей и сессий...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. Подраздел: Группы безопасности -->
+    <div class="tab-pane fade" id="subtab-winadmin-groups" role="tabpanel">
+      <div class="winadmin-panel" data-panel-id="panel-winadmin-groups" id="panel-winadmin-groups">
+        <div class="winadmin-panel-header">
+          <div class="d-flex align-items-center gap-2">
+            <span><i class="bi bi-diagram-3 me-1 text-primary"></i> Группы безопасности и граф членства</span>
+            <span class="ui-badge ui-badge-neutral" id="winadmin-groups-badge">0 групп</span>
+          </div>
+          <div class="input-group input-group-sm" style="width: 220px;">
+            <span class="input-group-text"><i class="bi bi-search"></i></span>
+            <input class="form-control" id="filter-groups-input" placeholder="Поиск группы..." type="text"/>
+          </div>
+        </div>
+        <div class="p-0 table-responsive" style="max-height: 480px; overflow-y: auto;">
+          <table class="winadmin-table">
+            <thead class="sticky-top">
+              <tr>
+                <th>Имя группы</th>
+                <th>SID</th>
+                <th>Описание</th>
+                <th>Тип</th>
+                <th>Участники</th>
+                <th style="text-align: right;">Действия</th>
+              </tr>
+            </thead>
+            <tbody id="winadmin-groups-tbody">
+              <tr><td class="text-center text-muted p-3" colspan="6">Загрузка групп безопасности...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. Подраздел: Журнал безопасности (Security Log) -->
+    <div class="tab-pane fade" id="subtab-winadmin-events" role="tabpanel">
+      <div class="winadmin-panel" data-panel-id="panel-winadmin-security-events" id="panel-winadmin-security-events">
+        <div class="winadmin-panel-header flex-wrap gap-2">
+          <div class="d-flex align-items-center gap-2">
+            <span><i class="bi bi-shield-shaded me-1 text-primary"></i> Общий журнал событий безопасности Windows</span>
+            <span class="ui-badge ui-badge-neutral" id="winadmin-events-badge">0 записей</span>
+          </div>
+          <div class="d-flex align-items-center gap-2 flex-wrap">
+            <div class="btn-group btn-group-sm" id="events-quick-filters" role="group">
+              <button class="btn btn-outline-secondary py-0 px-2 event-filter-btn active" data-filter="all" type="button">Все</button>
+              <button class="btn btn-outline-secondary py-0 px-2 event-filter-btn" data-filter="logon" type="button">Входы (4624/4625)</button>
+              <button class="btn btn-outline-secondary py-0 px-2 event-filter-btn" data-filter="accounts" type="button">Аккаунты (4720/4726)</button>
+              <button class="btn btn-outline-secondary py-0 px-2 event-filter-btn" data-filter="password" type="button">Пароли (4724)</button>
+              <button class="btn btn-outline-secondary py-0 px-2 event-filter-btn" data-filter="lockout" type="button">Блокировки (4740)</button>
+            </div>
+            <div class="input-group input-group-sm" style="width: 200px;">
+              <span class="input-group-text"><i class="bi bi-search"></i></span>
+              <input class="form-control" id="filter-events-input" placeholder="Поиск в журнале..." type="text"/>
+            </div>
+            <button class="btn btn-sm btn-outline-primary py-0 px-2" id="btn-refresh-events" title="Обновить журнал">
+              <i class="bi bi-arrow-clockwise"></i>
+            </button>
+          </div>
+        </div>
+        <div class="p-0 table-responsive" style="max-height: 480px; overflow-y: auto;">
+          <table class="winadmin-table">
+            <thead class="sticky-top">
+              <tr>
+                <th style="width: 140px;">Время</th>
+                <th style="width: 90px;">Event ID</th>
+                <th style="width: 170px;">Событие</th>
+                <th style="width: 160px;">Целевой аккаунт</th>
+                <th style="width: 140px;">Инициатор</th>
+                <th>Описание / Сообщение</th>
+                <th style="text-align: right; width: 80px;">Инфо</th>
+              </tr>
+            </thead>
+            <tbody id="winadmin-events-tbody">
+              <tr><td class="text-center text-muted p-3" colspan="7">Загрузка журнала событий безопасности...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. Подраздел: Аудит доступа и SAM Политики -->
+    <div class="tab-pane fade" id="subtab-winadmin-security" role="tabpanel">
+      <div class="row g-2">
+        <div class="col-md-7">
+          <div class="winadmin-panel h-100" data-panel-id="panel-winadmin-audit" id="panel-winadmin-audit">
+            <div class="winadmin-panel-header">
+              <span><i class="bi bi-shield-check me-1 text-primary"></i> Быстрый аудит привилегий и доступа</span>
+            </div>
+            <div class="p-3">
+              <div class="d-flex flex-wrap gap-2 mb-3">
+                <button class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1" id="btn-check-who-is-admin" data-term="winadmin-audit-admins" data-ai-tooltip="true" data-placement="top">
+                  <i class="bi bi-shield-lock"></i>
+                  <span>Who is Admin?</span>
+                </button>
+                <button class="btn btn-sm btn-outline-info d-flex align-items-center gap-1" id="btn-check-service-logon" data-term="winadmin-audit-service" data-ai-tooltip="true" data-placement="top">
+                  <i class="bi bi-gear"></i>
+                  <span>Logon as Service</span>
+                </button>
+                <button class="btn btn-sm btn-outline-warning d-flex align-items-center gap-1" id="btn-check-rdp" data-term="winadmin-audit-rdp" data-ai-tooltip="true" data-placement="top">
+                  <i class="bi bi-display"></i>
+                  <span>Remote Desktop (RDP)</span>
+                </button>
+                <button class="btn btn-sm btn-outline-danger d-flex align-items-center gap-1" id="btn-check-orphaned" data-term="winadmin-audit-orphaned" data-ai-tooltip="true" data-placement="top">
+                  <i class="bi bi-exclamation-triangle"></i>
+                  <span>Orphaned SIDs / Profiles</span>
+                </button>
+              </div>
+              <div class="rounded p-2 winadmin-audit-box small font-monospace" id="security-audit-results">
+                <div class="text-muted text-center py-4">Выберите проверку выше для запуска анализа безопасности.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-5">
+          <div class="winadmin-panel h-100" data-panel-id="panel-winadmin-sam" id="panel-winadmin-sam">
+            <div class="winadmin-panel-header">
+              <span><i class="bi bi-key-fill me-1 text-primary"></i> Политика паролей SAM</span>
+            </div>
+            <div class="p-3 small" id="password-policy-container">
+              <div class="text-muted">Загрузка политики паролей SAM...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5. Подраздел: Инспектор процесса (PID) -->
+    <div class="tab-pane fade" id="subtab-winadmin-pid" role="tabpanel">
+      <div class="winadmin-panel" data-panel-id="panel-winadmin-pid" id="panel-winadmin-pid">
+        <div class="winadmin-panel-header">
+          <span><i class="bi bi-cpu me-1 text-primary"></i> Исследование контекста безопасности процесса (Token &amp; Account Dossier)</span>
+        </div>
+        <div class="p-3">
+          <div class="row g-2 align-items-center mb-3">
+            <div class="col-auto">
+              <label class="col-form-label small fw-semibold text-body" for="input-explain-pid">PID процесса:</label>
+            </div>
+            <div class="col-auto" style="width: 160px;">
+              <input class="form-control form-control-sm font-monospace" id="input-explain-pid" placeholder="например 1234" type="number"/>
+            </div>
+            <div class="col-auto">
+              <button class="btn btn-sm btn-primary d-flex align-items-center gap-1 shadow-sm" id="btn-explain-pid">
+                <i class="bi bi-search"></i>
+                <span>Исследовать PID</span>
+              </button>
+            </div>
+          </div>
+          <div class="p-3 winadmin-dossier-box rounded font-monospace small" id="pid-dossier-output">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 6. Подраздел: Каталог операций (~180) -->
+    <div class="tab-pane fade" id="subtab-winadmin-catalog" role="tabpanel">
+      <div class="winadmin-panel" data-panel-id="panel-winadmin-catalog" id="panel-winadmin-catalog">
+        <div class="winadmin-panel-header flex-wrap gap-2">
+          <span><i class="bi bi-journal-code me-1 text-primary"></i> Реестр операций OS-level каталога Accounts &amp; Identity</span>
+          <div class="input-group input-group-sm" style="width: 240px;">
+            <span class="input-group-text"><i class="bi bi-search"></i></span>
+            <input class="form-control form-control-sm" id="filter-catalog-input" placeholder="Поиск в каталоге..." type="text"/>
+          </div>
+        </div>
+        <div class="p-0 table-responsive" style="max-height: 480px; overflow-y: auto;">
+          <table class="winadmin-table">
+            <thead class="sticky-top">
+              <tr>
+                <th style="width: 50px;">#</th>
+                <th>Операция</th>
+                <th>Подсистема</th>
+                <th>Механизм</th>
+                <th>API / CLI</th>
+                <th style="width: 90px;">Риск</th>
+              </tr>
+            </thead>
+            <tbody id="catalog-table-body">
+              <tr><td class="text-center text-muted p-3" colspan="6">Загрузка каталога операций...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 7. Подраздел: Управление ACL и правами доступа (перенесено из tab-security-acl) -->
+    <div class="tab-pane fade" id="subtab-winadmin-acl" role="tabpanel">
+      <!-- Top Stat Cards для ACL -->
+      <div class="row g-2 mb-2">
+        <div class="col-6 col-md-3">
+          <div class="winadmin-card" id="panel-security-acl-1" data-panel-id="panel-security-acl-1">
+            <span class="winadmin-label">Владелец объекта 👤</span>
+            <div class="d-flex align-items-baseline justify-content-between mt-1">
+              <span class="winadmin-value winadmin-value-sm text-primary text-truncate" id="winadmin-acl-owner-val">NT AUTHORITY\SYSTEM</span>
+            </div>
+            <div class="small text-muted mt-0.5 winadmin-sub-label" id="winadmin-acl-owner-sub">takeown.exe</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="winadmin-card" id="panel-security-acl-2" data-panel-id="panel-security-acl-2">
+            <span class="winadmin-label">Наследование прав 🧬</span>
+            <div class="d-flex align-items-baseline justify-content-between mt-1">
+              <span class="winadmin-value text-info" id="winadmin-acl-inherit-val">Включено</span>
+            </div>
+            <div class="small text-muted mt-0.5 winadmin-sub-label" id="winadmin-acl-inherit-sub">Inheritance Mode</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="winadmin-card" id="panel-security-acl-3" data-panel-id="panel-security-acl-3">
+            <span class="winadmin-label">Количество ACE 📋</span>
+            <div class="d-flex align-items-baseline justify-content-between mt-1">
+              <span class="winadmin-value text-success" id="winadmin-acl-ace-count">3</span>
+            </div>
+            <div class="small text-muted mt-0.5 winadmin-sub-label" id="winadmin-acl-ace-sub">icacls entries</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="winadmin-card" id="panel-security-acl-4" data-panel-id="panel-security-acl-4">
+            <span class="winadmin-label">Целостность ACL 🛡️</span>
+            <div class="d-flex align-items-baseline justify-content-between mt-1">
+              <span class="winadmin-value text-warning" id="winadmin-acl-integrity-val">Normal</span>
+            </div>
+            <div class="small text-muted mt-0.5 winadmin-sub-label" id="winadmin-acl-integrity-sub">ACL Health</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="winadmin-panel" data-panel-id="panel-winadmin-acl" id="panel-winadmin-acl">
+        <div class="winadmin-panel-header flex-wrap gap-2">
+          <div class="d-flex align-items-center gap-2">
+            <span><i class="bi bi-shield-lock me-1 text-primary"></i> Записи контроля доступа и управление разрешениями (icacls, takeown)</span>
+            <span class="ui-badge ui-badge-neutral" id="winadmin-acl-badge">3 ACE записей</span>
+          </div>
+          <div class="d-flex align-items-center gap-1.5 flex-wrap">
+            <button class="btn btn-sm btn-outline-warning py-0 px-2 shadow-sm" id="btn-acl-takeown" data-term="winadmin-acl-takeown" data-ai-tooltip="true" data-placement="top" title="Взять владение файлом или директорией (takeown /f)">
+              <i class="bi bi-person-check me-1"></i> Взять владение (takeown)
+            </button>
+            <button class="btn btn-sm btn-outline-danger py-0 px-2 shadow-sm" id="btn-acl-reset-default" data-term="winadmin-acl-reset" data-ai-tooltip="true" data-placement="top" title="Сбросить все наследуемые и кастомные ACL к системным">
+              <i class="bi bi-arrow-counterclockwise me-1"></i> Сбросить ACL по умолчанию
+            </button>
+            <div class="dropdown">
+              <button class="btn btn-sm btn-outline-warning dropdown-toggle py-0 px-2" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-palette me-1"></i> Шаблоны прав
+              </button>
+              <ul class="dropdown-menu shadow">
+                <li><button class="dropdown-item small" type="button" onclick="window.applyAclTemplate && window.applyAclTemplate('readonly')"><i class="bi bi-eye me-1 text-info"></i> Только чтение (Read-only)</button></li>
+                <li><button class="dropdown-item small" type="button" onclick="window.applyAclTemplate && window.applyAclTemplate('isolated')"><i class="bi bi-lock me-1 text-danger"></i> Строгая изоляция (SYSTEM + Admin)</button></li>
+                <li><button class="dropdown-item small" type="button" onclick="window.applyAclTemplate && window.applyAclTemplate('full_control')"><i class="bi bi-check-all me-1 text-success"></i> Полный доступ (Full Control)</button></li>
+              </ul>
+            </div>
+            <button class="btn btn-sm btn-outline-info py-0 px-2 shadow-sm" id="btn-acl-backup-create" data-term="winadmin-acl-backup" data-ai-tooltip="true" data-placement="top" title="Сохранить дамп ACL в apps/logs/acl_backups/">
+              <i class="bi bi-save me-1"></i> Авто-бэкап .acl
+            </button>
+            <button class="btn btn-sm btn-outline-success py-0 px-2 shadow-sm" id="btn-acl-restore-rollback" data-term="winadmin-acl-rollback" data-ai-tooltip="true" data-placement="top" title="Откатить права из последнего дампа">
+              <i class="bi bi-arrow-90deg-left me-1"></i> Откатить
+            </button>
+          </div>
+        </div>
+
+        <!-- Поле пути и кнопка инспекции -->
+        <div class="p-2.5 winadmin-header-strip border-bottom border-secondary">
+          <div class="row g-2 align-items-center">
+            <div class="col-12 col-md-8">
+              <div class="input-group input-group-sm">
+                <span class="input-group-text text-muted"><i class="bi bi-folder2-open"></i></span>
+                <input class="form-control font-monospace" id="winadmin-acl-path-input" placeholder="Путь к файлу или папке (например: C:\Windows\System32 или C:\Data)" type="text" value="C:\Windows\System32"/>
+                <button class="btn btn-primary px-3" id="btn-winadmin-acl-inspect" data-term="winadmin-acl-inspect" data-ai-tooltip="true" data-placement="top" type="button">
+                  <i class="bi bi-search me-1"></i> Инспектировать ACL
+                </button>
+              </div>
+            </div>
+            <div class="col-12 col-md-4 text-md-end">
+              <span class="small text-muted font-monospace" id="winadmin-acl-status-text">Дампы: apps/logs/acl_backups/</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Сетка: таблица ACE слева, изменение прав и лог справа -->
+        <div class="row g-0">
+          <div class="col-12 col-lg-7 border-end border-secondary">
+            <div class="p-0 table-responsive" style="max-height: 480px; overflow-y: auto;">
+              <table class="winadmin-table mb-0">
+                <thead class="sticky-top">
+                  <tr>
+                    <th>Субъект (Principal)</th>
+                    <th>Права (Permissions)</th>
+                    <th>Тип</th>
+                    <th>Наследование</th>
+                  </tr>
+                </thead>
+                <tbody id="winadmin-acl-tbody">
+                  <tr>
+                    <td class="font-monospace fw-semibold text-body">NT AUTHORITY\SYSTEM</td>
+                    <td><span class="ui-badge ui-badge-primary font-monospace">Full Control</span></td>
+                    <td><span class="ui-badge ui-badge-success">Allow</span></td>
+                    <td class="small text-muted font-monospace">Direct</td>
+                  </tr>
+                  <tr>
+                    <td class="font-monospace fw-semibold text-body">BUILTIN\Administrators</td>
+                    <td><span class="ui-badge ui-badge-primary font-monospace">Full Control</span></td>
+                    <td><span class="ui-badge ui-badge-success">Allow</span></td>
+                    <td class="small text-muted font-monospace">Direct</td>
+                  </tr>
+                  <tr>
+                    <td class="font-monospace fw-semibold text-body">BUILTIN\Users</td>
+                    <td><span class="ui-badge ui-badge-primary font-monospace">Read &amp; Execute</span></td>
+                    <td><span class="ui-badge ui-badge-success">Allow</span></td>
+                    <td class="small text-muted font-monospace">Inherited</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="col-12 col-lg-5 p-2.5 winadmin-side-strip d-flex flex-column gap-2">
+            <!-- Панель изменения прав доступа (icacls grant) -->
+            <div class="card border-secondary shadow-sm" data-panel-id="panel-winadmin-acl-modify" id="panel-winadmin-acl-modify">
+              <div class="card-header border-secondary py-1.5 px-3 d-flex align-items-center justify-content-between">
+                <span class="small fw-semibold"><i class="bi bi-person-gear text-warning me-1.5"></i>Изменение разрешений (icacls)</span>
+              </div>
+              <div class="card-body p-2.5">
+                <div class="mb-2">
+                  <label class="form-label small text-muted mb-1" for="winadmin-acl-user-input">Пользователь / Субъект:</label>
+                  <input class="form-control form-control-sm" id="winadmin-acl-user-input" placeholder="Administrators или Users" type="text" value="Administrators"/>
+                </div>
+                <div class="mb-2">
+                  <label class="form-label small text-muted mb-1" for="winadmin-acl-perm-select">Уровень разрешений:</label>
+                  <select class="form-select form-select-sm" id="winadmin-acl-perm-select">
+                    <option value="F">Полный доступ (Full Control - :F)</option>
+                    <option value="M">Изменение (Modify - :M)</option>
+                    <option value="RX">Чтение и выполнение (Read/Execute - :RX)</option>
+                    <option value="R">Только чтение (Read - :R)</option>
+                    <option value="W">Только запись (Write - :W)</option>
+                  </select>
+                </div>
+                <div class="d-flex align-items-center justify-content-between pt-1">
+                  <div class="form-check form-switch mb-0">
+                    <input checked="" class="form-check-input" id="winadmin-acl-dry-run-switch" type="checkbox"/>
+                    <label class="form-check-label small text-muted" for="winadmin-acl-dry-run-switch">Безопасный режим (Dry Run)</label>
+                  </div>
+                  <button class="btn btn-sm btn-success px-3" id="btn-winadmin-acl-grant" data-term="winadmin-acl-grant" data-ai-tooltip="true" data-placement="top" type="button">
+                    <i class="bi bi-check-lg me-1"></i> Применить права
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Консольный вывод icacls -->
+            <div class="card border-secondary shadow-sm flex-grow-1" data-panel-id="panel-winadmin-acl-console" id="panel-winadmin-acl-console">
+              <div class="card-header border-secondary py-1 px-3 d-flex justify-content-between align-items-center">
+                <span class="small text-muted fw-bold"><i class="bi bi-terminal me-1"></i>Консольный вывод icacls</span>
+                <button class="btn btn-link btn-xs text-secondary text-decoration-none p-0" id="btn-winadmin-acl-clear-log" type="button">Очистить</button>
+              </div>
+              <div class="card-body p-2">
+                <pre class="winadmin-console-box p-2 rounded small font-monospace mb-0" id="winadmin-acl-console-output">Готов к управлению ACL и правами доступа.</pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Модальное окно: Создание локального пользователя -->
+<div aria-hidden="true" class="modal fade" id="createUserModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content border border-secondary shadow">
+      <div class="modal-header border-secondary">
+        <h5 class="modal-title d-flex align-items-center gap-2 fs-6 fw-bold">
+          <i class="bi bi-person-plus text-primary"></i>
+          <span>Создать локального пользователя Windows</span>
+        </h5>
+        <button aria-label="Close" class="btn-close" data-bs-dismiss="modal" type="button"></button>
+      </div>
+      <div class="modal-body small">
+        <form id="create-user-form">
+          <div class="mb-2">
+            <label class="form-label fw-semibold">Имя пользователя (Логин)*</label>
+            <input class="form-control form-control-sm" id="create-user-name" placeholder="например: ivan" required="" type="text"/>
+          </div>
+          <div class="mb-2">
+            <label class="form-label fw-semibold">Пароль (опционально)</label>
+            <input class="form-control form-control-sm" id="create-user-pwd" placeholder="Оставьте пустым без пароля" type="password"/>
+          </div>
+          <div class="mb-2">
+            <label class="form-label fw-semibold">Полное имя (Full Name)</label>
+            <input class="form-control form-control-sm" id="create-user-fullname" placeholder="например: Иван Иванов" type="text"/>
+          </div>
+          <div class="mb-2">
+            <label class="form-label fw-semibold">Описание (Description)</label>
+            <input class="form-control form-control-sm" id="create-user-desc" placeholder="Назначение учетной записи" type="text"/>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer border-secondary">
+        <button class="btn btn-sm btn-secondary" data-bs-dismiss="modal" type="button">Отмена</button>
+        <button class="btn btn-sm btn-primary" id="btn-submit-create-user" type="button">Создать</button>
+      </div>
+    </div>
+  </div>
+</div>
+

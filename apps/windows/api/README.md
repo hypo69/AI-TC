@@ -16,4 +16,4 @@
 - **`config.json`** — параметры конфигурации локального сервиса.
 
 > [!NOTE]
-> Низкоуровневые CFFI/`ctypes` вызовы нативных библиотек Windows (`kernel32.dll`, `advapi32.dll`, `wevtapi.dll`, `setupapi.dll` и др.) вынесены в модуль телеметрии: [`apps.windows.telemetry.win32_ffi`](../telemetry/win32_ffi/).
+> Низкоуровневые CFFI/`ctypes` вызовы нативных библиотек Windows (`kernel32.dll`, `advapi32.dll`, `wevtapi.dll`, `setupapi.dll` и др.) вынесены в модуль SDK: [`apps.windows.sdk.win32_ffi`](../sdk/win32_ffi/).

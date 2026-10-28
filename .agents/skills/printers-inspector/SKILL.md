@@ -1,6 +1,7 @@
 ---
 name: printers-inspector
-description: Automated assistant skill for: Опрос локальных и сетевых принтеров и драйверов печати
+# Updated: 2026-10-25 18:35:00
+description: "Automated assistant skill for: Опрос локальных и сетевых принтеров и драйверов печати"
 ---
 
 # Инспектор принтеров и очередей печати

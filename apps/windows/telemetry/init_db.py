@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Process Name: AI-Windows-Admin Apps Windows Telemetry - Init Db
+# Process Name: AI-Breadboard Apps Windows Telemetry - Init Db
 # =============================================================================
 # Description:
 #   Модуль проверки, создания и валидации целостности структуры базы данных
@@ -14,11 +14,11 @@
 #     res = get_default_telemetry_db_path()
 #
 # File: init_db.py
-# Project: ai-windows-admin
+# Project: ai-breadboard
 # Package: apps.windows.telemetry
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 22:22:30
+# Updated: 2026-10-28 00:05:00
 # =============================================================================
 
 from __future__ import annotations
@@ -62,7 +62,8 @@ def get_default_telemetry_db_path() -> Path:
             base_dir = Path(appdata)
         else:
             base_dir = Path.home() / '.config'
-    return base_dir / 'AI-Windows-Admin' / 'apps' / 'windows' / 'telemetry' / 'logs' / 'telemetry.db'
+    app_name = os.environ.get('APP_NAME') or 'ai-tc'
+    return base_dir / app_name / 'telemetry' / 'telemetry.db'
 
 
 def init_telemetry_database(
@@ -153,26 +154,26 @@ def main() -> int:
 
     if args.check_only and not target_path.exists():
         if args.json:
-            logger.console(json.dumps({'status': 'error', 'message': f'Файл не найден: {target_path}', 'exists': False}, ensure_ascii=False))
+            print(json.dumps({'status': 'error', 'message': f'Файл не найден: {target_path}', 'exists': False}, ensure_ascii=False))
         else:
-            logger.console(f'❌ База данных телеметрии не найдена: {target_path}')
+            print(f'❌ База данных телеметрии не найдена: {target_path}')
         return 1
 
     res = init_telemetry_database(db_path=args.db_path, force=args.force)
 
     if args.json:
-        logger.console(json.dumps(res, ensure_ascii=False, indent=2))
+        print(json.dumps(res, ensure_ascii=False, indent=2))
     else:
         status_icon = '✅' if res['integrity_ok'] else '⚠️'
-        logger.console(f"\n{status_icon} База данных телеметрии: {res['db_path']}")
-        logger.console(f"   • Существует:     {res['exists']}")
-        logger.console(f"   • Вновь создана:  {res['created']}")
-        logger.console(f"   • Размер файла:   {res['size_mb']} МБ ({res['size_bytes']} байт)")
-        logger.console(f"   • Таблиц в схеме: {res['tables_count']}")
-        logger.console(f"   • Целостность:    {res['integrity_message']}")
+        print(f"\n{status_icon} База данных телеметрии: {res['db_path']}")
+        print(f"   • Существует:     {res['exists']}")
+        print(f"   • Вновь создана:  {res['created']}")
+        print(f"   • Размер файла:   {res['size_mb']} МБ ({res['size_bytes']} байт)")
+        print(f"   • Таблиц в схеме: {res['tables_count']}")
+        print(f"   • Целостность:    {res['integrity_message']}")
         if res['tables']:
-            logger.console(f"   • Таблицы:        {', '.join(res['tables'][:8])}{'...' if len(res['tables']) > 8 else ''}")
-        logger.console('')
+            print(f"   • Таблицы:        {', '.join(res['tables'][:8])}{'...' if len(res['tables']) > 8 else ''}")
+        print('')
 
     return 0 if res['integrity_ok'] else 1
 

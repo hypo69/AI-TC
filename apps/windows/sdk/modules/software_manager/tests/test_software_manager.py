@@ -16,11 +16,11 @@
 # Package: apps.windows.sdk.modules.software_manager.tests
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-18 09:30:00
 # =============================================================================
 
 from __future__ import annotations
-"""# Description:"""
+"""Модульные тесты для менеджера пакетов WinGet, Microsoft Store и MSI."""
 
 import pytest
 from fastapi import FastAPI
@@ -48,6 +48,15 @@ def test_software_report(manager: SoftwarePackagesManager):
     assert report is not None
     assert report.total_packages > 0
     assert len(report.packages) > 0
+    assert report.store_packages_count >= 0
+
+
+def test_software_store_packages(manager: SoftwarePackagesManager):
+    """Проверка фильтрации пакетов Microsoft Store."""
+    store_pkgs = manager.list_store_packages()
+    assert isinstance(store_pkgs, list)
+    for pkg in store_pkgs:
+        assert pkg.source == 'msstore'
 
 
 @pytest.mark.asyncio
@@ -69,9 +78,18 @@ def test_software_endpoints(client: TestClient):
     assert resp.status_code == 200
     data = resp.json()
     assert 'packages' in data
+    assert 'store_packages_count' in data
 
     resp_pkgs = client.get('/api/software-manager/packages')
     assert resp_pkgs.status_code == 200
+
+    resp_store = client.get('/api/software-manager/store')
+    assert resp_store.status_code == 200
+    store_data = resp_store.json()
+    assert isinstance(store_data, list)
+
+    resp_filter = client.get('/api/software-manager/packages?source=msstore')
+    assert resp_filter.status_code == 200
 
     resp_search = client.get('/api/software-manager/search?q=python')
     assert resp_search.status_code == 200

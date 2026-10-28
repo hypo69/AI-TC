@@ -26,13 +26,13 @@ chmod +x install.sh
 ./install.sh --lang ru
 
 # Установка в пользовательскую директорию
-./install.sh --install-dir /opt/ai-windows-admin
+./install.sh --install-dir /opt/ai-tc
 
 # Пропустить загрузку моделей
 ./install.sh --skip-models
 
 # Все Parameters сразу
-./install.sh --lang ru --install-dir ~/.ai-windows-admin --skip-models
+./install.sh --lang ru --install-dir ~/.ai-tc --skip-models
 ```
 
 ### Windows
@@ -63,7 +63,7 @@ python scripts/cli/installer.py --lang ru --install-dir /custom/path
 
 ```
 --lang {en|ru|es|he}       Язык установки (по умолчанию: en)
---install-dir PATH         Директория установки (по умолчанию: ~/AI-Windows-Admin)
+--install-dir PATH         Директория установки (по умолчанию: ~/ai-tc)
 --skip-models             Пропустить загрузку моделей ИИ
 --skip-venv               Пропустить создание виртуального окружения
 --skip-deps               Пропустить установку зависимостей
@@ -82,7 +82,7 @@ python scripts/cli/installer.py --lang ru --install-dir /custom/path
 ## Структура директории после установки
 
 ```
-~/AI-Windows-Admin/
+~/ai-tc/
 ├── venv/                    # Виртуальное окружение Python
 ├── launchers/               # Лончеры (run.py, etc)
 ├── scripts/
@@ -105,8 +105,8 @@ python scripts/cli/installer.py --lang ru --install-dir /custom/path
 
 ```bash
 # Автоматически добавлено в ~/.bashrc / ~/.zshrc
-export AIWINDOWSADMIN_DIR=/home/user/AI-Windows-Admin
-export PYTHONPATH=$AIWINDOWSADMIN_DIR
+export AITC_DIR=/home/user/ai-tc
+export PYTHONPATH=$AITC_DIR
 
 # Теперь можно использовать assist откуда угодно
 assist status

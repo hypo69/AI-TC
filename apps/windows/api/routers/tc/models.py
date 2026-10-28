@@ -11,7 +11,7 @@
 # Package: apps.windows.api.routers.tc
 # Author: hypo69
 # Copyright: c 2026 hypo69
-# Updated: 2026-10-12 06:20:00
+# Updated: 2026-10-22 13:30:00
 # =============================================================================
 
 from __future__ import annotations
@@ -44,7 +44,7 @@ class TcModelInstructionPayload(BaseModel):
     )
     save_to_disk: bool = Field(
         default=True,
-        description="Флаг сохранения системной инструкции в файл prompts/tc/system_instruction.md.",
+        description="Флаг сохранения системной инструкции в файл apps/windows/prompts/tc/system_instruction.md.",
     )
 
 

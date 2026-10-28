@@ -1,0 +1,851 @@
+<!--
+=============================================================================
+Process Name: Windows Web Interface - Theme Editor Tab
+=============================================================================
+Description:
+  Интерактивный редактор тем оформления WebGUI (размеры, цвета, элементы,
+  скругления, типографика, визуальные эффекты и пресеты).
+  Позволяет настраивать оформление интерфейса в реальном времени (Live Preview),
+  применять изменения на лету, сохранять в LocalStorage, экспортировать/импортировать
+  в JSON и генерировать чистый CSS-код.
+
+Usage Examples:
+  Ленивая загрузка через tab-core.js:
+    /html/tab_theme_editor/index.html?v=20261015_v1
+
+File: index.html
+Project: ai-windows-admin
+Package: windows/api/webgui/tab_theme_editor
+Author: hypo69
+Copyright: © 2026 hypo69
+Updated: 2026-10-20 11:15:00
+=============================================================================
+-->
+
+<div class="container-fluid p-3 d-flex flex-column gap-3 theme-editor-wrapper" style="max-width: 1600px; margin: 0 auto;">
+
+  <!-- Заголовок вкладки -->
+  <div class="tab-header d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+    <div class="d-flex align-items-center gap-2">
+      <span class="tab-header-icon fs-4 text-primary"><i class="bi bi-palette2"></i></span>
+      <div>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+          <h3 class="tab-header-title panel-header mb-0">Редактор тем и дизайн-системы</h3>
+          <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-0.5 small" id="theme-editor-status-badge">Активен</span>
+        </div>
+        <small class="tab-header-subtitle text-secondary">Тонкая настройка размеров, цветовых палитр, геометрии компонентов, шрифтов и эффектов с живым предпросмотром</small>
+      </div>
+    </div>
+
+    <!-- Панель быстрых действий -->
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+      <button type="button" class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-2" id="theme-btn-reset" title="Сбросить все кастомные изменения к выбранной теме">
+        <i class="bi bi-arrow-counterclockwise"></i>
+        <span>Сбросить</span>
+      </button>
+
+      <button type="button" class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-2" id="theme-btn-export" title="Экспортировать текущую тему в JSON-файл">
+        <i class="bi bi-download"></i>
+        <span>Экспорт JSON</span>
+      </button>
+
+      <label class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-2 mb-0" for="theme-file-import" style="cursor: pointer;" title="Импортировать тему из JSON-файла">
+        <i class="bi bi-upload"></i>
+        <span>Импорт JSON</span>
+        <input type="file" id="theme-file-import" accept=".json" class="d-none">
+      </label>
+
+      <button type="button" class="btn btn-sm btn-outline-info d-flex align-items-center gap-2" id="theme-btn-copy-css" title="Скопировать готовый CSS-код переменных в буфер обмена">
+        <i class="bi bi-code-slash"></i>
+        <span>Копировать CSS</span>
+      </button>
+
+      <button type="button" class="btn btn-sm btn-primary d-flex align-items-center gap-2 shadow-sm" id="theme-btn-save" title="Сохранить настройки темы в LocalStorage">
+        <i class="bi bi-check-circle-fill"></i>
+        <span>Сохранить тему</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- 2. Основная рабочая область: Панель настроек (слева) + Живой предпросмотр (справа) -->
+  <div class="row g-3">
+
+    <!-- Левая колонка: Элементы управления и настройки токенов -->
+    <div class="col-12 col-xl-6 d-flex flex-column gap-3">
+
+      <!-- Карточка: Выбор темы и наследование -->
+      <div class="card border-subtle shadow-sm bg-body">
+        <div class="card-header bg-body-tertiary py-2 px-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
+          <div class="fw-semibold small d-flex align-items-center gap-2">
+            <i class="bi bi-collection-fill text-warning"></i>
+            <span>Тема оформления и наследование</span>
+          </div>
+          <span class="badge bg-secondary-subtle text-secondary small border border-secondary-subtle" id="theme-type-badge"><i class="bi bi-lock-fill me-1"></i>Стандартная (только чтение)</span>
+        </div>
+        <div class="card-body p-3">
+          <!-- Индикатор статуса и наследования -->
+          <div id="theme-inheritance-alert" class="alert alert-secondary py-2 px-3 small d-flex align-items-center gap-2 mb-2">
+            <i class="bi bi-shield-lock-fill fs-6 text-secondary"></i>
+            <span>Стандартные темы системы защищены от перезаписи. Чтобы изменить оформление, создайте дочернюю тему на базе этой.</span>
+          </div>
+
+          <div class="row g-2 align-items-center">
+            <div class="col-12 col-sm-8">
+              <label class="form-label small text-muted mb-1" for="theme-preset-select">Активная тема для настройки:</label>
+              <select class="form-select form-select-sm" id="theme-preset-select">
+                <!-- Опции генерируются динамически через ThemeEngine -->
+              </select>
+            </div>
+            <div class="col-12 col-sm-4 d-flex align-items-end">
+              <button type="button" class="btn btn-sm btn-outline-primary w-100 d-flex align-items-center justify-content-center gap-2" id="theme-btn-apply-preset">
+                <i class="bi bi-lightning-fill"></i>
+                <span>Загрузить тему</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Панель управления дочерними темами -->
+          <div class="d-flex align-items-center gap-2 mt-2 pt-2 border-top border-subtle flex-wrap">
+            <button type="button" class="btn btn-sm btn-success d-flex align-items-center gap-1.5 shadow-sm" id="theme-btn-create-child" title="Создать новую дочернюю тему на основе выбранной">
+              <i class="bi bi-diagram-3-fill"></i>
+              <span>Создать дочернюю тему</span>
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1.5" id="theme-btn-rename-child" style="display: none;" title="Переименовать дочернюю тему">
+              <i class="bi bi-pencil"></i>
+              <span>Переименовать</span>
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-warning d-flex align-items-center gap-1.5" id="theme-btn-reset-to-parent" style="display: none;" title="Сбросить оформление дочерней темы к исходным значениям родителя">
+              <i class="bi bi-arrow-counterclockwise"></i>
+              <span>Сбросить к родителю</span>
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-danger d-flex align-items-center gap-1.5" id="theme-btn-delete-child" style="display: none;" title="Удалить дочернюю тему">
+              <i class="bi bi-trash"></i>
+              <span>Удалить тему</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Аккордеон настроек -->
+      <div class="accordion shadow-sm" id="themeEditorAccordion">
+
+        <!-- 1. Размеры, геометрия и плотность -->
+        <div class="accordion-item border-subtle bg-body">
+          <h2 class="accordion-header" id="headingSizes">
+            <button class="accordion-button py-2 px-3 fw-semibold small bg-body-tertiary text-body" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSizes" aria-expanded="true" aria-controls="collapseSizes">
+              <i class="bi bi-aspect-ratio text-info me-2"></i>
+              <span>Размеры, геометрия и плотность интерфейса</span>
+            </button>
+          </h2>
+          <div id="collapseSizes" class="accordion-collapse collapse show" aria-labelledby="headingSizes">
+            <div class="accordion-body p-3 d-flex flex-column gap-3">
+              
+              <!-- Базовый размер шрифта -->
+              <div>
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <label class="form-label small fw-medium mb-0" for="range-font-size">Базовый масштаб шрифта (Root Font Size):</label>
+                  <span class="badge bg-secondary-subtle text-body font-monospace small" id="val-font-size">16px</span>
+                </div>
+                <input type="range" class="form-range" id="range-font-size" min="12" max="20" step="1" value="16">
+                <div class="d-flex justify-content-between text-muted small" style="font-size: 0.72rem;">
+                  <span>12px (Компактный)</span>
+                  <span>16px (Стандарт)</span>
+                  <span>20px (Крупный)</span>
+                </div>
+              </div>
+
+              <!-- Радиус скругления углов -->
+              <div>
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <label class="form-label small fw-medium mb-0" for="range-border-radius">Скругление углов (Border Radius):</label>
+                  <span class="badge bg-secondary-subtle text-body font-monospace small" id="val-border-radius">8px</span>
+                </div>
+                <input type="range" class="form-range" id="range-border-radius" min="0" max="24" step="2" value="8">
+                <div class="d-flex justify-content-between text-muted small" style="font-size: 0.72rem;">
+                  <span>0px (Прямоугольный / Строгий)</span>
+                  <span>8px (Умеренный)</span>
+                  <span>24px (Максимально круглый)</span>
+                </div>
+              </div>
+
+              <!-- Плотность компоновки -->
+              <div>
+                <label class="form-label small fw-medium mb-1">Плотность отступов (Density):</label>
+                <div class="btn-group btn-group-sm w-100" role="group" id="btn-group-density">
+                  <input type="radio" class="btn-check" name="theme-density" id="density-compact" value="compact">
+                  <label class="btn btn-outline-secondary" for="density-compact">Компактная (Таблицы / Сервер)</label>
+
+                  <input type="radio" class="btn-check" name="theme-density" id="density-normal" value="normal" checked>
+                  <label class="btn btn-outline-secondary" for="density-normal">Стандартная</label>
+
+                  <input type="radio" class="btn-check" name="theme-density" id="density-comfortable" value="comfortable">
+                  <label class="btn btn-outline-secondary" for="density-comfortable">Просторная (Тач / Планшет)</label>
+                </div>
+              </div>
+
+              <!-- Высота KPI карточек -->
+              <div>
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <label class="form-label small fw-medium mb-0" for="range-kpi-height">Минимальная высота KPI-карточек:</label>
+                  <span class="badge bg-secondary-subtle text-body font-monospace small" id="val-kpi-height">72px</span>
+                </div>
+                <input type="range" class="form-range" id="range-kpi-height" min="56" max="110" step="4" value="72">
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Цвета фона и поверхностей -->
+        <div class="accordion-item border-subtle bg-body">
+          <h2 class="accordion-header" id="headingSurfaces">
+            <button class="accordion-button collapsed py-2 px-3 fw-semibold small bg-body-tertiary text-body" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSurfaces" aria-expanded="false" aria-controls="collapseSurfaces">
+              <i class="bi bi-layers text-primary me-2"></i>
+              <span>Цвета поверхностей и фона (Surfaces & Backgrounds)</span>
+            </button>
+          </h2>
+          <div id="collapseSurfaces" class="accordion-collapse collapse" aria-labelledby="headingSurfaces">
+            <div class="accordion-body p-3">
+              <div class="row g-3">
+
+                <!-- Фон страницы -->
+                <div class="col-12 col-sm-6">
+                  <label class="form-label small fw-medium mb-1" for="color-bg-base">Фон страницы (--bg-color / --ui-bg-base):</label>
+                  <div class="input-group input-group-sm">
+                    <input type="color" class="form-control form-control-color" id="picker-bg-base" value="#0b0f19" title="Выбрать цвет">
+                    <input type="text" class="form-control font-monospace" id="color-bg-base" value="#0b0f19">
+                  </div>
+                </div>
+
+                <!-- Фон карточек -->
+                <div class="col-12 col-sm-6">
+                  <label class="form-label small fw-medium mb-1" for="color-bg-surface">Поверхность карточек (--surface-1 / --card-bg):</label>
+                  <div class="input-group input-group-sm">
+                    <input type="color" class="form-control form-control-color" id="picker-bg-surface" value="#111827" title="Выбрать цвет">
+                    <input type="text" class="form-control font-monospace" id="color-bg-surface" value="#111827">
+                  </div>
+                </div>
+
+                <!-- Фон шапок и панелей -->
+                <div class="col-12 col-sm-6">
+                  <label class="form-label small fw-medium mb-1" for="color-bg-elevated">Шапки карточек и тулбары (--surface-2):</label>
+                  <div class="input-group input-group-sm">
+                    <input type="color" class="form-control form-control-color" id="picker-bg-elevated" value="#1f2937" title="Выбрать цвет">
+                    <input type="text" class="form-control font-monospace" id="color-bg-elevated" value="#1f2937">
+                  </div>
+                </div>
+
+                <!-- Фон навигации -->
+                <div class="col-12 col-sm-6">
+                  <label class="form-label small fw-medium mb-1" for="color-bg-nav">Фон шапки и навигации (--nav-bg):</label>
+                  <div class="input-group input-group-sm">
+                    <input type="color" class="form-control form-control-color" id="picker-bg-nav" value="#111827" title="Выбрать цвет">
+                    <input type="text" class="form-control font-monospace" id="color-bg-nav" value="#111827">
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Цвета текста и акцентов -->
+        <div class="accordion-item border-subtle bg-body">
+          <h2 class="accordion-header" id="headingTextColors">
+            <button class="accordion-button collapsed py-2 px-3 fw-semibold small bg-body-tertiary text-body" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTextColors" aria-expanded="false" aria-controls="collapseTextColors">
+              <i class="bi bi-type text-success me-2"></i>
+              <span>Цвета текста, ссылок и акцентов</span>
+            </button>
+          </h2>
+          <div id="collapseTextColors" class="accordion-collapse collapse" aria-labelledby="headingTextColors">
+            <div class="accordion-body p-3">
+              <div class="row g-3">
+
+                <!-- Основной текст -->
+                <div class="col-12 col-sm-6">
+                  <label class="form-label small fw-medium mb-1" for="color-text-primary">Основной текст (--text-color / --ui-text-primary):</label>
+                  <div class="input-group input-group-sm">
+                    <input type="color" class="form-control form-control-color" id="picker-text-primary" value="#f9fafb" title="Выбрать цвет">
+                    <input type="text" class="form-control font-monospace" id="color-text-primary" value="#f9fafb">
+                  </div>
+                </div>
+
+                <!-- Вторичный приглушенный текст -->
+                <div class="col-12 col-sm-6">
+                  <label class="form-label small fw-medium mb-1" for="color-text-muted">Приглушенный текст (--text-muted / --ui-text-muted):</label>
+                  <div class="input-group input-group-sm">
+                    <input type="color" class="form-control form-control-color" id="picker-text-muted" value="#9ca3af" title="Выбрать цвет">
+                    <input type="text" class="form-control font-monospace" id="color-text-muted" value="#9ca3af">
+                  </div>
+                </div>
+
+                <!-- Главный акцентный цвет -->
+                <div class="col-12 col-sm-6">
+                  <label class="form-label small fw-medium mb-1" for="color-accent">Главный акцент (--ui-accent / --nav-active):</label>
+                  <div class="input-group input-group-sm">
+                    <input type="color" class="form-control form-control-color" id="picker-accent" value="#38bdf8" title="Выбрать цвет">
+                    <input type="text" class="form-control font-monospace" id="color-accent" value="#38bdf8">
+                  </div>
+                </div>
+
+                <!-- Акцент при наведении -->
+                <div class="col-12 col-sm-6">
+                  <label class="form-label small fw-medium mb-1" for="color-accent-hover">Акцент при наведении (--ui-accent-hover):</label>
+                  <div class="input-group input-group-sm">
+                    <input type="color" class="form-control form-control-color" id="picker-accent-hover" value="#0ea5e9" title="Выбрать цвет">
+                    <input type="text" class="form-control font-monospace" id="color-accent-hover" value="#0ea5e9">
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. Границы, разделители и тени -->
+        <div class="accordion-item border-subtle bg-body">
+          <h2 class="accordion-header" id="headingBorders">
+            <button class="accordion-button collapsed py-2 px-3 fw-semibold small bg-body-tertiary text-body" type="button" data-bs-toggle="collapse" data-bs-target="#collapseBorders" aria-expanded="false" aria-controls="collapseBorders">
+              <i class="bi bi-bounding-box text-warning me-2"></i>
+              <span>Границы, разделители и стили теней</span>
+            </button>
+          </h2>
+          <div id="collapseBorders" class="accordion-collapse collapse" aria-labelledby="headingBorders">
+            <div class="accordion-body p-3">
+              <div class="row g-3">
+
+                <!-- Цвет границы -->
+                <div class="col-12 col-sm-6">
+                  <label class="form-label small fw-medium mb-1" for="color-border">Основная граница (--border-color):</label>
+                  <div class="input-group input-group-sm">
+                    <input type="color" class="form-control form-control-color" id="picker-border" value="#374151" title="Выбрать цвет">
+                    <input type="text" class="form-control font-monospace" id="color-border" value="#374151">
+                  </div>
+                </div>
+
+                <!-- Контрастная / активная граница -->
+                <div class="col-12 col-sm-6">
+                  <label class="form-label small fw-medium mb-1" for="color-border-strong">Активная граница (--border-strong):</label>
+                  <div class="input-group input-group-sm">
+                    <input type="color" class="form-control form-control-color" id="picker-border-strong" value="#596b82" title="Выбрать цвет">
+                    <input type="text" class="form-control font-monospace" id="color-border-strong" value="#596b82">
+                  </div>
+                </div>
+
+                <!-- Стиль теней -->
+                <div class="col-12">
+                  <label class="form-label small fw-medium mb-1" for="select-shadow-style">Стиль теней и свечения (Shadow Style):</label>
+                  <select class="form-select form-select-sm" id="select-shadow-style">
+                    <option value="none">Без теней (Flat / Плоский стиль)</option>
+                    <option value="soft" selected>Мягкие тени (Soft / Subtle Drop Shadows)</option>
+                    <option value="deep">Глубокие контрастные тени (Deep Shadows)</option>
+                    <option value="neon">Неоновое свечение (Neon Glow под цвет акцента)</option>
+                  </select>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5. Статусные цвета и индикаторы -->
+        <div class="accordion-item border-subtle bg-body">
+          <h2 class="accordion-header" id="headingStatuses">
+            <button class="accordion-button collapsed py-2 px-3 fw-semibold small bg-body-tertiary text-body" type="button" data-bs-toggle="collapse" data-bs-target="#collapseStatuses" aria-expanded="false" aria-controls="collapseStatuses">
+              <i class="bi bi-shield-check text-success me-2"></i>
+              <span>Статусные цвета (Успех, Предупреждение, Ошибка, Инфо)</span>
+            </button>
+          </h2>
+          <div id="collapseStatuses" class="accordion-collapse collapse" aria-labelledby="headingStatuses">
+            <div class="accordion-body p-3">
+              <div class="row g-3">
+
+                <!-- Успех -->
+                <div class="col-6 col-md-3">
+                  <label class="form-label small fw-medium mb-1" for="color-status-success">Успех / Норма:</label>
+                  <div class="input-group input-group-sm">
+                    <input type="color" class="form-control form-control-color" id="picker-status-success" value="#10b981" title="Выбрать цвет">
+                    <input type="text" class="form-control font-monospace" id="color-status-success" value="#10b981">
+                  </div>
+                </div>
+
+                <!-- Предупреждение -->
+                <div class="col-6 col-md-3">
+                  <label class="form-label small fw-medium mb-1" for="color-status-warning">Предупреждение:</label>
+                  <div class="input-group input-group-sm">
+                    <input type="color" class="form-control form-control-color" id="picker-status-warning" value="#f59e0b" title="Выбрать цвет">
+                    <input type="text" class="form-control font-monospace" id="color-status-warning" value="#f59e0b">
+                  </div>
+                </div>
+
+                <!-- Ошибка / Опасность -->
+                <div class="col-6 col-md-3">
+                  <label class="form-label small fw-medium mb-1" for="color-status-danger">Ошибка / Сбой:</label>
+                  <div class="input-group input-group-sm">
+                    <input type="color" class="form-control form-control-color" id="picker-status-danger" value="#ef4444" title="Выбрать цвет">
+                    <input type="text" class="form-control font-monospace" id="color-status-danger" value="#ef4444">
+                  </div>
+                </div>
+
+                <!-- Инфо -->
+                <div class="col-6 col-md-3">
+                  <label class="form-label small fw-medium mb-1" for="color-status-info">Информация:</label>
+                  <div class="input-group input-group-sm">
+                    <input type="color" class="form-control form-control-color" id="picker-status-info" value="#38bdf8" title="Выбрать цвет">
+                    <input type="text" class="form-control font-monospace" id="color-status-info" value="#38bdf8">
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 6. Типографика и визуальные эффекты -->
+        <div class="accordion-item border-subtle bg-body">
+          <h2 class="accordion-header" id="headingTypography">
+            <button class="accordion-button collapsed py-2 px-3 fw-semibold small bg-body-tertiary text-body" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTypography" aria-expanded="false" aria-controls="collapseTypography">
+              <i class="bi bi-magic text-danger me-2"></i>
+              <span>Шрифты и спецэффекты (Glassmorphism, CRT Scanlines)</span>
+            </button>
+          </h2>
+          <div id="collapseTypography" class="accordion-collapse collapse" aria-labelledby="headingTypography">
+            <div class="accordion-body p-3 d-flex flex-column gap-3">
+
+              <!-- Семейство шрифтов -->
+              <div>
+                <label class="form-label small fw-medium mb-1" for="select-font-family">Основной шрифт интерфейса (Font Family):</label>
+                <select class="form-select form-select-sm" id="select-font-family">
+                  <option value="system" selected>Системный (Segoe UI / Roboto / Apple System)</option>
+                  <option value="inter">Inter / Clean Modern (Современный гротеск)</option>
+                  <option value="mono">Моноширинный (Consolas / Cascadia Code / Courier)</option>
+                  <option value="georgia">Georgia / Serif (Классическая печатная гарнитура)</option>
+                </select>
+              </div>
+
+              <!-- Переключатели эффектов -->
+              <div class="row g-2 pt-2 border-top border-subtle">
+                <div class="col-12 col-sm-6">
+                  <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" role="switch" id="toggle-glassmorphism">
+                    <label class="form-check-label small fw-medium" for="toggle-glassmorphism">
+                      Glassmorphism (Backdrop blur)
+                    </label>
+                    <div class="text-muted small" style="font-size: 0.72rem;">Эффект матового стекла на панелях</div>
+                  </div>
+                </div>
+
+                <div class="col-12 col-sm-6">
+                  <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" role="switch" id="toggle-crt-scanlines">
+                    <label class="form-check-label small fw-medium" for="toggle-crt-scanlines">
+                      CRT Scanlines (Ретро-линии)
+                    </label>
+                    <div class="text-muted small" style="font-size: 0.72rem;">Горизонтальные полосы кинескопа</div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- 7. Заголовок панели (.panel-header / H3) -->
+        <div class="accordion-item border-subtle bg-body">
+          <h2 class="accordion-header" id="headingPanelHeader">
+            <button class="accordion-button collapsed py-2 px-3 fw-semibold small bg-body-tertiary text-body" type="button" data-bs-toggle="collapse" data-bs-target="#collapsePanelHeader" aria-expanded="false" aria-controls="collapsePanelHeader">
+              <i class="bi bi-window-sidebar text-info me-2"></i>
+              <span>Заголовок панели (.panel-header, размер H3)</span>
+            </button>
+          </h2>
+          <div id="collapsePanelHeader" class="accordion-collapse collapse" aria-labelledby="headingPanelHeader">
+            <div class="accordion-body p-3 d-flex flex-column gap-3">
+
+              <!-- Размер шрифта H3 заголовка панели -->
+              <div>
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <label class="form-label small fw-medium mb-0" for="range-panel-header-font-size">Размер шрифта заголовка панели (H3):</label>
+                  <span class="badge bg-secondary-subtle text-body font-monospace small" id="val-panel-header-font-size">28px</span>
+                </div>
+                <input type="range" class="form-range" id="range-panel-header-font-size" min="18" max="38" step="1" value="28">
+                <div class="d-flex justify-content-between text-muted small" style="font-size: 0.72rem;">
+                  <span>18px (Компактный)</span>
+                  <span>28px (H3 Стандарт 1.75rem)</span>
+                  <span>38px (Крупный)</span>
+                </div>
+              </div>
+
+              <!-- Цвета текста и фона заголовка панели -->
+              <div class="row g-3">
+                <div class="col-12 col-sm-6">
+                  <label class="form-label small fw-medium mb-1" for="color-panel-header-text">Цвет текста заголовка (--panel-header-color):</label>
+                  <div class="input-group input-group-sm">
+                    <input type="color" class="form-control form-control-color" id="picker-panel-header-text" value="#f9fafb" title="Выбрать цвет">
+                    <input type="text" class="form-control font-monospace" id="color-panel-header-text" value="#f9fafb">
+                  </div>
+                </div>
+
+                <div class="col-12 col-sm-6">
+                  <label class="form-label small fw-medium mb-1" for="color-panel-header-bg">Фон заголовка панели (--panel-header-bg):</label>
+                  <div class="input-group input-group-sm">
+                    <input type="color" class="form-control form-control-color" id="picker-panel-header-bg" value="#1f2937" title="Выбрать цвет">
+                    <input type="text" class="form-control font-monospace" id="color-panel-header-bg" value="#1f2937">
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- 8. Заголовок вкладки (.tab-header / .tab-header-title) -->
+        <div class="accordion-item border-subtle bg-body">
+          <h2 class="accordion-header" id="headingTabHeader">
+            <button class="accordion-button collapsed py-2 px-3 fw-semibold small bg-body-tertiary text-body" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTabHeader" aria-expanded="false" aria-controls="collapseTabHeader">
+              <i class="bi bi-layout-text-window text-warning me-2"></i>
+              <span>Заголовок вкладки (.tab-header / .tab-header-title)</span>
+            </button>
+          </h2>
+          <div id="collapseTabHeader" class="accordion-collapse collapse" aria-labelledby="headingTabHeader">
+            <div class="accordion-body p-3 d-flex flex-column gap-3">
+
+              <!-- Размер шрифта заголовка вкладки -->
+              <div>
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <label class="form-label small fw-medium mb-0" for="range-tab-header-font-size">Размер шрифта заголовка вкладки:</label>
+                  <span class="badge bg-secondary-subtle text-body font-monospace small" id="val-tab-header-font-size">22px</span>
+                </div>
+                <input type="range" class="form-range" id="range-tab-header-font-size" min="16" max="32" step="1" value="22">
+                <div class="d-flex justify-content-between text-muted small" style="font-size: 0.72rem;">
+                  <span>16px (Компактный)</span>
+                  <span>22px (Стандарт 1.35rem)</span>
+                  <span>32px (Крупный)</span>
+                </div>
+              </div>
+
+              <!-- Цвета текста заголовка и описания вкладки -->
+              <div class="row g-3">
+                <div class="col-12 col-sm-6">
+                  <label class="form-label small fw-medium mb-1" for="color-tab-header-text">Цвет названия вкладки (--tab-header-title-color):</label>
+                  <div class="input-group input-group-sm">
+                    <input type="color" class="form-control form-control-color" id="picker-tab-header-text" value="#f9fafb" title="Выбрать цвет">
+                    <input type="text" class="form-control font-monospace" id="color-tab-header-text" value="#f9fafb">
+                  </div>
+                </div>
+
+                <div class="col-12 col-sm-6">
+                  <label class="form-label small fw-medium mb-1" for="color-tab-header-sub">Цвет подзаголовка (--tab-header-subtitle-color):</label>
+                  <div class="input-group input-group-sm">
+                    <input type="color" class="form-control form-control-color" id="picker-tab-header-sub" value="#9ca3af" title="Выбрать цвет">
+                    <input type="text" class="form-control font-monospace" id="color-tab-header-sub" value="#9ca3af">
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- Правая колонка: Интерактивный Live Preview стенд -->
+    <div class="col-12 col-xl-6">
+      <div class="card border-subtle shadow-sm bg-body sticky-xl-top" style="top: 1rem; z-index: 10;">
+        <div class="card-header bg-body-tertiary py-2 px-3 d-flex align-items-center justify-content-between">
+          <div class="fw-semibold small d-flex align-items-center gap-2">
+            <i class="bi bi-eye-fill text-success"></i>
+            <span>Живой предпросмотр компонентов (Live Preview)</span>
+          </div>
+          <span class="badge bg-success-subtle text-success border border-success-subtle small">Мгновенный рендер</span>
+        </div>
+
+        <div class="card-body p-3 d-flex flex-column gap-3" id="theme-preview-sandbox">
+
+          <!-- Превью 1: Карточки метрик (KPI Cards) -->
+          <div>
+            <div class="small fw-semibold text-muted text-uppercase mb-2" style="font-size: 0.75rem;">1. KPI Карточки телеметрии</div>
+            <div class="row g-2">
+              <div class="col-4">
+                <div class="card border-subtle p-2 text-center bg-body shadow-sm preview-kpi-card">
+                  <div class="text-muted small preview-kpi-label">Процессор (CPU)</div>
+                  <div class="fs-4 fw-bold text-primary preview-kpi-val" id="preview-cpu-val">18.4%</div>
+                  <div class="progress mt-1" style="height: 4px;">
+                    <div class="progress-bar bg-primary" role="progressbar" style="width: 18.4%"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-4">
+                <div class="card border-subtle p-2 text-center bg-body shadow-sm preview-kpi-card">
+                  <div class="text-muted small preview-kpi-label">Память (RAM)</div>
+                  <div class="fs-4 fw-bold text-success preview-kpi-val" id="preview-ram-val">42.1%</div>
+                  <div class="progress mt-1" style="height: 4px;">
+                    <div class="progress-bar bg-success" role="progressbar" style="width: 42.1%"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-4">
+                <div class="card border-subtle p-2 text-center bg-body shadow-sm preview-kpi-card">
+                  <div class="text-muted small preview-kpi-label">Температура</div>
+                  <div class="fs-4 fw-bold text-warning preview-kpi-val" id="preview-temp-val">58°C</div>
+                  <div class="progress mt-1" style="height: 4px;">
+                    <div class="progress-bar bg-warning" role="progressbar" style="width: 58%"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Превью 1.5: Заголовок панели (.panel-header / H3) -->
+          <div>
+            <div class="small fw-semibold text-muted text-uppercase mb-2" style="font-size: 0.75rem;">Заголовок панели (.panel-header — H3)</div>
+            <div class="card border-subtle shadow-sm overflow-hidden preview-panel-header-card">
+              <div class="panel-header py-2 px-3 d-flex align-items-center justify-content-between">
+                <h3 class="panel-header mb-0 d-flex align-items-center gap-2">
+                  <i class="bi bi-window-sidebar text-primary"></i>
+                  <span>Заголовок панели (H3)</span>
+                </h3>
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle small">panel-header</span>
+              </div>
+              <div class="card-body p-3">
+                <p class="text-muted small mb-0">Содержимое панели с адаптивным размером H3 и настраиваемой палитрой темы оформления.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Превью 1.6: Заголовок страницы/вкладки (.tab-header) -->
+          <div>
+            <div class="small fw-semibold text-muted text-uppercase mb-2" style="font-size: 0.75rem;">Заголовок вкладки (.tab-header)</div>
+            <div class="card border-subtle shadow-sm p-3 bg-body preview-tab-header-box">
+              <div class="tab-header d-flex justify-content-between align-items-center mb-0 flex-wrap gap-2">
+                <div class="d-flex align-items-center gap-2">
+                  <span class="tab-header-icon fs-4 text-warning">⚡</span>
+                  <div>
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                      <h3 class="tab-header-title panel-header mb-0">Мониторинг процессов и активности хоста</h3>
+                      <span class="badge bg-success-subtle text-success border border-success px-2 py-0.5 small">
+                        🟢 ACTIVE
+                      </span>
+                    </div>
+                    <small class="tab-header-subtitle text-secondary">Диспетчер задач Windows, мониторинг нагрузки ЦП/RAM в реальном времени</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Превью 2: Кнопки и статусные бейджи -->
+          <div>
+            <div class="small fw-semibold text-muted text-uppercase mb-2" style="font-size: 0.75rem;">2. Кнопки и бейджи действий</div>
+            <div class="d-flex flex-wrap gap-2 align-items-center">
+              <button type="button" class="btn btn-sm btn-primary">Primary Button</button>
+              <button type="button" class="btn btn-sm btn-outline-secondary">Secondary Outline</button>
+              <button type="button" class="btn btn-sm btn-success">
+                <i class="bi bi-check2"></i> Успешно
+              </button>
+              <button type="button" class="btn btn-sm btn-danger">
+                <i class="bi bi-trash"></i> Удалить
+              </button>
+
+              <span class="badge bg-success-subtle text-success border border-success-subtle">Активен</span>
+              <span class="badge bg-warning-subtle text-warning border border-warning-subtle">Внимание</span>
+              <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Сбой</span>
+              <span class="badge bg-info-subtle text-info border border-info-subtle">Телеметрия</span>
+            </div>
+          </div>
+
+          <!-- Превью 3: Интерактивная таблица -->
+          <div>
+            <div class="small fw-semibold text-muted text-uppercase mb-2" style="font-size: 0.75rem;">3. Таблицы и списки сущностей</div>
+            <div class="table-responsive border border-subtle rounded">
+              <table class="table table-hover align-middle mb-0 small">
+                <thead class="table-light">
+                  <tr>
+                    <th>Служба / Процесс</th>
+                    <th>PID</th>
+                    <th>Статус</th>
+                    <th class="text-end">Использование</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="interactive-table-row">
+                    <td>
+                      <div class="fw-semibold text-body">RuntimeBroker.exe</div>
+                      <div class="text-muted" style="font-size: 0.75rem;">C:\Windows\System32</div>
+                    </td>
+                    <td class="font-monospace">4812</td>
+                    <td><span class="badge bg-success-subtle text-success border border-success-subtle">Running</span></td>
+                    <td class="text-end font-monospace">14.2 MB</td>
+                  </tr>
+                  <tr class="interactive-table-row">
+                    <td>
+                      <div class="fw-semibold text-body">TelemetryCollector.py</div>
+                      <div class="text-muted" style="font-size: 0.75rem;">apps.windows.telemetry</div>
+                    </td>
+                    <td class="font-monospace">9104</td>
+                    <td><span class="badge bg-primary-subtle text-primary border border-primary-subtle">Active 5s</span></td>
+                    <td class="text-end font-monospace">38.6 MB</td>
+                  </tr>
+                  <tr class="interactive-table-row">
+                    <td>
+                      <div class="fw-semibold text-body">Spooler (Print Subsystem)</div>
+                      <div class="text-muted" style="font-size: 0.75rem;">spoolsv.exe</div>
+                    </td>
+                    <td class="font-monospace">1840</td>
+                    <td><span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">Stopped</span></td>
+                    <td class="text-end font-monospace">0 MB</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Превью 4: Формы ввода и тумблеры -->
+          <div>
+            <div class="small fw-semibold text-muted text-uppercase mb-2" style="font-size: 0.75rem;">4. Элементы форм и переключатели</div>
+            <div class="row g-2">
+              <div class="col-12 col-sm-6">
+                <div class="input-group input-group-sm">
+                  <span class="input-group-text bg-body-tertiary text-muted"><i class="bi bi-search"></i></span>
+                  <input type="text" class="form-control" placeholder="Поисковый запрос..." value="explorer.exe">
+                </div>
+              </div>
+              <div class="col-12 col-sm-6 d-flex align-items-center gap-3">
+                <div class="form-check form-switch mb-0">
+                  <input class="form-check-input" type="checkbox" id="preview-switch" checked>
+                  <label class="form-check-label small" for="preview-switch">Live опрос</label>
+                </div>
+                <div class="form-check mb-0">
+                  <input class="form-check-input" type="checkbox" id="preview-check" checked>
+                  <label class="form-check-label small" for="preview-check">Уведомления</label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Превью 5: Информационные сообщения (Alerts) -->
+          <div>
+            <div class="small fw-semibold text-muted text-uppercase mb-2" style="font-size: 0.75rem;">5. Системные алерты и уведомления</div>
+            <div class="alert alert-info py-2 px-3 small d-flex align-items-center gap-2 mb-2">
+              <i class="bi bi-info-circle-fill fs-6 text-info"></i>
+              <span>Служба Windows API успешно инициализирована. Порт 8001 готов к приёму команд.</span>
+            </div>
+            <div class="alert alert-warning py-2 px-3 small d-flex align-items-center gap-2 mb-0">
+              <i class="bi bi-exclamation-triangle-fill fs-6 text-warning"></i>
+              <span>Обнаружено повышенное выделение дескрипторов в процессе explorer.exe (1 240 шт).</span>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="card-footer bg-body-tertiary py-2 px-3 d-flex align-items-center justify-content-between small text-muted">
+          <span>Стенд обновляется в режиме реального времени</span>
+          <button type="button" class="btn btn-sm btn-link p-0 text-decoration-none" id="preview-btn-toggle-fullscreen" title="Полноэкранный режим предварительного просмотра">
+            <i class="bi bi-arrows-fullscreen me-1"></i>Развернуть превью
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Модальное окно для отображения сгенерированного CSS-кода -->
+  <div class="modal fade" id="themeCssModal" tabindex="-1" aria-labelledby="themeCssModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content shadow border-secondary-subtle">
+        <div class="modal-header border-secondary-subtle">
+          <h5 class="modal-title d-flex align-items-center gap-2" id="themeCssModalLabel">
+            <i class="bi bi-code-slash text-primary"></i>
+            <span>Сгенерированный CSS-код темы</span>
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+        </div>
+        <div class="modal-body p-3">
+          <p class="small text-muted mb-2">
+            Вы можете скопировать этот блок CSS в файл стилей (например, <code>themes.css</code> или <code>custom.css</code>) для постоянного применения темы оформления:
+          </p>
+          <textarea class="form-control font-monospace small bg-body-tertiary" id="theme-css-output" rows="14" readonly style="font-size: 0.8rem;"></textarea>
+        </div>
+        <div class="modal-footer border-secondary-subtle py-2">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Закрыть</button>
+          <button type="button" class="btn btn-primary btn-sm d-flex align-items-center gap-1.5" id="btn-copy-css-modal">
+            <i class="bi bi-clipboard-check"></i>
+            <span>Скопировать в буфер</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Модальное окно создания дочерней темы -->
+  <div class="modal fade" id="themeCreateChildModal" tabindex="-1" aria-labelledby="themeCreateChildModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content shadow border-secondary-subtle">
+        <div class="modal-header border-secondary-subtle py-2 px-3">
+          <h5 class="modal-title fs-6 d-flex align-items-center gap-2" id="themeCreateChildModalLabel">
+            <i class="bi bi-diagram-3-fill text-success"></i>
+            <span>Создание дочерней темы оформления</span>
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+        </div>
+        <div class="modal-body p-3 d-flex flex-column gap-3">
+          <div class="alert alert-info py-2 px-3 small d-flex align-items-center gap-2 mb-0">
+            <i class="bi bi-info-circle-fill fs-6 text-info"></i>
+            <span>Дочерняя тема наследует все свойства выбранной базовой темы и позволяет кастомизировать палитру и размеры.</span>
+          </div>
+          <div>
+            <label class="form-label small fw-medium mb-1" for="child-theme-parent-select">Базовая (родительская) тема:</label>
+            <select class="form-select form-select-sm" id="child-theme-parent-select">
+              <!-- Наполняется динамически -->
+            </select>
+            <div class="form-text small" style="font-size: 0.75rem;">Все ненастроенные параметры будут унаследованы от этой темы.</div>
+          </div>
+          <div>
+            <label class="form-label small fw-medium mb-1" for="child-theme-name-input">Название новой темы:</label>
+            <input type="text" class="form-control form-control-sm" id="child-theme-name-input" placeholder="Например: Мой Тёмный Сланец">
+          </div>
+          <div>
+            <label class="form-label small fw-medium mb-1" for="child-theme-desc-input">Описание (опционально):</label>
+            <textarea class="form-control form-control-sm" id="child-theme-desc-input" rows="2" placeholder="Краткое назначение темы"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer border-secondary-subtle py-2 px-3">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Отмена</button>
+          <button type="button" class="btn btn-success btn-sm d-flex align-items-center gap-1.5" id="btn-confirm-create-child">
+            <i class="bi bi-check-circle-fill"></i>
+            <span>Создать и применить</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Модальное окно переименования дочерней темы -->
+  <div class="modal fade" id="themeRenameChildModal" tabindex="-1" aria-labelledby="themeRenameChildModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+      <div class="modal-content shadow border-secondary-subtle">
+        <div class="modal-header border-secondary-subtle py-2 px-3">
+          <h5 class="modal-title fs-6 d-flex align-items-center gap-2" id="themeRenameChildModalLabel">
+            <i class="bi bi-pencil-square text-primary"></i>
+            <span>Переименовать тему</span>
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+        </div>
+        <div class="modal-body p-3">
+          <label class="form-label small fw-medium mb-1" for="child-theme-rename-input">Новое название темы:</label>
+          <input type="text" class="form-control form-control-sm" id="child-theme-rename-input">
+        </div>
+        <div class="modal-footer border-secondary-subtle py-2 px-3">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Отмена</button>
+          <button type="button" class="btn btn-primary btn-sm d-flex align-items-center gap-1.5" id="btn-confirm-rename-child">
+            <i class="bi bi-check-lg"></i>
+            <span>Сохранить</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+

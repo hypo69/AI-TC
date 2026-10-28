@@ -11,7 +11,7 @@
 # Package: apps.windows.api.routers.about_system
 # Author: hypo69
 # Copyright: c 2026 hypo69
-# Updated: 2026-10-12 06:20:00
+# Updated: 2026-10-16 20:38:00
 # =============================================================================
 
 from __future__ import annotations
@@ -22,17 +22,20 @@ import os
 import platform
 import re
 import subprocess
-from typing import List
+from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter
 
 from logger import logger
 from apps.windows.telemetry.sqlite import TelemetryStorage
-from .helpers import get_windows_workgroup
+from apps.windows.sdk import windows_sdk
 from .models import ChangeWorkgroupRequest
 from .models import ChangeWorkgroupResponse
 from .models import LocaleOption
 from .models import RegionalOptionsResponse
+from .models import LanguagePackInfo
+from .models import InstallLanguagePackRequest
+from .models import InstallLanguagePackResponse
 from .models import RenameComputerRequest
 from .models import RenameComputerResponse
 from .models import SetLocaleRequest
@@ -42,6 +45,11 @@ from .models import SetTimezoneResponse
 from .models import TimezoneOption
 from .models import UpdateUserProfileRequest
 from .models import UpdateUserProfileResponse
+from .models import SetNetworkCategoryRequest
+from .models import SetNetworkCategoryResponse
+from .models import ToggleNetworkDiscoveryRequest
+from .models import ToggleNetworkDiscoveryResponse
+from .models import NetworkProfileStatusResponse
 
 
 def register_system_action_endpoints(router: APIRouter, storage: TelemetryStorage) -> None:
@@ -51,146 +59,52 @@ def register_system_action_endpoints(router: APIRouter, storage: TelemetryStorag
     # =========================================================================
     @router.post("/api/v1/system/rename-computer", response_model=RenameComputerResponse)
     async def rename_computer_endpoint(req: RenameComputerRequest) -> RenameComputerResponse:
-        """Переименование компьютера в Windows через команду Rename-Computer."""
+        """Переименование компьютера в Windows через Windows SDK."""
         old_name = platform.node() or "Host"
         clean_name = req.new_name.strip()
 
-        # Валидация NetBIOS имени хоста
-        if not re.match(r"^[a-zA-Z0-9]([a-zA-Z0-9\-]{0,13}[a-zA-Z0-9])?$", clean_name):
-            return RenameComputerResponse(
-                status="error",
-                old_name=old_name,
-                new_name=clean_name,
-                message="Недопустимый формат имени. Разрешены буквы (A-Z), цифры (0-9) и дефис (-), длина от 1 до 15 символов.",
-                restart_scheduled=False,
-            )
+        res = await asyncio.to_thread(windows_sdk.modules.regional.rename_computer, clean_name)
+        msg = res.get("message", "")
+        restart_sched = False
 
-        if clean_name.lower() == old_name.lower():
-            return RenameComputerResponse(
-                status="ok",
-                old_name=old_name,
-                new_name=clean_name,
-                message="Имя совпадает с текущим. Изменения не требуются.",
-                restart_scheduled=False,
-            )
+        if res.get("status") == "ok" and req.restart:
+            await asyncio.create_subprocess_exec("shutdown.exe", "/r", "/t", "5", "/c", "AI-Windows-Admin: Перезагрузка для применения нового имени хоста.")
+            msg += " Перезагрузка системы запланирована через 5 секунд."
+            restart_sched = True
 
-        try:
-            cmd = f"Rename-Computer -NewName '{clean_name}' -Force"
-            proc = await asyncio.create_subprocess_exec(
-                "powershell.exe",
-                "-NoProfile",
-                "-NonInteractive",
-                "-Command",
-                cmd,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE,
-            )
-            stdout, stderr = await proc.communicate()
-            if proc.returncode != 0:
-                err_text = stderr.decode("utf-8", errors="replace").strip() or stdout.decode("utf-8", errors="replace").strip()
-                logger.warning(f"[router_about_system] Ошибка Rename-Computer: {err_text}")
-                return RenameComputerResponse(
-                    status="error",
-                    old_name=old_name,
-                    new_name=clean_name,
-                    message=f"Ошибка переименования: {err_text}. Возможно, требуются права администратора.",
-                    restart_scheduled=False,
-                )
-
-            msg = f"Имя компьютера успешно изменено на '{clean_name}'. Изменения вступят в силу после перезагрузки."
-            if req.restart:
-                await asyncio.create_subprocess_exec("shutdown.exe", "/r", "/t", "5", "/c", "AI-Windows-Admin: Перезагрузка для применения нового имени хоста.")
-                msg += " Перезагрузка системы запланирована через 5 секунд."
-
-            return RenameComputerResponse(
-                status="ok",
-                old_name=old_name,
-                new_name=clean_name,
-                message=msg,
-                restart_scheduled=req.restart,
-            )
-        except Exception as exc:
-            logger.error(f"[router_about_system] Ошибка при переименовании компьютера: {exc}", exc_info=True)
-            return RenameComputerResponse(
-                status="error",
-                old_name=old_name,
-                new_name=clean_name,
-                message=f"Внутренняя ошибка: {exc}",
-                restart_scheduled=False,
-            )
+        return RenameComputerResponse(
+            status=res.get("status", "ok"),
+            old_name=res.get("old_name", old_name),
+            new_name=clean_name,
+            message=msg,
+            restart_scheduled=restart_sched,
+        )
 
     # =========================================================================
     # 10. Изменение рабочей группы: POST /api/v1/system/change-workgroup
     # =========================================================================
     @router.post("/api/v1/system/change-workgroup", response_model=ChangeWorkgroupResponse)
     async def change_workgroup_endpoint(req: ChangeWorkgroupRequest) -> ChangeWorkgroupResponse:
-        """Изменение рабочей группы в Windows через команду Add-Computer."""
-        old_wg = get_windows_workgroup()
+        """Изменение рабочей группы в Windows через Windows SDK."""
+        old_wg = windows_sdk.modules.regional.get_workgroup()
         clean_wg = req.new_workgroup.strip().upper()
 
-        # Валидация NetBIOS имени рабочей группы
-        if not re.match(r"^[a-zA-Z0-9_\-]{1,15}$", clean_wg):
-            return ChangeWorkgroupResponse(
-                status="error",
-                old_workgroup=old_wg,
-                new_workgroup=clean_wg,
-                message="Недопустимый формат имени рабочей группы. Разрешены буквы (A-Z), цифры (0-9), дефис (-) и подчеркивание (_), длина от 1 до 15 символов.",
-                restart_scheduled=False,
-            )
+        res = await asyncio.to_thread(windows_sdk.modules.regional.change_workgroup, clean_wg)
+        msg = res.get("message", "")
+        restart_sched = False
 
-        if clean_wg.lower() == old_wg.lower():
-            return ChangeWorkgroupResponse(
-                status="ok",
-                old_workgroup=old_wg,
-                new_workgroup=clean_wg,
-                message="Имя рабочей группы совпадает с текущим. Изменения не требуются.",
-                restart_scheduled=False,
-            )
+        if res.get("status") == "ok" and req.restart:
+            await asyncio.create_subprocess_exec("shutdown.exe", "/r", "/t", "5", "/c", "AI-Windows-Admin: Перезагрузка для применения новой рабочей группы.")
+            msg += " Перезагрузка системы запланирована через 5 секунд."
+            restart_sched = True
 
-        try:
-            cmd = f"Add-Computer -WorkGroupName '{clean_wg}' -Force"
-            proc = await asyncio.create_subprocess_exec(
-                "powershell.exe",
-                "-NoProfile",
-                "-NonInteractive",
-                "-Command",
-                cmd,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE,
-            )
-            stdout, stderr = await proc.communicate()
-            if proc.returncode != 0:
-                err_text = stderr.decode("utf-8", errors="replace").strip() or stdout.decode("utf-8", errors="replace").strip()
-                logger.warning(f"[router_about_system] Ошибка Add-Computer: {err_text}")
-                return ChangeWorkgroupResponse(
-                    status="error",
-                    old_workgroup=old_wg,
-                    new_workgroup=clean_wg,
-                    message=f"Ошибка смены рабочей группы: {err_text}. Возможно, требуются права администратора.",
-                    restart_scheduled=False,
-                )
-
-            msg = f"Рабочая группа успешно изменена на '{clean_wg}'. Изменения вступят в силу после перезагрузки."
-            if req.restart:
-                await asyncio.create_subprocess_exec("shutdown.exe", "/r", "/t", "5", "/c", "AI-Windows-Admin: Перезагрузка для применения новой рабочей группы.")
-                msg += " Перезагрузка системы запланирована через 5 секунд."
-
-            return ChangeWorkgroupResponse(
-                status="ok",
-                old_workgroup=old_wg,
-                new_workgroup=clean_wg,
-                message=msg,
-                restart_scheduled=req.restart,
-            )
-        except Exception as exc:
-            logger.error(f"[router_about_system] Ошибка при смене рабочей группы: {exc}", exc_info=True)
-            return ChangeWorkgroupResponse(
-                status="error",
-                old_workgroup=old_wg,
-                new_workgroup=clean_wg,
-                message=f"Внутренняя ошибка: {exc}",
-                restart_scheduled=False,
-            )
+        return ChangeWorkgroupResponse(
+            status=res.get("status", "ok"),
+            old_workgroup=res.get("old_workgroup", old_wg),
+            new_workgroup=clean_wg,
+            message=msg,
+            restart_scheduled=restart_sched,
+        )
 
     # =========================================================================
     # 11. Получение региональных настроек: GET /api/v1/system/regional-options
@@ -199,101 +113,46 @@ def register_system_action_endpoints(router: APIRouter, storage: TelemetryStorag
     async def get_regional_options_endpoint() -> RegionalOptionsResponse:
         """Получение текущих региональных параметров, списка часовых поясов и локалей."""
         def _fetch_options() -> RegionalOptionsResponse:
-            current_tz_id = ""
-            current_tz_name = ""
-            current_sys_loc = "ru-RU"
-            current_usr_loc = "ru-RU"
-            username = os.environ.get("USERNAME", "User")
-            user_fullname = ""
-            user_desc = ""
-            codepage = "UTF-8 (65001)"
+            rm = windows_sdk.modules.regional
 
-            # Текущая таймзона
-            try:
-                proc = subprocess.run(["tzutil", "/g"], capture_output=True, text=True, timeout=2)
-                if proc.returncode == 0 and proc.stdout.strip():
-                    current_tz_id = proc.stdout.strip()
-            except Exception as e:
-                logger.debug(f"[router_about_system] Ошибка tzutil /g: {e}")
+            # Текущая таймзона и список часовых поясов
+            current_tz_id = rm.get_current_timezone()
+            tz_raw = rm.get_timezones()
+            tz_list: List[TimezoneOption] = [
+                TimezoneOption(
+                    id=t["id"],
+                    display_name=t["display_name"],
+                    offset_minutes=t.get("offset_minutes", 0),
+                )
+                for t in tz_raw
+            ]
 
-            # Список таймзон
-            tz_list: List[TimezoneOption] = []
-            try:
-                ps_cmd = "[System.TimeZoneInfo]::GetSystemTimeZones() | Select-Object Id, DisplayName, @{N='Offset';E={$_.BaseUtcOffset.TotalMinutes}} | ConvertTo-Json -Compress"
-                p = subprocess.run(["powershell.exe", "-NoProfile", "-NonInteractive", "-Command", ps_cmd], capture_output=True, text=True, timeout=5)
-                if p.returncode == 0 and p.stdout.strip():
-                    data = json.loads(p.stdout.strip())
-                    if isinstance(data, list):
-                        for item in data:
-                            if isinstance(item, dict) and item.get("Id"):
-                                tz_list.append(TimezoneOption(
-                                    id=str(item["Id"]),
-                                    display_name=str(item.get("DisplayName", item["Id"])),
-                                    offset_minutes=int(item.get("Offset") or 0)
-                                ))
-            except Exception as e:
-                logger.debug(f"[router_about_system] Ошибка получения TimeZones: {e}")
-
-            # Fallback для таймзон если список пуст
-            if not tz_list:
-                default_tzs = [
-                    ("Dateline Standard Time", "(UTC-12:00) International Date Line West", -720),
-                    ("Hawaiian Standard Time", "(UTC-10:00) Hawaii", -600),
-                    ("Pacific Standard Time", "(UTC-08:00) Pacific Time (US & Canada)", -480),
-                    ("Mountain Standard Time", "(UTC-07:00) Mountain Time (US & Canada)", -420),
-                    ("Central Standard Time", "(UTC-06:00) Central Time (US & Canada)", -360),
-                    ("Eastern Standard Time", "(UTC-05:00) Eastern Time (US & Canada)", -300),
-                    ("UTC", "(UTC) Coordinated Universal Time", 0),
-                    ("GMT Standard Time", "(UTC+00:00) Dublin, Edinburgh, Lisbon, London", 0),
-                    ("W. Europe Standard Time", "(UTC+01:00) Amsterdam, Berlin, Bern, Rome, Stockholm, Vienna", 60),
-                    ("Israel Standard Time", "(UTC+02:00) Jerusalem", 120),
-                    ("FLE Standard Time", "(UTC+02:00) Helsinki, Kyiv, Riga, Sofia, Tallinn, Vilnius", 120),
-                    ("Russian Standard Time", "(UTC+03:00) Moscow, St. Petersburg", 180),
-                    ("Arabic Standard Time", "(UTC+03:00) Baghdad, Riyadh", 180),
-                    ("Arabian Standard Time", "(UTC+04:00) Abu Dhabi, Muscat", 240),
-                    ("Ekaterinburg Standard Time", "(UTC+05:00) Ekaterinburg", 300),
-                    ("India Standard Time", "(UTC+05:30) Chennai, Kolkata, Mumbai, New Delhi", 330),
-                    ("Omsk Standard Time", "(UTC+06:00) Omsk", 360),
-                    ("SE Asia Standard Time", "(UTC+07:00) Bangkok, Hanoi, Jakarta", 420),
-                    ("China Standard Time", "(UTC+08:00) Beijing, Chongqing, Hong Kong", 480),
-                    ("Tokyo Standard Time", "(UTC+09:00) Osaka, Sapporo, Tokyo", 540),
-                    ("AUS Eastern Standard Time", "(UTC+10:00) Canberra, Melbourne, Sydney", 600),
-                    ("Vladivostok Standard Time", "(UTC+10:00) Vladivostok", 600),
-                    ("New Zealand Standard Time", "(UTC+12:00) Auckland, Wellington", 720),
-                ]
-                for tid, tname, toff in default_tzs:
-                    tz_list.append(TimezoneOption(id=tid, display_name=tname, offset_minutes=toff))
-
+            current_tz_name = current_tz_id
             if current_tz_id:
                 for t in tz_list:
                     if t.id.lower() == current_tz_id.lower():
                         current_tz_name = t.display_name
                         break
-                if not current_tz_name:
-                    current_tz_name = current_tz_id
 
-            # Локали
-            try:
-                p_loc = subprocess.run(["powershell.exe", "-NoProfile", "-NonInteractive", "-Command", "(Get-WinSystemLocale).Name; (Get-Culture).Name"], capture_output=True, text=True, timeout=3)
-                if p_loc.returncode == 0:
-                    lines = [l.strip() for l in p_loc.stdout.splitlines() if l.strip()]
-                    if len(lines) >= 1:
-                        current_sys_loc = lines[0]
-                    if len(lines) >= 2:
-                        current_usr_loc = lines[1]
-            except Exception as e:
-                logger.debug(f"[router_about_system] Ошибка получения локалей: {e}")
+            # Системная и пользовательская локали
+            loc_dict = rm.get_current_locales()
+            current_sys_loc = loc_dict.get("system_locale", "ru-RU")
+            current_usr_loc = loc_dict.get("user_locale", "ru-RU")
 
-            # Пользователь
-            try:
-                p_usr = subprocess.run(["powershell.exe", "-NoProfile", "-NonInteractive", "-Command", f"Get-LocalUser -Name '{username}' | Select-Object FullName, Description | ConvertTo-Json -Compress"], capture_output=True, text=True, timeout=3)
-                if p_usr.returncode == 0 and p_usr.stdout.strip():
-                    u_data = json.loads(p_usr.stdout.strip())
-                    if isinstance(u_data, dict):
-                        user_fullname = u_data.get("FullName") or ""
-                        user_desc = u_data.get("Description") or ""
-            except Exception as e:
-                logger.debug(f"[router_about_system] Ошибка Get-LocalUser: {e}")
+            # Пользователь ОС
+            user_info = rm.get_user_account_info()
+            username = user_info.get("username") or os.environ.get("USERNAME", "User")
+            user_fullname = user_info.get("full_name") or ""
+            user_first_name = user_info.get("first_name") or ""
+            user_last_name = user_info.get("last_name") or ""
+            user_desc = user_info.get("description") or ""
+            user_sid = user_info.get("sid") or ""
+            user_profile = user_info.get("profile_dir") or ""
+            user_domain = user_info.get("domain") or ""
+            user_groups = user_info.get("groups") or []
+            user_account_type = user_info.get("account_type") or "Локальная учетная запись"
+            user_last_logon = user_info.get("last_logon") or ""
+            codepage = "UTF-8 (65001)"
 
             curated_locales = [
                 LocaleOption(code="ru-RU", name="Русский (Россия) [ru-RU]"),
@@ -312,6 +171,25 @@ def register_system_action_endpoints(router: APIRouter, storage: TelemetryStorag
                 LocaleOption(code="pt-BR", name="Português (Brasil) [pt-BR]"),
             ]
 
+            # Сетевой профиль и обнаружение сети
+            net_cat = "Public"
+            net_idx = None
+            is_disc_en = False
+            try:
+                disc_info = windows_sdk.modules.network_discovery.inspect()
+                net_cat = disc_info.get("current_category", "Public")
+                net_idx = disc_info.get("primary_interface_index")
+                is_disc_en = disc_info.get("is_discovery_enabled", False)
+            except Exception as e:
+                logger.debug(f"[router_about_system] Ошибка сбора сетевого профиля: {e}")
+
+            # Языковые пакеты Windows (Русский, Иврит, Английский)
+            lang_packs: List[LanguagePackInfo] = []
+            try:
+                lang_packs = [LanguagePackInfo(**p) for p in rm.get_language_packs()]
+            except Exception as e:
+                logger.debug(f"[router_about_system] Ошибка сбора языковых пакетов: {e}")
+
             return RegionalOptionsResponse(
                 status="ok",
                 current_timezone=current_tz_id,
@@ -320,10 +198,22 @@ def register_system_action_endpoints(router: APIRouter, storage: TelemetryStorag
                 current_user_locale=current_usr_loc,
                 current_username=username,
                 current_user_fullname=user_fullname,
+                current_user_first_name=user_first_name,
+                current_user_last_name=user_last_name,
                 current_user_description=user_desc,
+                current_user_sid=user_sid,
+                current_user_profile=user_profile,
+                current_user_domain=user_domain,
+                current_user_groups=user_groups,
+                current_user_account_type=user_account_type,
+                current_user_last_logon=user_last_logon,
                 current_codepage=codepage,
+                network_category=net_cat,
+                network_interface_index=net_idx,
+                is_discovery_enabled=is_disc_en,
                 timezones=tz_list,
                 locales=curated_locales,
+                language_packs=lang_packs,
             )
 
         return await asyncio.to_thread(_fetch_options)
@@ -333,113 +223,28 @@ def register_system_action_endpoints(router: APIRouter, storage: TelemetryStorag
     # =========================================================================
     @router.post("/api/v1/system/set-timezone", response_model=SetTimezoneResponse)
     async def set_timezone_endpoint(req: SetTimezoneRequest) -> SetTimezoneResponse:
-        """Изменение часового пояса Windows через tzutil /s."""
-        tz_id = req.timezone_id.strip()
-        if not re.match(r"^[a-zA-Z0-9_\-\.\s\(\)\+]+$", tz_id):
-            return SetTimezoneResponse(
-                status="error",
-                old_timezone="",
-                new_timezone=tz_id,
-                message="Недопустимый идентификатор часового пояса.",
-            )
-
-        old_tz = ""
-        try:
-            p_old = await asyncio.create_subprocess_exec("tzutil.exe", "/g", stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
-            stdout_old, _ = await p_old.communicate()
-            old_tz = stdout_old.decode("utf-8", errors="replace").strip()
-        except Exception:
-            pass
-
-        try:
-            proc = await asyncio.create_subprocess_exec(
-                "tzutil.exe",
-                "/s",
-                tz_id,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE,
-            )
-            stdout, stderr = await proc.communicate()
-            if proc.returncode != 0:
-                err_text = stderr.decode("utf-8", errors="replace").strip() or stdout.decode("utf-8", errors="replace").strip()
-                logger.warning(f"[router_about_system] Ошибка tzutil /s: {err_text}")
-                return SetTimezoneResponse(
-                    status="error",
-                    old_timezone=old_tz,
-                    new_timezone=tz_id,
-                    message=f"Не удалось изменить часовой пояс: {err_text}. Требуются права администратора.",
-                )
-
-            return SetTimezoneResponse(
-                status="ok",
-                old_timezone=old_tz,
-                new_timezone=tz_id,
-                message=f"Часовой пояс успешно изменен на '{tz_id}'.",
-            )
-        except Exception as exc:
-            logger.error(f"[router_about_system] Ошибка при установке часового пояса: {exc}", exc_info=True)
-            return SetTimezoneResponse(
-                status="error",
-                old_timezone=old_tz,
-                new_timezone=tz_id,
-                message=f"Внутренняя ошибка: {exc}",
-            )
+        """Изменение часового пояса Windows через Windows SDK."""
+        res = await asyncio.to_thread(windows_sdk.modules.regional.set_timezone, req.timezone_id)
+        return SetTimezoneResponse(
+            status=res.get("status", "ok"),
+            old_timezone=res.get("old_timezone", ""),
+            new_timezone=res.get("new_timezone", req.timezone_id),
+            message=res.get("message", ""),
+        )
 
     # =========================================================================
     # 13. Установка системной локали: POST /api/v1/system/set-locale
     # =========================================================================
     @router.post("/api/v1/system/set-locale", response_model=SetLocaleResponse)
     async def set_locale_endpoint(req: SetLocaleRequest) -> SetLocaleResponse:
-        """Изменение системной локали Windows через Set-WinSystemLocale."""
-        loc = req.system_locale.strip()
-        if not re.match(r"^[a-zA-Z]{2,3}(-[a-zA-Z0-9]{2,8})*$", loc):
-            return SetLocaleResponse(
-                status="error",
-                system_locale=loc,
-                message="Некорректный формат языкового тега локали (например: ru-RU, en-US).",
-                restart_required=False,
-            )
-
-        try:
-            cmd = f"Set-WinSystemLocale -SystemLocale '{loc}'"
-            if req.user_locale and re.match(r"^[a-zA-Z]{2,3}(-[a-zA-Z0-9]{2,8})*$", req.user_locale.strip()):
-                u_loc = req.user_locale.strip()
-                cmd += f"; Set-Culture '{u_loc}'"
-
-            proc = await asyncio.create_subprocess_exec(
-                "powershell.exe",
-                "-NoProfile",
-                "-NonInteractive",
-                "-Command",
-                cmd,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE,
-            )
-            stdout, stderr = await proc.communicate()
-            if proc.returncode != 0:
-                err_text = stderr.decode("utf-8", errors="replace").strip() or stdout.decode("utf-8", errors="replace").strip()
-                logger.warning(f"[router_about_system] Ошибка Set-WinSystemLocale: {err_text}")
-                return SetLocaleResponse(
-                    status="error",
-                    system_locale=loc,
-                    message=f"Не удалось изменить локаль: {err_text}. Требуются права администратора.",
-                    restart_required=False,
-                )
-
-            return SetLocaleResponse(
-                status="ok",
-                system_locale=loc,
-                message=f"Системная локаль успешно изменена на '{loc}'. Изменения вступят в силу после перезагрузки.",
-                restart_required=True,
-            )
-        except Exception as exc:
-            logger.error(f"[router_about_system] Ошибка при установке локали: {exc}", exc_info=True)
-            return SetLocaleResponse(
-                status="error",
-                system_locale=loc,
-                message=f"Внутренняя ошибка: {exc}",
-                restart_required=False,
-            )
+        """Изменение системной локали Windows через Windows SDK."""
+        res = await asyncio.to_thread(windows_sdk.modules.regional.set_locale, req.system_locale, req.user_locale)
+        return SetLocaleResponse(
+            status=res.get("status", "ok"),
+            system_locale=res.get("locale", req.system_locale),
+            message=res.get("message", ""),
+            restart_required=res.get("reboot_required", True),
+        )
 
     # =========================================================================
     # 14. Обновление профиля пользователя: POST /api/v1/system/update-user-profile
@@ -503,3 +308,92 @@ def register_system_action_endpoints(router: APIRouter, storage: TelemetryStorag
                 username=target_user,
                 message=f"Внутренняя ошибка: {exc}",
             )
+
+    # =========================================================================
+    # 15. Проверка сетевого профиля и обнаружения: GET /api/v1/system/network-profile
+    # =========================================================================
+    @router.get("/api/v1/system/network-profile", response_model=NetworkProfileStatusResponse)
+    async def get_network_profile_endpoint() -> NetworkProfileStatusResponse:
+        """Инспекция сетевых профилей, состояния служб и брандмауэра для сетевого обнаружения."""
+        def _inspect():
+            return windows_sdk.modules.network_discovery.inspect()
+
+        res = await asyncio.to_thread(_inspect)
+        return NetworkProfileStatusResponse(
+            status=res.get("status", "ok"),
+            is_discovery_enabled=res.get("is_discovery_enabled", False),
+            current_category=res.get("current_category", "Public"),
+            primary_interface_index=res.get("primary_interface_index"),
+            primary_profile=res.get("primary_profile"),
+            profiles=res.get("profiles", []),
+            services=res.get("services", {}),
+            firewall=res.get("firewall", {}),
+        )
+
+    # =========================================================================
+    # 16. Переключение категории профиля (Public/Private): POST /api/v1/system/network-profile/category
+    # =========================================================================
+    @router.post("/api/v1/system/network-profile/category", response_model=SetNetworkCategoryResponse)
+    async def set_network_category_endpoint(req: SetNetworkCategoryRequest) -> SetNetworkCategoryResponse:
+        """Изменение категории профиля сети (Public или Private)."""
+        def _set_category():
+            return windows_sdk.modules.network_discovery.set_network_category(
+                category=req.category,
+                interface_index=req.interface_index,
+            )
+
+        res = await asyncio.to_thread(_set_category)
+        return SetNetworkCategoryResponse(
+            status=res.get("status", "ok"),
+            interface_index=res.get("interface_index"),
+            category=res.get("category", req.category),
+            message=res.get("message", ""),
+        )
+
+    # =========================================================================
+    # 17. Включение/отключение сетевого обнаружения: POST /api/v1/system/network-discovery/toggle
+    # =========================================================================
+    @router.post("/api/v1/system/network-discovery/toggle", response_model=ToggleNetworkDiscoveryResponse)
+    async def toggle_network_discovery_endpoint(req: ToggleNetworkDiscoveryRequest) -> ToggleNetworkDiscoveryResponse:
+        """Включение или безопасное отключение сетевого обнаружения хоста."""
+        def _toggle():
+            if req.enabled:
+                set_private = (req.set_category == "Private")
+                return windows_sdk.modules.network_discovery.enable(
+                    interface_index=req.interface_index,
+                    set_private=set_private,
+                )
+            else:
+                set_public = (req.set_category == "Public")
+                return windows_sdk.modules.network_discovery.disable(
+                    interface_index=req.interface_index,
+                    set_public=set_public,
+                )
+
+        res = await asyncio.to_thread(_toggle)
+        state = res.get("state", {})
+        return ToggleNetworkDiscoveryResponse(
+            status=res.get("status", "ok"),
+            message=res.get("message", ""),
+            actions=res.get("actions", []),
+            is_discovery_enabled=state.get("is_discovery_enabled", req.enabled),
+            current_category=state.get("current_category", "Public"),
+        )
+
+    # =========================================================================
+    # 18. Установка/активация языкового пакета: POST /api/v1/system/install-language-pack
+    # =========================================================================
+    @router.post("/api/v1/system/install-language-pack", response_model=InstallLanguagePackResponse)
+    async def install_language_pack_endpoint(req: InstallLanguagePackRequest) -> InstallLanguagePackResponse:
+        """Установка или активация языкового пакета Windows через Windows SDK."""
+        res = await asyncio.to_thread(windows_sdk.modules.regional.install_language_pack, req.tag)
+        return InstallLanguagePackResponse(
+            status=res.get("status", "ok"),
+            tag=res.get("tag", req.tag),
+            name=res.get("name", req.tag),
+            message=res.get("message", ""),
+            is_installed=res.get("is_installed", False),
+            is_active=res.get("is_active", False),
+        )
+
+

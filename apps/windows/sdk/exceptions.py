@@ -29,7 +29,7 @@
 # Package: apps.windows.sdk
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-12 23:28:00
 # =============================================================================
 
 from __future__ import annotations
@@ -164,7 +164,7 @@ class DriverNotFoundError(DriverSubsystemError):
 
 
 class HardwareProbeError(DriverSubsystemError):
-    """Ошибка опроса сенсоров или взаимодействия с LibreHardwareMonitor / GPU."""
+    """Ошибка опроса сенсоров или взаимодействия с WMI/CIM/GPU."""
     pass
 
 

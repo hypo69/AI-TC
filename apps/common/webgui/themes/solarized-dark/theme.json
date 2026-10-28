@@ -1,0 +1,16 @@
+{
+  "id": "solarized-dark",
+  "name": "Solarized Deep (Глубокий сине-зеленый)",
+  "nameEn": "Solarized Deep",
+  "category": "dark",
+  "icon": "bi-tree-fill",
+  "iconColor": "text-success",
+  "description": "Классическая мягкая палитра глубоких сине-зеленых тонов",
+  "baseType": "dark",
+  "tokens": {
+    "--bg-color": "#002b36",
+    "--surface-1": "#073642",
+    "--surface-2": "#094352",
+    "--ui-accent": "#268bd2"
+  }
+}

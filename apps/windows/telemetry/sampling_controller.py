@@ -16,7 +16,7 @@
 # Package: apps.windows.telemetry
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-20 09:14:00
 # =============================================================================
 
 from __future__ import annotations
@@ -38,6 +38,7 @@ except ImportError:
     from logger import logger
 
 from .models import SamplingMode
+from .telemetry_config import TelemetryConfigManager, get_telemetry_config_manager
 
 
 class SamplingController:
@@ -47,18 +48,25 @@ class SamplingController:
         self,
         initial_mode: SamplingMode = SamplingMode.BOOT_AGGRESSIVE,
         boot_epoch: Optional[float] = None,
+        config_manager: Optional[TelemetryConfigManager] = None,
     ) -> None:
         """Инициализирует контроллер режимов сбора.
 
         Args:
             initial_mode: Начальный режим работы (по умолчанию BOOT_AGGRESSIVE).
             boot_epoch: Время старта ОС или сервиса в секундах Unix epoch.
+            config_manager: Экземпляр TelemetryConfigManager для загрузки интервалов.
         """
         self._mode = initial_mode
         self._boot_epoch = boot_epoch if boot_epoch is not None else BOOT_TIME
         self._start_epoch = time.time()
         self._incident_expiry_epoch: Optional[float] = None
         self._previous_mode: SamplingMode = SamplingMode.MONITORING
+        self._config_manager = config_manager or get_telemetry_config_manager()
+
+    def _cfg(self) -> Dict[str, float]:
+        """Возвращает актуальный словарь настроек контроллера из конфигурации."""
+        return self._config_manager.get_sampling_controller_config()
 
     @property
     def mode(self) -> SamplingMode:
@@ -77,67 +85,75 @@ class SamplingController:
             self._incident_expiry_epoch = None
         logger.info(f"Режим сбора телеметрии переключен на: {self._mode.value}")
 
-    def trigger_incident_mode(self, duration_seconds: float = 1200.0) -> None:
-        """Переводит сборщик в режим INCIDENT (1-секундный захват) на заданную длительность.
+    def trigger_incident_mode(self, duration_seconds: Optional[float] = None) -> None:
+        """Переводит сборщик в режим INCIDENT на заданную в конфигурации длительность.
 
         Args:
-            duration_seconds: Длительность удержания режима инцидента (по умолчанию 20 минут = 1200 сек).
+            duration_seconds: Длительность удержания режима инцидента (если не передано — из config.json).
         """
+        dur = duration_seconds if duration_seconds is not None else self._cfg().get("incident_duration_sec", 1200.0)
         if self._mode not in (SamplingMode.INCIDENT, SamplingMode.FORENSIC):
             self._previous_mode = self._mode
         self._mode = SamplingMode.INCIDENT
-        self._incident_expiry_epoch = time.time() + max(0.01, duration_seconds)
-        logger.warning(f"Активирован режим INCIDENT на {duration_seconds} сек.")
+        self._incident_expiry_epoch = time.time() + max(0.01, dur)
+        logger.warning(f"Активирован режим INCIDENT на {dur} сек.")
 
-    def trigger_forensic_mode(self, duration_seconds: float = 300.0) -> None:
-        """Переводит сборщик в режим FORENSIC (250-мс глубокий захват) на заданную длительность.
+    def trigger_forensic_mode(self, duration_seconds: Optional[float] = None) -> None:
+        """Переводит сборщик в режим FORENSIC на заданную в конфигурации длительность.
 
         Args:
-            duration_seconds: Длительность удержания форензик-режима в секундах (по умолчанию 5 минут = 300 сек).
+            duration_seconds: Длительность удержания форензик-режима в секундах (если не передано — из config.json).
         """
+        dur = duration_seconds if duration_seconds is not None else self._cfg().get("forensic_duration_sec", 300.0)
         if self._mode not in (SamplingMode.INCIDENT, SamplingMode.FORENSIC):
             self._previous_mode = self._mode
         self._mode = SamplingMode.FORENSIC
-        self._incident_expiry_epoch = time.time() + max(0.01, duration_seconds)
-        logger.warning(f"Активирован высокоскоростной режим FORENSIC (250мс) на {duration_seconds} сек.")
+        self._incident_expiry_epoch = time.time() + max(0.01, dur)
+        logger.warning(f"Активирован высокоскоростной режим FORENSIC на {dur} сек.")
 
     def get_current_interval(self) -> float:
-        """Возвращает текущий рекомендуемый интервал опроса телеметрии в секундах.
+        """Возвращает текущий рекомендуемый интервал опроса телеметрии в секундах из конфигурации.
 
         Returns:
             float: Интервал в секундах.
         """
         self._check_incident_expiration()
+        cfg = self._cfg()
 
         if self._mode == SamplingMode.FORENSIC:
-            return 0.25
+            return cfg.get("forensic_interval_sec", 0.25)
 
         if self._mode == SamplingMode.INCIDENT:
-            return 1.0
+            return cfg.get("incident_interval_sec", 1.0)
 
         if self._mode == SamplingMode.BOOT_AGGRESSIVE:
-            # Адаптивная кривая после старта Windows / сервиса
             uptime = time.time() - self._boot_epoch
             if uptime < 0:
                 uptime = time.time() - self._start_epoch
 
-            if uptime <= 600.0:  # 0–10 минут: 1-секундные данные
-                return 1.0
-            elif uptime <= 3600.0:  # 10–60 минут: 5-секундные
-                return 5.0
-            elif uptime <= 86400.0:  # 1–24 часа: 30-секундные
-                return 30.0
-            else:
-                # После 24 часов переходим в дежурный мониторинг
-                return 60.0
+            if uptime <= cfg.get("boot_phase1_max_uptime_sec", 600.0):
+                return cfg.get("boot_phase1_interval_sec", 1.0)
+            if uptime <= cfg.get("boot_phase2_max_uptime_sec", 3600.0):
+                return cfg.get("boot_phase2_interval_sec", 5.0)
+            if uptime <= cfg.get("boot_phase3_max_uptime_sec", 86400.0):
+                return cfg.get("boot_phase3_interval_sec", 30.0)
+            return cfg.get("normal_interval_sec", 60.0)
 
         if self._mode == SamplingMode.MONITORING:
-            return 30.0
+            return cfg.get("monitoring_interval_sec", 30.0)
 
         if self._mode == SamplingMode.NORMAL:
-            return 60.0
+            return cfg.get("normal_interval_sec", 60.0)
 
-        return 30.0
+        return cfg.get("monitoring_interval_sec", 30.0)
+
+    def get_effective_interval(self, base_interval: Optional[float] = None) -> float:
+        """Возвращает эффективный интервал опроса (совместимый алиас для get_current_interval)."""
+        if self._mode in (SamplingMode.FORENSIC, SamplingMode.INCIDENT, SamplingMode.BOOT_AGGRESSIVE):
+            return self.get_current_interval()
+        if base_interval is not None and base_interval > 0:
+            return float(base_interval)
+        return self.get_current_interval()
 
     def should_collect_per_process_details(self) -> bool:
         """Определяет, требуется ли собирать глубокий срез по всем процессам на текущем тике."""

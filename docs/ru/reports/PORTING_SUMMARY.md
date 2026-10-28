@@ -61,9 +61,9 @@ scripts/cli/
 from scripts.cli.paths import get_paths
 
 paths = get_paths()
-# Windows: C:\Users\user\AppData\Local\AI-Windows-Admin
-# Linux: /home/user/.local/share/AI-Windows-Admin
-# macOS: /Users/user/Library/Application Support/AI-Windows-Admin
+# Windows: C:\Users\user\AppData\Local\ai-tc
+# Linux: /home/user/.local/share/ai-tc
+# macOS: /Users/user/Library/Application Support/ai-tc
 ```
 
 ### ✅ Moduleная архитектура
@@ -191,8 +191,8 @@ bash install.sh
 
 ```bash
 # 1. Скопировать config.json и .env со старой машины
-scp user@old-machine:/path/to/config.json ~/AI-Windows-Admin/
-scp user@old-machine:/path/to/.env ~/AI-Windows-Admin/
+scp user@old-machine:/path/to/config.json ~/ai-tc/
+scp user@old-machine:/path/to/.env ~/ai-tc/
 
 # 2. Все работает! Пути автоматически адаптированы
 ./assist status

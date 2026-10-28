@@ -5,7 +5,7 @@
 Логгирование сенсоров в AI-Windows-Admin спроектировано по стандартам высоконагруженных телеметрических систем и разделено на **два взаимодополняющих формата**:
 
 1. 📊 **Табличные CSV-логи (`AppCsvLogger`):**
-   * Располагаются в системной директории `%APPDATA%/AI-Windows-Admin/apps/windows/telemetry/logs/`.
+   * Располагаются в системной директории `%APPDATA%/ai-tc/apps/windows/telemetry/logs/`.
    * Обеспечивают мгновенную интеграцию с аналитическими инструментами (Excel, Pandas, Grafana, PowerBI).
    * Стандартизированы по 3 потокам: **Опросы (`*_polls.csv`)**, **События (`*_events.csv`)**, **Изменения параметров (`*_param_changes.csv`)**.
 2. 📄 **Потоковые JSON-Lines логи (`TelemetryJsonLogger`):**
@@ -22,7 +22,7 @@
 flowchart TD
     subgraph Сенсоры["Сенсоры и Провайдеры (Sensors Layer)"]
         DFS["🔌 DeviceFlappingSensor<br/>(PnP, USB, Wacom, HDMI, BT)"]
-        LHM["🌡️ LibreHardwareMonitor<br/>(Температуры, Напряжения, RPM)"]
+        Hardware Sensors["🌡️ Hardware Monitor<br/>(Температуры, Напряжения, RPM)"]
         HW["🔍 HWiNFO / CPU-Z / GPU-Z<br/>(Сенсоры, Частоты, Вольтаж)"]
         SMART["💾 WindowsStorageSensor / WMI<br/>(Диски, Износ, Часы, TBW)"]
         SYS["💻 SystemCollector<br/>(CPU %, RAM, Диски, Сеть)"]
@@ -38,8 +38,8 @@ flowchart TD
     end
 
     subgraph ХранилищеCSV["📁 CSV Каталог (%APPDATA%/AI-Windows-Admin/apps/windows/telemetry/logs/)"]
-        CsvPolls[("📊 *_polls.csv<br/>(lhm, hwinfo, gpuz, smart, audit)")]
-        CsvEvents[("📋 *_events.csv<br/>(lhm_service, hwinfo_inventory, defender)")]
+        CsvPolls[("📊 *_polls.csv<br/>(sensors, hwinfo, gpuz, smart, audit)")]
+        CsvEvents[("📋 *_events.csv<br/>(hardware_monitor, hwinfo_inventory, defender)")]
         CsvParams[("⚙️ *_param_changes.csv<br/>(admin, system_control, safeops)")]
     end
 
@@ -50,7 +50,7 @@ flowchart TD
     end
 
     %% CSV маршрутизация
-    LHM -->|"log_poll / log_event"| CSVLog
+    Hardware Sensors -->|"log_poll / log_event"| CSVLog
     HW -->|"log_poll / log_event"| CSVLog
     SMART -->|"log_poll"| CSVLog
     SYS -->|"log_poll"| CSVLog
@@ -63,7 +63,7 @@ flowchart TD
     DFS -->|"Алерты дребезга"| SysLog
     JsonLog --> DevLogFile
 
-    LHM --> Agg
+    Hardware Sensors --> Agg
     SYS --> Agg
     NET --> Agg
     FILE --> Agg
@@ -82,7 +82,7 @@ flowchart TD
 Записываются вызовом `AppCsvLogger.log_poll(...)`:
 ```csv
 timestamp,app,poll_type,metric_name,value,unit,status,details
-2026-09-24T11:40:00.123+00:00,librehardwaremonitor,sensor_read,cpu_package_temp,58.4,°C,OK,"{""sensor_id"": ""/amdcpu/0/temperature/0""}"
+2026-09-24T11:40:00.123+00:00,hardware_sensors,sensor_read,cpu_package_temp,58.4,°C,OK,"{""sensor_id"": ""/amdcpu/0/temperature/0""}"
 2026-09-24T11:40:00.124+00:00,windows_sysadmin,sensor_read,power_on_hours,25038,h,OK,"{""device"": ""Disk0"", ""model"": ""Samsung SSD""}"
 ```
 
@@ -90,7 +90,7 @@ timestamp,app,poll_type,metric_name,value,unit,status,details
 Записываются вызовом `AppCsvLogger.log_event(...)`:
 ```csv
 timestamp,app,event_type,status,details
-2026-09-24T11:40:05.500+00:00,lhm_service,service_start,SUCCESS,"{""port"": 8085, ""pid"": 14220}"
+2026-09-24T11:40:05.500+00:00,hardware_monitor,service_start,SUCCESS,"{""port"": 8085, ""pid"": 14220}"
 2026-09-24T11:40:10.100+00:00,windows_defender,scan_completed,OK,"{""threats_detected"": 0}"
 ```
 
@@ -171,7 +171,7 @@ timestamp,app,param_name,old_value,new_value,status,user,details
 ```python
 from apps.common.csv_logger import AppCsvLogger
 
-logger = AppCsvLogger("librehardwaremonitor")
+logger = AppCsvLogger("hardware_sensors")
 logger.log_poll(
     poll_type="sensor_read",
     metric_name="cpu_temp",
@@ -179,7 +179,7 @@ logger.log_poll(
     unit="°C",
     status="OK",
     details={"sensor": "CPU Package"},
-    filename="lhm_sensor_polls.csv"
+    filename="hardware_sensor_polls.csv"
 )
 ```
 

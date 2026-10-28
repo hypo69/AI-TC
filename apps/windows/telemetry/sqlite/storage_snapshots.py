@@ -17,8 +17,7 @@
 # Project: ai-windows-admin
 # Package: apps.windows.telemetry.sqlite
 # Author: hypo69
-# Copyright: © 2026 hypo69
-# Updated: 2026-10-11 11:30:00
+# Updated: 2026-10-16 23:05:00
 # =============================================================================
 
 from __future__ import annotations
@@ -66,22 +65,7 @@ class TelemetrySnapshotStorageMixin:
 
     def save_sensor_poll(self, sensor_item: Dict[str, Any], timestamp: Optional[str] = None) -> int:
         if self._buffer.buffer_mode == 'direct':
-            with self._cm.lock, self._cm.get_connection() as conn:
-                row = self._writer.prepare_sensor_poll_row(sensor_item, timestamp)
-                conn.cursor().execute('''
-                    INSERT INTO sensor_polls (
-                        sensor_id, timestamp, created_at, hardware_name, hardware_type,
-                        sensor_category, sensor_name, unit, value, provider, provider_priority, raw_json
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    ON CONFLICT(sensor_id, timestamp) DO UPDATE SET
-                        created_at = excluded.created_at, hardware_name = excluded.hardware_name,
-                        hardware_type = excluded.hardware_type, sensor_category = excluded.sensor_category,
-                        sensor_name = excluded.sensor_name, unit = excluded.unit, value = excluded.value,
-                        provider = excluded.provider, provider_priority = excluded.provider_priority,
-                        raw_json = excluded.raw_json
-                ''', row)
-                conn.commit()
-                return 1
+            return self._writer.batch_insert_records([{'type': 'sensor_poll', 'data': sensor_item, 'timestamp': timestamp}])
         self._buffer.enqueue({'type': 'sensor_poll', 'data': sensor_item, 'timestamp': timestamp})
         return 1
 
@@ -191,11 +175,7 @@ class TelemetrySnapshotStorageMixin:
         return len(param_changes)
 
     def save_custom_record(self, source_file: str, payload: Dict[str, Any], timestamp: Optional[str] = None) -> int:
-        rec = {'type': 'custom_record', 'source_file': source_file, 'payload': payload, 'timestamp': timestamp}
-        if self._buffer.buffer_mode == 'direct':
-            return self._writer.batch_insert_records([rec])
-        self._buffer.enqueue(rec)
-        return 1
+        return 0
 
     def save_device_event(self, event: Dict[str, Any], timestamp: Optional[str] = None) -> int:
         rec = {'type': 'device_event', 'data': event, 'timestamp': timestamp}
@@ -258,6 +238,10 @@ class TelemetrySnapshotStorageMixin:
     def get_latest_snapshot_full(self) -> Optional[Dict[str, Any]]:
         """Извлекает и десериализует последний системный снимок со всеми метаданными и процессами."""
         return self._reader.get_latest_snapshot_full()
+
+    def get_latest_network_profile(self) -> Dict[str, Any]:
+        """Извлекает последний зафиксированный в telemetry.db сетевой профиль хоста."""
+        return self._reader.get_latest_network_profile()
 
     def get_latest_cpu(self) -> Optional[Dict[str, Any]]:
         return self._reader.get_latest_cpu()
@@ -394,5 +378,20 @@ class TelemetrySnapshotStorageMixin:
     def get_history_by_interval(self, interval: str = 'seconds', metric: str = 'all', limit: int = 120) -> List[Dict[str, Any]]:
         """Возвращает исторические срезы снимков под указанный интервал."""
         return self._reader.get_history_by_interval(interval=interval, metric=metric, limit=limit)
+
+    def get_process_provenance_analytics(
+        self,
+        cmdline_pattern: Optional[str] = None,
+        name: Optional[str] = None,
+        parent_name: Optional[str] = None,
+        days: int = 7,
+    ) -> Dict[str, Any]:
+        """Возвращает многоуровневую аналитику потребления ресурсов процессом."""
+        return self._reader.get_process_provenance_analytics(
+            cmdline_pattern=cmdline_pattern,
+            name=name,
+            parent_name=parent_name,
+            days=days,
+        )
 
     save_sensor_polls = save_sensor_polls_batch

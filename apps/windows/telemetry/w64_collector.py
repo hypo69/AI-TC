@@ -16,7 +16,7 @@
 # Package: apps.windows.telemetry
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-19 00:20:00
 # =============================================================================
 
 from __future__ import annotations
@@ -52,7 +52,7 @@ class AIW64Collector:
         enable_process_monitoring: bool = True,
         enable_registry_monitoring: bool = True,
         enable_network_monitoring: bool = True,
-        enable_event_log_monitoring: bool = True,
+        enable_event_log_monitoring: bool = False,
         monitored_paths: Optional[List[str]] = None,
         poll_interval_sec: float = 1.0,
         storage: Optional[TelemetryStorage] = None,
@@ -334,16 +334,15 @@ class AIW64Collector:
         return keys
 
     def _get_file_hashes(self) -> Dict[str, str]:
-        """Получить отпечатки и размеры отслеживаемых файлов для быстрого детекта изменений."""
+        """Получить отпечатки и размеры отслеживаемых файлов верхнего уровня без глубокого rglob по системным папкам."""
         hashes = {}
         for root_path in self.monitored_paths:
             p = Path(root_path)
             if not p.exists():
                 continue
             try:
-                # Ограничиваем сканирование первыми 100 файлами для предотвращения перегрузки
                 count = 0
-                for item in p.rglob('*'):
+                for item in p.iterdir():
                     if count > 100:
                         break
                     if item.is_file():

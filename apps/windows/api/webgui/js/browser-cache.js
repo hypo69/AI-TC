@@ -17,7 +17,7 @@
  * Package: windows/api/webgui/js
  * Author: hypo69
  * Copyright: © 2026 hypo69
- * Updated: 2026-10-10 17:35:00
+ * Updated: 2026-10-24 22:05:00
  * =============================================================================
  */
 
@@ -40,8 +40,8 @@
  * на наличие предупреждений о недоступности IndexedDB.
  */
 
-const DB_NAME = 'AI_Windows_Admin_DB';
-const DB_VERSION = 1;
+export const DB_NAME = 'AI_Windows_Admin_DB';
+export const DB_VERSION = 1;
 
 // Стандартные хранилища объектов IndexedDB
 export const STORES = {
@@ -55,12 +55,23 @@ export const STORES = {
 
 export class BrowserCacheManager {
   /**
-   * Инициализация менеджера браузерного кеша
+   * Инициализация менеджера браузерного кеша Windows Admin
    * @param {Object} options - Параметры конфигурации
+   * @param {string} options.dbName - Обязательное имя базы данных IndexedDB (не должно быть пустым)
+   * @param {number} [options.dbVersion=1] - Версия базы данных IndexedDB
    * @param {number} options.defaultTTL - Время жизни по умолчанию (в мс, 1 час = 3600000)
    * @param {number} options.maxMemoryEntries - Максимальное число записей в L1 памяти
    */
   constructor(options = {}) {
+    if (!options || typeof options.dbName !== 'string' || !options.dbName.trim()) {
+      throw new Error(
+        '[BrowserCacheManager] Ошибка: параметр options.dbName обязателен и не может быть пустым. ' +
+        'Неявные fallback-значения и хардкод запрещены стандартом Fail-Fast.'
+      );
+    }
+
+    this.dbName = options.dbName.trim();
+    this.dbVersion = options.dbVersion || DB_VERSION;
     this.defaultTTL = options.defaultTTL || 60 * 60 * 1000; // 1 час
     this.maxMemoryEntries = options.maxMemoryEntries || 200;
     this.memoryCache = new Map(); // L1 Cache: key -> { value, expiresAt, storeName, tags }
@@ -99,7 +110,7 @@ export class BrowserCacheManager {
 
     return new Promise((resolve) => {
       try {
-        const request = indexedDB.open(DB_NAME, DB_VERSION);
+        const request = indexedDB.open(this.dbName, this.dbVersion);
 
         request.onupgradeneeded = (event) => {
           const db = event.target.result;
@@ -112,13 +123,13 @@ export class BrowserCacheManager {
               store.createIndex('tags', 'tags', { unique: false, multiEntry: true });
             }
           });
-          console.log('[BrowserCache] Структура IndexedDB успешно обновлена до версии', DB_VERSION);
+          console.log('[BrowserCache] Структура IndexedDB успешно обновлена до версии', this.dbVersion);
         };
 
         request.onsuccess = (event) => {
           this.db = event.target.result;
           this.isDbReady = true;
-          console.log('[BrowserCache] IndexedDB успешно подключена:', DB_NAME);
+          console.log('[BrowserCache] IndexedDB успешно подключена:', this.dbName);
           console.log('[BrowserCache] Данные будут сохраняться в профиле пользователя:', this._getUserDataDir());
           this.cleanupExpired().catch(() => {});
           resolve(this.db);
@@ -693,8 +704,8 @@ export class BrowserCacheManager {
   }
 }
 
-// Создаем глобальный singleton экземпляр
-export const browserCache = new BrowserCacheManager();
+// Создаем глобальный singleton экземпляр для Windows Admin
+export const browserCache = new BrowserCacheManager({ dbName: DB_NAME });
 
 // Регистрация в глобальном объекте window для доступности во всех вкладках и скриптах
 if (typeof window !== 'undefined') {

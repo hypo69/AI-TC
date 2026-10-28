@@ -17,7 +17,7 @@
 # Package: apps.windows.sdk.modules.process_manager.core
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-15 16:16:00
 # =============================================================================
 
 from __future__ import annotations
@@ -28,22 +28,27 @@ from pydantic import BaseModel, Field
 
 
 class ProcessItem(BaseModel):
-    """Информация о запущенном процессе."""
+    """Информация о запущенном процессе с телеметрией запуска и родителя."""
     pid: int
+    ppid: Optional[int] = None
     name: str
     username: Optional[str] = None
     cpu_percent: float = 0.0
     memory_mb: float = 0.0
     num_threads: int = 1
     create_time: str = ''
+    uptime_str: Optional[str] = None
     exe_path: Optional[str] = None
     command_line: Optional[str] = None
+    launch_summary: Optional[str] = None
+    parent_name: Optional[str] = None
+    real_parent: Optional[str] = None
     has_window: bool = False
     window_title: Optional[str] = None
 
 
 class ProcessGroupItem(BaseModel):
-    """Группа связанных процессов/приложений (например, Google Chrome (25))."""
+    """Группа связанных процессов/приложений (например, Google Chrome (25) или ChatGPT (13))."""
     category: str = Field(default='background', description='Категория: app, background, windows')
     name: str = Field(..., description='Имя исполняемого файла (например, chrome.exe)')
     friendly_name: str = Field(..., description='Отображаемое имя (например, Google Chrome)')
@@ -56,6 +61,11 @@ class ProcessGroupItem(BaseModel):
     has_visible_window: bool = Field(default=False, description='Флаг наличия открытого видимого окна')
     window_titles: List[str] = Field(default_factory=list, description='Заголовки окон приложения')
     subprocesses: List[ProcessItem] = Field(default_factory=list, description='Список подпроцессов в группе')
+    real_parent_name: Optional[str] = Field(default=None, description='Истинный родительский процесс (например, ChatGPT.exe)')
+    launch_summary: Optional[str] = Field(default=None, description='Ключевая суть запуска (например, apps.windows.api)')
+    username: Optional[str] = Field(default=None, description='Пользователь, запустивший группу процессов')
+    create_time: Optional[str] = Field(default=None, description='Время создания старейшего процесса группы')
+    is_pwa_or_electron: bool = Field(default=False, description='Является ли PWA или Electron приложением')
 
 
 class CategorizedProcessReport(BaseModel):

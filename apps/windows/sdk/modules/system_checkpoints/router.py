@@ -16,7 +16,7 @@
 # Package: apps.windows.sdk.modules.system_checkpoints
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-16 22:17:00
 # =============================================================================
 
 from __future__ import annotations
@@ -27,8 +27,10 @@ from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 
 from apps.windows.system_checkpoints.models import (
+    AdvisorTrigger,
     CheckpointCreateRequest,
     CheckpointType,
+    SmartRestorePointCreateRequest,
     WimImageCreateRequest,
     WinREActionRequest,
 )
@@ -36,6 +38,7 @@ from apps.windows.system_checkpoints.core.checkpoint_coordinator import Checkpoi
 from apps.windows.system_checkpoints.core.image_manager import SystemImageManager
 from apps.windows.system_checkpoints.core.winre_manager import WinREManager
 from apps.windows.system_checkpoints.core.freshness_auditor import FreshnessAuditor
+from apps.windows.system_checkpoints.core.restore_point_advisor import RestorePointAdvisor
 from apps.windows.api.auth import require_admin_user
 
 router = APIRouter(prefix="/api/v1/windows-checkpoints", tags=["windows-checkpoints"])
@@ -44,6 +47,7 @@ _coordinator = CheckpointCoordinator()
 _image_mgr = _coordinator.image_manager
 _winre_mgr = _coordinator.winre_manager
 _freshness_auditor = _coordinator.freshness_auditor
+_advisor = _coordinator.advisor
 
 
 @router.get("/health")
@@ -169,6 +173,63 @@ async def create_native_restore_point(request: Request, req: NativeRestorePointC
         create_wim_image=False,
     )
     return _coordinator.create_checkpoint(chk_req)
+
+
+# --- Эндпоинты умного советника (Smart Restore Point Advisor) ---
+
+@router.get("/advisor/evaluate")
+async def evaluate_restore_need(trigger: str = "USER_REQUEST") -> Dict[str, Any]:
+    """Предварительная интеллектуальная оценка целесообразности создания точки восстановления.
+
+    Отвечает на три вопроса:
+    1. Есть ли смысл создавать точку?
+    2. Не дублирует ли она предыдущую?
+    3. Достаточно ли данных и условий для восстановления?
+    """
+    eval_res = _advisor.evaluate(trigger_event=trigger)
+    return eval_res.to_dict()
+
+
+@router.post("/advisor/create-smart")
+async def create_smart_restore_point(request: Request, req: SmartRestorePointCreateRequest) -> Dict[str, Any]:
+    """Создание точки восстановления с предварительной проверкой состояния и дедупликацией."""
+    require_admin_user(request)
+    return _advisor.execute_smart_restore_point(
+        title=req.title,
+        trigger_event=req.trigger.value,
+        force=req.force,
+        checkpoint_type=req.checkpoint_type,
+    )
+
+
+@router.get("/advisor/journal")
+async def get_smart_restore_journal(limit: int = 50) -> List[Dict[str, Any]]:
+    """Получение журнала срезов состояний, отпечатков и зафиксированных дельт."""
+    return _advisor.journal.get_recent_snapshots(limit=limit)
+
+
+@router.get("/advisor/readiness")
+async def get_restore_readiness() -> Dict[str, Any]:
+    """Проверка условий готовности системы к созданию точек (VSS, защита диска, квоты)."""
+    return _advisor.check_readiness()
+
+
+class ExplainRequest(BaseModel):
+    """Запрос на генерацию русскоязычного пояснения решения."""
+    trigger: str = "USER_REQUEST"
+
+
+@router.post("/advisor/explain")
+async def explain_advisor_decision(req: ExplainRequest) -> Dict[str, Any]:
+    """Генерация детального объяснения решения советника на естественном языке."""
+    eval_res = _advisor.evaluate(trigger_event=req.trigger)
+    explanation = _advisor.explain_with_ai(eval_res)
+    return {
+        "decision": eval_res.decision.value,
+        "summary": eval_res.summary,
+        "explanation": explanation,
+        "evaluation": eval_res.to_dict(),
+    }
 
 
 def init_router(app: Optional[Any] = None, state: Optional[Any] = None) -> APIRouter:

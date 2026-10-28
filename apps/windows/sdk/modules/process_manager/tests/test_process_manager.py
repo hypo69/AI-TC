@@ -14,7 +14,7 @@
 # Package: apps.windows.sdk.modules.process_manager.tests
 # Author: hypo69
 # Copyright: © 2026 hypo69
-# Updated: 2026-10-10 17:35:00
+# Updated: 2026-10-16 20:35:00
 # =============================================================================
 
 from __future__ import annotations
@@ -104,3 +104,60 @@ def test_process_manager_endpoints(client: TestClient):
     resp_list = client.get('/api/process-manager/list')
     assert resp_list.status_code == 200
     assert len(resp_list.json()) > 0
+
+    resp_inv = client.get('/api/process-manager/investigate/powershell')
+    assert resp_inv.status_code == 200
+    inv_data = resp_inv.json()
+    assert inv_data.get('status') == 'detected'
+    assert 'verdict' in inv_data
+    assert 'code_location' in inv_data
+
+
+
+def test_extract_launch_summary():
+    """Проверка извлечения сути команды запуска (Python, PWA, Node, PowerShell)."""
+    # 1. Python модуль
+    assert ProcessClassifier._extract_launch_summary(
+        'python.exe',
+        'C:\\Python\\python.exe -m apps.windows.api --host 127.0.0.1'
+    ) == 'apps.windows.api'
+
+    # 2. Python скрипт
+    assert ProcessClassifier._extract_launch_summary(
+        'python.exe',
+        'python.exe C:\\AI-TC\\apps\\windows\\telemetry\\main.py'
+    ) == 'telemetry/main.py'
+
+    # 3. PWA / ChatGPT
+    assert ProcessClassifier._extract_launch_summary(
+        'chrome.exe',
+        'chrome.exe --app=https://chatgpt.com/'
+    ) == 'ChatGPT (PWA App)'
+
+    # 4. Chromium renderer
+    assert ProcessClassifier._extract_launch_summary(
+        'chrome.exe',
+        'chrome.exe --type=renderer --no-sandbox'
+    ) == 'Chromium Renderer'
+
+    # 5. PowerShell
+    assert ProcessClassifier._extract_launch_summary(
+        'pwsh.exe',
+        'pwsh.exe -File C:\\AI-TC\\tc.ps1'
+    ) == 'tc.ps1'
+
+
+def test_process_enrichment_telemetry(classifier: ProcessClassifier):
+    """Проверка обогащения процессов телеметрией (ppid, parent_name, launch_summary)."""
+    report = classifier.classify_processes()
+    all_subs = []
+    for grp in report.apps + report.background_processes + report.windows_processes:
+        all_subs.extend(grp.subprocesses)
+
+    assert len(all_subs) > 0
+    # Проверяем, что хотя бы у части процессов есть ppid и username
+    with_ppid = [p for p in all_subs if p.ppid is not None]
+    assert len(with_ppid) > 0
+    with_user = [p for p in all_subs if p.username]
+    assert len(with_user) > 0
+

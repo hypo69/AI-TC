@@ -19,9 +19,9 @@
       "*"
     ]
   },
-  "watch_directory": "C:\\Users\\onela\\AppData\\Local\\AI-Windows-Admin",
+  "watch_directory": "C:\\Users\\onela\\AppData\\Local\\AI-TC",
   "watch_directories": [
-    "C:\\Users\\onela\\AppData\\Local\\AI-Windows-Admin",
+    "C:\\Users\\onela\\AppData\\Local\\AI-TC",
     "C:\\Program Files",
     "C:\\"
   ],
@@ -35,7 +35,6 @@
       ".git",
       "__pycache__",
       "node_modules",
-      "c:\\Users\\onela\\AppData\\*.*",
       ".pytest_cache"
     ],
     "extensions": [
